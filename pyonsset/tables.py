@@ -2,6 +2,7 @@ import os
 from math import ceil, sqrt
 import numpy as np
 import pandas as pd
+from pyonsset.constants import *
 
 def calc_tech_lcoe(people,
                    num_people_per_hh,
@@ -61,39 +62,39 @@ def time_value_lcoe(dr, life, gen, it, mt, ft):
     Lower = el_gen / discount_factor
     return np.sum(Upper) / np.sum(Lower) / 1000
 
-def run(scenario, specs):
+def make_tables(scenario, specs):
     output_dir = 'Tables/scenario{}'.format(scenario)
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
     # Import country specific values from Excel
-    country_specs_xlsx = os.path.join('Tables', specs)
+    country_specs_xlsx = os.path.join('Tables', specs + '.xlsx')
     grid_lcoes_csv = os.path.join(output_dir, 'grid_lcoes.csv')
     grid_cap_csv = os.path.join(output_dir, 'grid_cap.csv')
     tech_lcoes_csv = os.path.join(output_dir, 'tech_lcoes.csv')
     tech_cap_csv = os.path.join(output_dir, 'tech_cap.csv')
     num_people_csv = os.path.join(output_dir, 'num_people.csv')
 
-    country_specs = pd.read_excel(country_specs_xlsx)[['Country', 'GridPrice', 'GridLosses', 'BaseToPeak', 'DieselPriceLow']]
+    country_specs = pd.read_excel(country_specs_xlsx)[[SPE_COUNTRY, SPE_GRID_PRICE, SPE_GRID_LOSSES, SPE_BASE_TO_PEAK, 'DieselPriceLow']]
 
     people_arr = 1000*np.arange(1,401)
     additional_mv_line_length_arr = 5*np.arange(1,11)
-    techs = ['mg_hydro', 'mg_pv1750', 'mg_pv2250', 'mg_wind0.2', 'mg_wind0.3', 'mg_wind0.4', 'mg_diesel']
+    techs = [MG_HYDRO, MG_PV_LOW, MG_PV_HIGH, MG_WIND_LOW, MG_WIND_MID, MG_WIND_HIGH, MG_DIESEL, SA_DIESEL_, SA_PV_LOW, SA_PV_HIGH]
 
     grid_lcoes = pd.Panel(np.zeros([len(country_specs), len(additional_mv_line_length_arr), len(people_arr)]),
-                          items=country_specs['Country'].values, major_axis=additional_mv_line_length_arr,
+                          items=country_specs[SPE_COUNTRY].values, major_axis=additional_mv_line_length_arr,
                           minor_axis=people_arr)
 
     grid_cap = pd.Panel(np.zeros([len(country_specs), len(additional_mv_line_length_arr), len(people_arr)]),
-                          items=country_specs['Country'].values, major_axis=additional_mv_line_length_arr,
+                          items=country_specs[SPE_COUNTRY].values, major_axis=additional_mv_line_length_arr,
                           minor_axis=people_arr)
 
     tech_lcoes = pd.Panel(np.zeros([len(country_specs), len(techs), len(people_arr)]),
-                      items=country_specs['Country'].values, major_axis=techs,
+                      items=country_specs[SPE_COUNTRY].values, major_axis=techs,
                       minor_axis=people_arr)
 
     tech_cap = pd.Panel(np.zeros([len(country_specs), len(techs), len(people_arr)]),
-                          items=country_specs['Country'].values, major_axis=techs,
+                          items=country_specs[SPE_COUNTRY].values, major_axis=techs,
                           minor_axis=people_arr)
 
     target_energy_access_level = scenario
@@ -121,14 +122,14 @@ def run(scenario, specs):
                 discount_rate = 0.08
                 system_life = 30
 
-                transmission_losses = float(country['GridLosses'])
-                base_to_peak_load_ratio = float(country['BaseToPeak'])
+                transmission_losses = float(country[SPE_GRID_LOSSES])
+                base_to_peak_load_ratio = float(country[SPE_BASE_TO_PEAK])
 
 
                 if calc_lcoe:
                     om_of_td_lines = 0.03
-                    lcoe_grid = float(country['GridPrice'])
-                    diesel_price = float(country['DieselPriceLow'])
+                    lcoe_grid = float(country[SPE_GRID_PRICE])
+                    diesel_price = float(country[SPE_DIESEL_PRICE_LOW])
                 else:
                     om_of_td_lines = 0.0
                     lcoe_grid = 0.0
@@ -176,7 +177,6 @@ def run(scenario, specs):
                 # mg_hydro
                 if calc_lcoe: om_costs = 0.02
                 else: om_costs = 0.0
-
                 lcoe_mg_hydro = calc_tech_lcoe(people,
                                       num_people_per_hh,
                                       target_energy_access_level,
@@ -198,7 +198,6 @@ def run(scenario, specs):
                 irradiation = 1750.0
                 if calc_lcoe: om_costs = 0.02
                 else: om_costs = 0.0
-
                 lcoe_mg_pv1750 = calc_tech_lcoe(people,
                                       num_people_per_hh,
                                       target_energy_access_level,
@@ -220,7 +219,6 @@ def run(scenario, specs):
                 irradiation = 2250.0
                 if calc_lcoe: om_costs = 0.02
                 else: om_costs = 0.0
-
                 lcoe_mg_pv2250 = calc_tech_lcoe(people,
                                       num_people_per_hh,
                                       target_energy_access_level,
@@ -241,7 +239,6 @@ def run(scenario, specs):
                 # mg_wind0.2
                 if calc_lcoe: om_costs = 0.02
                 else: om_costs = 0.0
-
                 lcoe_mg_wind02 = calc_tech_lcoe(people,
                                       num_people_per_hh,
                                       target_energy_access_level,
@@ -262,7 +259,6 @@ def run(scenario, specs):
                 # mg_wind0.3
                 if calc_lcoe: om_costs = 0.02
                 else: om_costs = 0.0
-
                 lcoe_mg_wind03 = calc_tech_lcoe(people,
                                       num_people_per_hh,
                                       target_energy_access_level,
@@ -283,7 +279,6 @@ def run(scenario, specs):
                 # mg_wind0.4
                 if calc_lcoe: om_costs = 0.02
                 else: om_costs = 0.0
-
                 lcoe_mg_wind04 = calc_tech_lcoe(people,
                                       num_people_per_hh,
                                       target_energy_access_level,
@@ -304,7 +299,6 @@ def run(scenario, specs):
                 # mg_diesel
                 if calc_lcoe: om_costs = 0.1
                 else: om_costs = 0.0
-
                 lcoe_mg_diesel = calc_tech_lcoe(people,
                                       num_people_per_hh,
                                       target_energy_access_level,
@@ -325,6 +319,71 @@ def run(scenario, specs):
                                       efficiency=0.33,
                                       fuel_cost=diesel_price/10*1000)
 
+                # sa_diesel
+                if calc_lcoe: om_costs = 0.1
+                else: om_costs = 0.0
+                lcoe_sa_diesel = calc_tech_lcoe(people,
+                                                num_people_per_hh,
+                                                target_energy_access_level,
+                                                discount_rate,
+                                                0,
+                                                0,
+                                                0,
+                                                0,
+                                                capacity_factor=0.7,
+                                                distribution_losses=0.0,
+                                                connection_cost_per_hh=100.0,
+                                                capital_cost=721.0,
+                                                om_costs=om_costs,
+                                                base_to_peak_load_ratio=0.5,
+                                                system_life=15,
+                                                mv_line_length=0,
+                                                diesel=True,
+                                                efficiency=0.33,
+                                                fuel_cost=diesel_price / 10 * 1000)
+
+                # sa_pv1750
+                irradiation = 1750.0
+                if calc_lcoe: om_costs = 0.02
+                else: om_costs = 0.0
+                lcoe_sa_pv1750 = calc_tech_lcoe(people,
+                                      num_people_per_hh,
+                                      target_energy_access_level,
+                                      discount_rate,
+                                      0,
+                                      0,
+                                      0,
+                                      0,
+                                      capacity_factor = irradiation / 8760,
+                                      distribution_losses=0.0,
+                                      connection_cost_per_hh=100.0,
+                                      capital_cost = 4300.0,
+                                      om_costs = om_costs,
+                                      base_to_peak_load_ratio = 0.9,
+                                      system_life = 20,
+                                      mv_line_length = 0)
+
+                # sa_pv2250
+                irradiation = 2250.0
+                if calc_lcoe: om_costs = 0.02
+                else: om_costs = 0.0
+                lcoe_sa_pv2250 = calc_tech_lcoe(people,
+                                      num_people_per_hh,
+                                      target_energy_access_level,
+                                      discount_rate,
+                                      0,
+                                      0,
+                                      0,
+                                      0,
+                                      capacity_factor=irradiation / 8760,
+                                      distribution_losses=0.0,
+                                      connection_cost_per_hh=100.0,
+                                      capital_cost=4300.0,
+                                      om_costs=om_costs,
+                                      base_to_peak_load_ratio=0.9,
+                                      system_life=20,
+                                      mv_line_length=0)
+
                 if calc_lcoe:
                     grid_lcoes[country_name][people] = lcoe_grid_list
                     tech_lcoes[country_name][people][techs[0]] = lcoe_mg_hydro
@@ -334,6 +393,9 @@ def run(scenario, specs):
                     tech_lcoes[country_name][people][techs[4]] = lcoe_mg_wind03
                     tech_lcoes[country_name][people][techs[5]] = lcoe_mg_wind04
                     tech_lcoes[country_name][people][techs[6]] = lcoe_mg_diesel
+                    tech_lcoes[country_name][people][techs[7]] = lcoe_sa_diesel
+                    tech_lcoes[country_name][people][techs[8]] = lcoe_sa_pv1750
+                    tech_lcoes[country_name][people][techs[9]] = lcoe_sa_pv2250
                 else:
                     grid_cap[country_name][people] = lcoe_grid_list
                     tech_cap[country_name][people][techs[0]] = lcoe_mg_hydro
@@ -343,6 +405,9 @@ def run(scenario, specs):
                     tech_cap[country_name][people][techs[4]] = lcoe_mg_wind03
                     tech_cap[country_name][people][techs[5]] = lcoe_mg_wind04
                     tech_cap[country_name][people][techs[6]] = lcoe_mg_diesel
+                    tech_cap[country_name][people][techs[7]] = lcoe_sa_diesel
+                    tech_cap[country_name][people][techs[8]] = lcoe_sa_pv1750
+                    tech_cap[country_name][people][techs[9]] = lcoe_sa_pv2250
 
 
         if calc_lcoe:
@@ -361,15 +426,15 @@ def run(scenario, specs):
     ##### Calculate num people triggers
     num_people_for_grid = pd.DataFrame(1e9 * np.ones([len(additional_mv_line_length_arr),len(country_specs)]),
                                       index=additional_mv_line_length_arr,
-                                      columns=country_specs['Country'].values)
+                                      columns=country_specs[SPE_COUNTRY].values)
 
     for country in grid_lcoes:
         for additional_mv_line_length in additional_mv_line_length_arr:
             for people in people_arr:
                 lcoes = tech_lcoes[country][people]
-                min_lcoe_techs = min(lcoes['mg_diesel'], lcoes['mg_wind0.2'],
-                                    (lcoes['mg_pv1750']+lcoes['mg_pv2250'])/2,
-                                     lcoes['mg_hydro'])
+                min_lcoe_techs = min(lcoes[MG_DIESEL], lcoes[MG_WIND_MID],
+                                    (lcoes[SA_PV_LOW]+lcoes[SA_PV_HIGH])/2,
+                                     lcoes[MG_HYDRO])
 
                 if grid_lcoes[country][people][additional_mv_line_length] < min_lcoe_techs:
                     num_people_for_grid[country][additional_mv_line_length] = people / 100

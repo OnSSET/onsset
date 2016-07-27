@@ -2,6 +2,7 @@ import os
 import pandas as pd
 import numpy as np
 from collections import defaultdict
+from pyonsset.constants import *
 
 def separateElecStatus(elec_status):
     """
@@ -122,39 +123,31 @@ def run(scenario, settlements):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    from datetime import datetime
-    startTime = datetime.now()
-
-    settlements_csv = os.path.join('Tables', settlements)
+    settlements_csv = os.path.join('Tables', settlements + '.csv')
     num_people_csv = os.path.join(output_dir, 'num_people.csv')
     settlements_out_csv = os.path.join(output_dir, settlements)
 
     df = pd.read_csv(settlements_csv)
     num_people = pd.read_csv(num_people_csv, index_col=0)
 
-    distance = [5000, 10000, 15000, 20000, 25000, 30000, 35000, 40000, 45000, 50000]
-    distance_field = ['Elec' + str(x) for x in distance]
     df['Elec2030'] = 0
-    for col in distance_field: df[col] = 0
+    for col in SET_ELEC_STEPS: df[col] = 0
     countries = num_people.columns.values.tolist()
 
     for c in countries:
-        df.loc[df.Country == c, 'Elec2030'] = df.loc[df.Country == c].apply(lambda row:
+        df.loc[df.Country == c, SET_ELEC_FUTURE] = df.loc[df.Country == c].apply(lambda row:
                                                                            1
-                                                                           if row['Elec2015'] == 1 or
-                                                                                (row['GridDistPlan'] < 5000 and row['Pop2030'] > num_people[c].loc[5]) or
-                                                                                (row['GridDistPlan'] < 10000 and row['Pop2030'] > num_people[c].loc[10])
+                                                                           if row[SET_ELEC_CURRENT] == 1 or
+                                                                                (row[SET_GRID_DIST_PLANNED] < 5000 and row[SET_POP_FUTURE] > num_people[c].loc[5]) or
+                                                                                (row[SET_GRID_DIST_PLANNED] < 10000 and row[SET_POP_FUTURE] > num_people[c].loc[10])
                                                                            else 0
                                                                            , axis=1)
 
         print('start {}'.format(c))
-        df.loc[df.Country == c,distance_field] = runAlgorithm(
-                        df.loc[df.Country == c,['X', 'Y', 'Pop2030', 'Elec2030']],
-                        distance,
+        df.loc[df.Country == c,SET_ELEC_STEPS] = runAlgorithm(
+                        df.loc[df.Country == c,[SET_X, SET_Y, SET_POP_FUTURE, SET_ELEC_FUTURE]],
+            ELEC_DISTANCES,
                         num_people[c].values.astype(int).tolist())
-
-        print('\t\t{} done, took {}'.format(c,datetime.now() - startTime))
-        startTime = datetime.now()
 
 
     df.to_csv(settlements_out_csv,index=False)
