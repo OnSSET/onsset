@@ -1,13 +1,14 @@
+"""
+This module contains the preparatory functions to set up all columns that aren't scenario-specific.
+"""
+
 import pandas as pd
 import os
 from pyonsset.constants import *
 
-def pop(settlements, specs):
-    settlements_csv = os.path.join('Tables', settlements + '.csv')
-    country_specs_xlsx = os.path.join('Tables', specs + '.xlsx')
-
-    df = pd.read_csv(settlements_csv)
-    country_specs = pd.read_excel(country_specs_xlsx, index_col = 0)
+def pop():
+    df = pd.read_csv(FF_SETTLEMENTS)
+    country_specs = pd.read_excel(FF_SPECS, index_col = 0)
 
     countries = country_specs.index.values.tolist()
 
@@ -74,15 +75,12 @@ def pop(settlements, specs):
                                                                            , axis=1)
 
 
-    df.to_csv(settlements_csv,index=False)
-    country_specs.to_excel(country_specs_xlsx)
+    df.to_csv(FF_SETTLEMENTS, index=False)
+    country_specs.to_excel(FF_SPECS)
 
-def elec(settlements, specs):
-    settlements_csv = os.path.join('Tables', settlements + '.csv')
-    country_specs_xlsx = os.path.join('Tables', specs + '.xlsx')
-
-    df = pd.read_csv(settlements_csv)
-    country_specs = pd.read_excel(country_specs_xlsx, index_col = 0)
+def elec():
+    df = pd.read_csv(FF_SETTLEMENTS)
+    country_specs = pd.read_excel(FF_SPECS, index_col = 0)
     countries = country_specs.index.values.tolist()
 
     for c in countries:
@@ -138,8 +136,8 @@ def elec(settlements, specs):
                 break
             elif not round_two:
                 min_night_lights = sorted([5.0, min_night_lights - min_night_lights * 2 * (target-calculated)/target, 60.0])[1]
-                max_grid_dist = sorted([5000.0, max_grid_dist + max_grid_dist * 2 * (target-calculated)/target, 150000.0])[1]
-                max_road_dist = sorted([500.0, max_road_dist + max_road_dist * 2 * (target-calculated)/target, 50000.0])[1]
+                max_grid_dist = sorted([5.0, max_grid_dist + max_grid_dist * 2 * (target-calculated)/target, 150.0])[1]
+                max_road_dist = sorted([0.5, max_road_dist + max_road_dist * 2 * (target-calculated)/target, 50.0])[1]
             elif calculated - target < 0:
                 pop_round_two = sorted([0.01, pop_round_two - pop_round_two * (target-calculated)/target, 100000.0])[1]
             else:
@@ -173,5 +171,5 @@ def elec(settlements, specs):
         country_specs.loc[c, SPE_POP_CUTOFF1] = pop_cutoff
 
 
-    df.to_csv(settlements_csv,index=False)
-    country_specs.to_excel(country_specs_xlsx)
+    df.to_csv(FF_SETTLEMENTS, index=False)
+    country_specs.to_excel(FF_SPECS)

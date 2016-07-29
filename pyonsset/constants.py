@@ -1,5 +1,25 @@
+import os
+
+# files and folders
+FF_TABLES = 'tables'
+FF_LCOES = os.path.join(FF_TABLES, 'lcoes')
+FF_SPECS = os.path.join(FF_TABLES, 'specs.xlsx')
+FF_SETTLEMENTS = os.path.join(FF_TABLES, 'settlements.csv')
+def FF_GRID_LCOES(scenario):
+    return os.path.join(FF_LCOES, str(scenario), 'grid_lcoes_{}.csv'.format(scenario))
+def FF_GRID_CAP(scenario):
+    return os.path.join(FF_LCOES, str(scenario), 'grid_cap_{}.csv'.format(scenario))
+def FF_TECH_LCOES(scenario):
+    return os.path.join(FF_LCOES, str(scenario), 'tech_lcoes_{}.csv'.format(scenario))
+def FF_TECH_CAP(scenario):
+    return os.path.join(FF_LCOES, str(scenario), 'tech_cap_{}.csv'.format(scenario))
+def FF_NUM_PEOPLE(scenario):
+    return os.path.join(FF_LCOES, str(scenario), 'num_people_{}.csv'.format(scenario))
+
 # general
-ELEC_DISTANCES = [5000, 10000, 15000, 20000, 25000, 30000, 35000, 40000, 45000, 50000]
+ELEC_DISTANCES = [5*x for x in range(1,11)]
+MAX_GRID_EXTEND = ELEC_DISTANCES[-1]
+NUM_PEOPLE_PER_HH = 5.0
 
 # settlements file
 SET_COUNTRY = 'Country' # give eplanation of each variable
@@ -18,9 +38,10 @@ SET_WINDCF = 'WindCF'
 SET_HYDRO = 'Hydropower'
 SET_HYDRO_DIST = 'HydropwoerDist'
 SET_URBAN = 'IsUrban'
-SET_ELEC_CURRENT = 'Elec2015'
-SET_ELEC_FUTURE = 'Elec2030'
-SET_ELEC_STEPS = ['Elec' + str(x) for x in ELEC_DISTANCES]
+SET_ELEC_PREFIX = 'Elec'
+SET_ELEC_CURRENT = SET_ELEC_PREFIX + '2015'
+SET_ELEC_FUTURE = SET_ELEC_PREFIX + '2030'
+SET_ELEC_STEPS = [SET_ELEC_PREFIX + str(x) for x in ELEC_DISTANCES]
 
 # results inserted into settlements file
 RES_MIN_GRID_DIST = 'MinGridDist'

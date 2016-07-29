@@ -1,8 +1,8 @@
-import os
 from math import ceil, sqrt
 import numpy as np
 import pandas as pd
 from pyonsset.constants import *
+
 
 def calc_tech_lcoe(people,
                    num_people_per_hh,
@@ -39,13 +39,13 @@ def calc_tech_lcoe(people,
     if diesel: ft = fuel_cost / efficiency
     else: ft = 0
 
-
     return time_value_lcoe(discount_rate,
                            system_life,
                            generation_per_year,
                            total_investment_cost,
                            td_om_cost + (capital_cost * om_costs * installed_capacity),
                            ft)
+
 
 def time_value_lcoe(dr, life, gen, it, mt, ft):
     year = np.arange(0, life+1)
@@ -62,31 +62,30 @@ def time_value_lcoe(dr, life, gen, it, mt, ft):
     Lower = el_gen / discount_factor
     return np.sum(Upper) / np.sum(Lower) / 1000
 
-def make_tables(scenario, specs):
-    output_dir = 'Tables/scenario{}'.format(scenario)
+
+def make_tables(scenario):
+    output_dir = os.path.join(FF_LCOES, str(scenario))
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
     # Import country specific values from Excel
-    country_specs_xlsx = os.path.join('Tables', specs + '.xlsx')
-    grid_lcoes_csv = os.path.join(output_dir, 'grid_lcoes.csv')
-    grid_cap_csv = os.path.join(output_dir, 'grid_cap.csv')
-    tech_lcoes_csv = os.path.join(output_dir, 'tech_lcoes.csv')
-    tech_cap_csv = os.path.join(output_dir, 'tech_cap.csv')
-    num_people_csv = os.path.join(output_dir, 'num_people.csv')
+    grid_lcoes_csv = FF_GRID_LCOES(scenario)
+    grid_cap_csv = FF_GRID_CAP(scenario)
+    tech_lcoes_csv = FF_TECH_LCOES(scenario)
+    tech_cap_csv = FF_TECH_CAP(scenario)
+    num_people_csv = FF_NUM_PEOPLE(scenario)
 
-    country_specs = pd.read_excel(country_specs_xlsx)[[SPE_COUNTRY, SPE_GRID_PRICE, SPE_GRID_LOSSES, SPE_BASE_TO_PEAK, 'DieselPriceLow']]
+    country_specs = pd.read_excel(FF_SPECS)[[SPE_COUNTRY, SPE_GRID_PRICE, SPE_GRID_LOSSES, SPE_BASE_TO_PEAK, SPE_DIESEL_PRICE_LOW]]
 
-    people_arr = 1000*np.arange(1,401)
-    additional_mv_line_length_arr = 5*np.arange(1,11)
+    people_arr = [10*x for x in range(1,401)]
     techs = [MG_HYDRO, MG_PV_LOW, MG_PV_HIGH, MG_WIND_LOW, MG_WIND_MID, MG_WIND_HIGH, MG_DIESEL, SA_DIESEL_, SA_PV_LOW, SA_PV_HIGH]
 
-    grid_lcoes = pd.Panel(np.zeros([len(country_specs), len(additional_mv_line_length_arr), len(people_arr)]),
-                          items=country_specs[SPE_COUNTRY].values, major_axis=additional_mv_line_length_arr,
+    grid_lcoes = pd.Panel(np.zeros([len(country_specs), len(ELEC_DISTANCES), len(people_arr)]),
+                          items=country_specs[SPE_COUNTRY].values, major_axis=ELEC_DISTANCES,
                           minor_axis=people_arr)
 
-    grid_cap = pd.Panel(np.zeros([len(country_specs), len(additional_mv_line_length_arr), len(people_arr)]),
-                          items=country_specs[SPE_COUNTRY].values, major_axis=additional_mv_line_length_arr,
+    grid_cap = pd.Panel(np.zeros([len(country_specs), len(ELEC_DISTANCES), len(people_arr)]),
+                          items=country_specs[SPE_COUNTRY].values, major_axis=ELEC_DISTANCES,
                           minor_axis=people_arr)
 
     tech_lcoes = pd.Panel(np.zeros([len(country_specs), len(techs), len(people_arr)]),
@@ -98,16 +97,17 @@ def make_tables(scenario, specs):
                           minor_axis=people_arr)
 
     target_energy_access_level = scenario
-    num_people_per_hh = 5.0
-    grid_cell_area = 100.0
+    grid_cell_area = 100.0 # legacy
 
     calc_lcoe = True # alternative being calculate caponly
 
     while True:
         for index, country in country_specs.iterrows():
-            country_name = country['Country']
+            country_name = country[SPE_COUNTRY]
 
             for people in people_arr:
+                people *= 100 # to adjust for incorrect grid size
+
                 # Grid
                 hv_line_cost = 53000.0
                 mv_increase_rate = 0.1
@@ -125,7 +125,6 @@ def make_tables(scenario, specs):
                 transmission_losses = float(country[SPE_GRID_LOSSES])
                 base_to_peak_load_ratio = float(country[SPE_BASE_TO_PEAK])
 
-
                 if calc_lcoe:
                     om_of_td_lines = 0.03
                     lcoe_grid = float(country[SPE_GRID_PRICE])
@@ -136,7 +135,7 @@ def make_tables(scenario, specs):
                     diesel_price = 0.0
 
                 # load estimation
-                consumption = people / num_people_per_hh * target_energy_access_level
+                consumption = people / NUM_PEOPLE_PER_HH * target_energy_access_level
                 average_load = consumption * (1+transmission_losses) / 8760
                 peak_load = average_load / base_to_peak_load_ratio
 
@@ -145,9 +144,9 @@ def make_tables(scenario, specs):
                 no_lv_lines = ceil(peak_load / lv_line_capacity)
                 lv_network_capacity = no_lv_lines / no_mv_lines
                 lv_network_length = ((grid_cell_area/no_mv_lines)/(lv_line_max_length/sqrt(2)))**2
-                actual_lv_lines = ceil(min([people/num_people_per_hh, max([lv_network_capacity, lv_network_length])]))
-                hh_per_lv_network = (people/num_people_per_hh)/(actual_lv_lines*no_mv_lines)
-                lv_unit_length = sqrt(grid_cell_area/(people/num_people_per_hh))*sqrt(2)/2
+                actual_lv_lines = ceil(min([people/NUM_PEOPLE_PER_HH, max([lv_network_capacity, lv_network_length])]))
+                hh_per_lv_network = (people/NUM_PEOPLE_PER_HH)/(actual_lv_lines*no_mv_lines)
+                lv_unit_length = sqrt(grid_cell_area/(people/NUM_PEOPLE_PER_HH))*sqrt(2)/2
                 lv_lines_length_per_lv_network = 1.333 * hh_per_lv_network * lv_unit_length
                 total_lv_lines_length = no_mv_lines * actual_lv_lines * lv_lines_length_per_lv_network
                 line_reach = (grid_cell_area/no_mv_lines)/(2*sqrt(grid_cell_area/no_lv_lines))
@@ -157,12 +156,12 @@ def make_tables(scenario, specs):
                 num_transformers = ceil(additional_hv_lines+no_mv_lines+(no_mv_lines*actual_lv_lines))
 
                 lcoe_grid_list = []
-                for additional_mv_line_length in additional_mv_line_length_arr:
+                for additional_mv_line_length in ELEC_DISTANCES:
                     td_investment_cost =    hv_lines_total_length*hv_line_cost + \
                                             total_length_of_lines*mv_line_cost + \
                                             total_lv_lines_length*lv_line_cost + \
                                             num_transformers*hv_lv_transformer_cost + \
-                                            (people/num_people_per_hh)*connection_cost_per_hh + \
+                                            (people/NUM_PEOPLE_PER_HH)*connection_cost_per_hh + \
                                             additional_mv_line_length*(mv_line_cost*(1+mv_increase_rate)**((additional_mv_line_length/5)-1))
                     td_om_cost = td_investment_cost*om_of_td_lines
 
@@ -178,7 +177,7 @@ def make_tables(scenario, specs):
                 if calc_lcoe: om_costs = 0.02
                 else: om_costs = 0.0
                 lcoe_mg_hydro = calc_tech_lcoe(people,
-                                      num_people_per_hh,
+                                      NUM_PEOPLE_PER_HH,
                                       target_energy_access_level,
                                       discount_rate,
                                       total_lv_lines_length,
@@ -199,7 +198,7 @@ def make_tables(scenario, specs):
                 if calc_lcoe: om_costs = 0.02
                 else: om_costs = 0.0
                 lcoe_mg_pv1750 = calc_tech_lcoe(people,
-                                      num_people_per_hh,
+                                      NUM_PEOPLE_PER_HH,
                                       target_energy_access_level,
                                       discount_rate,
                                       total_lv_lines_length,
@@ -220,7 +219,7 @@ def make_tables(scenario, specs):
                 if calc_lcoe: om_costs = 0.02
                 else: om_costs = 0.0
                 lcoe_mg_pv2250 = calc_tech_lcoe(people,
-                                      num_people_per_hh,
+                                      NUM_PEOPLE_PER_HH,
                                       target_energy_access_level,
                                       discount_rate,
                                       total_lv_lines_length,
@@ -240,7 +239,7 @@ def make_tables(scenario, specs):
                 if calc_lcoe: om_costs = 0.02
                 else: om_costs = 0.0
                 lcoe_mg_wind02 = calc_tech_lcoe(people,
-                                      num_people_per_hh,
+                                      NUM_PEOPLE_PER_HH,
                                       target_energy_access_level,
                                       discount_rate,
                                       total_lv_lines_length,
@@ -260,7 +259,7 @@ def make_tables(scenario, specs):
                 if calc_lcoe: om_costs = 0.02
                 else: om_costs = 0.0
                 lcoe_mg_wind03 = calc_tech_lcoe(people,
-                                      num_people_per_hh,
+                                      NUM_PEOPLE_PER_HH,
                                       target_energy_access_level,
                                       discount_rate,
                                       total_lv_lines_length,
@@ -280,7 +279,7 @@ def make_tables(scenario, specs):
                 if calc_lcoe: om_costs = 0.02
                 else: om_costs = 0.0
                 lcoe_mg_wind04 = calc_tech_lcoe(people,
-                                      num_people_per_hh,
+                                      NUM_PEOPLE_PER_HH,
                                       target_energy_access_level,
                                       discount_rate,
                                       total_lv_lines_length,
@@ -300,7 +299,7 @@ def make_tables(scenario, specs):
                 if calc_lcoe: om_costs = 0.1
                 else: om_costs = 0.0
                 lcoe_mg_diesel = calc_tech_lcoe(people,
-                                      num_people_per_hh,
+                                      NUM_PEOPLE_PER_HH,
                                       target_energy_access_level,
                                       discount_rate,
                                       total_lv_lines_length,
@@ -323,7 +322,7 @@ def make_tables(scenario, specs):
                 if calc_lcoe: om_costs = 0.1
                 else: om_costs = 0.0
                 lcoe_sa_diesel = calc_tech_lcoe(people,
-                                                num_people_per_hh,
+                                                NUM_PEOPLE_PER_HH,
                                                 target_energy_access_level,
                                                 discount_rate,
                                                 0,
@@ -347,7 +346,7 @@ def make_tables(scenario, specs):
                 if calc_lcoe: om_costs = 0.02
                 else: om_costs = 0.0
                 lcoe_sa_pv1750 = calc_tech_lcoe(people,
-                                      num_people_per_hh,
+                                      NUM_PEOPLE_PER_HH,
                                       target_energy_access_level,
                                       discount_rate,
                                       0,
@@ -368,7 +367,7 @@ def make_tables(scenario, specs):
                 if calc_lcoe: om_costs = 0.02
                 else: om_costs = 0.0
                 lcoe_sa_pv2250 = calc_tech_lcoe(people,
-                                      num_people_per_hh,
+                                      NUM_PEOPLE_PER_HH,
                                       target_energy_access_level,
                                       discount_rate,
                                       0,
@@ -384,6 +383,7 @@ def make_tables(scenario, specs):
                                       system_life=20,
                                       mv_line_length=0)
 
+                people /= 100 # reset people to original value
                 if calc_lcoe:
                     grid_lcoes[country_name][people] = lcoe_grid_list
                     tech_lcoes[country_name][people][techs[0]] = lcoe_mg_hydro
@@ -409,27 +409,23 @@ def make_tables(scenario, specs):
                     tech_cap[country_name][people][techs[8]] = lcoe_sa_pv1750
                     tech_cap[country_name][people][techs[9]] = lcoe_sa_pv2250
 
-
         if calc_lcoe:
             calc_lcoe = False
         else:
             break
-
 
     grid_lcoes.transpose(2, 0, 1).to_frame().to_csv(grid_lcoes_csv)
     grid_cap.transpose(2, 0, 1).to_frame().to_csv(grid_cap_csv)
     tech_lcoes.transpose(2, 0, 1).to_frame().to_csv(tech_lcoes_csv)
     tech_cap.transpose(2, 0, 1).to_frame().to_csv(tech_cap_csv)
 
-
-
     ##### Calculate num people triggers
-    num_people_for_grid = pd.DataFrame(1e9 * np.ones([len(additional_mv_line_length_arr),len(country_specs)]),
-                                      index=additional_mv_line_length_arr,
+    num_people_for_grid = pd.DataFrame(1e9 * np.ones([len(ELEC_DISTANCES),len(country_specs)]),
+                                      index=ELEC_DISTANCES,
                                       columns=country_specs[SPE_COUNTRY].values)
 
     for country in grid_lcoes:
-        for additional_mv_line_length in additional_mv_line_length_arr:
+        for additional_mv_line_length in ELEC_DISTANCES:
             for people in people_arr:
                 lcoes = tech_lcoes[country][people]
                 min_lcoe_techs = min(lcoes[MG_DIESEL], lcoes[MG_WIND_MID],
@@ -437,7 +433,7 @@ def make_tables(scenario, specs):
                                      lcoes[MG_HYDRO])
 
                 if grid_lcoes[country][people][additional_mv_line_length] < min_lcoe_techs:
-                    num_people_for_grid[country][additional_mv_line_length] = people / 100
+                    num_people_for_grid[country][additional_mv_line_length] = people
                     break
 
     num_people_for_grid.to_csv(num_people_csv)

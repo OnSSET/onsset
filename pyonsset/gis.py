@@ -3,13 +3,12 @@ import arcpy
 import csv
 from pyonsset.constants import *
 
-def create():
-    arcpy.env.workspace = r'C:\Users\adm.esa\Desktop\ONSSET\Africa_Onsset.gdb'
+def create(gdb, settlements_fc):
+    arcpy.env.workspace = gdb
     arcpy.env.overwriteOutput = True
     arcpy.env.addOutputsToMap = False
     arcpy.CheckOutExtension("Spatial")
 
-    settlements = 'settlements_1km2'
     pop = 'pop2010_clipped'
     ghi = 'ghi' # per day values
     windcf = 'windcf'
@@ -22,54 +21,54 @@ def create():
     nightlights = 'nightlights'
 
     #starting point
-    arcpy.RasterToPoint_conversion(pop, settlements)
+    arcpy.RasterToPoint_conversion(pop, settlements_fc)
 
     #country names
-    arcpy.sa.ExtractMultiValuesToPoints(settlements, [[admin_raster, 'CountryNum']])
-    arcpy.JoinField_management(settlements, 'CountryNum', admin_raster, 'Value', SET_COUNTRY)
-    arcpy.DeleteField_management(settlements, 'CountryNum')
+    arcpy.sa.ExtractMultiValuesToPoints(settlements_fc, [[admin_raster, 'CountryNum']])
+    arcpy.JoinField_management(settlements_fc, 'CountryNum', admin_raster, 'Value', SET_COUNTRY)
+    arcpy.DeleteField_management(settlements_fc, 'CountryNum')
 
     # add X and Y values in km
-    arcpy.AddXY_management(settlements)
-    arcpy.AddField_management(settlements, SET_X, 'FLOAT')
-    arcpy.CalculateField_management(settlements, SET_X, '!POINT_X! / 1000', 'PYTHON_9.3')
-    arcpy.AddField_management(settlements, SET_Y, 'FLOAT')
-    arcpy.CalculateField_management(settlements, SET_Y, '!POINT_Y! / 1000', 'PYTHON_9.3')
-    arcpy.DeleteField_management(settlements, 'POINT_X; POINT_Y')
+    arcpy.AddXY_management(settlements_fc)
+    arcpy.AddField_management(settlements_fc, SET_X, 'FLOAT')
+    arcpy.CalculateField_management(settlements_fc, SET_X, '!POINT_X! / 1000', 'PYTHON_9.3')
+    arcpy.AddField_management(settlements_fc, SET_Y, 'FLOAT')
+    arcpy.CalculateField_management(settlements_fc, SET_Y, '!POINT_Y! / 1000', 'PYTHON_9.3')
+    arcpy.DeleteField_management(settlements_fc, 'POINT_X; POINT_Y')
 
     # ghi, windcf, travel, nightlights
-    arcpy.sa.ExtractMultiValuesToPoints(settlements, [[ghi, SET_GHI]])
-    arcpy.sa.ExtractMultiValuesToPoints(settlements, [[windcf, SET_WINDCF]])
-    arcpy.sa.ExtractMultiValuesToPoints(settlements, [[travel, SET_TRAVEL_HOURS]])
-    arcpy.sa.ExtractMultiValuesToPoints(settlements, [[nightlights, SET_NIGHT_LIGHTS]])
+    arcpy.sa.ExtractMultiValuesToPoints(settlements_fc, [[ghi, SET_GHI]])
+    arcpy.sa.ExtractMultiValuesToPoints(settlements_fc, [[windcf, SET_WINDCF]])
+    arcpy.sa.ExtractMultiValuesToPoints(settlements_fc, [[travel, SET_TRAVEL_HOURS]])
+    arcpy.sa.ExtractMultiValuesToPoints(settlements_fc, [[nightlights, SET_NIGHT_LIGHTS]])
 
     # each point's distance from the existing grid
-    arcpy.Near_analysis(settlements, gridExisting)
-    arcpy.AddField_management(settlements, SET_GRID_DIST_CURRENT, 'FLOAT')
-    arcpy.CalculateField_management(settlements, SET_GRID_DIST_CURRENT, '!NEAR_DIST! / 1000', 'PYTHON_9.3')
-    arcpy.DeleteField_management(settlements, 'NEAR_DIST; NEAR_FID')
+    arcpy.Near_analysis(settlements_fc, gridExisting)
+    arcpy.AddField_management(settlements_fc, SET_GRID_DIST_CURRENT, 'FLOAT')
+    arcpy.CalculateField_management(settlements_fc, SET_GRID_DIST_CURRENT, '!NEAR_DIST! / 1000', 'PYTHON_9.3')
+    arcpy.DeleteField_management(settlements_fc, 'NEAR_DIST; NEAR_FID')
 
     # each point's distance from either grid
-    arcpy.Near_analysis(settlements, [gridExisting, gridPlanned])
-    arcpy.AddField_management(settlements, SET_GRID_DIST_PLANNED, 'FLOAT')
-    arcpy.CalculateField_management(settlements, SET_GRID_DIST_PLANNED, '!NEAR_DIST! / 1000', 'PYTHON_9.3')
-    arcpy.DeleteField_management(settlements, 'NEAR_DIST; NEAR_FID; NEAR_FC')
+    arcpy.Near_analysis(settlements_fc, [gridExisting, gridPlanned])
+    arcpy.AddField_management(settlements_fc, SET_GRID_DIST_PLANNED, 'FLOAT')
+    arcpy.CalculateField_management(settlements_fc, SET_GRID_DIST_PLANNED, '!NEAR_DIST! / 1000', 'PYTHON_9.3')
+    arcpy.DeleteField_management(settlements_fc, 'NEAR_DIST; NEAR_FID; NEAR_FC')
 
     # Add roaddist
-    arcpy.Near_analysis(settlements, roads)
-    arcpy.AddField_management(settlements, SET_ROAD_DIST, 'FLOAT')
-    arcpy.CalculateField_management(settlements, SET_ROAD_DIST, '!NEAR_DIST! / 1000', 'PYTHON_9.3')
-    arcpy.DeleteField_management(settlements, 'NEAR_DIST; NEAR_FID')
+    arcpy.Near_analysis(settlements_fc, roads)
+    arcpy.AddField_management(settlements_fc, SET_ROAD_DIST, 'FLOAT')
+    arcpy.CalculateField_management(settlements_fc, SET_ROAD_DIST, '!NEAR_DIST! / 1000', 'PYTHON_9.3')
+    arcpy.DeleteField_management(settlements_fc, 'NEAR_DIST; NEAR_FID')
 
-    # Add hydropower points to settlements
-    arcpy.Near_analysis(settlements, hydro_points)
-    arcpy.AddField_management(settlements, SET_HYDRO_DIST, 'FLOAT')
-    arcpy.CalculateField_management(settlements, SET_HYDRO_DIST, '!NEAR_DIST! / 1000', 'PYTHON_9.3')
-    arcpy.JoinField_management(settlements, 'NEAR_FID', hydro_points,arcpy.Describe(hydro_points).OIDFieldName, [SET_HYDRO])
-    arcpy.DeleteField_management(settlements, 'NEAR_DIST; NEAR_FID')
+    # Add hydropower points
+    arcpy.Near_analysis(settlements_fc, hydro_points)
+    arcpy.AddField_management(settlements_fc, SET_HYDRO_DIST, 'FLOAT')
+    arcpy.CalculateField_management(settlements_fc, SET_HYDRO_DIST, '!NEAR_DIST! / 1000', 'PYTHON_9.3')
+    arcpy.JoinField_management(settlements_fc, 'NEAR_FID', hydro_points,arcpy.Describe(hydro_points).OIDFieldName, [SET_HYDRO])
+    arcpy.DeleteField_management(settlements_fc, 'NEAR_DIST; NEAR_FID')
 
-def export_csv(settlements):
-    settlements = r'C:/Users/adm.esa/Desktop/ONSSET/Africa_Onsset.gdb/settlements_1km2'
+def export_csv(gdb, settlements_fc, settlements):
+    arcpy.env.workspace = gdb
     settlements_csv = os.path.join('Tables', settlements + '.csv')
 
     field_list = [SET_COUNTRY, SET_X, SET_Y, SET_POP, SET_GRID_DIST_CURRENT,
@@ -80,11 +79,11 @@ def export_csv(settlements):
         csvwriter = csv.writer(csvfile, delimiter=',', lineterminator='\n')
         csvwriter.writerow(field_list)
 
-        with arcpy.da.SearchCursor(settlements, field_list) as cursor:
+        with arcpy.da.SearchCursor(settlements_fc, field_list) as cursor:
             for row in cursor:
                 csvwriter.writerow(row)
 
-def import_csv(scenario, diesel_high, settlements, gdb, shapefile):
+def import_csv(scenario, diesel_high, settlements, gdb, settlements_fc):
     output_dir = r'C:\Users\arderne\Work\Onsset\PyOnSSET\Tables\scenario{}'.format(scenario)
     if diesel_high:
         settlements_csv = os.path.join(output_dir, settlements + '-high.csv')
@@ -96,7 +95,7 @@ def import_csv(scenario, diesel_high, settlements, gdb, shapefile):
     arcpy.env.addOutputsToMap = False
     arcpy.CheckOutExtension("Spatial")
 
-    arcpy.CreateFeatureclass_management(arcpy.env.workspace, shapefile, "POINT")
+    arcpy.CreateFeatureclass_management(arcpy.env.workspace, settlements_fc, "POINT")
     csvreader = csv.reader(open(settlements_csv, 'r'), delimiter=',', lineterminator='\n')
 
     fields = next(csvreader)
@@ -115,10 +114,10 @@ def import_csv(scenario, diesel_high, settlements, gdb, shapefile):
         except ValueError:
             type = 'TEXT'
         types.append(type)
-        arcpy.AddField_management(shapefile, h, type)
+        arcpy.AddField_management(settlements_fc, h, type)
 
     prev = None
-    with arcpy.da.InsertCursor(shapefile, fields) as cursor:
+    with arcpy.da.InsertCursor(settlements_fc, fields) as cursor:
         for row in csvreader:
             rowf = []
 
