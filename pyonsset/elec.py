@@ -1,16 +1,25 @@
+"""
+Contains the functions to calculate the electrification possibility for each cell, at a number of different distances
+from the future grid.
+"""
+
+import logging
 import pandas as pd
 import numpy as np
 from collections import defaultdict
 from pyonsset.constants import *
 
+logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.DEBUG)
+
 
 def separate_elec_status(elec_status):
     """
-    Separate out the electrified and unelectrified states from list
+    Separate out the electrified and unelectrified states from list.
 
     @param elec_status: electricity status for each location
     @type elec_status: list of int
     """
+
     electrified = []
     unelectrified = []
 
@@ -24,9 +33,14 @@ def separate_elec_status(elec_status):
 
 def get_2d_hash_table(gis_data, unelectrified, distance_limit):
     """
-    Generates the 2D Hash Table with the unelectrified locations hashed
-    into the table for easy O(1) access.
+    Generates the 2D Hash Table with the unelectrified locations hashed into the table for easy O(1) access.
+
+    @param gis_data: list of X- and Y-values for each cell
+    @param unelectrified: list of unelectrified cells
+    @param distance_limit: the current distance from grid value being used
+    @return:
     """
+
     hash_table = defaultdict(lambda: defaultdict(list))
     for unelec_row in unelectrified:
         hash_x = int(gis_data[unelec_row][0] / distance_limit)
@@ -39,7 +53,14 @@ def get_unelectrified_rows(hash_table, elec_row, gis_data, distance_limit):
     """
     Returns all the unelectrified locations close to the electrified location
     based on the distance boundary limit specified by asking the 2D hash table.
+
+    @param hash_table: the hash table created by get_2d_hash_table()
+    @param elec_row: the current row being worked on
+    @param gis_data: list of X- and Y-values for each cell
+    @param distance_limit: the current distance from grid value being used
+    @return:
     """
+
     unelec_list = []
     hash_x = int(gis_data[elec_row][0] / distance_limit)
     hash_y = int(gis_data[elec_row][1] / distance_limit)
@@ -59,7 +80,14 @@ def get_unelectrified_rows(hash_table, elec_row, gis_data, distance_limit):
     return unelec_list
 
 
-def run_algorithm(df_country, distance, num_people):
+def elec_single_country(df_country, distance, num_people):
+    """
+
+    @param df_country: pandas.DataFrame containing all rows for a single country
+    @param distance: list of distances to use
+    @param num_people: list of corresponding population cutoffs to use
+    @return:
+    """
     gis_data = df_country[[SET_X, SET_Y, SET_POP_FUTURE]].values.tolist()
     elec_status = df_country[SET_ELEC_FUTURE].tolist()
     cell_path = np.zeros((len(elec_status),2))
@@ -67,20 +95,17 @@ def run_algorithm(df_country, distance, num_people):
     df_elec = pd.DataFrame(index=df_country.index.values)
 
     for distance_limit, population_limit in zip(distance, num_people):
-        print('doing column {}'.format(distance_limit))
+        logging.info('Column {}'.format(distance_limit))
         counter = 0
         electrified, unelectrified = separate_elec_status(elec_status)
 
         hash_table = get_2d_hash_table(gis_data, unelectrified, distance_limit)
-        # print str(hash_table) # TO DEBUG
-
         elec_changes = []
         counter2 = 2
 
         while counter2 >= 1:
             counter2 = 0
-            # Iteration based on number of electrified
-            # cells at this stage of the calculation.
+            # Iteration based on number of electrified cells at this stage of the calculation.
             for elec_row in electrified:
 
                 unelec_rows = get_unelectrified_rows(hash_table, elec_row, gis_data, distance_limit)
@@ -92,9 +117,11 @@ def run_algorithm(df_country, distance, num_people):
                     el = elec_status[unelec_row] == 0
                     dx = abs(gis_data[elec_row][0] - gis_data[unelec_row][0]) < distance_limit
                     dy = abs(gis_data[elec_row][1] - gis_data[unelec_row][1]) < distance_limit
-                    # this not_same_point check is dodgey I think?
+                    # TODO this not_same_point check is dodgey I think?
                     not_same_point = dx > 0 or dy > 0
-                    pop = gis_data[unelec_row][2] > population_limit + distance_limit * (0.15702 * (existing_grid + 7.006) / 10 - 0.11) / 0.44
+                    # TODO this manual addition to pop check also dodgey
+                    pop = gis_data[unelec_row][2] > population_limit + distance_limit * (
+                        0.15702 * (existing_grid + 7.006) / 10 - 0.11) / 0.44
                     ok_to_extend = existing_grid < MAX_GRID_EXTEND
 
                     if el and dx and dy and not_same_point and pop and ok_to_extend:
@@ -115,7 +142,17 @@ def run_algorithm(df_country, distance, num_people):
     return df_elec
 
 
-def run(scenario, selection):
+def run_elec(scenario, selection='all'):
+    """
+    Run the electrification algorithm for the selected scenario and either one country or all.
+
+    @param scenario: kW/hh/year
+    @param selection: (optional) a specific country or leave blank for all
+    @return:
+    """
+
+    logging.info('Starting function elec.run_elec()')
+
     output_dir = os.path.join(FF_TABLES, selection, str(scenario))
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -129,6 +166,7 @@ def run(scenario, selection):
     df[SET_ELEC_FUTURE] = 0
     for col in SET_ELEC_STEPS: df[col] = 0
 
+    # Limit the scope to the specific country if requested
     countries = num_people.columns.values.tolist()
     if selection != 'all':
         if selection in countries:
@@ -137,18 +175,28 @@ def run(scenario, selection):
             raise KeyError('The selected country doesnt exist')
 
     for c in countries:
+        logging.info('Electrify {}'.format(c))
         df.loc[df.Country == c, SET_ELEC_FUTURE] = df.loc[df.Country == c].apply(lambda row:
-                                                                           1
-                                                                           if row[SET_ELEC_CURRENT] == 1 or
-                                                                                (row[SET_GRID_DIST_PLANNED] < ELEC_DISTANCES[0] and row[SET_POP_FUTURE] > num_people[c].loc[ELEC_DISTANCES[0]]) or
-                                                                                (row[SET_GRID_DIST_PLANNED] < ELEC_DISTANCES[1] and row[SET_POP_FUTURE] > num_people[c].loc[ELEC_DISTANCES[1]])
-                                                                           else 0
-                                                                           , axis=1)
+            1
+            if row[SET_ELEC_CURRENT] == 1 or
+                (row[SET_GRID_DIST_PLANNED] < ELEC_DISTANCES[0] and row[SET_POP_FUTURE] > num_people[c].loc[ELEC_DISTANCES[0]]) or
+                (row[SET_GRID_DIST_PLANNED] < ELEC_DISTANCES[1] and row[SET_POP_FUTURE] > num_people[c].loc[ELEC_DISTANCES[1]])
+            else 0,
+            axis=1)
 
-        print('start {}'.format(c))
-        df.loc[df.Country == c,SET_ELEC_STEPS] = run_algorithm(
-                        df.loc[df.Country == c,[SET_X, SET_Y, SET_POP_FUTURE, SET_ELEC_FUTURE]],
+        df.loc[df.Country == c,SET_ELEC_STEPS] = elec_single_country(
+            df.loc[df.Country == c,[SET_X, SET_Y, SET_POP_FUTURE, SET_ELEC_FUTURE]],
             ELEC_DISTANCES,
-                        num_people[c].values.astype(int).tolist())
+            num_people[c].values.astype(int).tolist())
 
+    logging.info('Saving to csv')
     df.to_csv(settlements_out_csv,index=False)
+
+    logging.info('Completed function elec.run_elec()')
+
+
+if __name__ == "__main__":
+    print('Running as a script')
+    scenario = input('Enter scenario value (int): ')
+    selection = input('Enter country selection or "all": ')
+    run_elec(scenario, selection)
