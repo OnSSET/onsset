@@ -37,10 +37,10 @@ def make_tables(scenario, specs_xlsx=FF_SPECS):
              MG_WIND_HIGH, MG_DIESEL, SA_DIESEL, SA_PV_LOW, SA_PV_HIGH]
 
     # A pd.Panel for each of the main results
-    grid_lcoes = pd.Panel(np.zeros([len(specs), len(ELEC_DISTANCES), len(people_arr)]),
-                          items=specs[SPE_COUNTRY].values, major_axis=ELEC_DISTANCES, minor_axis=people_arr)
-    grid_cap = pd.Panel(np.zeros([len(specs), len(ELEC_DISTANCES), len(people_arr)]),
-                        items=specs[SPE_COUNTRY].values, major_axis=ELEC_DISTANCES, minor_axis=people_arr)
+    grid_lcoes = pd.Panel(np.zeros([len(specs), len(ELEC_DISTS), len(people_arr)]),
+                          items=specs[SPE_COUNTRY].values, major_axis=ELEC_DISTS, minor_axis=people_arr)
+    grid_cap = pd.Panel(np.zeros([len(specs), len(ELEC_DISTS), len(people_arr)]),
+                        items=specs[SPE_COUNTRY].values, major_axis=ELEC_DISTS, minor_axis=people_arr)
     tech_lcoes = pd.Panel(np.zeros([len(specs), len(techs), len(people_arr)]),
                           items=specs[SPE_COUNTRY].values, major_axis=techs, minor_axis=people_arr)
     tech_cap = pd.Panel(np.zeros([len(specs), len(techs), len(people_arr)]),
@@ -88,19 +88,17 @@ def make_tables(scenario, specs_xlsx=FF_SPECS):
     # Dependent on country and distance from existing grid
 
     # The dataframe is initialised with very high default values
-    num_people_for_grid = pd.DataFrame(1e9 * np.ones([len(ELEC_DISTANCES), len(specs)]), index=ELEC_DISTANCES,
+    num_people_for_grid = pd.DataFrame(1e9 * np.ones([len(ELEC_DISTS), len(specs)]), index=ELEC_DISTS,
                                        columns=specs[SPE_COUNTRY].values)
 
     # Loop through every comination of variables and see at what point (number of people) the grid becomes the
     # most economical option.
     for country in grid_lcoes:
-        for additional_mv_line_length in ELEC_DISTANCES:
+        for additional_mv_line_length in ELEC_DISTS:
             for people in people_arr:
                 lcoes = tech_lcoes[country][people]
-                # TODO This check excludes some technologies, why?
-                min_lcoe_techs = min(lcoes[MG_DIESEL], lcoes[MG_WIND_MID],
-                                     (lcoes[SA_PV_LOW] + lcoes[SA_PV_HIGH]) / 2,
-                                     lcoes[MG_HYDRO])
+                min_lcoe_techs = min(lcoes[MG_HYDRO], (lcoes[MG_PV_LOW] + lcoes[MG_PV_HIGH]) / 2, lcoes[MG_WIND_MID],
+                                     lcoes[MG_DIESEL], lcoes[SA_DIESEL], (lcoes[SA_PV_LOW] + lcoes[SA_PV_HIGH]) / 2)
 
                 if grid_lcoes[country][people][additional_mv_line_length] < min_lcoe_techs:
                     num_people_for_grid[country][additional_mv_line_length] = people
@@ -124,7 +122,7 @@ def get_lcoes(country_specs, people, scenario, calc_cap_only):
     base_to_peak_load_ratio = float(country_specs[SPE_BASE_TO_PEAK])
     grid_price = float(country_specs[SPE_GRID_PRICE])
     diesel_price = float(country_specs[SPE_DIESEL_PRICE_LOW]) / LHV_DIESEL  # to convert from USD/L to USD/kWh
-    om_of_td_lines = 0.03 # percentage (kept here so that it can be specified differently for lcoe/cap_only options)
+    om_of_td_lines = 0.03  # percentage (kept here so that it can be specified differently for lcoe/cap_only options)
 
     # All O&M and fuel costs are excluded if we're calculating capital costs only
     if calc_cap_only:
@@ -135,7 +133,7 @@ def get_lcoes(country_specs, people, scenario, calc_cap_only):
     lcoes = {}
 
     # Each technology gets a call to calc_lcoe() with the relevant parameters
-    # The grid calculation is a list comprehension including lcoes for each value in ELEC_DISTANCES
+    # The grid calculation is a list comprehension including lcoes for each value in ELEC_DISTS
     lcoes[GRID] = [calc_lcoe(people=people,
                              scenario=scenario,
                              om_of_td_lines=om_of_td_lines,
@@ -146,7 +144,7 @@ def get_lcoes(country_specs, people, scenario, calc_cap_only):
                              additional_mv_line_length=additional_mv_line_length,
                              grid_price=grid_price,
                              grid=True)
-                   for additional_mv_line_length in ELEC_DISTANCES]
+                   for additional_mv_line_length in ELEC_DISTS]
 
     # mg_hydro
     om_costs = 0 if calc_cap_only else 0.02
@@ -162,8 +160,8 @@ def get_lcoes(country_specs, people, scenario, calc_cap_only):
                                 system_life=30,
                                 mv_line_length=5)
 
-    # mg_pv1750
-    irradiation = 1750.0
+    # mg_pv_low
+    irradiation = PV_LOW
     om_costs = 0 if calc_cap_only else 0.02
     lcoes[MG_PV_LOW] = calc_lcoe(people=people,
                                  scenario=scenario,
@@ -176,8 +174,8 @@ def get_lcoes(country_specs, people, scenario, calc_cap_only):
                                  base_to_peak_load_ratio=0.9,
                                  system_life=20)
 
-    # mg_pv2250
-    irradiation = 2250
+    # mg_pv_high
+    irradiation = PV_HIGH
     om_costs = 0 if calc_cap_only else 0.02
     lcoes[MG_PV_HIGH] = calc_lcoe(people=people,
                                   scenario=scenario,
@@ -195,7 +193,7 @@ def get_lcoes(country_specs, people, scenario, calc_cap_only):
     lcoes[MG_WIND_LOW] = calc_lcoe(people=people,
                                    scenario=scenario,
                                    om_of_td_lines=om_of_td_lines,
-                                   capacity_factor=0.2,
+                                   capacity_factor=WIND_LOW,
                                    distribution_losses=0.05,
                                    connection_cost_per_hh=100,
                                    capital_cost=3000,
@@ -208,7 +206,7 @@ def get_lcoes(country_specs, people, scenario, calc_cap_only):
     lcoes[MG_WIND_MID] = calc_lcoe(people=people,
                                    scenario=scenario,
                                    om_of_td_lines=om_of_td_lines,
-                                   capacity_factor=0.3,
+                                   capacity_factor=WIND_MID,
                                    distribution_losses=0.05,
                                    connection_cost_per_hh=100,
                                    capital_cost=3000,
@@ -221,7 +219,7 @@ def get_lcoes(country_specs, people, scenario, calc_cap_only):
     lcoes[MG_WIND_HIGH] = calc_lcoe(people=people,
                                     scenario=scenario,
                                     om_of_td_lines=om_of_td_lines,
-                                    capacity_factor=0.4,
+                                    capacity_factor=WIND_HIGH,
                                     distribution_losses=0.05,
                                     connection_cost_per_hh=100,
                                     capital_cost=3000,
@@ -262,8 +260,8 @@ def get_lcoes(country_specs, people, scenario, calc_cap_only):
                                  diesel=True,
                                  standalone=True)
 
-    # sa_pv1750
-    irradiation = 1750
+    # sa_pv_low
+    irradiation = PV_LOW
     om_costs = 0 if calc_cap_only else 0.02
     lcoes[SA_PV_LOW] = calc_lcoe(people=people,
                                  scenario=scenario,
@@ -277,8 +275,8 @@ def get_lcoes(country_specs, people, scenario, calc_cap_only):
                                  system_life=20,
                                  standalone=True)
 
-    # sa_pv2250
-    irradiation = 2250
+    # sa_pv_high
+    irradiation = PV_HIGH
     om_costs = 0 if calc_cap_only else 0.02
     lcoes[SA_PV_HIGH] = calc_lcoe(people=people,
                                   scenario=scenario,
@@ -315,7 +313,7 @@ def calc_lcoe(people, scenario, om_of_td_lines, distribution_losses, connection_
     @param capacity_factor: percentage (non-grid only)
     @param efficiency: percentage (diesel only)
     @param diesel_price: USD/kWh (diesel only)
-    @param additional_mv_line_length: the additional MV line length in km, from ELEC_DISTANCES (grid only)
+    @param additional_mv_line_length: the additional MV line length in km, from ELEC_DISTS (grid only)
     @param grid_price: USD/kWh (grid only)
     @param grid: True/False flag for grid
     @param diesel: True/False flag for diesel
@@ -323,19 +321,19 @@ def calc_lcoe(people, scenario, om_of_td_lines, distribution_losses, connection_
     @return: The LCOE values with the given parameters
     """
 
-    grid_cell_area = 100 # TODO This should be fixed to 1, but some values and calculations aren't area independent
+    grid_cell_area = 100  # TODO This should be fixed to 1, but some values and calculations aren't area independent
     people *= grid_cell_area  # To adjust for incorrect grid size above
 
-    mv_line_cost = 9000 # USD/km
-    lv_line_cost = 5000 # USD/km
-    discount_rate = 0.08 # percent
-    mv_line_capacity = 50 # kW/line
-    lv_line_capacity = 10 # kW/line
-    lv_line_max_length = 30 # km
-    hv_line_cost = 53000 # USD/km
-    mv_line_max_length = 50 # km
-    hv_lv_transformer_cost = 5000 # USD/unit
-    mv_increase_rate = 0.1 # percentage
+    mv_line_cost = 9000  # USD/km
+    lv_line_cost = 5000  # USD/km
+    discount_rate = 0.08  # percent
+    mv_line_capacity = 50  # kW/line
+    lv_line_capacity = 10  # kW/line
+    lv_line_max_length = 30  # km
+    hv_line_cost = 53000  # USD/km
+    mv_line_max_length = 50  # km
+    hv_lv_transformer_cost = 5000  # USD/unit
+    mv_increase_rate = 0.1  # percentage
 
     consumption = people / NUM_PEOPLE_PER_HH * scenario
     average_load = consumption * (1 + distribution_losses) / HOURS_PER_YEAR
@@ -396,11 +394,11 @@ def calc_lcoe(people, scenario, om_of_td_lines, distribution_losses, connection_
     el_gen = generation_per_year * np.ones(system_life + 1)
     el_gen[0] = 0
     discount_factor = (1 + discount_rate) ** year
-    it = np.zeros(system_life + 1) # investment
+    it = np.zeros(system_life + 1)  # investment
     it[0] = total_investment_cost
-    mt = total_om_cost * np.ones(system_life + 1) # maintenance
+    mt = total_om_cost * np.ones(system_life + 1)  # maintenance
     mt[0] = 0
-    ft = el_gen * fuel_cost # fuel
+    ft = el_gen * fuel_cost  # fuel
     ft[0] = 0
     discounted_costs = (it + mt + ft) / discount_factor
     discounted_generation = el_gen / discount_factor
@@ -408,8 +406,7 @@ def calc_lcoe(people, scenario, om_of_td_lines, distribution_losses, connection_
     return np.sum(discounted_costs) / np.sum(discounted_generation)
 
 if __name__ == "__main__":
-    print('Running as a script')
-    scenario = input('Enter scenario value (int): ')
-    specs_csv = input('Enter path to specs file: ')
     os.chdir('..')
-    make_tables(scenario, specs_csv)
+    print('Running as a script')
+    scenario = int(input('Enter scenario value (int): '))
+    make_tables(scenario)

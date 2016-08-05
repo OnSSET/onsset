@@ -2,14 +2,18 @@
 Contains the preparatory functions create and export the settlements from ArcGIS
 All functions in this module need to be run with an ArcGIS connected instance of Python
 """
-
+from __future__ import absolute_import, division, print_function
 import logging
 try:
     import arcpy
 except ImportError:
-    raise SystemExit('Please use this module with an ARcGIS connected instance of Python (need arcpy)')
+    raise SystemExit('Please use this module with an ArcGIS connected instance of Python (need arcpy)')
 import csv
 from pyonsset.constants import *
+try:
+    input = raw_input
+except NameError:
+    pass
 
 logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.DEBUG)
 
@@ -29,20 +33,21 @@ def create(gdb='C:/Users/adm.esa/Desktop/ONSSET/Africa_Onsset.gdb', settlements_
     arcpy.env.addOutputsToMap = False
     arcpy.CheckOutExtension("Spatial")
 
-    pop = 'pop2010_clipped' # Type: raster, Unit: people per km2, must be in resolution 1km x 1km
-    ghi = 'ghi' # Type: raster, Unit: kWh/m2/day
-    windcf = 'windcf' # Type: raster, Unit: capacity factor as a percentage (range 0 - 100, converted to 0-1 below)
-    travel = 'travelhours' # Type: raster, Unit: hours
-    grid_existing = 'grid_existing' # Type: shapefile (line)
-    grid_planned = 'grid_planned' # Type: shapefile (line)
-    hydro_points = 'hydropoints' # Type: shapefile (points), Unit: MW (field must be named Hydropower)
-    admin_raster = 'admin_raster' # Type: raster, country names must conform to specs.xlsx file
-    roads = 'roads' # Type: shapefile (lines)
-    nightlights = 'nightlights' # Type: raster, Unit: (range 0 - 63)
+    pop = 'pop2010'  # Type: raster, Unit: people per km2, must be in resolution 1km x 1km
+    ghi = 'ghi'  # Type: raster, Unit: kWh/m2/day
+    windcf = 'windcf'  # Type: raster, Unit: capacity factor as a percentage (range 0 - 1)
+    travel = 'travelhours'  # Type: raster, Unit: hours
+    grid_existing = 'grid_existing'  # Type: shapefile (line)
+    grid_planned = 'grid_planned'  # Type: shapefile (line)
+    hydro_points = 'hydropoints'  # Type: shapefile (points), Unit: kW (field must be named Hydropower)
+    admin_raster = 'admin_raster'  # Type: raster, country names must conform to specs.xlsx file
+    roads = 'roads'  # Type: shapefile (lines)
+    nightlights = 'nightlights'  # Type: raster, Unit: (range 0 - 63)
 
     # Starting point
     logging.info('Create settlements layer')
     arcpy.RasterToPoint_conversion(pop, settlements_fc)
+    arcpy.AlterField_management(settlements_fc, 'grid_code', SET_POP, SET_POP)
 
     # Country names
     # Has to be done with a raster -- trying with a shapefile ran out of memory and crashed
@@ -68,7 +73,6 @@ def create(gdb='C:/Users/adm.esa/Desktop/ONSSET/Africa_Onsset.gdb', settlements_
     arcpy.sa.ExtractMultiValuesToPoints(settlements_fc, [[ghi, SET_GHI]])
     logging.info('Add WindCF')
     arcpy.sa.ExtractMultiValuesToPoints(settlements_fc, [[windcf, SET_WINDCF]])
-    #TODO convert to range 0-1
     logging.info('Add Travel time')
     arcpy.sa.ExtractMultiValuesToPoints(settlements_fc, [[travel, SET_TRAVEL_HOURS]])
     logging.info('Add night lights')
@@ -101,11 +105,12 @@ def create(gdb='C:/Users/adm.esa/Desktop/ONSSET/Africa_Onsset.gdb', settlements_
     # Add hydropower points
     # The distance is converted to kilometres
     # Important that the hydropower field is named exactly matching SET_HYDRO
-    logging.info('Add hydropwoer and hydropower distance')
+    logging.info('Add hydropower and hydropower distance')
     arcpy.Near_analysis(settlements_fc, hydro_points)
     arcpy.AddField_management(settlements_fc, SET_HYDRO_DIST, 'FLOAT')
     arcpy.CalculateField_management(settlements_fc, SET_HYDRO_DIST, '!NEAR_DIST! / 1000', 'PYTHON_9.3')
-    arcpy.JoinField_management(settlements_fc, 'NEAR_FID', hydro_points,arcpy.Describe(hydro_points).OIDFieldName, [SET_HYDRO])
+    arcpy.JoinField_management(settlements_fc, 'NEAR_FID', hydro_points,
+                               arcpy.Describe(hydro_points).OIDFieldName, [SET_HYDRO])
     arcpy.DeleteField_management(settlements_fc, 'NEAR_DIST; NEAR_FID')
 
     logging.info('Completed function gis.create()')
@@ -168,6 +173,7 @@ def import_csv(scenario, selection, diesel_high, settlements_fc, gdb='C:/Users/a
     arcpy.env.addOutputsToMap = False
     arcpy.CheckOutExtension("Spatial")
     arcpy.CreateFeatureclass_management(arcpy.env.workspace, settlements_fc, "POINT")
+    arcpy.DefineProjection_management(settlements_fc, arcpy.SpatialReference('WGS 1984 World Mercator'))
 
     # Open the csv file and copy the field names (first row)
     csvreader = csv.reader(open(settlements_csv, 'r'), delimiter=',', lineterminator='\n')
@@ -176,10 +182,10 @@ def import_csv(scenario, selection, diesel_high, settlements_fc, gdb='C:/Users/a
     # Add a sample row (to set the field types in ArcGIS)
     # For all the fields that are floatable, make the field a FLOAT, otherwise TEXT
     # If any element is black (it equals '') then try the operation again with the next row, as '' isn't floatable
-    types = []
+    field_types = []
     while True:
         sample_row = next(csvreader)
-        types = []
+        field_types = []
 
         for i, f in enumerate(fields):
             if sample_row[i] == '':
@@ -187,11 +193,11 @@ def import_csv(scenario, selection, diesel_high, settlements_fc, gdb='C:/Users/a
 
             try:
                 float(sample_row[i])
-                type = 'FLOAT'
+                field_type = 'FLOAT'
             except ValueError:
-                type = 'TEXT'
-            types.append(type)
-            arcpy.AddField_management(settlements_fc, f, type)
+                field_type = 'TEXT'
+            field_types.append(field_type)
+            arcpy.AddField_management(settlements_fc, f, field_type)
         break
 
     # Reset the csvreader and skip the first row
@@ -209,7 +215,9 @@ def import_csv(scenario, selection, diesel_high, settlements_fc, gdb='C:/Users/a
             rowf = []
 
             for i, r in enumerate(row):
-                if types[i] == 'FLOAT':
+                if 'SHAPE@' in fields[i]:
+                    rowf.append(float(r) * 1000)
+                elif field_types[i] == 'FLOAT':
                     try:
                         rowf.append(float(r))
                     except ValueError:
@@ -225,8 +233,9 @@ def import_csv(scenario, selection, diesel_high, settlements_fc, gdb='C:/Users/a
     logging.info('Completed function gis.import_csv()')
 
 if __name__ == "__main__":
+    os.chdir('..')
     print('Running as a script')
-    choice = input('(1) create, (2) export, (3) import: ')
+    choice = int(input('(1) create, (2) export, (3) import: '))
     if choice == 1:
         gdb = input('Enter gdb path and filename: ')
         settlements_fc = input('Enter name for new feature class: ')
@@ -238,7 +247,7 @@ if __name__ == "__main__":
     elif choice == 3:
         gdb = input('Enter gdb path and filename: ')
         settlements_fc = input('Enter name for new feature class: ')
-        scenario = input('Enter scenario value (int): ')
+        scenario = int(input('Enter scenario value (int): '))
         selection = input('Enter country selection or "all": ')
         diesel_high = input('Enter L for low diesel, H for high diesel: ')
         diesel_high = diesel_high in 'H'

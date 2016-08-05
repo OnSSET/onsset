@@ -90,12 +90,12 @@ def elec_single_country(df_country, distance, num_people):
     """
     gis_data = df_country[[SET_X, SET_Y, SET_POP_FUTURE]].values.tolist()
     elec_status = df_country[SET_ELEC_FUTURE].tolist()
-    cell_path = np.zeros((len(elec_status),2))
+    cell_path = np.zeros((len(elec_status), 2))
 
     df_elec = pd.DataFrame(index=df_country.index.values)
 
     for distance_limit, population_limit in zip(distance, num_people):
-        logging.info('Column {}'.format(distance_limit))
+        logging.info(' - Column {}'.format(distance_limit))
         counter = 0
         electrified, unelectrified = separate_elec_status(elec_status)
 
@@ -120,8 +120,7 @@ def elec_single_country(df_country, distance, num_people):
                     # TODO this not_same_point check is dodgey I think?
                     not_same_point = dx > 0 or dy > 0
                     # TODO this manual addition to pop check also dodgey
-                    pop = gis_data[unelec_row][2] > population_limit + distance_limit * (
-                        0.15702 * (existing_grid + 7.006) / 10 - 0.11) / 0.44
+                    pop = gis_data[unelec_row][2] > population_limit + distance_limit * (0.15702 * (existing_grid + 7.006) / 10 - 0.11) / 0.44
                     ok_to_extend = existing_grid < MAX_GRID_EXTEND
 
                     if el and dx and dy and not_same_point and pop and ok_to_extend:
@@ -159,44 +158,52 @@ def run_elec(scenario, selection='all'):
 
     num_people_csv = FF_NUM_PEOPLE(scenario)
     settlements_out_csv = os.path.join(output_dir, '{}_{}.csv'.format(selection, scenario))
+    if not os.path.isfile(num_people_csv):
+        raise IOError('The scenario LCOE tables have not been set up')
 
     df = pd.read_csv(FF_SETTLEMENTS)
     num_people = pd.read_csv(num_people_csv, index_col=0)
-
-    df[SET_ELEC_FUTURE] = 0
-    for col in SET_ELEC_STEPS: df[col] = 0
 
     # Limit the scope to the specific country if requested
     countries = num_people.columns.values.tolist()
     if selection != 'all':
         if selection in countries:
-            countries = selection
+            countries = [selection]
+            df = df[df.Country == selection]
         else:
             raise KeyError('The selected country doesnt exist')
 
+    # Initialise the new columns
+    df[SET_ELEC_FUTURE] = 0
+    for col in SET_ELEC_STEPS:
+        df[col] = 0
+
     for c in countries:
         logging.info('Electrify {}'.format(c))
+        logging.info('Determine future pre-electrification status')
         df.loc[df.Country == c, SET_ELEC_FUTURE] = df.loc[df.Country == c].apply(lambda row:
             1
             if row[SET_ELEC_CURRENT] == 1 or
-                (row[SET_GRID_DIST_PLANNED] < ELEC_DISTANCES[0] and row[SET_POP_FUTURE] > num_people[c].loc[ELEC_DISTANCES[0]]) or
-                (row[SET_GRID_DIST_PLANNED] < ELEC_DISTANCES[1] and row[SET_POP_FUTURE] > num_people[c].loc[ELEC_DISTANCES[1]])
+            (row[SET_GRID_DIST_PLANNED] < ELEC_DISTS[0] and row[SET_POP_FUTURE] > num_people[c].loc[ELEC_DISTS[0]]) or
+            (row[SET_GRID_DIST_PLANNED] < ELEC_DISTS[1] and row[SET_POP_FUTURE] > num_people[c].loc[ELEC_DISTS[1]])
             else 0,
             axis=1)
 
-        df.loc[df.Country == c,SET_ELEC_STEPS] = elec_single_country(
-            df.loc[df.Country == c,[SET_X, SET_Y, SET_POP_FUTURE, SET_ELEC_FUTURE]],
-            ELEC_DISTANCES,
+        logging.info('Analyse electrification columns')
+        df.loc[df.Country == c, SET_ELEC_STEPS] = elec_single_country(
+            df.loc[df.Country == c, [SET_X, SET_Y, SET_POP_FUTURE, SET_ELEC_FUTURE]],
+            ELEC_DISTS,
             num_people[c].values.astype(int).tolist())
 
     logging.info('Saving to csv')
-    df.to_csv(settlements_out_csv,index=False)
+    df.to_csv(settlements_out_csv, index=False)
 
     logging.info('Completed function elec.run_elec()')
 
 
 if __name__ == "__main__":
+    os.chdir('..')
     print('Running as a script')
-    scenario = input('Enter scenario value (int): ')
+    scenario = int(input('Enter scenario value (int): '))
     selection = input('Enter country selection or "all": ')
     run_elec(scenario, selection)
