@@ -12,16 +12,17 @@ FF_TECH_CAP = lambda x: os.path.join(FF_LCOES, str(x), 'tech_cap_{}.csv'.format(
 FF_NUM_PEOPLE = lambda x: os.path.join(FF_LCOES, str(x), 'num_people_{}.csv'.format(x))
 
 # general
-ELEC_DISTS = [5 * x for x in range(1, 11)]
-MAX_GRID_EXTEND = ELEC_DISTS[-1]
-NUM_PEOPLE_PER_HH = 5.0
+ELEC_DISTS = list(range(1, 10)) + list(range(10, 20, 2)) + list(range(20,51,5))  # distances in km to test elec
+MAX_GRID_EXTEND = ELEC_DISTS[-1]  # in km, never extend the grid further than this
+NUM_PEOPLE_PER_HH = 5
 LHV_DIESEL = 9.9445485  # (kWh/l) lower heating value
 HOURS_PER_YEAR = 8760
-PV_LOW = 1500.0
-PV_HIGH = 2500.0
-WIND_LOW = 0.2
-WIND_MID = 0.3
-WIND_HIGH = 0.4
+EXISTING_GRID_COST_RATIO = 0.1 # factor to multiply by existing grid length when calculating elec status
+PV_LOW = 1500  # kWh/m2/year
+PV_HIGH = 2500  # kWh/m2/year
+WIND_LOW = 0.2  # capacity factor
+WIND_MID = 0.3  # capacity factor
+WIND_HIGH = 0.4  # capacity factor
 
 # settlements file
 SET_COUNTRY = 'Country'  # This cannot be changed, lots of code will break
@@ -70,10 +71,14 @@ SUM_INVESTMENT_PREFIX = 'investment_'
 
 # specs file
 SPE_COUNTRY = 'Country'
-SPE_POP = 'Pop2015TotActual'  # The actual population in the base year
-SPE_URBAN = 'UrbanRatio'  # The ratio of urban population (range 0 - 1)
+SPE_POP = 'Pop2015'  # The actual population in the base year
+SPE_URBAN = 'UrbanRatio2015'  # The ratio of urban population (range 0 - 1) in base year
+SPE_POP_FUTURE = 'Pop2030'
+SPE_URBAN_FUTURE = 'UrbanRatio2030'
 SPE_URBAN_MODELLED = 'UrbanRatioModelled'  # The urban ratio in the model after calibration (for comparison)
 SPE_URBAN_CUTOFF = 'UrbanCutOff'  # The urban cutoff population calirated by the model, in people per km2
+
+
 SPE_URBAN_GROWTH = 'UrbanGrowth'  # The urban growth rate as a simple multplier (urban pop future / urban pop present)
 SPE_RURAL_GROWTH = 'RuralGrowth'  # Same as for urban
 SPE_DIESEL_PRICE_LOW = 'DieselPriceLow'  # Diesel price in USD/litre

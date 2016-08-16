@@ -65,6 +65,7 @@ def pop():
             # Get the calculated urban ratio, and limit it to within reasonable boundaries
             pop_urb = df.ix[df.Country == c][df.loc[df.Country == c][SET_URBAN] == 1][SET_POP_CALIB].sum()
             calculated = pop_urb / pop_actual
+            print(calculated)
             if calculated == 0:
                 calculated = 0.05
             elif calculated == 1:
@@ -94,8 +95,11 @@ def pop():
 
         # Project future population, with separate growth rates for urban and rural
         logging.info(' - Project future population')
-        urban_growth = specs.loc[c, SPE_URBAN_GROWTH]
-        rural_growth = specs.loc[c, SPE_RURAL_GROWTH]
+
+        urban_growth = (specs.loc[c, SPE_URBAN] * specs.loc[c, SPE_POP]) / (
+            specs.loc[c, SPE_URBAN_FUTURE] * specs.loc[c, SPE_POP_FUTURE])
+        rural_growth = ((1 - specs.loc[c, SPE_URBAN]) * specs.loc[c, SPE_POP]) / (
+            (1 - specs.loc[c, SPE_URBAN_FUTURE]) * specs.loc[c, SPE_POP_FUTURE])
 
         df.loc[df.Country == c, SET_POP_FUTURE] = df.loc[df.Country == c].apply(lambda row:
             row[SET_POP_CALIB] * urban_growth

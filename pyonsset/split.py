@@ -49,6 +49,10 @@ def run(scenario, selection='all', diesel_high=False):
     tech_cap = pd.read_csv(tech_cap_csv, index_col=0).set_index('minor', drop=True, append=True).to_panel()
     specs = pd.read_excel(FF_SPECS, index_col=0)
 
+    # Make sure the selection is valid before continuing
+    if selection != 'all' and selection not in specs.index.values.tolist():
+        raise KeyError('The chosen country doesnt exist')
+
     # Each of these functions for a specific column of results
     # The columns are used in df.apply() calls underneath
     # To add a new column, it needs a new function, as well as the df.apply() call beneath
@@ -123,6 +127,7 @@ def run(scenario, selection='all', diesel_high=False):
         x = tech_cap.items.values.astype(float).tolist()
         y = [0.0, 2.0]
         z = tech_cap.major_xs(row[SET_COUNTRY]).loc[[SA_DIESEL, SA_DIESEL]].as_matrix()
+        # The capital cost isn't function of population, but kept here anyway for future proofing
         p_c = interp2d(x, y, z)(row[SET_POP_FUTURE], 1.0)[0]  # capital cost in USD/kWh
 
         consumption = 14  # (l/h) truck consumption per hour
@@ -139,15 +144,10 @@ def run(scenario, selection='all', diesel_high=False):
         return (p_d + 2 * p_d * consumption * time / volume) * (1 / mu) * (1 / LHV_DIESEL) + p_om + p_c
 
     def res_lcoe_sa_pv(row):
-        x1 = PV_LOW
-        x2 = PV_HIGH
-        y1 = tech_lcoes.major_xs(row[SET_COUNTRY]).loc[SA_PV_LOW].iloc[0]
-        y2 = tech_lcoes.major_xs(row[SET_COUNTRY]).loc[SA_PV_HIGH].iloc[0]
-
-        gradient = (y2 - y1) / (x2 - x1)
-        intercept = y2 - gradient * x2
-
-        return gradient * row['GHI'] + intercept
+        x = tech_lcoes.items.values.astype(float).tolist()
+        y = [PV_LOW, PV_HIGH]
+        z = tech_lcoes.major_xs(row[SET_COUNTRY]).loc[[SA_PV_LOW, SA_PV_HIGH]].as_matrix()
+        return interp2d(x, y, z)(row[SET_POP_FUTURE], row[SET_GHI])[0]
 
     def res_minimum_category(row):
         if 'grid' in row[RES_MINIMUM_TECH]:
@@ -277,7 +277,7 @@ def run(scenario, selection='all', diesel_high=False):
 
     # The next section calculates the summaries for technology split, consumption added and total investment cost
     logging.info('Calculate summaries')
-    countries = specs.index.values.tolist()
+    countries = specs.index.values.tolist() if selection == 'all' else [selection]
     cols = []
     techs = [RES_LCOE_GRID, RES_LCOE_SA_DIESEL, RES_LCOE_SA_PV, RES_LCOE_MG_WIND,
              RES_LCOE_MG_DIESEL, RES_LCOE_MG_PV, RES_LCOE_MG_HYDRO]
@@ -287,10 +287,10 @@ def run(scenario, selection='all', diesel_high=False):
     summary = pd.DataFrame(index=countries, columns=cols)
 
     for c in countries:
-        pop_tot = float(specs.loc[c, SPE_POP])
+        new_connections = float(df.ix[df.Country == c][RES_NEW_CONNECTIONS].sum())
         for t in techs:
             summary.loc[c, SUM_SPLIT_PREFIX + t] = \
-                df.ix[df.Country == c][df.loc[df.Country == c][RES_MINIMUM_TECH] == t][SET_POP_CALIB].sum()/pop_tot
+                df.ix[df.Country == c][df.loc[df.Country == c][RES_MINIMUM_TECH] == t][RES_NEW_CONNECTIONS].sum()/new_connections
             summary.loc[c, SUM_CAPACITY_PREFIX + t] = \
                 df.ix[df.Country == c][df.loc[df.Country == c][RES_MINIMUM_TECH] == t][RES_NEW_CAPACITY].sum()
             summary.loc[c, SUM_INVESTMENT_PREFIX + t] = \

@@ -26,6 +26,8 @@ def create(gdb='C:/Users/adm.esa/Desktop/ONSSET/Africa_Onsset.gdb', settlements_
     @param settlements_fc: a name for the new settlements layer
     """
 
+    # TODO Implement in QGIS
+
     logging.info('Starting function gis.create()')
 
     arcpy.env.workspace = gdb
@@ -69,8 +71,10 @@ def create(gdb='C:/Users/adm.esa/Desktop/ONSSET/Africa_Onsset.gdb', settlements_
     arcpy.DeleteField_management(settlements_fc, 'POINT_X; POINT_Y')
 
     # Add GHI, WindCF, travel, nightlights
+    # TODO need to start including Near analysis for this also, to solve neighbouring effects, explore other options also
     logging.info('Add GHI')
     arcpy.sa.ExtractMultiValuesToPoints(settlements_fc, [[ghi, SET_GHI]])
+    # TODO new wind layer
     logging.info('Add WindCF')
     arcpy.sa.ExtractMultiValuesToPoints(settlements_fc, [[windcf, SET_WINDCF]])
     logging.info('Add Travel time')
@@ -148,7 +152,7 @@ def export_csv(gdb='C:/Users/adm.esa/Desktop/ONSSET/Africa_Onsset.gdb', settleme
     logging.info('Completed function gis.export_csv()')
 
 
-def import_csv(scenario, selection, diesel_high, settlements_fc, gdb='C:/Users/adm.esa/Desktop/ONSSET/Africa_Onsset.gdb'):
+def import_csv(scenario, selection, diesel_high, settlements_fc, gdb=r'C:\Users\adm.esa\Desktop\ONSSET\Africa_Onsset_Results.gdb'):
     """
     Import the csv file designated by scenario, selection and diesel_high back into ArcGIS.
 
@@ -167,17 +171,21 @@ def import_csv(scenario, selection, diesel_high, settlements_fc, gdb='C:/Users/a
     else:
         settlements_csv = os.path.join(output_dir, '{}_{}_low.csv'.format(selection, scenario))
 
+    settlements_csv = r'db/settlements.csv'
+
     # Set up the ArcGIS environment options and create a new feature class
     arcpy.env.workspace = gdb
     arcpy.env.overwriteOutput = True
     arcpy.env.addOutputsToMap = False
     arcpy.CheckOutExtension("Spatial")
-    arcpy.CreateFeatureclass_management(arcpy.env.workspace, settlements_fc, "POINT")
-    arcpy.DefineProjection_management(settlements_fc, arcpy.SpatialReference('WGS 1984 World Mercator'))
 
     # Open the csv file and copy the field names (first row)
     csvreader = csv.reader(open(settlements_csv, 'r'), delimiter=',', lineterminator='\n')
     fields = next(csvreader) # The first line in the csv file contains the field names
+
+    # We only create the feature class once we've confirmed that the csv exists
+    arcpy.CreateFeatureclass_management(arcpy.env.workspace, settlements_fc, "POINT")
+    arcpy.DefineProjection_management(settlements_fc, arcpy.SpatialReference('WGS 1984 World Mercator'))
 
     # Add a sample row (to set the field types in ArcGIS)
     # For all the fields that are floatable, make the field a FLOAT, otherwise TEXT
@@ -250,5 +258,9 @@ if __name__ == "__main__":
         scenario = int(input('Enter scenario value (int): '))
         selection = input('Enter country selection or "all": ')
         diesel_high = input('Enter L for low diesel, H for high diesel: ')
+        settlements_fc = 'set_{}_{}_{}'.format(selection, scenario, diesel_high)
         diesel_high = diesel_high in 'H'
-        import_csv(scenario, selection, diesel_high, settlements_fc, gdb)
+        if len(gdb) == 0:
+            import_csv(scenario, selection, diesel_high, settlements_fc)
+        else:
+            import_csv(scenario, selection, diesel_high, settlements_fc, gdb)

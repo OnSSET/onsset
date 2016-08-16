@@ -31,7 +31,7 @@ def separate_elec_status(elec_status):
     return electrified, unelectrified
 
 
-def get_2d_hash_table(gis_data, unelectrified, distance_limit):
+def get_2d_hash_table(x, y, unelectrified, distance_limit):
     """
     Generates the 2D Hash Table with the unelectrified locations hashed into the table for easy O(1) access.
 
@@ -43,13 +43,13 @@ def get_2d_hash_table(gis_data, unelectrified, distance_limit):
 
     hash_table = defaultdict(lambda: defaultdict(list))
     for unelec_row in unelectrified:
-        hash_x = int(gis_data[unelec_row][0] / distance_limit)
-        hash_y = int(gis_data[unelec_row][1] / distance_limit)
+        hash_x = int(x[unelec_row] / distance_limit)
+        hash_y = int(y[unelec_row] / distance_limit)
         hash_table[hash_x][hash_y].append(unelec_row)
     return hash_table
 
 
-def get_unelectrified_rows(hash_table, elec_row, gis_data, distance_limit):
+def get_unelectrified_rows(hash_table, elec_row, x, y, distance_limit):
     """
     Returns all the unelectrified locations close to the electrified location
     based on the distance boundary limit specified by asking the 2D hash table.
@@ -62,8 +62,8 @@ def get_unelectrified_rows(hash_table, elec_row, gis_data, distance_limit):
     """
 
     unelec_list = []
-    hash_x = int(gis_data[elec_row][0] / distance_limit)
-    hash_y = int(gis_data[elec_row][1] / distance_limit)
+    hash_x = int(x[elec_row] / distance_limit)
+    hash_y = int(y[elec_row] / distance_limit)
 
     unelec_list.extend(hash_table.get(hash_x, {}).get(hash_y, []))
     unelec_list.extend(hash_table.get(hash_x, {}).get(hash_y - 1, []))
@@ -88,55 +88,44 @@ def elec_single_country(df_country, distance, num_people):
     @param num_people: list of corresponding population cutoffs to use
     @return:
     """
-    gis_data = df_country[[SET_X, SET_Y, SET_POP_FUTURE]].values.tolist()
-    elec_status = df_country[SET_ELEC_FUTURE].tolist()
-    cell_path = np.zeros((len(elec_status), 2))
+    x = df_country[SET_X].values.tolist()
+    y = df_country[SET_Y].values.tolist()
+    pop = df_country[SET_POP_FUTURE].values.tolist()
+    status = df_country[SET_ELEC_FUTURE].tolist()
+    cell_path = np.zeros(len(status))
 
     df_elec = pd.DataFrame(index=df_country.index.values)
 
     for distance_limit, population_limit in zip(distance, num_people):
         logging.info(' - Column {}'.format(distance_limit))
-        counter = 0
-        electrified, unelectrified = separate_elec_status(elec_status)
+        electrified, unelectrified = separate_elec_status(status)
 
-        hash_table = get_2d_hash_table(gis_data, unelectrified, distance_limit)
-        elec_changes = []
-        counter2 = 2
+        hash_table = get_2d_hash_table(x, y, unelectrified, distance_limit)
 
-        while counter2 >= 1:
-            counter2 = 0
+        while len(electrified) > 0:
+            changes = []
             # Iteration based on number of electrified cells at this stage of the calculation.
-            for elec_row in electrified:
+            for elec in electrified:
 
-                unelec_rows = get_unelectrified_rows(hash_table, elec_row, gis_data, distance_limit)
+                unelectrified_hashed = get_unelectrified_rows(hash_table, elec, x, y, distance_limit)
+                for unelec in unelectrified_hashed:
+                    existing_grid = cell_path[elec]
 
-                for unelec_row in unelec_rows:
-                    # km of line build prior + line km building
-                    existing_grid = cell_path[elec_row][0] + cell_path[elec_row][1]
-                    # Check if really unelectrified
-                    el = elec_status[unelec_row] == 0
-                    dx = abs(gis_data[elec_row][0] - gis_data[unelec_row][0]) < distance_limit
-                    dy = abs(gis_data[elec_row][1] - gis_data[unelec_row][1]) < distance_limit
-                    # TODO this not_same_point check is dodgey I think?
-                    not_same_point = dx > 0 or dy > 0
-                    # TODO this manual addition to pop check also dodgey
-                    pop = gis_data[unelec_row][2] > population_limit + distance_limit * (0.15702 * (existing_grid + 7.006) / 10 - 0.11) / 0.44
-                    ok_to_extend = existing_grid < MAX_GRID_EXTEND
+                    # We go 5km - 50km so further sets can be electrified by closer ones, but not vice versa
+                    # But if we fix this, then it might prefer to just electrify everything in 1km steps, as it
+                    # then pays only 10% for previous steps
 
-                    if el and dx and dy and not_same_point and pop and ok_to_extend:
-                        if unelec_row not in elec_changes:
-                            counter2 += 1
-                            elec_changes.append(unelec_row)
-                            elec_status[unelec_row] = 1
-                            cell_path[unelec_row] = [existing_grid, distance_limit]
+                    if (abs(x[elec] - x[unelec]) + EXISTING_GRID_COST_RATIO * existing_grid < distance_limit and
+                            abs(y[elec] - y[unelec]) + EXISTING_GRID_COST_RATIO * existing_grid < distance_limit):
+                        if pop[unelec] > population_limit and existing_grid < MAX_GRID_EXTEND:
+                            if status[unelec] == 0:
+                                changes.append(unelec)
+                                status[unelec] = 1
+                                cell_path[unelec] = existing_grid + distance_limit
 
-            if counter2 != 0:
-                electrified = [item for item in elec_changes]
-                elec_changes = []
-            counter += 1
-            # end while loop
+            electrified = changes[:]
 
-        df_elec[SET_ELEC_PREFIX+str(distance_limit)] = elec_status
+        df_elec[SET_ELEC_PREFIX + str(distance_limit)] = status
 
     return df_elec
 
@@ -184,8 +173,8 @@ def run_elec(scenario, selection='all'):
         df.loc[df.Country == c, SET_ELEC_FUTURE] = df.loc[df.Country == c].apply(lambda row:
             1
             if row[SET_ELEC_CURRENT] == 1 or
-            (row[SET_GRID_DIST_PLANNED] < ELEC_DISTS[0] and row[SET_POP_FUTURE] > num_people[c].loc[ELEC_DISTS[0]]) or
-            (row[SET_GRID_DIST_PLANNED] < ELEC_DISTS[1] and row[SET_POP_FUTURE] > num_people[c].loc[ELEC_DISTS[1]])
+            (row[SET_GRID_DIST_PLANNED] < ELEC_DISTS[4] and row[SET_POP_FUTURE] > num_people[c].loc[ELEC_DISTS[4]]) or
+            (row[SET_GRID_DIST_PLANNED] < ELEC_DISTS[9] and row[SET_POP_FUTURE] > num_people[c].loc[ELEC_DISTS[9]])
             else 0,
             axis=1)
 

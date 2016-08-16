@@ -27,27 +27,24 @@ def make_tables(scenario, specs_xlsx=FF_SPECS):
         os.makedirs(output_dir)
 
     # Import country specific values from Excel
-    specs = pd.read_excel(specs_xlsx)[[SPE_COUNTRY, SPE_GRID_PRICE, SPE_GRID_LOSSES,
-                                       SPE_BASE_TO_PEAK, SPE_DIESEL_PRICE_LOW]]
+    specs = pd.read_excel(specs_xlsx, index_col=0)[[SPE_GRID_PRICE, SPE_GRID_LOSSES,
+                                                    SPE_BASE_TO_PEAK, SPE_DIESEL_PRICE_LOW, SPE_DIESEL_PRICE_HIGH]]
 
-    # From 10 to 4000 people per km2
-    # techs must be modified if any new technologies are added
-    people_arr = [10 * x for x in range(1, 401)]
+    # From 0 to 900 000 people per km2
+    # Techs must be modified if any new technologies are added
+    people_arr = list(range(10)) + list(range(10, 1000, 10)) + list(range(1000, 10000, 100)) + \
+                 list(range(10000, 100000, 10000)) + list(range(100000, 1000000, 100000))
+
     techs = [MG_HYDRO, MG_PV_LOW, MG_PV_HIGH, MG_WIND_LOW, MG_WIND_MID,
              MG_WIND_HIGH, MG_DIESEL, SA_DIESEL, SA_PV_LOW, SA_PV_HIGH]
 
     # A pd.Panel for each of the main results
-    grid_lcoes = pd.Panel(np.zeros([len(specs), len(ELEC_DISTS), len(people_arr)]),
-                          items=specs[SPE_COUNTRY].values, major_axis=ELEC_DISTS, minor_axis=people_arr)
-    grid_cap = pd.Panel(np.zeros([len(specs), len(ELEC_DISTS), len(people_arr)]),
-                        items=specs[SPE_COUNTRY].values, major_axis=ELEC_DISTS, minor_axis=people_arr)
-    tech_lcoes = pd.Panel(np.zeros([len(specs), len(techs), len(people_arr)]),
-                          items=specs[SPE_COUNTRY].values, major_axis=techs, minor_axis=people_arr)
-    tech_cap = pd.Panel(np.zeros([len(specs), len(techs), len(people_arr)]),
-                        items=specs[SPE_COUNTRY].values, major_axis=techs, minor_axis=people_arr)
+    grid_lcoes = pd.Panel(items=specs.index.values, major_axis=ELEC_DISTS, minor_axis=people_arr)
+    grid_cap = pd.Panel(items=specs.index.values, major_axis=ELEC_DISTS, minor_axis=people_arr)
+    tech_lcoes = pd.Panel(items=specs.index.values, major_axis=techs, minor_axis=people_arr)
+    tech_cap = pd.Panel(items=specs.index.values, major_axis=techs, minor_axis=people_arr)
 
-    for index, country_specs in specs.iterrows():
-        country_name = country_specs[SPE_COUNTRY]
+    for country_name, country_specs in specs.iterrows():
         for people in people_arr:
 
             # First calculate the full LCOE values, and insert the results into the panels
@@ -86,19 +83,23 @@ def make_tables(scenario, specs_xlsx=FF_SPECS):
 
     # The following section calculates the number of people required before grid-connecting is feasible
     # Dependent on country and distance from existing grid
-
     # The dataframe is initialised with very high default values
     num_people_for_grid = pd.DataFrame(1e9 * np.ones([len(ELEC_DISTS), len(specs)]), index=ELEC_DISTS,
-                                       columns=specs[SPE_COUNTRY].values)
+                                       columns=specs.index.values.tolist())
 
-    # Loop through every comination of variables and see at what point (number of people) the grid becomes the
+    # Loop through every combination of variables and see at what point (number of people) the grid becomes the
     # most economical option.
     for country in grid_lcoes:
         for additional_mv_line_length in ELEC_DISTS:
             for people in people_arr:
                 lcoes = tech_lcoes[country][people]
-                min_lcoe_techs = min(lcoes[MG_HYDRO], (lcoes[MG_PV_LOW] + lcoes[MG_PV_HIGH]) / 2, lcoes[MG_WIND_MID],
-                                     lcoes[MG_DIESEL], lcoes[SA_DIESEL], (lcoes[SA_PV_LOW] + lcoes[SA_PV_HIGH]) / 2)
+
+                # Shortened version of Szabo analysis in split.py, using 20 hours as a travel time
+                cost_mg_diesel = lcoes[MG_DIESEL] + (2 * specs[SPE_DIESEL_PRICE_HIGH][country] * 33.7 * 20 / 15000) * \
+                                                    (1 / 0.3) * (1 / LHV_DIESEL)
+
+                min_lcoe_techs = min((lcoes[MG_PV_LOW] + lcoes[MG_PV_HIGH]) / 2, lcoes[MG_WIND_MID],
+                                     (lcoes[SA_PV_LOW] + lcoes[SA_PV_HIGH]) / 2, cost_mg_diesel)
 
                 if grid_lcoes[country][people][additional_mv_line_length] < min_lcoe_techs:
                     num_people_for_grid[country][additional_mv_line_length] = people
@@ -156,13 +157,13 @@ def get_lcoes(country_specs, people, scenario, calc_cap_only):
                                 connection_cost_per_hh=100,
                                 capital_cost=5000,
                                 om_costs=om_costs,
-                                base_to_peak_load_ratio=1.0,
+                                base_to_peak_load_ratio=1,
                                 system_life=30,
                                 mv_line_length=5)
 
     # mg_pv_low
     irradiation = PV_LOW
-    om_costs = 0 if calc_cap_only else 0.02
+    om_costs = 0 if calc_cap_only else 0.0015
     lcoes[MG_PV_LOW] = calc_lcoe(people=people,
                                  scenario=scenario,
                                  om_of_td_lines=om_of_td_lines,
@@ -251,43 +252,43 @@ def get_lcoes(country_specs, people, scenario, calc_cap_only):
                                  capacity_factor=0.7,
                                  distribution_losses=0,
                                  connection_cost_per_hh=100,
-                                 capital_cost=721,
+                                 capital_cost=938,
                                  om_costs=om_costs,
                                  base_to_peak_load_ratio=0.5,
-                                 system_life=15,
-                                 efficiency=0.33,
+                                 system_life=10,
+                                 efficiency=0.28,
                                  diesel_price=diesel_price,
                                  diesel=True,
                                  standalone=True)
 
     # sa_pv_low
     irradiation = PV_LOW
-    om_costs = 0 if calc_cap_only else 0.02
+    om_costs = 0 if calc_cap_only else 0.0012
     lcoes[SA_PV_LOW] = calc_lcoe(people=people,
                                  scenario=scenario,
                                  om_of_td_lines=0,
                                  capacity_factor=irradiation / HOURS_PER_YEAR,
                                  distribution_losses=0,
                                  connection_cost_per_hh=100,
-                                 capital_cost=4300,
+                                 capital_cost=5500,
                                  om_costs=om_costs,
                                  base_to_peak_load_ratio=0.9,
-                                 system_life=20,
+                                 system_life=15,
                                  standalone=True)
 
     # sa_pv_high
     irradiation = PV_HIGH
-    om_costs = 0 if calc_cap_only else 0.02
+    om_costs = 0 if calc_cap_only else 0.012
     lcoes[SA_PV_HIGH] = calc_lcoe(people=people,
                                   scenario=scenario,
                                   om_of_td_lines=0,
                                   capacity_factor=irradiation / HOURS_PER_YEAR,
                                   distribution_losses=0,
                                   connection_cost_per_hh=100,
-                                  capital_cost=4300,
+                                  capital_cost=5500,
                                   om_costs=om_costs,
                                   base_to_peak_load_ratio=0.9,
-                                  system_life=20,
+                                  system_life=15,
                                   standalone=True)
 
     return lcoes
@@ -321,7 +322,11 @@ def calc_lcoe(people, scenario, om_of_td_lines, distribution_losses, connection_
     @return: The LCOE values with the given parameters
     """
 
-    grid_cell_area = 100  # TODO This should be fixed to 1, but some values and calculations aren't area independent
+    # To prevent any div/0 error
+    if people == 0:
+        people = 0.00001
+
+    grid_cell_area = 100 # This was 100, changed to 1 which creates different results but let's go with it
     people *= grid_cell_area  # To adjust for incorrect grid size above
 
     mv_line_cost = 9000  # USD/km
@@ -390,12 +395,19 @@ def calc_lcoe(people, scenario, om_of_td_lines, distribution_losses, connection_
         fuel_cost = 0
 
     # Perform the time value LCOE calculation
+    #reinvest_year = 0
+    #if system_life < 15:
+    #    reinvest_year = system_life
+    #    system_life *= 2
+
     year = np.arange(0, system_life + 1)
     el_gen = generation_per_year * np.ones(system_life + 1)
     el_gen[0] = 0
     discount_factor = (1 + discount_rate) ** year
     it = np.zeros(system_life + 1)  # investment
     it[0] = total_investment_cost
+    #if reinvest_year:
+    #    it[reinvest_year] = total_investment_cost
     mt = total_om_cost * np.ones(system_life + 1)  # maintenance
     mt[0] = 0
     ft = el_gen * fuel_cost  # fuel
