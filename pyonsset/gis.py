@@ -193,7 +193,6 @@ def import_csv(scenario, selection, diesel_high, gdb=r'C:\Users\adm.esa\Desktop\
 
     # We only create the feature class once we've confirmed that the csv exists
     arcpy.CreateFeatureclass_management(arcpy.env.workspace, settlements_fc, "POINT")
-    # arcpy.DefineProjection_management(settlements_fc, arcpy.SpatialReference('WGS 1984'))  # for degrees
     arcpy.DefineProjection_management(settlements_fc, arcpy.SpatialReference('WGS 1984 World Mercator'))
 
     # Add a sample row (to set the field types in ArcGIS)
