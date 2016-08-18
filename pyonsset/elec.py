@@ -158,7 +158,8 @@ def run_elec(scenario, selection='all'):
     if selection != 'all':
         if selection in countries:
             countries = [selection]
-            df = df[df.Country == selection]
+            # Changed this to loc...
+            df = df.loc[df.Country == selection]
         else:
             raise KeyError('The selected country doesnt exist')
 

@@ -147,6 +147,10 @@ def run(scenario, selection='all', diesel_high=False):
         x = tech_lcoes.items.values.astype(float).tolist()
         y = [PV_LOW, PV_HIGH]
         z = tech_lcoes.major_xs(row[SET_COUNTRY]).loc[[SA_PV_LOW, SA_PV_HIGH]].as_matrix()
+        # TODO use np.interp(pop, x, columns) for 1D
+        # TODO RegularGridInterpolater: 48 us setup, 111us eval
+        # TODO RectBivariateSpline: 710 us setup, 5 us eval
+        # TODO interp2d 433 us setup, 21 us eval
         return interp2d(x, y, z)(row[SET_POP_FUTURE], row[SET_GHI])[0]
 
     def res_minimum_category(row):
@@ -287,14 +291,14 @@ def run(scenario, selection='all', diesel_high=False):
     summary = pd.DataFrame(index=countries, columns=cols)
 
     for c in countries:
-        new_connections = float(df.ix[df.Country == c][RES_NEW_CONNECTIONS].sum())
+        new_connections = float(df.loc[df.Country == c][RES_NEW_CONNECTIONS].sum())
         for t in techs:
             summary.loc[c, SUM_SPLIT_PREFIX + t] = \
-                df.ix[df.Country == c][df.loc[df.Country == c][RES_MINIMUM_TECH] == t][RES_NEW_CONNECTIONS].sum()/new_connections
+                df.loc[df.Country == c][df.loc[df.Country == c][RES_MINIMUM_TECH] == t][RES_NEW_CONNECTIONS].sum()/new_connections
             summary.loc[c, SUM_CAPACITY_PREFIX + t] = \
-                df.ix[df.Country == c][df.loc[df.Country == c][RES_MINIMUM_TECH] == t][RES_NEW_CAPACITY].sum()
+                df.loc[df.Country == c][df.loc[df.Country == c][RES_MINIMUM_TECH] == t][RES_NEW_CAPACITY].sum()
             summary.loc[c, SUM_INVESTMENT_PREFIX + t] = \
-                df.ix[df.Country == c][df.loc[df.Country == c][RES_MINIMUM_TECH] == t][RES_INVESTMENT_COST].sum()
+                df.loc[df.Country == c][df.loc[df.Country == c][RES_MINIMUM_TECH] == t][RES_INVESTMENT_COST].sum()
 
     summary.to_csv(summary_csv)
 

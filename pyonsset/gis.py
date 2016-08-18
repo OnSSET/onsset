@@ -60,6 +60,7 @@ def create(gdb='C:/Users/adm.esa/Desktop/ONSSET/Africa_Onsset.gdb', settlements_
     arcpy.JoinField_management(settlements_fc, country_num, admin_raster, 'Value', SET_COUNTRY)
     arcpy.DeleteField_management(settlements_fc, country_num)
 
+    # TODO add values in degrees also!
     # Add X and Y values
     # They are converted from metres to kilometres in this process
     logging.info('Add X/Y values')
@@ -152,7 +153,7 @@ def export_csv(gdb='C:/Users/adm.esa/Desktop/ONSSET/Africa_Onsset.gdb', settleme
     logging.info('Completed function gis.export_csv()')
 
 
-def import_csv(scenario, selection, diesel_high, settlements_fc, gdb=r'C:\Users\adm.esa\Desktop\ONSSET\Africa_Onsset_Results.gdb'):
+def import_csv(scenario, selection, diesel_high, gdb=r'C:\Users\adm.esa\Desktop\ONSSET\Onsset_Results_16Aug.gdb'):
     """
     Import the csv file designated by scenario, selection and diesel_high back into ArcGIS.
 
@@ -163,15 +164,22 @@ def import_csv(scenario, selection, diesel_high, settlements_fc, gdb=r'C:\Users\
     @param gdb: The geodatabase where the result should be saved
     """
 
+    # TODO standardise method arguments and handling of 'all'
+
     logging.info('Starting function gis.import_csv()...')
 
     output_dir = os.path.join(FF_TABLES, selection, str(scenario))
     if diesel_high:
         settlements_csv = os.path.join(output_dir, '{}_{}_high.csv'.format(selection, scenario))
+        settlements_fc = 'sets_{}_{}_H'.format(selection, scenario)
     else:
         settlements_csv = os.path.join(output_dir, '{}_{}_low.csv'.format(selection, scenario))
+        settlements_fc = 'sets_{}_{}_L'.format(selection, scenario)
 
-    settlements_csv = r'db/settlements.csv'
+    # Import main settlements file
+    if selection == 'all':
+        settlements_csv = r'db/settlements.csv'
+        settlements_fc = '_sets_all_noscenario'
 
     # Set up the ArcGIS environment options and create a new feature class
     arcpy.env.workspace = gdb
@@ -185,11 +193,12 @@ def import_csv(scenario, selection, diesel_high, settlements_fc, gdb=r'C:\Users\
 
     # We only create the feature class once we've confirmed that the csv exists
     arcpy.CreateFeatureclass_management(arcpy.env.workspace, settlements_fc, "POINT")
+    # arcpy.DefineProjection_management(settlements_fc, arcpy.SpatialReference('WGS 1984'))  # for degrees
     arcpy.DefineProjection_management(settlements_fc, arcpy.SpatialReference('WGS 1984 World Mercator'))
 
     # Add a sample row (to set the field types in ArcGIS)
     # For all the fields that are floatable, make the field a FLOAT, otherwise TEXT
-    # If any element is black (it equals '') then try the operation again with the next row, as '' isn't floatable
+    # If any element is blank (it equals '') then try the operation again with the next row, as '' isn't floatable
     field_types = []
     while True:
         sample_row = next(csvreader)
@@ -211,9 +220,9 @@ def import_csv(scenario, selection, diesel_high, settlements_fc, gdb=r'C:\Users\
     # Reset the csvreader and skip the first row
     csvreader = csv.reader(open(settlements_csv, 'r'), delimiter=',', lineterminator='\n')
     next(csvreader)
-    # Rename the X and Y fields so that ArcGIS recognises them as as the coordinates
-    fields[1] = 'SHAPE@X'
-    fields[2] = 'SHAPE@Y'
+    # Add the X and Y fields so that ArcGIS recognises them as as the coordinates
+    fields.append('SHAPE@X')
+    fields.append('SHAPE@Y')
 
     # Insert the rows one at a time, converting to float or string as appropriate
     # The prev variable is just to know when a new country is starting to it can be reported
@@ -222,9 +231,15 @@ def import_csv(scenario, selection, diesel_high, settlements_fc, gdb=r'C:\Users\
         for row in csvreader:
             rowf = []
 
+            x,y = 0,0
             for i, r in enumerate(row):
-                if 'SHAPE@' in fields[i]:
-                    rowf.append(float(r) * 1000)
+                if fields[i] == 'X':
+                    x = float(r)
+                    rowf.append(x)
+                elif fields[i] == 'Y':
+                    y = float(r)
+                    rowf.append(y)
+
                 elif field_types[i] == 'FLOAT':
                     try:
                         rowf.append(float(r))
@@ -233,6 +248,8 @@ def import_csv(scenario, selection, diesel_high, settlements_fc, gdb=r'C:\Users\
                 else:
                     rowf.append(str(r))
 
+            rowf.append(x*1000)
+            rowf.append(y*1000)
             cursor.insertRow(rowf)
             if rowf[0] != prev:
                 logging.info('Doing {}'.format(rowf[0]))
@@ -254,13 +271,11 @@ if __name__ == "__main__":
         export_csv(gdb, settlements_fc)
     elif choice == 3:
         gdb = input('Enter gdb path and filename: ')
-        settlements_fc = input('Enter name for new feature class: ')
         scenario = int(input('Enter scenario value (int): '))
         selection = input('Enter country selection or "all": ')
         diesel_high = input('Enter L for low diesel, H for high diesel: ')
-        settlements_fc = 'set_{}_{}_{}'.format(selection, scenario, diesel_high)
         diesel_high = diesel_high in 'H'
         if len(gdb) == 0:
-            import_csv(scenario, selection, diesel_high, settlements_fc)
+            import_csv(scenario, selection, diesel_high)
         else:
-            import_csv(scenario, selection, diesel_high, settlements_fc, gdb)
+            import_csv(scenario, selection, diesel_high, gdb)

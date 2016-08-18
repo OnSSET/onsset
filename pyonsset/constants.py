@@ -12,7 +12,7 @@ FF_TECH_CAP = lambda x: os.path.join(FF_LCOES, str(x), 'tech_cap_{}.csv'.format(
 FF_NUM_PEOPLE = lambda x: os.path.join(FF_LCOES, str(x), 'num_people_{}.csv'.format(x))
 
 # general
-ELEC_DISTS = list(range(1, 10)) + list(range(10, 20, 2)) + list(range(20,51,5))  # distances in km to test elec
+ELEC_DISTS = range(1,51)  # list(range(1, 10)) + list(range(10, 20, 2)) + list(range(20,51,5))  # distances in km to test elec
 MAX_GRID_EXTEND = ELEC_DISTS[-1]  # in km, never extend the grid further than this
 NUM_PEOPLE_PER_HH = 5
 LHV_DIESEL = 9.9445485  # (kWh/l) lower heating value
