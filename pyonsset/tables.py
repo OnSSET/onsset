@@ -35,8 +35,8 @@ def make_tables(scenario, specs_xlsx=FF_SPECS):
     people_arr = list(range(10)) + list(range(10, 1000, 10)) + list(range(1000, 10000, 100)) + \
                  list(range(10000, 100000, 10000)) + list(range(100000, 1000000, 100000))
 
-    techs = [MG_HYDRO, MG_PV_LOW, MG_PV_HIGH, MG_WIND_LOW, MG_WIND_MID,
-             MG_WIND_HIGH, MG_DIESEL, SA_DIESEL, SA_PV_LOW, SA_PV_HIGH]
+    techs = [MG_HYDRO, MG_PV_LOW, MG_PV_MID, MG_PV_HIGH, MG_WIND_LOW, MG_WIND_MID,
+             MG_WIND_HIGH, MG_WIND_EXTRA_HIGH, MG_DIESEL, SA_DIESEL, SA_PV_LOW, SA_PV_MID, SA_PV_HIGH]
 
     # A pd.Panel for each of the main results
     grid_lcoes = pd.Panel(items=specs.index.values, major_axis=ELEC_DISTS, minor_axis=people_arr)
@@ -52,13 +52,16 @@ def make_tables(scenario, specs_xlsx=FF_SPECS):
             grid_lcoes[country_name][people] = lcoes[GRID]
             tech_lcoes[country_name][people][MG_HYDRO] = lcoes[MG_HYDRO]
             tech_lcoes[country_name][people][MG_PV_LOW] = lcoes[MG_PV_LOW]
+            tech_lcoes[country_name][people][MG_PV_MID] = lcoes[MG_PV_MID]
             tech_lcoes[country_name][people][MG_PV_HIGH] = lcoes[MG_PV_HIGH]
             tech_lcoes[country_name][people][MG_WIND_LOW] = lcoes[MG_WIND_LOW]
             tech_lcoes[country_name][people][MG_WIND_MID] = lcoes[MG_WIND_MID]
             tech_lcoes[country_name][people][MG_WIND_HIGH] = lcoes[MG_WIND_HIGH]
+            tech_lcoes[country_name][people][MG_WIND_EXTRA_HIGH] = lcoes[MG_WIND_EXTRA_HIGH]
             tech_lcoes[country_name][people][MG_DIESEL] = lcoes[MG_DIESEL]
             tech_lcoes[country_name][people][SA_DIESEL] = lcoes[SA_DIESEL]
             tech_lcoes[country_name][people][SA_PV_LOW] = lcoes[SA_PV_LOW]
+            tech_lcoes[country_name][people][SA_PV_MID] = lcoes[SA_PV_MID]
             tech_lcoes[country_name][people][SA_PV_HIGH] = lcoes[SA_PV_HIGH]
 
             # Then calculate only the capital costs, and insert the values
@@ -66,13 +69,16 @@ def make_tables(scenario, specs_xlsx=FF_SPECS):
             grid_cap[country_name][people] = lcoes[GRID]
             tech_cap[country_name][people][MG_HYDRO] = lcoes[MG_HYDRO]
             tech_cap[country_name][people][MG_PV_LOW] = lcoes[MG_PV_LOW]
+            tech_cap[country_name][people][MG_PV_MID] = lcoes[MG_PV_MID]
             tech_cap[country_name][people][MG_PV_HIGH] = lcoes[MG_PV_HIGH]
             tech_cap[country_name][people][MG_WIND_LOW] = lcoes[MG_WIND_LOW]
             tech_cap[country_name][people][MG_WIND_MID] = lcoes[MG_WIND_MID]
             tech_cap[country_name][people][MG_WIND_HIGH] = lcoes[MG_WIND_HIGH]
+            tech_cap[country_name][people][MG_WIND_EXTRA_HIGH] = lcoes[MG_WIND_EXTRA_HIGH]
             tech_cap[country_name][people][MG_DIESEL] = lcoes[MG_DIESEL]
             tech_cap[country_name][people][SA_DIESEL] = lcoes[SA_DIESEL]
             tech_cap[country_name][people][SA_PV_LOW] = lcoes[SA_PV_LOW]
+            tech_cap[country_name][people][SA_PV_MID] = lcoes[SA_PV_MID]
             tech_cap[country_name][people][SA_PV_HIGH] = lcoes[SA_PV_HIGH]
 
     # Save the panels to csv
@@ -98,8 +104,7 @@ def make_tables(scenario, specs_xlsx=FF_SPECS):
                 cost_mg_diesel = lcoes[MG_DIESEL] + (2 * specs[SPE_DIESEL_PRICE_HIGH][country] * 33.7 * 20 / 15000) * \
                                                     (1 / 0.3) * (1 / LHV_DIESEL)
 
-                min_lcoe_techs = min((lcoes[MG_PV_LOW] + lcoes[MG_PV_HIGH]) / 2, lcoes[MG_WIND_MID],
-                                     (lcoes[SA_PV_LOW] + lcoes[SA_PV_HIGH]) / 2, cost_mg_diesel)
+                min_lcoe_techs = min(lcoes[MG_PV_LOW], lcoes[MG_WIND_LOW], lcoes[SA_PV_LOW], cost_mg_diesel)
 
                 if grid_lcoes[country][people][additional_mv_line_length] < min_lcoe_techs:
                     num_people_for_grid[country][additional_mv_line_length] = people
@@ -125,12 +130,6 @@ def get_lcoes(country_specs, people, scenario, calc_cap_only):
     diesel_price = float(country_specs[SPE_DIESEL_PRICE_LOW]) / LHV_DIESEL  # to convert from USD/L to USD/kWh
     om_of_td_lines = 0.03  # percentage (kept here so that it can be specified differently for lcoe/cap_only options)
 
-    # All O&M and fuel costs are excluded if we're calculating capital costs only
-    if calc_cap_only:
-        om_of_td_lines = 0
-        grid_price = 0
-        diesel_price = 0
-
     lcoes = {}
 
     # Each technology gets a call to calc_lcoe() with the relevant parameters
@@ -144,11 +143,11 @@ def get_lcoes(country_specs, people, scenario, calc_cap_only):
                              system_life=30,
                              additional_mv_line_length=additional_mv_line_length,
                              grid_price=grid_price,
-                             grid=True)
+                             grid=True,
+                             calc_cap_only=calc_cap_only)
                    for additional_mv_line_length in ELEC_DISTS]
 
     # mg_hydro
-    om_costs = 0 if calc_cap_only else 0.02
     lcoes[MG_HYDRO] = calc_lcoe(people=people,
                                 scenario=scenario,
                                 om_of_td_lines=om_of_td_lines,
@@ -156,41 +155,52 @@ def get_lcoes(country_specs, people, scenario, calc_cap_only):
                                 distribution_losses=0.05,
                                 connection_cost_per_hh=100,
                                 capital_cost=5000,
-                                om_costs=om_costs,
+                                om_costs=0.02,
                                 base_to_peak_load_ratio=1,
                                 system_life=30,
-                                mv_line_length=5)
+                                mv_line_length=5,
+                                calc_cap_only=calc_cap_only)
 
     # mg_pv_low
-    irradiation = PV_LOW
-    om_costs = 0 if calc_cap_only else 0.0015
     lcoes[MG_PV_LOW] = calc_lcoe(people=people,
                                  scenario=scenario,
                                  om_of_td_lines=om_of_td_lines,
-                                 capacity_factor=irradiation / HOURS_PER_YEAR,
+                                 capacity_factor=PV_LOW / HOURS_PER_YEAR,
                                  distribution_losses=0.05,
                                  connection_cost_per_hh=100,
                                  capital_cost=4300,
-                                 om_costs=om_costs,
+                                 om_costs=0.0015,
                                  base_to_peak_load_ratio=0.9,
-                                 system_life=20)
+                                 system_life=20,
+                                 calc_cap_only=calc_cap_only)
+
+    # mg_pv_mid
+    lcoes[MG_PV_MID] = calc_lcoe(people=people,
+                                 scenario=scenario,
+                                 om_of_td_lines=om_of_td_lines,
+                                 capacity_factor=PV_MID / HOURS_PER_YEAR,
+                                 distribution_losses=0.05,
+                                 connection_cost_per_hh=100,
+                                 capital_cost=4300,
+                                 om_costs=0.0015,
+                                 base_to_peak_load_ratio=0.9,
+                                 system_life=20,
+                                 calc_cap_only=calc_cap_only)
 
     # mg_pv_high
-    irradiation = PV_HIGH
-    om_costs = 0 if calc_cap_only else 0.02
     lcoes[MG_PV_HIGH] = calc_lcoe(people=people,
                                   scenario=scenario,
                                   om_of_td_lines=om_of_td_lines,
-                                  capacity_factor=irradiation / HOURS_PER_YEAR,
+                                  capacity_factor=PV_HIGH / HOURS_PER_YEAR,
                                   distribution_losses=0.05,
                                   connection_cost_per_hh=100,
                                   capital_cost=4300,
-                                  om_costs=om_costs,
+                                  om_costs=0.02,
                                   base_to_peak_load_ratio=0.9,
-                                  system_life=20)
+                                  system_life=20,
+                                  calc_cap_only=calc_cap_only)
 
-    # mg_wind0.2
-    om_costs = 0 if calc_cap_only else 0.02
+    # mg_wind_low
     lcoes[MG_WIND_LOW] = calc_lcoe(people=people,
                                    scenario=scenario,
                                    om_of_td_lines=om_of_td_lines,
@@ -198,12 +208,12 @@ def get_lcoes(country_specs, people, scenario, calc_cap_only):
                                    distribution_losses=0.05,
                                    connection_cost_per_hh=100,
                                    capital_cost=3000,
-                                   om_costs=om_costs,
+                                   om_costs=0.02,
                                    base_to_peak_load_ratio=0.75,
-                                   system_life=20)
+                                   system_life=20,
+                                   calc_cap_only=calc_cap_only)
 
-    # mg_wind0.3
-    om_costs = 0 if calc_cap_only else 0.02
+    # mg_wind_mid
     lcoes[MG_WIND_MID] = calc_lcoe(people=people,
                                    scenario=scenario,
                                    om_of_td_lines=om_of_td_lines,
@@ -211,12 +221,12 @@ def get_lcoes(country_specs, people, scenario, calc_cap_only):
                                    distribution_losses=0.05,
                                    connection_cost_per_hh=100,
                                    capital_cost=3000,
-                                   om_costs=om_costs,
+                                   om_costs=0.02,
                                    base_to_peak_load_ratio=0.75,
-                                   system_life=20)
+                                   system_life=20,
+                                   calc_cap_only=calc_cap_only)
 
-    # mg_wind0.4
-    om_costs = 0 if calc_cap_only else 0.02
+    # mg_wind_high
     lcoes[MG_WIND_HIGH] = calc_lcoe(people=people,
                                     scenario=scenario,
                                     om_of_td_lines=om_of_td_lines,
@@ -224,12 +234,25 @@ def get_lcoes(country_specs, people, scenario, calc_cap_only):
                                     distribution_losses=0.05,
                                     connection_cost_per_hh=100,
                                     capital_cost=3000,
-                                    om_costs=om_costs,
+                                    om_costs=0.02,
                                     base_to_peak_load_ratio=0.75,
-                                    system_life=20)
+                                    system_life=20,
+                                    calc_cap_only=calc_cap_only)
+
+    # mg_wind_extra_high
+    lcoes[MG_WIND_EXTRA_HIGH] = calc_lcoe(people=people,
+                                    scenario=scenario,
+                                    om_of_td_lines=om_of_td_lines,
+                                    capacity_factor=WIND_EXTRA_HIGH,
+                                    distribution_losses=0.05,
+                                    connection_cost_per_hh=100,
+                                    capital_cost=3000,
+                                    om_costs=0.02,
+                                    base_to_peak_load_ratio=0.75,
+                                    system_life=20,
+                                    calc_cap_only=calc_cap_only)
 
     # mg_diesel
-    om_costs = 0 if calc_cap_only else 0.1
     lcoes[MG_DIESEL] = calc_lcoe(people=people,
                                  scenario=scenario,
                                  om_of_td_lines=om_of_td_lines,
@@ -237,15 +260,15 @@ def get_lcoes(country_specs, people, scenario, calc_cap_only):
                                  distribution_losses=0.05,
                                  connection_cost_per_hh=100,
                                  capital_cost=721,
-                                 om_costs=om_costs,
+                                 om_costs=0.1,
                                  base_to_peak_load_ratio=0.5,
                                  system_life=15,
                                  efficiency=0.33,
                                  diesel_price=diesel_price,
-                                 diesel=True)
+                                 diesel=True,
+                                 calc_cap_only=calc_cap_only)
 
     # sa_diesel
-    om_costs = 0 if calc_cap_only else 0.1
     lcoes[SA_DIESEL] = calc_lcoe(people=people,
                                  scenario=scenario,
                                  om_of_td_lines=0,
@@ -253,51 +276,64 @@ def get_lcoes(country_specs, people, scenario, calc_cap_only):
                                  distribution_losses=0,
                                  connection_cost_per_hh=100,
                                  capital_cost=938,
-                                 om_costs=om_costs,
+                                 om_costs=0.1,
                                  base_to_peak_load_ratio=0.5,
                                  system_life=10,
                                  efficiency=0.28,
                                  diesel_price=diesel_price,
                                  diesel=True,
-                                 standalone=True)
+                                 standalone=True,
+                                 calc_cap_only=calc_cap_only)
 
     # sa_pv_low
-    irradiation = PV_LOW
-    om_costs = 0 if calc_cap_only else 0.0012
     lcoes[SA_PV_LOW] = calc_lcoe(people=people,
                                  scenario=scenario,
                                  om_of_td_lines=0,
-                                 capacity_factor=irradiation / HOURS_PER_YEAR,
+                                 capacity_factor=PV_LOW / HOURS_PER_YEAR,
                                  distribution_losses=0,
                                  connection_cost_per_hh=100,
                                  capital_cost=5500,
-                                 om_costs=om_costs,
+                                 om_costs=0.0012,
                                  base_to_peak_load_ratio=0.9,
                                  system_life=15,
-                                 standalone=True)
+                                 standalone=True,
+                                 calc_cap_only=calc_cap_only)
+
+    # sa_pv_mid
+    lcoes[SA_PV_MID] = calc_lcoe(people=people,
+                                 scenario=scenario,
+                                 om_of_td_lines=0,
+                                 capacity_factor=PV_MID / HOURS_PER_YEAR,
+                                 distribution_losses=0,
+                                 connection_cost_per_hh=100,
+                                 capital_cost=5500,
+                                 om_costs=0.0012,
+                                 base_to_peak_load_ratio=0.9,
+                                 system_life=15,
+                                 standalone=True,
+                                 calc_cap_only=calc_cap_only)
 
     # sa_pv_high
-    irradiation = PV_HIGH
-    om_costs = 0 if calc_cap_only else 0.012
     lcoes[SA_PV_HIGH] = calc_lcoe(people=people,
                                   scenario=scenario,
                                   om_of_td_lines=0,
-                                  capacity_factor=irradiation / HOURS_PER_YEAR,
+                                  capacity_factor=PV_HIGH / HOURS_PER_YEAR,
                                   distribution_losses=0,
                                   connection_cost_per_hh=100,
                                   capital_cost=5500,
-                                  om_costs=om_costs,
+                                  om_costs=0.0012,
                                   base_to_peak_load_ratio=0.9,
                                   system_life=15,
-                                  standalone=True)
+                                  standalone=True,
+                                  calc_cap_only=calc_cap_only)
 
     return lcoes
 
 
 def calc_lcoe(people, scenario, om_of_td_lines, distribution_losses, connection_cost_per_hh,
               base_to_peak_load_ratio, system_life, mv_line_length=0, om_costs=0.0, capital_cost=0, capacity_factor=1.0,
-              efficiency=1.0, diesel_price=0, additional_mv_line_length=0, grid_price=0, grid=False, diesel=False,
-              standalone=False):
+              efficiency=1.0, diesel_price=0.0, additional_mv_line_length=0, grid_price=0.0, grid=False, diesel=False,
+              standalone=False, calc_cap_only=False):
     """
     Calculate the LCOE for a single technology with a single people/distance pair.
 
@@ -319,14 +355,15 @@ def calc_lcoe(people, scenario, om_of_td_lines, distribution_losses, connection_
     @param grid: True/False flag for grid
     @param diesel: True/False flag for diesel
     @param standalone: True/False flag for standalone
-    @return: The LCOE values with the given parameters
+    @param calc_cap_only: True/False flag for calculating only capital cost
+    @return: The LCOE values with the given parameters, or the capital cost as a function of num people
     """
 
     # To prevent any div/0 error
     if people == 0:
         people = 0.00001
 
-    grid_cell_area = 100 # This was 100, changed to 1 which creates different results but let's go with it
+    grid_cell_area = 1  # This was 100, changed to 1 which creates different results but let's go with it
     people *= grid_cell_area  # To adjust for incorrect grid size above
 
     mv_line_cost = 9000  # USD/km
@@ -395,27 +432,41 @@ def calc_lcoe(people, scenario, om_of_td_lines, distribution_losses, connection_
         fuel_cost = 0
 
     # Perform the time value LCOE calculation
-    #reinvest_year = 0
-    #if system_life < 15:
-    #    reinvest_year = system_life
-    #    system_life *= 2
 
-    year = np.arange(0, system_life + 1)
-    el_gen = generation_per_year * np.ones(system_life + 1)
+    project_life = END_YEAR - START_YEAR
+    reinvest_year = 0
+    if system_life < project_life:
+        reinvest_year = system_life
+
+    year = np.arange(project_life)
+    el_gen = generation_per_year * np.ones(project_life)
     el_gen[0] = 0
     discount_factor = (1 + discount_rate) ** year
-    it = np.zeros(system_life + 1)  # investment
+    it = np.zeros(project_life)  # investment
     it[0] = total_investment_cost
-    #if reinvest_year:
-    #    it[reinvest_year] = total_investment_cost
-    mt = total_om_cost * np.ones(system_life + 1)  # maintenance
+    if reinvest_year:
+        it[reinvest_year] = total_investment_cost
+
+    s = np.zeros(project_life)  # salvage
+    used_life = project_life
+    if reinvest_year:
+        used_life = project_life - system_life # so salvage will come from the remaining life after the re-investment
+    s[-1] = total_investment_cost * (1 - used_life / system_life)
+
+    mt = total_om_cost * np.ones(project_life)  # maintenance
     mt[0] = 0
     ft = el_gen * fuel_cost  # fuel
     ft[0] = 0
-    discounted_costs = (it + mt + ft) / discount_factor
+
+    discounted_costs = (it + mt + ft - s) / discount_factor
+    discounted_investments = (it) / discount_factor
     discounted_generation = el_gen / discount_factor
 
-    return np.sum(discounted_costs) / np.sum(discounted_generation)
+    # So we also return the total investment cost for this number of people
+    if calc_cap_only:
+        return np.sum(discounted_investments)
+    else:
+        return np.sum(discounted_costs) / np.sum(discounted_generation)
 
 if __name__ == "__main__":
     os.chdir('..')

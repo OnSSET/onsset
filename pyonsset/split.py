@@ -5,7 +5,7 @@ Contains the final section to calculate and compare the LCOEs for each cell.
 import logging
 import pandas as pd
 import numpy as np
-from scipy.interpolate import interp2d
+from scipy.interpolate import RegularGridInterpolator
 from pyonsset.constants import *
 
 logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.DEBUG)
@@ -58,6 +58,8 @@ def run(scenario, selection='all', diesel_high=False):
     # To add a new column, it needs a new function, as well as the df.apply() call beneath
 
     def res_min_grid_dist(row):
+        # 0 means already electrified
+        # 99 means not electrifiable
         if row[SET_ELEC_CURRENT] == 0:
             return np.ma.filled(np.ma.masked_equal(np.array(
                 [row[x] * ELEC_DISTS[i] for i, x in enumerate(SET_ELEC_STEPS)]), 0, copy=False).min(), fill_value=99)
@@ -73,29 +75,34 @@ def run(scenario, selection='all', diesel_high=False):
             x = grid_lcoes.items.values.astype(float).tolist()
             y = grid_lcoes.minor_axis.values.astype(float).tolist()
             z = grid_lcoes.major_xs(row[SET_COUNTRY]).as_matrix()
-            return interp2d(x, y, z)(row[SET_POP_FUTURE], row[RES_MIN_GRID_DIST])[0]
+            return RegularGridInterpolator((y, x), z, bounds_error=False, fill_value=99)([row[RES_MIN_GRID_DIST], row[SET_POP_FUTURE]])[0]
 
     def res_lcoe_mg_hydro(row):
         if row[SET_HYDRO_DIST] < 5:
             x = tech_lcoes.items.values.astype(float).tolist()
-            y = [0.0, 2.0]
-            z = tech_lcoes.major_xs(row[SET_COUNTRY]).loc[[MG_HYDRO, MG_HYDRO]].as_matrix()
-            return interp2d(x, y, z)(row[SET_POP_FUTURE], 1.0)[0]
+            z = tech_lcoes.major_xs(row[SET_COUNTRY]).loc[MG_HYDRO].as_matrix()
+            return np.interp(row[SET_POP_FUTURE], x, z)
         else:
             return 99
 
     def res_lcoe_mg_pv(row):
         x = tech_lcoes.items.values.astype(float).tolist()
-        y = [PV_LOW, PV_HIGH]
-        z = tech_lcoes.major_xs(row[SET_COUNTRY]).loc[[MG_PV_LOW, MG_PV_HIGH]].as_matrix()
-        return interp2d(x, y, z)(row[SET_POP_FUTURE], row[SET_GHI])[0]
+        y = [PV_LOW, PV_MID, PV_HIGH]
+        z = tech_lcoes.major_xs(row[SET_COUNTRY]).loc[[MG_PV_LOW, MG_PV_MID, MG_PV_HIGH]].as_matrix()
+        return RegularGridInterpolator((y, x), z, bounds_error=False, fill_value=99)([row[SET_GHI], row[SET_POP_FUTURE]])[0]
 
     def res_lcoe_mg_wind(row):
-        if row[SET_WINDCF] >= 0.2:
+        min_wind_cf = 0.2
+        max_wind_cf = 0.6
+
+        if row[SET_WINDCF] >= min_wind_cf:
             x = tech_lcoes.items.values.astype(float).tolist()
-            y = [WIND_LOW, WIND_MID, WIND_HIGH]
-            z = tech_lcoes.major_xs(row[SET_COUNTRY]).loc[[MG_WIND_LOW, MG_WIND_MID, MG_WIND_HIGH]].as_matrix()
-            return interp2d(x, y, z)(row[SET_POP_FUTURE], row[SET_WINDCF])[0]
+            y = [WIND_LOW, WIND_MID, WIND_HIGH, WIND_EXTRA_HIGH]
+            z = tech_lcoes.major_xs(row[SET_COUNTRY]).loc[[MG_WIND_LOW, MG_WIND_MID, MG_WIND_HIGH, MG_WIND_EXTRA_HIGH]].as_matrix()
+            if row[SET_WINDCF] <= max_wind_cf:
+                return RegularGridInterpolator((y, x), z, bounds_error=False, fill_value=99)([row[SET_WINDCF], row[SET_POP_FUTURE]])[0]
+            else:
+                return RegularGridInterpolator((y, x), z, bounds_error=False, fill_value=99)([max_wind_cf, row[SET_POP_FUTURE]])[0]
         else:
             return 99
 
@@ -103,9 +110,8 @@ def run(scenario, selection='all', diesel_high=False):
         # Pp = p_lcoe + (2*p_d*consumption*time/volume)*(1/mu)*(1/LHVd)
 
         x = tech_lcoes.items.values.astype(float).tolist()
-        y = [0.0, 2.0]
-        z = tech_lcoes.major_xs(row[SET_COUNTRY]).loc[[MG_DIESEL, MG_DIESEL]].as_matrix()
-        p_lcoe = interp2d(x, y, z)(row[SET_POP_FUTURE], 1.0)[0]
+        z = tech_lcoes.major_xs(row[SET_COUNTRY]).loc[MG_DIESEL].as_matrix()
+        p_lcoe = np.interp(row[SET_POP_FUTURE], x, z)
 
         consumption = 33.7
         volume = 15000
@@ -125,10 +131,9 @@ def run(scenario, selection='all', diesel_high=False):
         # output Pp in USD/kWh
 
         x = tech_cap.items.values.astype(float).tolist()
-        y = [0.0, 2.0]
-        z = tech_cap.major_xs(row[SET_COUNTRY]).loc[[SA_DIESEL, SA_DIESEL]].as_matrix()
         # The capital cost isn't function of population, but kept here anyway for future proofing
-        p_c = interp2d(x, y, z)(row[SET_POP_FUTURE], 1.0)[0]  # capital cost in USD/kWh
+        z = tech_lcoes.major_xs(row[SET_COUNTRY]).loc[SA_DIESEL].as_matrix()
+        p_c = np.interp(row[SET_POP_FUTURE], x, z)
 
         consumption = 14  # (l/h) truck consumption per hour
         time = row[SET_TRAVEL_HOURS]  # time in hours
@@ -145,13 +150,12 @@ def run(scenario, selection='all', diesel_high=False):
 
     def res_lcoe_sa_pv(row):
         x = tech_lcoes.items.values.astype(float).tolist()
-        y = [PV_LOW, PV_HIGH]
-        z = tech_lcoes.major_xs(row[SET_COUNTRY]).loc[[SA_PV_LOW, SA_PV_HIGH]].as_matrix()
-        # TODO use np.interp(pop, x, columns) for 1D
-        # TODO RegularGridInterpolater: 48 us setup, 111us eval
-        # TODO RectBivariateSpline: 710 us setup, 5 us eval
-        # TODO interp2d 433 us setup, 21 us eval
-        return interp2d(x, y, z)(row[SET_POP_FUTURE], row[SET_GHI])[0]
+        y = [PV_LOW, PV_MID, PV_HIGH]
+        z = tech_lcoes.major_xs(row[SET_COUNTRY]).loc[[SA_PV_LOW, SA_PV_MID, SA_PV_HIGH]].as_matrix()
+        # RegularGridInterpolater: 48 us setup, 111us eval
+        # RectBivariateSpline: 710 us setup, 5 us eval
+        # interp2d 433 us setup, 21 us eval
+        return RegularGridInterpolator((y, x), z, bounds_error=False, fill_value=99)([row[SET_GHI], row[SET_POP_FUTURE]])[0]
 
     def res_minimum_category(row):
         if 'grid' in row[RES_MINIMUM_TECH]:
@@ -170,67 +174,71 @@ def run(scenario, selection='all', diesel_high=False):
     def res_new_capacity(row):
         min_tech = row[RES_MINIMUM_TECH]
         if min_tech == RES_LCOE_SA_DIESEL:
-            cf = 1 * 0.5
+            cf = 0.7  # capacity factor
+            btp = 0.5  # base to peak ratio
         elif min_tech == RES_LCOE_SA_PV:
-            cf = 1 * row[SET_GHI]/HOURS_PER_YEAR
+            cf = row[SET_GHI]/HOURS_PER_YEAR
+            btp = 0.9
         elif min_tech == RES_LCOE_MG_WIND:
-            cf = 0.75 * row[SET_WINDCF]
+            cf = row[SET_WINDCF]
+            btp = 0.75
         elif min_tech == RES_LCOE_MG_DIESEL:
-            cf = 0.5 * 0.7
+            cf = 0.7
+            btp = 0.5
         elif min_tech == RES_LCOE_MG_PV:
-            cf = 0.9 * row[SET_GHI]/HOURS_PER_YEAR
+            cf = row[SET_GHI]/HOURS_PER_YEAR
+            btp = 0.9
         elif min_tech == RES_LCOE_MG_HYDRO:
-            cf = 1 * 0.5
+            cf = 0.5
+            btp = 1
         elif min_tech == RES_LCOE_GRID:
-            cf = 1 * specs[SPE_BASE_TO_PEAK][row[SET_COUNTRY]]
+            cf = 1
+            btp = specs[SPE_BASE_TO_PEAK][row[SET_COUNTRY]]
         else:
             raise ValueError('A technology has not been accounted for in res_new_capacity()')
 
-        return (row[RES_NEW_CONNECTIONS]*scenario/NUM_PEOPLE_PER_HH)/(HOURS_PER_YEAR*cf)
+        return (row[RES_NEW_CONNECTIONS]*scenario/NUM_PEOPLE_PER_HH)/(HOURS_PER_YEAR * cf * btp)
 
     def res_investment_cost(row):
         min_tech = row[RES_MINIMUM_TECH]
         if min_tech == RES_LCOE_SA_DIESEL:
             x = tech_cap.items.values.astype(float).tolist()
-            y = [0.0, 2.0]
-            y_var = 1.0
-            z = tech_cap.major_xs(row[SET_COUNTRY]).loc[[SA_DIESEL, SA_DIESEL]].as_matrix()
+            z = tech_cap.major_xs(row[SET_COUNTRY]).loc[SA_DIESEL].as_matrix()
+            return np.interp(row[RES_NEW_CONNECTIONS], x, z)
         elif min_tech == RES_LCOE_SA_PV:
             x = tech_cap.items.values.astype(float).tolist()
-            y = [PV_LOW, PV_HIGH]
+            y = [PV_LOW, PV_MID, PV_HIGH]
             y_var = row[SET_GHI]
-            z = tech_cap.major_xs(row[SET_COUNTRY]).loc[[SA_PV_LOW, SA_PV_HIGH]].as_matrix()
+            z = tech_cap.major_xs(row[SET_COUNTRY]).loc[[SA_PV_LOW, SA_PV_MID, SA_PV_HIGH]].as_matrix()
+            return RegularGridInterpolator((y, x), z)([y_var, row[RES_NEW_CONNECTIONS]])[0]
         elif min_tech == RES_LCOE_MG_WIND:
             x = tech_cap.items.values.astype(float).tolist()
-            y = [WIND_LOW, WIND_MID, WIND_HIGH]
+            y = [WIND_LOW, WIND_MID, WIND_HIGH, WIND_EXTRA_HIGH]
             y_var = row[SET_WINDCF]
-            z = tech_cap.major_xs(row[SET_COUNTRY]).loc[[MG_WIND_LOW, MG_WIND_MID, MG_WIND_HIGH]].as_matrix()
+            z = tech_cap.major_xs(row[SET_COUNTRY]).loc[[MG_WIND_LOW, MG_WIND_MID, MG_WIND_HIGH, MG_WIND_EXTRA_HIGH]].as_matrix()
+            return RegularGridInterpolator((y, x), z)([y_var, row[RES_NEW_CONNECTIONS]])[0]
         elif min_tech == RES_LCOE_MG_DIESEL:
             x = tech_cap.items.values.astype(float).tolist()
-            y = [0.0, 2.0]
-            y_var = 1.0
-            z = tech_cap.major_xs(row[SET_COUNTRY]).loc[[MG_DIESEL, MG_DIESEL]].as_matrix()
+            z = tech_cap.major_xs(row[SET_COUNTRY]).loc[MG_DIESEL].as_matrix()
+            return np.interp(row[RES_NEW_CONNECTIONS], x, z)
         elif min_tech == RES_LCOE_MG_PV:
             x = tech_cap.items.values.astype(float).tolist()
-            y = [PV_LOW, PV_HIGH]
+            y = [PV_LOW, PV_MID, PV_HIGH]
             y_var = row[SET_GHI]
-            z = tech_cap.major_xs(row[SET_COUNTRY]).loc[[MG_PV_LOW, MG_PV_HIGH]].as_matrix()
+            z = tech_cap.major_xs(row[SET_COUNTRY]).loc[[MG_PV_LOW, MG_PV_MID, MG_PV_HIGH]].as_matrix()
+            return RegularGridInterpolator((y, x), z)([y_var, row[RES_NEW_CONNECTIONS]])[0]
         elif min_tech == RES_LCOE_MG_HYDRO:
             x = tech_cap.items.values.astype(float).tolist()
-            y = [0.0, 2.0]
-            y_var = 1.0
-            z = tech_cap.major_xs(row[SET_COUNTRY]).loc[[MG_HYDRO, MG_HYDRO]].as_matrix()
+            z = tech_cap.major_xs(row[SET_COUNTRY]).loc[MG_HYDRO].as_matrix()
+            return np.interp(row[RES_NEW_CONNECTIONS], x, z)
         elif min_tech == RES_LCOE_GRID:
             x = grid_cap.items.values.astype(float).tolist()
             y = grid_cap.minor_axis.values.astype(float).tolist()
             y_var = row[RES_MIN_GRID_DIST]
             z = grid_cap.major_xs(row[SET_COUNTRY]).as_matrix()
+            return RegularGridInterpolator((y, x), z)([y_var, row[RES_NEW_CONNECTIONS]])[0]
         else:
             raise ValueError('A technology has not been accounted for in res_investment_cost()')
-
-        # TODO is it correct to multiply by number of years (15)?
-        return interp2d(x, y, z)(row[SET_POP_FUTURE], y_var)[0]*(
-            scenario*row[RES_NEW_CONNECTIONS]/NUM_PEOPLE_PER_HH)*(END_YEAR-START_YEAR)
 
     # Here the functions defined above are actually applied.
     logging.info('Calculate minimum grid distance')
@@ -270,7 +278,7 @@ def run(scenario, selection='all', diesel_high=False):
     logging.info('Calculate new connections')
     df[RES_NEW_CONNECTIONS] = df.apply(res_new_connections, axis=1)
 
-    logging.info('Calcualte new consumption')
+    logging.info('Calcualte new capacity')
     df[RES_NEW_CAPACITY] = df.apply(res_new_capacity, axis=1)
 
     logging.info('Calculate investment cost')
@@ -291,14 +299,14 @@ def run(scenario, selection='all', diesel_high=False):
     summary = pd.DataFrame(index=countries, columns=cols)
 
     for c in countries:
-        new_connections = float(df.loc[df.Country == c][RES_NEW_CONNECTIONS].sum())
+        new_connections = float(df.loc[df[SET_COUNTRY] == c][RES_NEW_CONNECTIONS].sum())
         for t in techs:
             summary.loc[c, SUM_SPLIT_PREFIX + t] = \
-                df.loc[df.Country == c][df.loc[df.Country == c][RES_MINIMUM_TECH] == t][RES_NEW_CONNECTIONS].sum()/new_connections
+                df.loc[df[SET_COUNTRY] == c][df.loc[df[SET_COUNTRY] == c][RES_MINIMUM_TECH] == t][RES_NEW_CONNECTIONS].sum()/new_connections
             summary.loc[c, SUM_CAPACITY_PREFIX + t] = \
-                df.loc[df.Country == c][df.loc[df.Country == c][RES_MINIMUM_TECH] == t][RES_NEW_CAPACITY].sum()
+                df.loc[df[SET_COUNTRY] == c][df.loc[df[SET_COUNTRY] == c][RES_MINIMUM_TECH] == t][RES_NEW_CAPACITY].sum()
             summary.loc[c, SUM_INVESTMENT_PREFIX + t] = \
-                df.loc[df.Country == c][df.loc[df.Country == c][RES_MINIMUM_TECH] == t][RES_INVESTMENT_COST].sum()
+                df.loc[df[SET_COUNTRY] == c][df.loc[df[SET_COUNTRY] == c][RES_MINIMUM_TECH] == t][RES_INVESTMENT_COST].sum()
 
     summary.to_csv(summary_csv)
 

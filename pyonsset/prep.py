@@ -4,9 +4,181 @@ Contains the functions to set up all columns that aren't scenario-specific
 
 import logging
 import pandas as pd
+from math import pi, exp, log
 from pyonsset.constants import *
 
 logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.DEBUG)
+
+
+def condition():
+    """
+    Do any initial data conditioning that may be required.
+    """
+
+    logging.info('Starting function prep.condition()')
+
+    # Ensure that the base folder for all csv files exists
+    if not os.path.exists(FF_TABLES):
+        raise IOError('The main folder has not been set up')
+
+    df = pd.read_csv(FF_SETTLEMENTS)
+
+    logging.info('Replace null values with zero')
+    df.fillna(0, inplace=True)
+
+    # Sort the dataframe by country to make it prettier to use
+    if df[SET_COUNTRY].iloc[0] != 'Angola':
+        logging.info('Sort by country')
+        df.sort_values('Country', inplace=True)
+
+    logging.info('Saving to csv')
+    df.to_csv(FF_SETTLEMENTS, index=False)
+
+    logging.info('Completed function prep.condition()')
+
+
+def grid_penalties():
+    """
+    Do any initial data conditioning that may be required.
+    """
+
+    logging.info('Starting function prep.grid_penalties()')
+
+    # Ensure that the base folder for all csv files exists
+    if not os.path.exists(FF_TABLES):
+        raise IOError('The main folder has not been set up')
+
+    df = pd.read_csv(FF_SETTLEMENTS)
+
+    def classify_road_dist(row):
+        road_dist = row[SET_ROAD_DIST]
+        if road_dist <= 5: return 5
+        elif 5 < road_dist <= 10: return 4
+        elif 10 < road_dist <= 25: return 3
+        elif 25 < road_dist <= 50: return 2
+        elif road_dist > 50: return 1
+
+    def classify_substation_dist(row):
+        substation_dist = row[SET_SUBSTATION_DIST]
+        if substation_dist <= 1: return 5
+        elif 1 < substation_dist <= 5: return 4
+        elif 5 < substation_dist <= 10: return 3
+        elif 10 < substation_dist <= 50: return 2
+        elif substation_dist > 50: return 1
+
+    def classify_land_cover(row):
+        land_cover = row[SET_LAND_COVER]
+        if land_cover == 0: return 1
+        elif land_cover == 1: return 3
+        elif land_cover == 2: return 2
+        elif land_cover == 3: return 3
+        elif land_cover == 4: return 2
+        elif land_cover == 5: return 3
+        elif land_cover == 6: return 4
+        elif land_cover == 7: return 5
+        elif land_cover == 8: return 4
+        elif land_cover == 9: return 5
+        elif land_cover == 10: return 5
+        elif land_cover == 11: return 1
+        elif land_cover == 12: return 3
+        elif land_cover == 13: return 3
+        elif land_cover == 14: return 5
+        elif land_cover == 15: return 3
+        elif land_cover == 16: return 5
+
+    def classify_elevation(row):
+        elevation = row[SET_SUBSTATION_DIST]
+        if elevation <= 500: return 5
+        elif 500 < elevation <= 1000: return 4
+        elif 1000 < elevation <= 2000: return 3
+        elif 2000 < elevation <= 3000: return 2
+        elif elevation > 3000: return 1
+
+    def classify_slope(row):
+        slope = row[SET_SUBSTATION_DIST]
+        if slope <= 10: return 5
+        elif 10 < slope <= 20: return 4
+        elif 20 < slope <= 30: return 3
+        elif 30 < slope <= 40: return 2
+        elif slope > 40: return 1
+
+    logging.info('Classify road dist')
+    df[SET_ROAD_DIST_CLASSIFIED] = df.apply(classify_road_dist, axis=1)
+
+    logging.info('Classify substation dist')
+    df[SET_SUBSTATION_DIST_CLASSIFIED] = df.apply(classify_substation_dist, axis=1)
+
+    logging.info('Classify land cover')
+    df[SET_LAND_COVER_CLASSIFIED] = df.apply(classify_land_cover, axis=1)
+
+    logging.info('Classify elevation')
+    df[SET_ELEVATION_CLASSIFIED] = df.apply(classify_elevation, axis=1)
+
+    logging.info('Classify slope')
+    df[SET_SLOPE_CLASSIFIED] = df.apply(classify_slope, axis=1)
+
+    logging.info('Combined classification')
+    df[SET_COMBINED_CLASSIFICATION] = 0.05 * df[SET_ROAD_DIST_CLASSIFIED] + \
+                                  0.09 * df[SET_SUBSTATION_DIST_CLASSIFIED] + \
+                                  0.39 * df[SET_LAND_COVER_CLASSIFIED] + \
+                                  0.15 * df[SET_ELEVATION_CLASSIFIED] + \
+                                  0.32 * df[SET_SLOPE_CLASSIFIED]
+
+    logging.info('Saving to csv')
+    df.to_csv(FF_SETTLEMENTS, index=False)
+
+    logging.info('Completed function prep.grid_penalties()')
+
+def wind():
+    """
+    Calculate the wind capacity factor based on the average wind velocity.
+    """
+
+    logging.info('Starting function prep.wind()')
+
+    # Ensure that the base folder for all csv files exists
+    if not os.path.exists(FF_TABLES):
+        raise IOError('The main folder has not been set up')
+
+    df = pd.read_csv(FF_SETTLEMENTS)
+
+    k = 2
+    mu = 0.97
+    T = 365.25 * 24
+    Uarr = range(1, 26)
+    Prated = 600
+    hub_height = 45
+    data_height = 80
+    P = [0, 0, 25, 80, 130, 205, 290, 375, 450, 510, 555, 580,
+         595, 597, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600]
+
+    def power_law(u_zr, z, zr):
+        return u_zr * (z / zr) ** ((0.37 - 0.088 * log(u_zr)) / (1 - 0.088 * log(zr / 10)))
+
+    def get_wind_cf(row):
+        u = row[SET_WINDVEL]
+        if u == 0:
+            return 0
+
+        else:
+            u_mean = power_law(u, hub_height, data_height)
+
+            f = []
+            for u in Uarr:
+                f.append((pi / 2.0) * (u / u_mean ** 2) * exp((-pi / 4) * (u / u_mean) ** k))
+
+            E = 0
+            for i in range(len(Uarr)):
+                E += mu * T * P[i] * f[i]
+
+            return E / (Prated * T)
+
+    df[SET_WINDCF] = df.apply(get_wind_cf, axis=1)
+
+    logging.info('Saving to csv')
+    df.to_csv(FF_SETTLEMENTS, index=False)
+
+    logging.info('Completed function prep.wind()')
 
 
 def pop():
@@ -24,11 +196,6 @@ def pop():
     specs = pd.read_excel(FF_SPECS, index_col=0)
     countries = specs.index.values.tolist()
 
-    # Sort the dataframe by country to make it prettier to use
-    if df[SET_COUNTRY].iloc[0] != 'Angola':
-        logging.info('Sort by country')
-        df.sort_values('Country', inplace=True)
-
     # Everything is done one country at a time (not so for all modules)
     for c in countries:
         logging.info(c)
@@ -36,11 +203,11 @@ def pop():
         # Calculate the ratio between the actual population and the total population from the GIS layer
         logging.info(' - Calibrate current population')
         pop_actual = float(specs.loc[c, SPE_POP])
-        pop_sum = df.loc[df.Country == c, SET_POP].sum()
+        pop_sum = df.loc[df[SET_COUNTRY] == c, SET_POP].sum()
         pop_ratio = pop_actual/pop_sum
 
         # And use this ratio to calibrate the population in a new column
-        df.loc[df.Country == c, SET_POP_CALIB] = df.loc[df.Country == c].apply(lambda row:
+        df.loc[df[SET_COUNTRY] == c, SET_POP_CALIB] = df.loc[df[SET_COUNTRY] == c].apply(lambda row:
             row[SET_POP] * pop_ratio,
             axis=1)
 
@@ -56,14 +223,14 @@ def pop():
         max_iterations = 30
         while True:
             # Assign the 1 (urban)/0 (rural) values to each cell
-            df.loc[df.Country == c, SET_URBAN] = df.loc[df.Country == c].apply(lambda row:
+            df.loc[df[SET_COUNTRY] == c, SET_URBAN] = df.loc[df[SET_COUNTRY] == c].apply(lambda row:
                 1
                 if row[SET_POP_CALIB] > cutoff
                 else 0,
                 axis=1)
 
             # Get the calculated urban ratio, and limit it to within reasonable boundaries
-            pop_urb = df.ix[df.Country == c][df.loc[df.Country == c][SET_URBAN] == 1][SET_POP_CALIB].sum()
+            pop_urb = df.ix[df[SET_COUNTRY] == c][df.loc[df[SET_COUNTRY] == c][SET_URBAN] == 1][SET_POP_CALIB].sum()
             calculated = pop_urb / pop_actual
 
             if calculated == 0:
@@ -101,7 +268,7 @@ def pop():
         rural_growth = ((1 - specs.loc[c, SPE_URBAN_FUTURE]) * specs.loc[c, SPE_POP_FUTURE]) / (
             (1 - specs.loc[c, SPE_URBAN]) * specs.loc[c, SPE_POP])
 
-        df.loc[df.Country == c, SET_POP_FUTURE] = df.loc[df.Country == c].apply(lambda row:
+        df.loc[df[SET_COUNTRY] == c, SET_POP_FUTURE] = df.loc[df[SET_COUNTRY] == c].apply(lambda row:
             row[SET_POP_CALIB] * urban_growth
             if row[SET_URBAN] == 1
             else row[SET_POP_CALIB] * rural_growth,
@@ -119,7 +286,7 @@ def elec():
     Calibrate the current electrification status, and future 'pre-electrification' status
     """
 
-    logging.info('Starting function prep.pop()')
+    logging.info('Starting function prep.elec()')
 
     # Ensure that the base folder for all csv files exists
     if not os.path.exists(FF_TABLES):
@@ -153,7 +320,7 @@ def elec():
         max_iterations_two = 60
         while True:
             # Assign the 1 (electrified)/0 (un-electrified) values to each cell
-            df.loc[df.Country == c, SET_ELEC_CURRENT] = df.loc[df.Country == c].apply(lambda row:
+            df.loc[df[SET_COUNTRY] == c, SET_ELEC_CURRENT] = df.loc[df[SET_COUNTRY] == c].apply(lambda row:
                 1
                 if (row[SET_NIGHT_LIGHTS] > min_night_lights and
                     (row[SET_POP_CALIB] > pop_cutoff or
@@ -166,7 +333,7 @@ def elec():
                 axis=1)
 
             # Get the calculated electrified ratio, and limit it to within reasonable boundaries
-            pop_elec = df.ix[df.Country == c][df.loc[df.Country == c][SET_ELEC_CURRENT] == 1][SET_POP_CALIB].sum()
+            pop_elec = df.ix[df[SET_COUNTRY] == c][df.loc[df[SET_COUNTRY] == c][SET_ELEC_CURRENT] == 1][SET_POP_CALIB].sum()
             calculated = pop_elec / pop_tot
 
             if calculated == 0:
@@ -226,8 +393,10 @@ def elec():
 if __name__ == "__main__":
     os.chdir('..')
     print('Running as a script')
-    choice = int(input('(1) pop, (2) elec: '))
+    choice = int(input('(1) pop, (2) elec, (3) wind: '))
     if choice == 1:
         pop()
     elif choice == 2:
         elec()
+    elif choice == 3:
+        wind()

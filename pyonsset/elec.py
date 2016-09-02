@@ -80,7 +80,7 @@ def get_unelectrified_rows(hash_table, elec_row, x, y, distance_limit):
     return unelec_list
 
 
-def elec_single_country(df_country, distance, num_people):
+def elec_single_country(df_country, num_people):
     """
 
     @param df_country: pandas.DataFrame containing all rows for a single country
@@ -92,11 +92,13 @@ def elec_single_country(df_country, distance, num_people):
     y = df_country[SET_Y].values.tolist()
     pop = df_country[SET_POP_FUTURE].values.tolist()
     status = df_country[SET_ELEC_FUTURE].tolist()
+    grid_penalty_ratio = (1 + 0.1/df_country[SET_COMBINED_CLASSIFICATION].as_matrix()**2).tolist()
     cell_path = np.zeros(len(status))
 
     df_elec = pd.DataFrame(index=df_country.index.values)
 
-    for distance_limit, population_limit in zip(distance, num_people):
+    # We skip the first element in ELEC_DISTS to avoid dividing by zero
+    for distance_limit, population_limit in zip(ELEC_DISTS[1:], num_people):
         logging.info(' - Column {}'.format(distance_limit))
         electrified, unelectrified = separate_elec_status(status)
 
@@ -111,12 +113,12 @@ def elec_single_country(df_country, distance, num_people):
                 for unelec in unelectrified_hashed:
                     existing_grid = cell_path[elec]
 
-                    # We go 5km - 50km so further sets can be electrified by closer ones, but not vice versa
+                    # We go 1km - 50km so further sets can be electrified by closer ones, but not vice versa
                     # But if we fix this, then it might prefer to just electrify everything in 1km steps, as it
                     # then pays only 10% for previous steps
 
-                    if (abs(x[elec] - x[unelec]) + EXISTING_GRID_COST_RATIO * existing_grid < distance_limit and
-                            abs(y[elec] - y[unelec]) + EXISTING_GRID_COST_RATIO * existing_grid < distance_limit):
+                    if grid_penalty_ratio[unelec]*((abs(x[elec] - x[unelec])) + EXISTING_GRID_COST_RATIO * existing_grid < distance_limit and
+                            grid_penalty_ratio[unelec]*(abs(y[elec] - y[unelec])) + EXISTING_GRID_COST_RATIO * existing_grid < distance_limit):
                         if pop[unelec] > population_limit and existing_grid < MAX_GRID_EXTEND:
                             if status[unelec] == 0:
                                 changes.append(unelec)
@@ -136,7 +138,6 @@ def run_elec(scenario, selection='all'):
 
     @param scenario: kW/hh/year
     @param selection: (optional) a specific country or leave blank for all
-    @return:
     """
 
     logging.info('Starting function elec.run_elec()')
@@ -158,8 +159,7 @@ def run_elec(scenario, selection='all'):
     if selection != 'all':
         if selection in countries:
             countries = [selection]
-            # Changed this to loc...
-            df = df.loc[df.Country == selection]
+            df = df.loc[df[SET_COUNTRY] == selection]
         else:
             raise KeyError('The selected country doesnt exist')
 
@@ -170,19 +170,21 @@ def run_elec(scenario, selection='all'):
 
     for c in countries:
         logging.info('Electrify {}'.format(c))
+
+        # Calcualte 2030 pre-electrification
         logging.info('Determine future pre-electrification status')
-        df.loc[df.Country == c, SET_ELEC_FUTURE] = df.loc[df.Country == c].apply(lambda row:
+        df.loc[df[SET_COUNTRY] == c, SET_ELEC_FUTURE] = df.loc[df[SET_COUNTRY] == c].apply(lambda row:
             1
             if row[SET_ELEC_CURRENT] == 1 or
+            # This 4 and 9 is very specific
             (row[SET_GRID_DIST_PLANNED] < ELEC_DISTS[4] and row[SET_POP_FUTURE] > num_people[c].loc[ELEC_DISTS[4]]) or
             (row[SET_GRID_DIST_PLANNED] < ELEC_DISTS[9] and row[SET_POP_FUTURE] > num_people[c].loc[ELEC_DISTS[9]])
             else 0,
             axis=1)
 
         logging.info('Analyse electrification columns')
-        df.loc[df.Country == c, SET_ELEC_STEPS] = elec_single_country(
-            df.loc[df.Country == c, [SET_X, SET_Y, SET_POP_FUTURE, SET_ELEC_FUTURE]],
-            ELEC_DISTS,
+        df.loc[df[SET_COUNTRY] == c, SET_ELEC_STEPS] = elec_single_country(
+            df.loc[df[SET_COUNTRY] == c],
             num_people[c].values.astype(int).tolist())
 
     logging.info('Saving to csv')

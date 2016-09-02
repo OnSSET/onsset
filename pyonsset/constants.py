@@ -12,17 +12,19 @@ FF_TECH_CAP = lambda x: os.path.join(FF_LCOES, str(x), 'tech_cap_{}.csv'.format(
 FF_NUM_PEOPLE = lambda x: os.path.join(FF_LCOES, str(x), 'num_people_{}.csv'.format(x))
 
 # general
-ELEC_DISTS = range(1,51)  # list(range(1, 10)) + list(range(10, 20, 2)) + list(range(20,51,5))  # distances in km to test elec
+ELEC_DISTS = range(0,51)  # list(range(1, 10)) + list(range(10, 20, 2)) + list(range(20,51,5))  # distances in km to test elec
 MAX_GRID_EXTEND = ELEC_DISTS[-1]  # in km, never extend the grid further than this
 NUM_PEOPLE_PER_HH = 5
 LHV_DIESEL = 9.9445485  # (kWh/l) lower heating value
 HOURS_PER_YEAR = 8760
 EXISTING_GRID_COST_RATIO = 0.1 # factor to multiply by existing grid length when calculating elec status
 PV_LOW = 1500  # kWh/m2/year
-PV_HIGH = 2500  # kWh/m2/year
+PV_MID = 2000
+PV_HIGH = 2900  # kWh/m2/year
 WIND_LOW = 0.2  # capacity factor
 WIND_MID = 0.3  # capacity factor
 WIND_HIGH = 0.4  # capacity factor
+WIND_EXTRA_HIGH = 0.6  # capacity factor
 
 # settlements file
 SET_COUNTRY = 'Country'  # This cannot be changed, lots of code will break
@@ -37,16 +39,27 @@ SET_ROAD_DIST = 'RoadDist'  # Distance in km from road network
 SET_NIGHT_LIGHTS = 'NightLights'  # Intensity of night time lights (from NASA), range 0 - 63
 SET_TRAVEL_HOURS = 'TravelHours'  # Travel time to large city in hours
 SET_GHI = 'GHI'  # Global horizontal irradiance in kWh/m2/day
+SET_WINDVEL = 'WindVel'  # Wind velocity in m/s
 SET_WINDCF = 'WindCF'  # Wind capacity factor as percentage (range 0 - 1)
 SET_HYDRO = 'Hydropower'  # Hydropower potential in kW
 SET_HYDRO_DIST = 'HydropowerDist'  # Distance to hydropower site in km
+SET_SUBSTATION_DIST = 'SubstationDist'
+SET_ELEVATION = 'Elevation'
+SET_SLOPE = 'Slope'
+SET_LAND_COVER = 'LandCover'
+SET_ROAD_DIST_CLASSIFIED = 'RoadDistClassified'
+SET_SUBSTATION_DIST_CLASSIFIED = 'SubstationDistClassified'
+SET_ELEVATION_CLASSIFIED = 'ElevationClassified'
+SET_SLOPE_CLASSIFIED = 'SlopeClassified'
+SET_LAND_COVER_CLASSIFIED = 'LandCoverClassified'
+SET_COMBINED_CLASSIFICATION = 'GridClassification'
 SET_URBAN = 'IsUrban'  # Whether the site is urban (0 or 1)
 SET_ELEC_PREFIX = 'Elec'
 START_YEAR = 2015
 END_YEAR = 2030
 SET_ELEC_CURRENT = SET_ELEC_PREFIX + str(START_YEAR)  # If the site is currently electrified (0 or 1)
 SET_ELEC_FUTURE = SET_ELEC_PREFIX + str(END_YEAR)  # If the site has the potential to be 'easily' electrified in future
-SET_ELEC_STEPS = [SET_ELEC_PREFIX + str(x) for x in ELEC_DISTS]  # Electrification potential at each distance
+SET_ELEC_STEPS = [SET_ELEC_PREFIX + str(x) for x in ELEC_DISTS[1:]]  # Electrification potential at each distance (skip the first element 0)
 
 # results inserted into settlements file
 RES_MIN_GRID_DIST = 'MinGridDist'  # The minimum distance to an electrified cell
@@ -100,11 +113,14 @@ SPE_ROAD_CUTOFF2 = 'RoadRoundTwo'
 GRID = 'grid'
 MG_HYDRO = 'mg_hydro'
 MG_PV_LOW = 'mg_pv_low'
+MG_PV_MID = 'mg_pv_mid'
 MG_PV_HIGH = 'mg_pv_high'
 MG_WIND_LOW = 'mg_wind_low'
 MG_WIND_MID = 'mg_wind_mid'
 MG_WIND_HIGH = 'mg_wind_high'
+MG_WIND_EXTRA_HIGH = 'mg_wind_extra_high'
 MG_DIESEL = 'mg_diesel'
 SA_DIESEL = 'sa_diesel'
 SA_PV_LOW = 'sa_pv_low'
+SA_PV_MID = 'sa_pv_mid'
 SA_PV_HIGH = 'sa_pv_high'

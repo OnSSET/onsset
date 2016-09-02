@@ -37,7 +37,7 @@ def create(gdb='C:/Users/adm.esa/Desktop/ONSSET/Africa_Onsset.gdb', settlements_
 
     pop = 'pop2010'  # Type: raster, Unit: people per km2, must be in resolution 1km x 1km
     ghi = 'ghi'  # Type: raster, Unit: kWh/m2/day
-    windcf = 'windcf'  # Type: raster, Unit: capacity factor as a percentage (range 0 - 1)
+    windvel = 'windvel'  # Type: raster, Unit: capacity factor as a percentage (range 0 - 1)
     travel = 'travelhours'  # Type: raster, Unit: hours
     grid_existing = 'grid_existing'  # Type: shapefile (line)
     grid_planned = 'grid_planned'  # Type: shapefile (line)
@@ -45,6 +45,10 @@ def create(gdb='C:/Users/adm.esa/Desktop/ONSSET/Africa_Onsset.gdb', settlements_
     admin_raster = 'admin_raster'  # Type: raster, country names must conform to specs.xlsx file
     roads = 'roads'  # Type: shapefile (lines)
     nightlights = 'nightlights'  # Type: raster, Unit: (range 0 - 63)
+    substations = 'substations'
+    elevation = 'elevation'
+    slope = 'slope'
+    land_cover = 'landcover'
 
     # Starting point
     logging.info('Create settlements layer')
@@ -60,7 +64,6 @@ def create(gdb='C:/Users/adm.esa/Desktop/ONSSET/Africa_Onsset.gdb', settlements_
     arcpy.JoinField_management(settlements_fc, country_num, admin_raster, 'Value', SET_COUNTRY)
     arcpy.DeleteField_management(settlements_fc, country_num)
 
-    # TODO add values in degrees also!
     # Add X and Y values
     # They are converted from metres to kilometres in this process
     logging.info('Add X/Y values')
@@ -75,13 +78,18 @@ def create(gdb='C:/Users/adm.esa/Desktop/ONSSET/Africa_Onsset.gdb', settlements_
     # TODO need to start including Near analysis for this also, to solve neighbouring effects, explore other options also
     logging.info('Add GHI')
     arcpy.sa.ExtractMultiValuesToPoints(settlements_fc, [[ghi, SET_GHI]])
-    # TODO new wind layer
-    logging.info('Add WindCF')
-    arcpy.sa.ExtractMultiValuesToPoints(settlements_fc, [[windcf, SET_WINDCF]])
+    logging.info('Add WindVel')
+    arcpy.sa.ExtractMultiValuesToPoints(settlements_fc, [[windvel, SET_WINDVEL]])
     logging.info('Add Travel time')
     arcpy.sa.ExtractMultiValuesToPoints(settlements_fc, [[travel, SET_TRAVEL_HOURS]])
     logging.info('Add night lights')
     arcpy.sa.ExtractMultiValuesToPoints(settlements_fc, [[nightlights, SET_NIGHT_LIGHTS]])
+    logging.info('Add elevation')
+    arcpy.sa.ExtractMultiValuesToPoints(settlements_fc, [[elevation, SET_ELEVATION]])
+    logging.info('Add slope')
+    arcpy.sa.ExtractMultiValuesToPoints(settlements_fc, [[slope, SET_SLOPE]])
+    logging.info('Add land cover')
+    arcpy.sa.ExtractMultiValuesToPoints(settlements_fc, [[land_cover, SET_LAND_COVER]])
 
     # Each point's distance from the existing grid
     # Converted to kilometres
@@ -97,6 +105,14 @@ def create(gdb='C:/Users/adm.esa/Desktop/ONSSET/Africa_Onsset.gdb', settlements_
     arcpy.Near_analysis(settlements_fc, [grid_existing, grid_planned])
     arcpy.AddField_management(settlements_fc, SET_GRID_DIST_PLANNED, 'FLOAT')
     arcpy.CalculateField_management(settlements_fc, SET_GRID_DIST_PLANNED, '!NEAR_DIST! / 1000', 'PYTHON_9.3')
+    arcpy.DeleteField_management(settlements_fc, 'NEAR_DIST; NEAR_FID; NEAR_FC')
+
+    # Each point's distance from substations
+    # Converted to kilometres
+    logging.info('Add distance from substations')
+    arcpy.Near_analysis(settlements_fc, substations)
+    arcpy.AddField_management(settlements_fc, SET_SUBSTATION_DIST, 'FLOAT')
+    arcpy.CalculateField_management(settlements_fc, SET_SUBSTATION_DIST, '!NEAR_DIST! / 1000', 'PYTHON_9.3')
     arcpy.DeleteField_management(settlements_fc, 'NEAR_DIST; NEAR_FID; NEAR_FC')
 
     # Add roaddist
@@ -121,7 +137,7 @@ def create(gdb='C:/Users/adm.esa/Desktop/ONSSET/Africa_Onsset.gdb', settlements_
     logging.info('Completed function gis.create()')
 
 
-def export_csv(gdb='C:/Users/adm.esa/Desktop/ONSSET/Africa_Onsset.gdb', settlements_fc='settlements'):
+def export_csv(gdb=r'C:\Users\adm.esa\Desktop\ONSSET\Onsset_Layers.gdb', settlements_fc='settlements'):
     """
     Export a settlements feature class to a csv file that can be used by pandas.
 
@@ -138,7 +154,8 @@ def export_csv(gdb='C:/Users/adm.esa/Desktop/ONSSET/Africa_Onsset.gdb', settleme
     # This will need to be edited if more fields are added.
     field_list = [SET_COUNTRY, SET_X, SET_Y, SET_POP, SET_GRID_DIST_CURRENT,
                   SET_GRID_DIST_PLANNED, SET_ROAD_DIST, SET_NIGHT_LIGHTS, SET_TRAVEL_HOURS,
-                  SET_GHI, SET_WINDCF, SET_HYDRO, SET_HYDRO_DIST]
+                  SET_GHI, SET_WINDVEL, SET_HYDRO, SET_HYDRO_DIST, SET_SUBSTATION_DIST,
+                  SET_LAND_COVER, SET_ELEVATION, SET_SLOPE]
 
     logging.info('Writing output...')
     with open(FF_SETTLEMENTS, 'w') as csvfile:
@@ -153,7 +170,7 @@ def export_csv(gdb='C:/Users/adm.esa/Desktop/ONSSET/Africa_Onsset.gdb', settleme
     logging.info('Completed function gis.export_csv()')
 
 
-def import_csv(scenario, selection, diesel_high, gdb=r'C:\Users\adm.esa\Desktop\ONSSET\Onsset_Results_16Aug.gdb'):
+def import_csv(scenario, selection, diesel_high, gdb=r'C:\Users\adm.esa\Desktop\ONSSET\Onsset_Results_2Sep.gdb'):
     """
     Import the csv file designated by scenario, selection and diesel_high back into ArcGIS.
 
@@ -171,10 +188,10 @@ def import_csv(scenario, selection, diesel_high, gdb=r'C:\Users\adm.esa\Desktop\
     output_dir = os.path.join(FF_TABLES, selection, str(scenario))
     if diesel_high:
         settlements_csv = os.path.join(output_dir, '{}_{}_high.csv'.format(selection, scenario))
-        settlements_fc = 'sets_{}_{}_H'.format(selection, scenario)
+        settlements_fc = 'sets_{}_{}_high'.format(selection, scenario)
     else:
         settlements_csv = os.path.join(output_dir, '{}_{}_low.csv'.format(selection, scenario))
-        settlements_fc = 'sets_{}_{}_L'.format(selection, scenario)
+        settlements_fc = 'sets_{}_{}_low'.format(selection, scenario)
 
     # Import main settlements file
     if selection == 'all':
@@ -267,7 +284,10 @@ if __name__ == "__main__":
     elif choice == 2:
         gdb = input('Enter gdb path and filename: ')
         settlements_fc = input('Enter name for feature class to export: ')
-        export_csv(gdb, settlements_fc)
+        if len(gdb) == 0:
+            export_csv()
+        else:
+            export_csv(gdb, settlements_fc)
     elif choice == 3:
         gdb = input('Enter gdb path and filename: ')
         scenario = int(input('Enter scenario value (int): '))
