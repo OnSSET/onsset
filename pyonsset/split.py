@@ -11,13 +11,12 @@ from pyonsset.constants import *
 logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.DEBUG)
 
 
-def run(scenario, selection='all', diesel_high=False):
+def main(scenario, selection='all', diesel_high=False):
     """
-    Calculate LCOEs for each cell and compare.
-
-    @param scenario: kWh/hh/yeaer
-    @param selection: specific country or all
-    @param diesel_high: True/False
+    Setup
+    @param scenario:
+    @param selection:
+    @param diesel_high:
     """
 
     logging.info('Starting function split.run()')
@@ -42,6 +41,8 @@ def run(scenario, selection='all', diesel_high=False):
     tech_lcoes_csv = FF_TECH_LCOES(scenario)
     tech_cap_csv = FF_TECH_CAP(scenario)
 
+    settlements_in_csv = 'db/settlements.csv'
+
     df = pd.read_csv(settlements_in_csv)
     grid_lcoes = pd.read_csv(grid_lcoes_csv, index_col=0).set_index('minor', drop=True, append=True).to_panel()
     grid_cap = pd.read_csv(grid_cap_csv, index_col=0).set_index('minor', drop=True, append=True).to_panel()
@@ -53,6 +54,17 @@ def run(scenario, selection='all', diesel_high=False):
     if selection != 'all' and selection not in specs.index.values.tolist():
         raise KeyError('The chosen country doesnt exist')
 
+    df = df.loc[df[SET_COUNTRY] == selection]
+
+    df = grid_only(df, grid_lcoes, specs)
+    df = techs_only(df, tech_lcoes, specs, diesel_high)
+    df = results(df, specs, grid_cap, tech_cap, scenario)
+    summaries(df, specs, summary_csv, selection)
+
+    logging.info('Saving to csv')
+    df.to_csv(settlements_out_csv, index=False)
+
+def grid_only(df, grid_lcoes, specs):
     # Each of these functions for a specific column of results
     # The columns are used in df.apply() calls underneath
     # To add a new column, it needs a new function, as well as the df.apply() call beneath
@@ -77,6 +89,16 @@ def run(scenario, selection='all', diesel_high=False):
             z = grid_lcoes.major_xs(row[SET_COUNTRY]).as_matrix()
             return RegularGridInterpolator((y, x), z, bounds_error=False, fill_value=99)([row[RES_MIN_GRID_DIST], row[SET_POP_FUTURE]])[0]
 
+    logging.info('Calculate minimum grid distance')
+    df[RES_MIN_GRID_DIST] = df.apply(res_min_grid_dist, axis=1)
+
+    logging.info('Calculate grid LCOE')
+    df[RES_LCOE_GRID] = df.apply(res_lcoe_grid, axis=1)
+
+    return df
+
+
+def techs_only(df, tech_lcoes, specs, diesel_high):
     def res_lcoe_mg_hydro(row):
         if row[SET_HYDRO_DIST] < 5:
             x = tech_lcoes.items.values.astype(float).tolist()
@@ -86,25 +108,19 @@ def run(scenario, selection='all', diesel_high=False):
             return 99
 
     def res_lcoe_mg_pv(row):
-        x = tech_lcoes.items.values.astype(float).tolist()
-        y = [PV_LOW, PV_MID, PV_HIGH]
-        z = tech_lcoes.major_xs(row[SET_COUNTRY]).loc[[MG_PV_LOW, MG_PV_MID, MG_PV_HIGH]].as_matrix()
-        return RegularGridInterpolator((y, x), z, bounds_error=False, fill_value=99)([row[SET_GHI], row[SET_POP_FUTURE]])[0]
+        if row[SET_SOLAR_RESTRICTION] == 0:
+            return 99
+        else:
+            x = tech_lcoes.items.values.astype(float).tolist()
+            y = [PV_LOW, PV_MID, PV_HIGH]
+            z = tech_lcoes.major_xs(row[SET_COUNTRY]).loc[[MG_PV_LOW, MG_PV_MID, MG_PV_HIGH]].as_matrix()
+            return RegularGridInterpolator((y, x), z, bounds_error=False, fill_value=99)([row[SET_GHI], row[SET_POP_FUTURE]])[0]
 
     def res_lcoe_mg_wind(row):
-        min_wind_cf = 0.2
-        max_wind_cf = 0.6
-
-        if row[SET_WINDCF] >= min_wind_cf:
-            x = tech_lcoes.items.values.astype(float).tolist()
-            y = [WIND_LOW, WIND_MID, WIND_HIGH, WIND_EXTRA_HIGH]
-            z = tech_lcoes.major_xs(row[SET_COUNTRY]).loc[[MG_WIND_LOW, MG_WIND_MID, MG_WIND_HIGH, MG_WIND_EXTRA_HIGH]].as_matrix()
-            if row[SET_WINDCF] <= max_wind_cf:
-                return RegularGridInterpolator((y, x), z, bounds_error=False, fill_value=99)([row[SET_WINDCF], row[SET_POP_FUTURE]])[0]
-            else:
-                return RegularGridInterpolator((y, x), z, bounds_error=False, fill_value=99)([max_wind_cf, row[SET_POP_FUTURE]])[0]
-        else:
-            return 99
+        x = tech_lcoes.items.values.astype(float).tolist()
+        y = [WIND_LOW, WIND_MID, WIND_HIGH, WIND_EXTRA_HIGH]
+        z = tech_lcoes.major_xs(row[SET_COUNTRY]).loc[[MG_WIND_LOW, MG_WIND_MID, MG_WIND_HIGH, MG_WIND_EXTRA_HIGH]].as_matrix()
+        return RegularGridInterpolator((y, x), z, bounds_error=False, fill_value=99)([row[SET_WINDCF], row[SET_POP_FUTURE]])[0]
 
     def res_lcoe_mg_diesel(row):
         # Pp = p_lcoe + (2*p_d*consumption*time/volume)*(1/mu)*(1/LHVd)
@@ -130,7 +146,7 @@ def run(scenario, selection='all', diesel_high=False):
         # from Mentis2015: Pp = (p_d + 2*p_d*consumption*time/volume)*(1/mu)*(1/LHVd) + p_om + p_c
         # output Pp in USD/kWh
 
-        x = tech_cap.items.values.astype(float).tolist()
+        x = tech_lcoes.items.values.astype(float).tolist()
         # The capital cost isn't function of population, but kept here anyway for future proofing
         z = tech_lcoes.major_xs(row[SET_COUNTRY]).loc[SA_DIESEL].as_matrix()
         p_c = np.interp(row[SET_POP_FUTURE], x, z)
@@ -157,6 +173,35 @@ def run(scenario, selection='all', diesel_high=False):
         # interp2d 433 us setup, 21 us eval
         return RegularGridInterpolator((y, x), z, bounds_error=False, fill_value=99)([row[SET_GHI], row[SET_POP_FUTURE]])[0]
 
+    logging.info('Calculated minigrid hydro LCOE')
+    df[RES_LCOE_MG_HYDRO] = df.apply(res_lcoe_mg_hydro, axis=1)
+
+    logging.info('Calculate minigrid PV LCOE')
+    df[RES_LCOE_MG_PV] = df.apply(res_lcoe_mg_pv, axis=1)
+
+    logging.info('Calculate minigrid wind LCOE')
+    df[RES_LCOE_MG_WIND] = df.apply(res_lcoe_mg_wind, axis=1)
+
+    logging.info('Calculate minigrid diesel LCOE')
+    df[RES_LCOE_MG_DIESEL] = df.apply(res_lcoe_mg_diesel, axis=1)
+
+    logging.info('Calculate standalone diesel LCOE')
+    df[RES_LCOE_SA_DIESEL] = df.apply(res_lcoe_sa_diesel, axis=1)
+
+    logging.info('Calculate standalone PV LCOE')
+    df[RES_LCOE_SA_PV] = df.apply(res_lcoe_sa_pv, axis=1)
+
+    logging.info('Determine minimum technology (no grid)')
+    df[RES_MINIMUM_TECH] = df[[RES_LCOE_SA_DIESEL, RES_LCOE_SA_PV, RES_LCOE_MG_WIND,
+                               RES_LCOE_MG_DIESEL, RES_LCOE_MG_PV, RES_LCOE_MG_HYDRO]].T.idxmin()
+
+    logging.info('Determine minimum tech LCOE')
+    df[RES_MINIMUM_TECH_LCOE] = df.apply(lambda row: (row[row[RES_MINIMUM_TECH]]), axis=1)
+
+    return df
+
+
+def results(df, specs, grid_cap, tech_cap, scenario):
     def res_minimum_category(row):
         if 'grid' in row[RES_MINIMUM_TECH]:
             return 'grid'
@@ -240,37 +285,23 @@ def run(scenario, selection='all', diesel_high=False):
         else:
             raise ValueError('A technology has not been accounted for in res_investment_cost()')
 
-    # Here the functions defined above are actually applied.
-    logging.info('Calculate minimum grid distance')
-    df[RES_MIN_GRID_DIST] = df.apply(res_min_grid_dist, axis=1)
-
-    logging.info('Calculate grid LCOE')
-    df[RES_LCOE_GRID] = df.apply(res_lcoe_grid, axis=1)
-
-    logging.info('Calculated minigrid hydro LCOE')
-    df[RES_LCOE_MG_HYDRO] = df.apply(res_lcoe_mg_hydro, axis=1)
-
-    logging.info('Calculate minigrid PV LCOE')
-    df[RES_LCOE_MG_PV] = df.apply(res_lcoe_mg_pv, axis=1)
-
-    logging.info('Calculate minigrid wind LCOE')
-    df[RES_LCOE_MG_WIND] = df.apply(res_lcoe_mg_wind, axis=1)
-
-    logging.info('Calculate minigrid diesel LCOE')
-    df[RES_LCOE_MG_DIESEL] = df.apply(res_lcoe_mg_diesel, axis=1)
-
-    logging.info('Calculate standalone diesel LCOE')
-    df[RES_LCOE_SA_DIESEL] = df.apply(res_lcoe_sa_diesel, axis=1)
-
-    logging.info('Calculate standalone PV LCOE')
-    df[RES_LCOE_SA_PV] = df.apply(res_lcoe_sa_pv, axis=1)
-
-    logging.info('Determine minimum technology')
-    df[RES_MINIMUM_TECH] = df[[RES_LCOE_GRID, RES_LCOE_SA_DIESEL, RES_LCOE_SA_PV, RES_LCOE_MG_WIND,
+    logging.info('Determine minimum overall')
+    df[RES_MINIMUM_OVERALL] = df[[RES_LCOE_GRID, RES_LCOE_SA_DIESEL, RES_LCOE_SA_PV, RES_LCOE_MG_WIND,
                                RES_LCOE_MG_DIESEL, RES_LCOE_MG_PV, RES_LCOE_MG_HYDRO]].T.idxmin()
 
-    logging.info('Determine minimum LCOE')
-    df[RES_MINIMUM_LCOE] = df.apply(lambda row: (row[row[RES_MINIMUM_TECH]]), axis=1)
+    logging.info('Determine minimum overall LCOE')
+    df[RES_MINIMUM_OVERALL_LCOE] = df.apply(lambda row: (row[row[RES_MINIMUM_OVERALL]]), axis=1)
+
+    logging.info('Add technology codes')
+    codes = {RES_LCOE_GRID: 1, RES_LCOE_MG_HYDRO: 7, RES_LCOE_MG_WIND: 6, RES_LCOE_MG_PV: 5,
+             RES_LCOE_MG_DIESEL: 4, RES_LCOE_SA_DIESEL: 2, RES_LCOE_SA_PV: 3}
+    df.loc[df[RES_MINIMUM_OVERALL] == RES_LCOE_GRID, RES_MINIMUM_OVERALL_CODE] = codes[RES_LCOE_GRID]
+    df.loc[df[RES_MINIMUM_OVERALL] == RES_LCOE_MG_HYDRO, RES_MINIMUM_OVERALL_CODE] = codes[RES_LCOE_MG_HYDRO]
+    df.loc[df[RES_MINIMUM_OVERALL] == RES_LCOE_SA_PV, RES_MINIMUM_OVERALL_CODE] = codes[RES_LCOE_SA_PV]
+    df.loc[df[RES_MINIMUM_OVERALL] == RES_LCOE_MG_WIND, RES_MINIMUM_OVERALL_CODE] = codes[RES_LCOE_MG_WIND]
+    df.loc[df[RES_MINIMUM_OVERALL] == RES_LCOE_MG_PV, RES_MINIMUM_OVERALL_CODE] = codes[RES_LCOE_MG_PV]
+    df.loc[df[RES_MINIMUM_OVERALL] == RES_LCOE_MG_DIESEL, RES_MINIMUM_OVERALL_CODE] = codes[RES_LCOE_MG_DIESEL]
+    df.loc[df[RES_MINIMUM_OVERALL] == RES_LCOE_SA_DIESEL, RES_MINIMUM_OVERALL_CODE] = codes[RES_LCOE_SA_DIESEL]
 
     logging.info('Determine minimum category')
     df[RES_MINIMUM_CATEGORY] = df.apply(res_minimum_category, axis=1)
@@ -284,9 +315,10 @@ def run(scenario, selection='all', diesel_high=False):
     logging.info('Calculate investment cost')
     df[RES_INVESTMENT_COST] = df.apply(res_investment_cost, axis=1)
 
-    logging.info('Saving to csv')
-    df.to_csv(settlements_out_csv, index=False)
+    return df
 
+
+def summaries(df, specs, summary_csv, selection):
     # The next section calculates the summaries for technology split, consumption added and total investment cost
     logging.info('Calculate summaries')
     countries = specs.index.values.tolist() if selection == 'all' else [selection]
@@ -310,14 +342,11 @@ def run(scenario, selection='all', diesel_high=False):
 
     summary.to_csv(summary_csv)
 
-    logging.info('Completed function split.run()')
-
 
 if __name__ == "__main__":
     os.chdir('..')
     print('Running as a script')
-    scenario = int(input('Enter scenario value (int): '))
-    selection = input('Enter country selection or "all": ')
-    diesel_high = input('Enter L for low diesel, H for high diesel: ')
-    diesel_high = diesel_high in 'H'
-    run(scenario, selection, diesel_high)
+    sce = int(input('Enter scenario value (int): '))
+    sel = input('Enter country selection or "all": ')
+    dh = True if 'H' in input('Enter L for low diesel, H for high diesel: ') else False
+    main(sce, sel, dh)

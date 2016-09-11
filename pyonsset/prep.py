@@ -5,12 +5,13 @@ Contains the functions to set up all columns that aren't scenario-specific
 import logging
 import pandas as pd
 from math import pi, exp, log
+from pyproj import Proj
 from pyonsset.constants import *
 
 logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.DEBUG)
 
 
-def condition():
+def condition(df):
     """
     Do any initial data conditioning that may be required.
     """
@@ -21,23 +22,31 @@ def condition():
     if not os.path.exists(FF_TABLES):
         raise IOError('The main folder has not been set up')
 
-    df = pd.read_csv(FF_SETTLEMENTS)
-
     logging.info('Replace null values with zero')
     df.fillna(0, inplace=True)
 
-    # Sort the dataframe by country to make it prettier to use
-    if df[SET_COUNTRY].iloc[0] != 'Angola':
-        logging.info('Sort by country')
-        df.sort_values('Country', inplace=True)
+    logging.info('Sort by country')
+    df.sort_values(by=['Country','Y','X'], inplace=True)
 
-    logging.info('Saving to csv')
-    df.to_csv(FF_SETTLEMENTS, index=False)
+    logging.info('Add columns with location in degrees')
+    project = Proj('+proj=merc +lon_0=0 +k=1 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs')
+
+    def get_x(row):
+        x, y = project(row[SET_X] * 1000, row[SET_Y] * 1000, inverse=True)
+        return x
+
+    def get_y(row):
+        x, y = project(row[SET_X] * 1000, row[SET_Y] * 1000, inverse=True)
+        return y
+
+    df[SET_X_DEG] = df.apply(get_x, axis=1)
+    df[SET_Y_DEG] = df.apply(get_y, axis=1)
 
     logging.info('Completed function prep.condition()')
+    return df
 
 
-def grid_penalties():
+def grid_penalties(df):
     """
     Do any initial data conditioning that may be required.
     """
@@ -47,8 +56,6 @@ def grid_penalties():
     # Ensure that the base folder for all csv files exists
     if not os.path.exists(FF_TABLES):
         raise IOError('The main folder has not been set up')
-
-    df = pd.read_csv(FF_SETTLEMENTS)
 
     def classify_road_dist(row):
         road_dist = row[SET_ROAD_DIST]
@@ -124,12 +131,12 @@ def grid_penalties():
                                   0.15 * df[SET_ELEVATION_CLASSIFIED] + \
                                   0.32 * df[SET_SLOPE_CLASSIFIED]
 
-    logging.info('Saving to csv')
-    df.to_csv(FF_SETTLEMENTS, index=False)
+    # TODO Calculate the penalty in perentage here
 
     logging.info('Completed function prep.grid_penalties()')
+    return df
 
-def wind():
+def wind(df):
     """
     Calculate the wind capacity factor based on the average wind velocity.
     """
@@ -140,48 +147,39 @@ def wind():
     if not os.path.exists(FF_TABLES):
         raise IOError('The main folder has not been set up')
 
-    df = pd.read_csv(FF_SETTLEMENTS)
-
-    k = 2
-    mu = 0.97
-    T = 365.25 * 24
-    Uarr = range(1, 26)
-    Prated = 600
-    hub_height = 45
-    data_height = 80
-    P = [0, 0, 25, 80, 130, 205, 290, 375, 450, 510, 555, 580,
-         595, 597, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600]
-
-    def power_law(u_zr, z, zr):
-        return u_zr * (z / zr) ** ((0.37 - 0.088 * log(u_zr)) / (1 - 0.088 * log(zr / 10)))
+    mu = 0.97  # availability factor
+    t = 8760
+    p_rated = 600
+    z = 55  # hub height
+    zr = 80  # velocity measurement height
+    es = 0.85  # losses in wind electricty
+    u_arr = range(1, 26)
+    p_curve = [0, 0, 0, 0, 30, 77, 135, 208, 287, 371, 450, 514, 558,
+               582, 594, 598, 600, 600, 600, 600, 600, 600, 600, 600, 600]
 
     def get_wind_cf(row):
-        u = row[SET_WINDVEL]
-        if u == 0:
+        u_zr = row[SET_WINDVEL]
+        if u_zr == 0:
             return 0
 
         else:
-            u_mean = power_law(u, hub_height, data_height)
+            # Adjust for the correct hub height
+            alpha = (0.37 - 0.088 * log(u_zr)) / (1 - 0.088 * log(zr / 10))
+            u_z = u_zr * (z / zr) ** alpha
 
-            f = []
-            for u in Uarr:
-                f.append((pi / 2.0) * (u / u_mean ** 2) * exp((-pi / 4) * (u / u_mean) ** k))
+            # Rayleigh distribution and sum of series
+            rayleigh = [(pi / 2) * (u / u_z ** 2) * exp((-pi / 4) * (u / u_z) ** 2) for u in u_arr]
+            energy_produced = sum([mu * es * t * p * r for p,r in zip(p_curve, rayleigh)])
 
-            E = 0
-            for i in range(len(Uarr)):
-                E += mu * T * P[i] * f[i]
-
-            return E / (Prated * T)
+            return energy_produced/(p_rated * t)
 
     df[SET_WINDCF] = df.apply(get_wind_cf, axis=1)
 
-    logging.info('Saving to csv')
-    df.to_csv(FF_SETTLEMENTS, index=False)
-
     logging.info('Completed function prep.wind()')
+    return df
 
 
-def pop():
+def pop(df):
     """
     Calibrate the actual current population, the urban split and forecast the future population
     """
@@ -192,7 +190,6 @@ def pop():
     if not os.path.exists(FF_TABLES):
         raise IOError('The main folder has not been set up')
 
-    df = pd.read_csv(FF_SETTLEMENTS)
     specs = pd.read_excel(FF_SPECS, index_col=0)
     countries = specs.index.values.tolist()
 
@@ -274,14 +271,13 @@ def pop():
             else row[SET_POP_CALIB] * rural_growth,
             axis=1)
 
-    logging.info('Saving to csv')
-    df.to_csv(FF_SETTLEMENTS, index=False)
     specs.to_excel(FF_SPECS)
 
     logging.info('Completed function prep.pop()')
+    return df
 
 
-def elec():
+def elec(df):
     """
     Calibrate the current electrification status, and future 'pre-electrification' status
     """
@@ -292,7 +288,6 @@ def elec():
     if not os.path.exists(FF_TABLES):
         raise IOError('The main folder has not been set up')
 
-    df = pd.read_csv(FF_SETTLEMENTS)
     country_specs = pd.read_excel(FF_SPECS, index_col=0)
     countries = country_specs.index.values.tolist()
 
@@ -383,20 +378,20 @@ def elec():
         # country_specs.loc[c, SPE_GRID_CUTOFF2] = grid_dist_round_two
         # country_specs.loc[c, SPE_ROAD_CUTOFF2] = road_dist_round_two
 
-    logging.info('Saving to csv')
-    df.to_csv(FF_SETTLEMENTS, index=False)
     country_specs.to_excel(FF_SPECS)
 
     logging.info('Completed function prep.elec()')
+    return df
 
 
 if __name__ == "__main__":
     os.chdir('..')
     print('Running as a script')
-    choice = int(input('(1) pop, (2) elec, (3) wind: '))
-    if choice == 1:
-        pop()
-    elif choice == 2:
-        elec()
-    elif choice == 3:
-        wind()
+    df = pd.read_csv(FF_SETTLEMENTS)
+    df = condition(df)
+    df = grid_penalties(df)
+    df = wind(df)
+    df = pop(df)
+    df = elec(df)
+    logging.info('Saving to csv')
+    df.to_csv(FF_SETTLEMENTS, index=False)

@@ -26,8 +26,6 @@ def create(gdb='C:/Users/adm.esa/Desktop/ONSSET/Africa_Onsset.gdb', settlements_
     @param settlements_fc: a name for the new settlements layer
     """
 
-    # TODO Implement in QGIS
-
     logging.info('Starting function gis.create()')
 
     arcpy.env.workspace = gdb
@@ -75,7 +73,6 @@ def create(gdb='C:/Users/adm.esa/Desktop/ONSSET/Africa_Onsset.gdb', settlements_
     arcpy.DeleteField_management(settlements_fc, 'POINT_X; POINT_Y')
 
     # Add GHI, WindCF, travel, nightlights
-    # TODO need to start including Near analysis for this also, to solve neighbouring effects, explore other options also
     logging.info('Add GHI')
     arcpy.sa.ExtractMultiValuesToPoints(settlements_fc, [[ghi, SET_GHI]])
     logging.info('Add WindVel')
@@ -151,11 +148,8 @@ def export_csv(gdb=r'C:\Users\adm.esa\Desktop\ONSSET\Onsset_Layers.gdb', settlem
     if not os.path.exists(FF_TABLES):
         os.makedirs(FF_TABLES)
 
-    # This will need to be edited if more fields are added.
-    field_list = [SET_COUNTRY, SET_X, SET_Y, SET_POP, SET_GRID_DIST_CURRENT,
-                  SET_GRID_DIST_PLANNED, SET_ROAD_DIST, SET_NIGHT_LIGHTS, SET_TRAVEL_HOURS,
-                  SET_GHI, SET_WINDVEL, SET_HYDRO, SET_HYDRO_DIST, SET_SUBSTATION_DIST,
-                  SET_LAND_COVER, SET_ELEVATION, SET_SLOPE]
+    # Skips the first two elements (OBJECT_ID and Shape)
+    field_list = [f.name for f in arcpy.ListFields(settlements_fc)[2:]]
 
     logging.info('Writing output...')
     with open(FF_SETTLEMENTS, 'w') as csvfile:
@@ -165,7 +159,6 @@ def export_csv(gdb=r'C:\Users\adm.esa\Desktop\ONSSET\Onsset_Layers.gdb', settlem
         with arcpy.da.SearchCursor(settlements_fc, field_list) as cursor:
             for row in cursor:
                 csvwriter.writerow(row)
-    logging.info('Completed')
 
     logging.info('Completed function gis.export_csv()')
 
