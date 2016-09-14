@@ -163,18 +163,15 @@ def export_csv(gdb=r'C:\Users\adm.esa\Desktop\ONSSET\Onsset_Layers.gdb', settlem
     logging.info('Completed function gis.export_csv()')
 
 
-def import_csv(scenario, selection, diesel_high, gdb=r'C:\Users\adm.esa\Desktop\ONSSET\Onsset_Results_2Sep.gdb'):
+def import_csv(selection, scenario, diesel_high, gdb=r'C:\Users\adm.esa\Desktop\ONSSET\Onsset_Results_13Sep.gdb'):
     """
     Import the csv file designated by scenario, selection and diesel_high back into ArcGIS.
 
     @param scenario: The scenario target in kWh/hh/year
     @param selection: The country or subset to import
     @param diesel_high: Whether to use the high diesel table
-    @param settlements_fc: A name for the new feature class to be created
     @param gdb: The geodatabase where the result should be saved
     """
-
-    # TODO standardise method arguments and handling of 'all'
 
     logging.info('Starting function gis.import_csv()...')
 
@@ -199,7 +196,7 @@ def import_csv(scenario, selection, diesel_high, gdb=r'C:\Users\adm.esa\Desktop\
 
     # Open the csv file and copy the field names (first row)
     csvreader = csv.reader(open(settlements_csv, 'r'), delimiter=',', lineterminator='\n')
-    fields = next(csvreader) # The first line in the csv file contains the field names
+    fields = next(csvreader)  # The first line in the csv file contains the field names
 
     # We only create the feature class once we've confirmed that the csv exists
     arcpy.CreateFeatureclass_management(arcpy.env.workspace, settlements_fc, "POINT")
@@ -240,7 +237,7 @@ def import_csv(scenario, selection, diesel_high, gdb=r'C:\Users\adm.esa\Desktop\
         for row in csvreader:
             rowf = []
 
-            x,y = 0,0
+            x, y = 0.0, 0.0
             for i, r in enumerate(row):
                 if fields[i] == 'X':
                     x = float(r)
@@ -266,9 +263,8 @@ def import_csv(scenario, selection, diesel_high, gdb=r'C:\Users\adm.esa\Desktop\
 
     logging.info('Completed function gis.import_csv()')
 
-if __name__ == "__main__":
-    os.chdir('..')
-    print('Running as a script')
+
+def main():
     choice = int(input('(1) create, (2) export, (3) import: '))
     if choice == 1:
         gdb = input('Enter gdb path and filename: ')
@@ -283,11 +279,17 @@ if __name__ == "__main__":
             export_csv(gdb, settlements_fc)
     elif choice == 3:
         gdb = input('Enter gdb path and filename: ')
-        scenario = int(input('Enter scenario value (int): '))
         selection = input('Enter country selection or "all": ')
+        scenario = int(input('Enter scenario value (int): '))
         diesel_high = input('Enter L for low diesel, H for high diesel: ')
         diesel_high = diesel_high in 'H'
         if len(gdb) == 0:
-            import_csv(scenario, selection, diesel_high)
+            import_csv(selection, scenario, diesel_high)
         else:
-            import_csv(scenario, selection, diesel_high, gdb)
+            import_csv(selection, scenario, diesel_high, gdb)
+
+
+if __name__ == "__main__":
+    os.chdir('..')
+    print('Running as a script')
+    main()

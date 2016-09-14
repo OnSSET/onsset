@@ -26,7 +26,7 @@ def condition(df):
     df.fillna(0, inplace=True)
 
     logging.info('Sort by country')
-    df.sort_values(by=['Country','Y','X'], inplace=True)
+    df.sort_values(by=['Country', 'Y', 'X'], inplace=True)
 
     logging.info('Add columns with location in degrees')
     project = Proj('+proj=merc +lon_0=0 +k=1 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs')
@@ -109,6 +109,13 @@ def grid_penalties(df):
         elif 30 < slope <= 40: return 2
         elif slope > 40: return 1
 
+    def set_penalty(row):
+        classification = row[SET_COMBINED_CLASSIFICATION]
+        if classification > 4: return 1.1
+        elif classification > 3: return 1.05
+        elif classification > 2: return 1.02
+        else: return 1.00
+
     logging.info('Classify road dist')
     df[SET_ROAD_DIST_CLASSIFIED] = df.apply(classify_road_dist, axis=1)
 
@@ -125,13 +132,14 @@ def grid_penalties(df):
     df[SET_SLOPE_CLASSIFIED] = df.apply(classify_slope, axis=1)
 
     logging.info('Combined classification')
-    df[SET_COMBINED_CLASSIFICATION] = 0.05 * df[SET_ROAD_DIST_CLASSIFIED] + \
-                                  0.09 * df[SET_SUBSTATION_DIST_CLASSIFIED] + \
-                                  0.39 * df[SET_LAND_COVER_CLASSIFIED] + \
-                                  0.15 * df[SET_ELEVATION_CLASSIFIED] + \
-                                  0.32 * df[SET_SLOPE_CLASSIFIED]
+    df[SET_COMBINED_CLASSIFICATION] = (0.05 * df[SET_ROAD_DIST_CLASSIFIED] +
+                                       0.09 * df[SET_SUBSTATION_DIST_CLASSIFIED] +
+                                       0.39 * df[SET_LAND_COVER_CLASSIFIED] +
+                                       0.15 * df[SET_ELEVATION_CLASSIFIED] +
+                                       0.32 * df[SET_SLOPE_CLASSIFIED])
 
-    # TODO Calculate the penalty in perentage here
+    logging.info('Grid penalty')
+    df[SET_GRID_PENALTY] = df.apply(set_penalty, axis=1)
 
     logging.info('Completed function prep.grid_penalties()')
     return df
@@ -169,7 +177,7 @@ def wind(df):
 
             # Rayleigh distribution and sum of series
             rayleigh = [(pi / 2) * (u / u_z ** 2) * exp((-pi / 4) * (u / u_z) ** 2) for u in u_arr]
-            energy_produced = sum([mu * es * t * p * r for p,r in zip(p_curve, rayleigh)])
+            energy_produced = sum([mu * es * t * p * r for p, r in zip(p_curve, rayleigh)])
 
             return energy_produced/(p_rated * t)
 
@@ -288,24 +296,24 @@ def elec(df):
     if not os.path.exists(FF_TABLES):
         raise IOError('The main folder has not been set up')
 
-    country_specs = pd.read_excel(FF_SPECS, index_col=0)
-    countries = country_specs.index.values.tolist()
+    specs = pd.read_excel(FF_SPECS, index_col=0)
+    countries = specs.index.values.tolist()
 
     for c in countries:
         logging.info(c)
 
         # Calibrate current electrification
         logging.info(' - Calibrating current electrification')
-        target = country_specs.loc[c, SPE_ELEC]
-        pop_cutoff = country_specs.loc[c, SPE_POP_CUTOFF1]
-        min_night_lights = country_specs.loc[c, SPE_MIN_NIGHT_LIGHTS]
-        max_grid_dist = country_specs.loc[c, SPE_MAX_GRID_DIST]
-        max_road_dist = country_specs.loc[c, SPE_MAX_ROAD_DIST]
-        pop_tot = country_specs.loc[c, SPE_POP]
+        target = specs.loc[c, SPE_ELEC]
+        pop_cutoff = specs.loc[c, SPE_POP_CUTOFF1]
+        min_night_lights = specs.loc[c, SPE_MIN_NIGHT_LIGHTS]
+        max_grid_dist = specs.loc[c, SPE_MAX_GRID_DIST]
+        max_road_dist = specs.loc[c, SPE_MAX_ROAD_DIST]
+        pop_tot = specs.loc[c, SPE_POP]
         is_round_two = False
-        pop_cutoff2 = country_specs.loc[c, SPE_POP_CUTOFF2]
-        grid_cutoff2 = country_specs.loc[c, SPE_GRID_CUTOFF2]
-        road_cutoff2 = country_specs.loc[c, SPE_ROAD_CUTOFF2]
+        pop_cutoff2 = specs.loc[c, SPE_POP_CUTOFF2]
+        grid_cutoff2 = specs.loc[c, SPE_GRID_CUTOFF2]
+        road_cutoff2 = specs.loc[c, SPE_ROAD_CUTOFF2]
         calculated = 0
 
         count = 0
@@ -368,25 +376,23 @@ def elec(df):
 
             count += 1
 
-        country_specs.loc[c, SPE_MIN_NIGHT_LIGHTS] = min_night_lights
-        country_specs.loc[c, SPE_MAX_GRID_DIST] = max_grid_dist
-        country_specs.loc[c, SPE_MAX_ROAD_DIST] = max_road_dist
-        country_specs.loc[c, SPE_ELEC_MODELLED] = calculated
-        country_specs.loc[c, SPE_POP_CUTOFF1] = pop_cutoff
-        country_specs.loc[c, SPE_POP_CUTOFF2] = pop_cutoff2
+        specs.loc[c, SPE_MIN_NIGHT_LIGHTS] = min_night_lights
+        specs.loc[c, SPE_MAX_GRID_DIST] = max_grid_dist
+        specs.loc[c, SPE_MAX_ROAD_DIST] = max_road_dist
+        specs.loc[c, SPE_ELEC_MODELLED] = calculated
+        specs.loc[c, SPE_POP_CUTOFF1] = pop_cutoff
+        specs.loc[c, SPE_POP_CUTOFF2] = pop_cutoff2
         # These two aren't included, as we want to give the algorithm a fresh start each time
-        # country_specs.loc[c, SPE_GRID_CUTOFF2] = grid_dist_round_two
-        # country_specs.loc[c, SPE_ROAD_CUTOFF2] = road_dist_round_two
+        # specs.loc[c, SPE_GRID_CUTOFF2] = grid_dist_round_two
+        # specs.loc[c, SPE_ROAD_CUTOFF2] = road_dist_round_two
 
-    country_specs.to_excel(FF_SPECS)
+    specs.to_excel(FF_SPECS)
 
     logging.info('Completed function prep.elec()')
     return df
 
 
-if __name__ == "__main__":
-    os.chdir('..')
-    print('Running as a script')
+def main():
     df = pd.read_csv(FF_SETTLEMENTS)
     df = condition(df)
     df = grid_penalties(df)
@@ -395,3 +401,8 @@ if __name__ == "__main__":
     df = elec(df)
     logging.info('Saving to csv')
     df.to_csv(FF_SETTLEMENTS, index=False)
+
+if __name__ == "__main__":
+    os.chdir('..')
+    print('Running as a script')
+    main()
