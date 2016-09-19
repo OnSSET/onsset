@@ -1,7 +1,3 @@
-"""
-Contains the preparatory functions create and export the settlements from ArcGIS
-All functions in this module need to be run with an ArcGIS connected instance of Python
-"""
 from __future__ import absolute_import, division, print_function
 import logging
 try:
@@ -9,11 +5,12 @@ try:
 except ImportError:
     raise SystemExit('Please use this module with an ArcGIS connected instance of Python (need arcpy)')
 import csv
-from pyonsset.constants import *
+from .constants import *
 try:
     input = raw_input
 except NameError:
     pass
+import os
 
 logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.DEBUG)
 
@@ -134,7 +131,7 @@ def create(gdb='C:/Users/adm.esa/Desktop/ONSSET/Africa_Onsset.gdb', settlements_
     logging.info('Completed function gis.create()')
 
 
-def export_csv(gdb=r'C:\Users\adm.esa\Desktop\ONSSET\Onsset_Layers.gdb', settlements_fc='settlements'):
+def export_csv(gdb=r'C:\Users\adm.esa\Desktop\ONSSET\Onsset_Layers.gdb', settlements_fc='settlements', out_file=FF_SETTLEMENTS):
     """
     Export a settlements feature class to a csv file that can be used by pandas.
 
@@ -145,14 +142,17 @@ def export_csv(gdb=r'C:\Users\adm.esa\Desktop\ONSSET\Onsset_Layers.gdb', settlem
     logging.info('Starting function gis.export_csv()...')
 
     arcpy.env.workspace = gdb
-    if not os.path.exists(FF_TABLES):
-        os.makedirs(FF_TABLES)
+
+    try:
+        os.makedirs(os.path.dirname(out_file))
+    except FileExistsError:
+        pass
 
     # Skips the first two elements (OBJECT_ID and Shape)
     field_list = [f.name for f in arcpy.ListFields(settlements_fc)[2:]]
 
     logging.info('Writing output...')
-    with open(FF_SETTLEMENTS, 'w') as csvfile:
+    with open(out_file, 'w') as csvfile:
         csvwriter = csv.writer(csvfile, delimiter=',', lineterminator='\n')
         csvwriter.writerow(field_list)
 
@@ -163,7 +163,7 @@ def export_csv(gdb=r'C:\Users\adm.esa\Desktop\ONSSET\Onsset_Layers.gdb', settlem
     logging.info('Completed function gis.export_csv()')
 
 
-def import_csv(selection, scenario, diesel_high, gdb=r'C:\Users\adm.esa\Desktop\ONSSET\Onsset_Results_13Sep.gdb'):
+def import_csv(in_file, out_fc, gdb=r'C:\Users\adm.esa\Desktop\ONSSET\Onsset_Results_13Sep.gdb'):
     """
     Import the csv file designated by scenario, selection and diesel_high back into ArcGIS.
 
@@ -175,19 +175,6 @@ def import_csv(selection, scenario, diesel_high, gdb=r'C:\Users\adm.esa\Desktop\
 
     logging.info('Starting function gis.import_csv()...')
 
-    output_dir = os.path.join(FF_TABLES, selection, str(scenario))
-    if diesel_high:
-        settlements_csv = os.path.join(output_dir, '{}_{}_high.csv'.format(selection, scenario))
-        settlements_fc = 'sets_{}_{}_high'.format(selection, scenario)
-    else:
-        settlements_csv = os.path.join(output_dir, '{}_{}_low.csv'.format(selection, scenario))
-        settlements_fc = 'sets_{}_{}_low'.format(selection, scenario)
-
-    # Import main settlements file
-    if selection == 'all':
-        settlements_csv = r'db/settlements.csv'
-        settlements_fc = '_sets_all_noscenario'
-
     # Set up the ArcGIS environment options and create a new feature class
     arcpy.env.workspace = gdb
     arcpy.env.overwriteOutput = True
@@ -195,12 +182,12 @@ def import_csv(selection, scenario, diesel_high, gdb=r'C:\Users\adm.esa\Desktop\
     arcpy.CheckOutExtension("Spatial")
 
     # Open the csv file and copy the field names (first row)
-    csvreader = csv.reader(open(settlements_csv, 'r'), delimiter=',', lineterminator='\n')
+    csvreader = csv.reader(open(in_file, 'r'), delimiter=',', lineterminator='\n')
     fields = next(csvreader)  # The first line in the csv file contains the field names
 
     # We only create the feature class once we've confirmed that the csv exists
-    arcpy.CreateFeatureclass_management(arcpy.env.workspace, settlements_fc, "POINT")
-    arcpy.DefineProjection_management(settlements_fc, arcpy.SpatialReference('WGS 1984 World Mercator'))
+    arcpy.CreateFeatureclass_management(arcpy.env.workspace, out_fc, "POINT")
+    arcpy.DefineProjection_management(out_fc, arcpy.SpatialReference('WGS 1984 World Mercator'))
 
     # Add a sample row (to set the field types in ArcGIS)
     # For all the fields that are floatable, make the field a FLOAT, otherwise TEXT
@@ -220,11 +207,11 @@ def import_csv(selection, scenario, diesel_high, gdb=r'C:\Users\adm.esa\Desktop\
             except ValueError:
                 field_type = 'TEXT'
             field_types.append(field_type)
-            arcpy.AddField_management(settlements_fc, f, field_type)
+            arcpy.AddField_management(out_fc, f, field_type)
         break
 
     # Reset the csvreader and skip the first row
-    csvreader = csv.reader(open(settlements_csv, 'r'), delimiter=',', lineterminator='\n')
+    csvreader = csv.reader(open(in_file, 'r'), delimiter=',', lineterminator='\n')
     next(csvreader)
     # Add the X and Y fields so that ArcGIS recognises them as as the coordinates
     fields.append('SHAPE@X')
@@ -233,7 +220,7 @@ def import_csv(selection, scenario, diesel_high, gdb=r'C:\Users\adm.esa\Desktop\
     # Insert the rows one at a time, converting to float or string as appropriate
     # The prev variable is just to know when a new country is starting to it can be reported
     prev = None
-    with arcpy.da.InsertCursor(settlements_fc, fields) as cursor:
+    with arcpy.da.InsertCursor(out_fc, fields) as cursor:
         for row in csvreader:
             rowf = []
 
@@ -262,34 +249,3 @@ def import_csv(selection, scenario, diesel_high, gdb=r'C:\Users\adm.esa\Desktop\
             prev = rowf[0]
 
     logging.info('Completed function gis.import_csv()')
-
-
-def main():
-    choice = int(input('(1) create, (2) export, (3) import: '))
-    if choice == 1:
-        gdb = input('Enter gdb path and filename: ')
-        settlements_fc = input('Enter name for new feature class: ')
-        create(gdb, settlements_fc)
-    elif choice == 2:
-        gdb = input('Enter gdb path and filename: ')
-        settlements_fc = input('Enter name for feature class to export: ')
-        if len(gdb) == 0:
-            export_csv()
-        else:
-            export_csv(gdb, settlements_fc)
-    elif choice == 3:
-        gdb = input('Enter gdb path and filename: ')
-        selection = input('Enter country selection or "all": ')
-        scenario = int(input('Enter scenario value (int): '))
-        diesel_high = input('Enter L for low diesel, H for high diesel: ')
-        diesel_high = diesel_high in 'H'
-        if len(gdb) == 0:
-            import_csv(selection, scenario, diesel_high)
-        else:
-            import_csv(selection, scenario, diesel_high, gdb)
-
-
-if __name__ == "__main__":
-    os.chdir('..')
-    print('Running as a script')
-    main()

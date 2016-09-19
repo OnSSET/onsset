@@ -1,24 +1,11 @@
-import os
-
 # files and folders
-FF_TABLES = 'db'
-FF_LCOES = os.path.join(FF_TABLES, 'lcoes')
-FF_SPECS = os.path.join(FF_TABLES, 'specs.xlsx')
-FF_SETTLEMENTS = os.path.join(FF_TABLES, 'settlements.csv')
-FF_GRID_LCOES = lambda var: os.path.join(FF_LCOES, str(var), 'grid_lcoes_{}.csv'.format(var))
-FF_GRID_CAP = lambda var: os.path.join(FF_LCOES, str(var), 'grid_cap_{}.csv'.format(var))
-FF_TECH_LCOES = lambda var: os.path.join(FF_LCOES, str(var), 'tech_lcoes_{}.csv'.format(var))
-FF_TECH_CAP = lambda var: os.path.join(FF_LCOES, str(var), 'tech_cap_{}.csv'.format(var))
-FF_NUM_PEOPLE = lambda var: os.path.join(FF_LCOES, str(var), 'num_people_{}.csv'.format(var))
+FF_SPECS = 'db/specs.xlsx'
+FF_SETTLEMENTS = 'db/settlements.csv'
 
 # general
-ELEC_DISTS = range(0, 51)
 NUM_PEOPLE_DISTS = [5, 10]
-MAX_DIST = 50
-NUM_PEOPLE_PER_HH = 5
 LHV_DIESEL = 9.9445485  # (kWh/l) lower heating value
 HOURS_PER_YEAR = 8760
-EXISTING_GRID_COST_RATIO = 0.1  # factor to multiply by existing grid length when calculating elec status
 PV_LOW = 1500  # kWh/m2/year
 PV_MID = 2000
 PV_HIGH = 2900  # kWh/m2/year
@@ -99,25 +86,22 @@ SPE_URBAN_MODELLED = 'UrbanRatioModelled'  # The urban ratio in the model after 
 SPE_URBAN_CUTOFF = 'UrbanCutOff'  # The urban cutoff population calirated by the model, in people per km2
 SPE_URBAN_GROWTH = 'UrbanGrowth'  # The urban growth rate as a simple multplier (urban pop future / urban pop present)
 SPE_RURAL_GROWTH = 'RuralGrowth'  # Same as for urban
+SPE_NUM_PEOPLE_PER_HH = 'NumPeoplePerHH'
 SPE_DIESEL_PRICE_LOW = 'DieselPriceLow'  # Diesel price in USD/litre
 SPE_DIESEL_PRICE_HIGH = 'DieselPriceHigh'  # Same, with a high forecast var
 SPE_GRID_PRICE = 'GridPrice'  # Grid price of electricity in USD/kWh
 SPE_GRID_CAPACITY_INVESTMENT = 'GridCapacityInvestmentCost'  # grid capacity investments costs from TEMBA USD/kW
 SPE_GRID_LOSSES = 'GridLosses'  # As a ratio (0 - 1)
 SPE_BASE_TO_PEAK = 'BaseToPeak'  # As a ratio (0 - 1)
+SPE_EXISTING_GRID_COST_RATIO = 'ExistingGridCostRatio'
+SPE_MAX_GRID_DIST = 'MaxGridDist'
 SPE_ELEC = 'ElecActual'  # Actual current percentage electrified population (0 - 1)
 SPE_ELEC_MODELLED = 'ElecModelled'  # The modelled version after calibration (for comparison)
 SPE_MIN_NIGHT_LIGHTS = 'MinNightLights'
-SPE_MAX_GRID_DIST = 'MaxGridDist'
+SPE_MAX_GRID_EXTENSION_DIST = 'MaxGridExtensionDist'
 SPE_MAX_ROAD_DIST = 'MaxRoadDist'
 SPE_POP_CUTOFF1 = 'PopCutOffRoundOne'
 SPE_POP_CUTOFF2 = 'PopCutOffRoundTwo'
-SPE_GRID_CUTOFF2 = 'GridRoundTwo'
-SPE_ROAD_CUTOFF2 = 'RoadRoundTwo'
-SPE_AVE_GHI = 'AverageGHI'
-SPE_AVE_WINDCF = 'AverageWindCF'
-SPE_AVE_TRAVEL_HOURS = 'AverageTravelHours'
-SPE_MAX_POP = 'MaxPop'
 
 # tech lcoes
 GRID = 'grid'
