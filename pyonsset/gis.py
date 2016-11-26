@@ -1,16 +1,16 @@
+# Functions to create a settlements feature class, export it, and re-import a process csv
+#
+# Author: Christopher Arderne
+# Date: 26 November 2016
+# Python version: 2.7
+
 from __future__ import absolute_import, division, print_function
 import logging
-try:
-    import arcpy
-except ImportError:
-    raise SystemExit('Please use this module with an ArcGIS connected instance of Python (need arcpy)')
+import arcpy
 import csv
-from .constants import *
-try:
-    input = raw_input
-except NameError:
-    pass
+from pyonsset.constants import *
 import os
+import errno
 
 logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.DEBUG)
 
@@ -44,6 +44,7 @@ def create(gdb='C:/Users/adm.esa/Desktop/ONSSET/Africa_Onsset.gdb', settlements_
     elevation = 'elevation'
     slope = 'slope'
     land_cover = 'landcover'
+    solar_restriction = 'solar_restriction'
 
     # Starting point
     logging.info('Create settlements layer')
@@ -72,6 +73,8 @@ def create(gdb='C:/Users/adm.esa/Desktop/ONSSET/Africa_Onsset.gdb', settlements_
     # Add GHI, WindCF, travel, nightlights
     logging.info('Add GHI')
     arcpy.sa.ExtractMultiValuesToPoints(settlements_fc, [[ghi, SET_GHI]])
+    logging.info('Add Solar restriction')
+    arcpy.sa.ExtractMultiValuesToPoints(settlements_fc, [[solar_restriction, SET_SOLAR_RESTRICTION]])
     logging.info('Add WindVel')
     arcpy.sa.ExtractMultiValuesToPoints(settlements_fc, [[windvel, SET_WINDVEL]])
     logging.info('Add Travel time')
@@ -127,11 +130,10 @@ def create(gdb='C:/Users/adm.esa/Desktop/ONSSET/Africa_Onsset.gdb', settlements_
     arcpy.JoinField_management(settlements_fc, 'NEAR_FID', hydro_points,
                                arcpy.Describe(hydro_points).OIDFieldName, [SET_HYDRO])
     arcpy.DeleteField_management(settlements_fc, 'NEAR_DIST; NEAR_FID')
-
     logging.info('Completed function gis.create()')
 
 
-def export_csv(gdb=r'C:\Users\adm.esa\Desktop\ONSSET\Onsset_Layers.gdb', settlements_fc='settlements', out_file=FF_SETTLEMENTS):
+def export_csv(gdb=r'C:\Users\adm.esa\Desktop\ONSSET\Onsset_Layers.gdb', settlements_fc='settlements', out_file='db/settlements.csv'):
     """
     Export a settlements feature class to a csv file that can be used by pandas.
 
@@ -145,8 +147,11 @@ def export_csv(gdb=r'C:\Users\adm.esa\Desktop\ONSSET\Onsset_Layers.gdb', settlem
 
     try:
         os.makedirs(os.path.dirname(out_file))
-    except FileExistsError:
-        pass
+    except OSError as e:
+        if e.errno == errno.EEXIST:
+            print('Directory not created.')
+        else:
+            raise
 
     # Skips the first two elements (OBJECT_ID and Shape)
     field_list = [f.name for f in arcpy.ListFields(settlements_fc)[2:]]
@@ -166,6 +171,7 @@ def export_csv(gdb=r'C:\Users\adm.esa\Desktop\ONSSET\Onsset_Layers.gdb', settlem
 def import_csv(in_file, out_fc, gdb=r'C:\Users\adm.esa\Desktop\ONSSET\Onsset_Results_13Sep.gdb'):
     """
     Import the csv file designated by scenario, selection and diesel_high back into ArcGIS.
+    The columns with locations in degrees (not metres!) must be labelled X and Y
 
     @param scenario: The scenario target in kWh/hh/year
     @param selection: The country or subset to import
@@ -187,7 +193,7 @@ def import_csv(in_file, out_fc, gdb=r'C:\Users\adm.esa\Desktop\ONSSET\Onsset_Res
 
     # We only create the feature class once we've confirmed that the csv exists
     arcpy.CreateFeatureclass_management(arcpy.env.workspace, out_fc, "POINT")
-    arcpy.DefineProjection_management(out_fc, arcpy.SpatialReference('WGS 1984 World Mercator'))
+    arcpy.DefineProjection_management(out_fc, arcpy.SpatialReference('WGS 1984'))
 
     # Add a sample row (to set the field types in ArcGIS)
     # For all the fields that are floatable, make the field a FLOAT, otherwise TEXT
@@ -241,11 +247,24 @@ def import_csv(in_file, out_fc, gdb=r'C:\Users\adm.esa\Desktop\ONSSET\Onsset_Res
                 else:
                     rowf.append(str(r))
 
-            rowf.append(x*1000)
-            rowf.append(y*1000)
+            rowf.append(x)
+            rowf.append(y)
             cursor.insertRow(rowf)
-            if rowf[0] != prev:
-                logging.info('Doing {}'.format(rowf[0]))
-            prev = rowf[0]
+            if rowf[2] != prev:
+                logging.info('Doing {}'.format(rowf[2]))
+            prev = rowf[2]
 
     logging.info('Completed function gis.import_csv()')
+
+
+if __name__ == "__main__":
+    print(0)
+    #gdb = r'C:\Users\adm.esa\Desktop\ONSSET\output_12Nov.gdb'
+    #in_f = r'C:\Users\adm.esa\Desktop\ONSSET\PyOnSSET\db\run_12Nov\_Africa_combined.csv'
+    #fc = 'africa12nov'
+    #import_csv(in_f, fc, gdb)
+
+    #gdb = r'C:\Users\adm.esa\Documents\ArcGIS\Default.gdb'
+    #in_featureclass = 'africa100km2_COUNTRIES'
+    #out_csv = r'C:\Users\adm.esa\Desktop\ONSSET\PyOnSSET\db/africa100km2.csv'
+    #export_csv(gdb, in_featureclass, out_csv)

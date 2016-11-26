@@ -1,18 +1,14 @@
-# files and folders
-FF_SPECS = 'db/specs.xlsx'
-FF_SETTLEMENTS = 'db/settlements.csv'
+# Names and parameters used across the program
+#
+# Author: Christopher Arderne
+# Date: 26 November 2016
+# Python version: 3.5
 
 # general
-NUM_PEOPLE_DISTS = [5, 10]
 LHV_DIESEL = 9.9445485  # (kWh/l) lower heating value
 HOURS_PER_YEAR = 8760
-PV_LOW = 1500  # kWh/m2/year
-PV_MID = 2000
-PV_HIGH = 2900  # kWh/m2/year
-WIND_LOW = 0.2  # capacity factor
-WIND_MID = 0.3  # capacity factor
-WIND_HIGH = 0.4  # capacity factor
-WIND_EXTRA_HIGH = 0.7  # capacity factor
+START_YEAR = 2015
+END_YEAR = 2030
 
 # settlements file
 SET_COUNTRY = 'Country'  # This cannot be changed, lots of code will break
@@ -21,8 +17,8 @@ SET_Y = 'Y'  # Coordinate in kilometres
 SET_X_DEG = 'X_deg'
 SET_Y_DEG = 'Y_deg'
 SET_POP = 'Pop'  # Population in people per point (equally, people per km2)
-SET_POP_CALIB = 'Pop2015Act'  # Calibrated population to reference year, same units
-SET_POP_FUTURE = 'Pop2030'  # Project future population, same units
+SET_POP_CALIB = 'PopStartCalibrated'  # Calibrated population to reference year, same units
+SET_POP_FUTURE = 'PopFuture'  # Project future population, same units
 SET_GRID_DIST_CURRENT = 'GridDistCurrent'  # Distance in km from current grid
 SET_GRID_DIST_PLANNED = 'GridDistPlan'  # Distance in km from current and future grid
 SET_ROAD_DIST = 'RoadDist'  # Distance in km from road network
@@ -47,32 +43,29 @@ SET_COMBINED_CLASSIFICATION = 'GridClassification'
 SET_GRID_PENALTY = 'GridPenalty'
 SET_URBAN = 'IsUrban'  # Whether the site is urban (0 or 1)
 SET_ELEC_PREFIX = 'Elec'
-START_YEAR = 2015
-END_YEAR = 2030
-SET_ELEC_CURRENT = SET_ELEC_PREFIX + str(START_YEAR)  # If the site is currently electrified (0 or 1)
-SET_ELEC_FUTURE = SET_ELEC_PREFIX + str(END_YEAR)  # If the site has the potential to be 'easily' electrified in future
-
-# results inserted into settlements file
-RES_MIN_GRID_DIST = 'MinGridDist'
-RES_LCOE_GRID = 'lcoe_grid'  # All lcoes in USD/kWh
-RES_LCOE_SA_PV = 'lcoe_sa_pv'
-RES_LCOE_SA_DIESEL = 'lcoe_sa_diesel'
-RES_LCOE_MG_WIND = 'lcoe_mg_wind'
-RES_LCOE_MG_DIESEL = 'lcoe_mg_diesel'
-RES_LCOE_MG_PV = 'lcoe_mg_pv'
-RES_LCOE_MG_HYDRO = 'lcoe_mg_hydro'
-RES_MINIMUM_TECH = 'minimum_tech'  # The technology with lowest lcoe (excluding grid)
-RES_MINIMUM_OVERALL = 'minimum_overall'
-RES_MINIMUM_TECH_LCOE = 'minimum_tech_lcoe'  # The lcoe value
-RES_MINIMUM_OVERALL_LCOE = 'minimum_overall_lcoe'
-RES_MINIMUM_OVERALL_CODE = 'minimum_overall_code'
-RES_MINIMUM_CATEGORY = 'minimum_category'  # The category with minimum lcoe (grid, minigrid or standalone)
-RES_NEW_CAPACITY = 'NewCapacity'  # Capacity in kW
-RES_NEW_CONNECTIONS = 'NewConnections'  # Number of new people with electricity connections
-RES_INVESTMENT_COST = 'InvestmentCost'  # The investment cost in USD
+SET_ELEC_CURRENT = 'ElecStart'  # If the site is currently electrified (0 or 1)
+SET_ELEC_FUTURE = 'ElecFuture'  # If the site has the potential to be 'easily' electrified in future
+SET_NEW_CONNECTIONS = 'NewConnections'  # Number of new people with electricity connections
+SET_MIN_GRID_DIST = 'MinGridDist'
+SET_LCOE_GRID = 'Grid'  # All lcoes in USD/kWh
+SET_LCOE_SA_PV = 'SA_PV'
+SET_LCOE_SA_DIESEL = 'SA_Diesel'
+SET_LCOE_MG_WIND = 'MG_Wind'
+SET_LCOE_MG_DIESEL = 'MG_Diesel'
+SET_LCOE_MG_PV = 'MG_PV'
+SET_LCOE_MG_HYDRO = 'MG_Hydro'
+SET_MINIMUM_TECH = 'MinimumTech'  # The technology with lowest lcoe (excluding grid)
+SET_MINIMUM_OVERALL = 'MinimumOverall'  # Same as above, but including grid
+SET_MINIMUM_TECH_LCOE = 'MinimumTechLCOE'  # The lcoe value for minimum tech
+SET_MINIMUM_OVERALL_LCOE = 'MinimumOverallLCOE'  # The lcoe value for overall minimum
+SET_MINIMUM_OVERALL_CODE = 'MinimumOverallCode'  # And a code from 1 - 7 to represent that option
+SET_MINIMUM_CATEGORY = 'MinimumCategory'  # The category with minimum lcoe (grid, minigrid or standalone)
+SET_NEW_CAPACITY = 'NewCapacity'  # Capacity in kW
+SET_INVESTMENT_COST = 'InvestmentCost'  # The investment cost in USD
 
 # summary results
-SUM_SPLIT_PREFIX = 'split_'
+SUM_POPULATION_PREFIX = 'population_'
+SUM_NEW_CONNECTIONS_PREFIX = 'new_connections_'
 SUM_CAPACITY_PREFIX = 'capacity_'
 SUM_INVESTMENT_PREFIX = 'investment_'
 
@@ -102,19 +95,3 @@ SPE_MAX_GRID_EXTENSION_DIST = 'MaxGridExtensionDist'
 SPE_MAX_ROAD_DIST = 'MaxRoadDist'
 SPE_POP_CUTOFF1 = 'PopCutOffRoundOne'
 SPE_POP_CUTOFF2 = 'PopCutOffRoundTwo'
-
-# tech lcoes
-GRID = 'grid'
-MG_HYDRO = 'mg_hydro'
-MG_PV_LOW = 'mg_pv_low'
-MG_PV_MID = 'mg_pv_mid'
-MG_PV_HIGH = 'mg_pv_high'
-MG_WIND_LOW = 'mg_wind_low'
-MG_WIND_MID = 'mg_wind_mid'
-MG_WIND_HIGH = 'mg_wind_high'
-MG_WIND_EXTRA_HIGH = 'mg_wind_extra_high'
-MG_DIESEL = 'mg_diesel'
-SA_DIESEL = 'sa_diesel'
-SA_PV_LOW = 'sa_pv_low'
-SA_PV_MID = 'sa_pv_mid'
-SA_PV_HIGH = 'sa_pv_high'

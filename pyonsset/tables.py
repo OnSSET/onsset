@@ -1,13 +1,20 @@
+# Calculate the levelised cost for given technologies and parameters
+#
+# Author: Christopher Arderne
+# Date: 26 November 2016
+# Python version: 3.5
+
 import logging
 import numpy as np
 import pandas as pd
 from math import ceil, sqrt
-from .constants import *
+from pyonsset.constants import *
 
 logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.DEBUG)
 
 
-def get_grid_lcoe_table(country_specs, scenario):
+def get_grid_lcoe_table(scenario, max_dist, num_people_per_hh, transmission_losses, base_to_peak_load_ratio,
+                        grid_price, grid_capacity_investment):
     """
     Create the LCOES and capital costs for grid and each technology, as well as the number of people required to be
     grid-connected, for each set of parameters.
@@ -22,16 +29,10 @@ def get_grid_lcoe_table(country_specs, scenario):
 
     people_arr_direct = list(range(1000)) + list(range(1000,10000,10)) + list(range(10000,350000,1000))
 
-    elec_dists = range(0, int(country_specs[SPE_MAX_GRID_EXTENSION_DIST]) + 1)
+    elec_dists = range(0, int(max_dist) + 1)
 
     # A pd.Panel for each of the main results
     grid_lcoes = pd.DataFrame(index=elec_dists, columns=people_arr_direct)
-
-    num_people_per_hh = float(country_specs[SPE_NUM_PEOPLE_PER_HH])
-    transmission_losses = float(country_specs[SPE_GRID_LOSSES])
-    base_to_peak_load_ratio = float(country_specs[SPE_BASE_TO_PEAK])
-    grid_price = float(country_specs[SPE_GRID_PRICE])
-    grid_capacity_investment = float(country_specs[SPE_GRID_CAPACITY_INVESTMENT])
 
     for people in people_arr_direct:
         for additional_mv_line_length in elec_dists:
@@ -98,7 +99,7 @@ def get_mg_pv_lcoe(people, scenario, num_people_per_hh, calc_cap_only, ghi):
                            distribution_losses=0.05,
                            connection_cost_per_hh=100,
                            capital_cost=4300,
-                           om_costs=0.0015,
+                           om_costs=0.015,
                            base_to_peak_load_ratio=0.9,
                            system_life=20,
                            calc_cap_only=calc_cap_only)
@@ -142,7 +143,7 @@ def get_sa_diesel_lcoe(people, scenario, num_people_per_hh, calc_cap_only, diese
                                  om_of_td_lines=0,
                                  capacity_factor=0.7,
                                  distribution_losses=0,
-                                 connection_cost_per_hh=100,
+                                 connection_cost_per_hh=0,
                                  capital_cost=938,
                                  om_costs=0.1,
                                  base_to_peak_load_ratio=0.5,
@@ -161,9 +162,9 @@ def get_sa_pv_lcoe(people, scenario, num_people_per_hh, calc_cap_only, ghi):
                                   om_of_td_lines=0,
                                   capacity_factor=ghi / HOURS_PER_YEAR,
                                   distribution_losses=0,
-                                  connection_cost_per_hh=100,
+                                  connection_cost_per_hh=0,
                                   capital_cost=5500,
-                                  om_costs=0.0012,
+                                  om_costs=0.012,
                                   base_to_peak_load_ratio=0.9,
                                   system_life=15,
                                   standalone=True,

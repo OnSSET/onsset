@@ -1,7 +1,13 @@
+# Functions for preparation that doesn't depend on scenario considerations
+#
+# Author: Christopher Arderne
+# Date: 26 November 2016
+# Python version: 3.5
+
 import logging
 from math import pi, exp, log
 from pyproj import Proj
-from .constants import *
+from pyonsset.constants import *
 
 logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.DEBUG)
 
@@ -49,23 +55,23 @@ def grid_penalties(df):
 
     def classify_substation_dist(row):
         substation_dist = row[SET_SUBSTATION_DIST]
-        if substation_dist <= 1: return 5
-        elif substation_dist <= 5: return 4
-        elif substation_dist <= 10: return 3
-        elif substation_dist <= 50: return 2
+        if substation_dist <= 0.5: return 5
+        elif substation_dist <= 1: return 4
+        elif substation_dist <= 5: return 3
+        elif substation_dist <= 10: return 2
         else: return 1
 
     def classify_land_cover(row):
         land_cover = row[SET_LAND_COVER]
         if land_cover == 0: return 1
         elif land_cover == 1: return 3
-        elif land_cover == 2: return 2
+        elif land_cover == 2: return 4
         elif land_cover == 3: return 3
-        elif land_cover == 4: return 2
+        elif land_cover == 4: return 4
         elif land_cover == 5: return 3
-        elif land_cover == 6: return 4
+        elif land_cover == 6: return 2
         elif land_cover == 7: return 5
-        elif land_cover == 8: return 4
+        elif land_cover == 8: return 2
         elif land_cover == 9: return 5
         elif land_cover == 10: return 5
         elif land_cover == 11: return 1
@@ -76,7 +82,7 @@ def grid_penalties(df):
         elif land_cover == 16: return 5
 
     def classify_elevation(row):
-        elevation = row[SET_SUBSTATION_DIST]
+        elevation = row[SET_ELEVATION]
         if elevation <= 500: return 5
         elif elevation <= 1000: return 4
         elif elevation <= 2000: return 3
@@ -84,7 +90,7 @@ def grid_penalties(df):
         else: return 1
 
     def classify_slope(row):
-        slope = row[SET_SUBSTATION_DIST]
+        slope = row[SET_SLOPE]
         if slope <= 10: return 5
         elif slope <= 20: return 4
         elif slope <= 30: return 3
@@ -93,10 +99,12 @@ def grid_penalties(df):
 
     def set_penalty(row):
         classification = row[SET_COMBINED_CLASSIFICATION]
-        if classification <= 2: return 1.00
-        elif classification <= 3: return 1.02
-        elif classification <= 4: return 1.05
-        else: return 1.10
+        return 1 + (exp(0.85 * abs(1 - classification)) - 1) / 100
+
+        #if classification <= 2: return 1.00
+        #elif classification <= 3: return 1.02
+        #elif classification <= 4: return 1.05
+        #else: return 1.10
 
     logging.info('Classify road dist')
     df[SET_ROAD_DIST_CLASSIFIED] = df.apply(classify_road_dist, axis=1)
@@ -163,16 +171,14 @@ def wind(df):
     return df
 
 
-def pop(df, specs, country):
+def pop(df, pop_actual, pop_future, urban, urban_future, urban_cutoff):
     """
     Calibrate the actual current population, the urban split and forecast the future population
     """
 
     # Calculate the ratio between the actual population and the total population from the GIS layer
     logging.info('Calibrate current population')
-    pop_actual = float(specs.loc[country, SPE_POP])
-    pop_sum = df[SET_POP].sum()
-    pop_ratio = pop_actual/pop_sum
+    pop_ratio = pop_actual/df[SET_POP].sum()
 
     # And use this ratio to calibrate the population in a new column
     df[SET_POP_CALIB] = df.apply(lambda row: row[SET_POP] * pop_ratio, axis=1)
@@ -180,36 +186,33 @@ def pop(df, specs, country):
     # Calculate the urban split, by calibrating the cutoff until the target ratio is achieved
     # Keep looping until it is satisfied or another break conditions is reached
     logging.info('Calibrate urban split')
-    target = specs.loc[country, SPE_URBAN]
-    cutoff = specs.loc[country, SPE_URBAN_CUTOFF]  # Start with a cutoff value from specs
-    calculated = 0
     count = 0
     prev_vals = []  # Stores cutoff values that have already been tried to prevent getting stuck in a loop
     accuracy = 0.005
     max_iterations = 30
     while True:
         # Assign the 1 (urban)/0 (rural) values to each cell
-        df[SET_URBAN] = df.apply(lambda row: 1 if row[SET_POP_CALIB] > cutoff else 0, axis=1)
+        df[SET_URBAN] = df.apply(lambda row: 1 if row[SET_POP_CALIB] > urban_cutoff else 0, axis=1)
 
         # Get the calculated urban ratio, and limit it to within reasonable boundaries
         pop_urb = df.loc[df[SET_URBAN] == 1, SET_POP_CALIB].sum()
-        calculated = pop_urb / pop_actual
+        urban_modelled = pop_urb / pop_actual
 
-        if calculated == 0:
-            calculated = 0.05
-        elif calculated == 1:
-            calculated = 0.999
+        if urban_modelled == 0:
+            urban_modelled = 0.05
+        elif urban_modelled == 1:
+            urban_modelled = 0.999
 
-        if abs(calculated - target) < accuracy:
+        if abs(urban_modelled - urban) < accuracy:
             break
         else:
-            cutoff = sorted([0.005, cutoff - cutoff * 2 * (target-calculated)/target, 10000.0])[1]
+            urban_cutoff = sorted([0.005, urban_cutoff - urban_cutoff * 2 * (urban - urban_modelled) / urban, 10000.0])[1]
 
-        if cutoff in prev_vals:
+        if urban_cutoff in prev_vals:
             logging.info('NOT SATISFIED: repeating myself')
             break
         else:
-            prev_vals.append(cutoff)
+            prev_vals.append(urban_cutoff)
 
         if count >= max_iterations:
             logging.info('NOT SATISFIED: got to {}'.format(max_iterations))
@@ -217,44 +220,32 @@ def pop(df, specs, country):
 
         count += 1
 
-    # Save the calibrated cutoff and split so they can be compared
-    specs.loc[country, SPE_URBAN_CUTOFF] = cutoff
-    specs.loc[country, SPE_URBAN_MODELLED] = calculated
-
     # Project future population, with separate growth rates for urban and rural
     logging.info('Project future population')
 
-    urban_growth = (specs.loc[country, SPE_URBAN_FUTURE] * specs.loc[country, SPE_POP_FUTURE]) / (
-        specs.loc[country, SPE_URBAN] * specs.loc[country, SPE_POP])
-    rural_growth = ((1 - specs.loc[country, SPE_URBAN_FUTURE]) * specs.loc[country, SPE_POP_FUTURE]) / (
-        (1 - specs.loc[country, SPE_URBAN]) * specs.loc[country, SPE_POP])
+    urban_growth = (urban_future * pop_future) / (urban * pop)
+    rural_growth = ((1 - urban_future) * pop_future) / ((1 - urban) * pop)
 
     df[SET_POP_FUTURE] = df.apply(lambda row: row[SET_POP_CALIB] * urban_growth
                                   if row[SET_URBAN] == 1
                                   else row[SET_POP_CALIB] * rural_growth,
                                   axis=1)
 
-    return df, specs
 
 
-def elec_current(df, specs, country):
+    return df, urban_cutoff, urban_modelled
+
+
+def elec_current(df, elec, pop_cutoff, min_night_lights, max_grid_dist, pop_tot, pop_cutoff2):
     """
     Calibrate the current electrification status, and future 'pre-electrification' status
     """
 
     # Calibrate current electrification
     logging.info('Calibrate current electrification')
-    target = specs.loc[country, SPE_ELEC]
-    pop_cutoff = specs.loc[country, SPE_POP_CUTOFF1]
-    min_night_lights = specs.loc[country, SPE_MIN_NIGHT_LIGHTS]
-    max_grid_dist = specs.loc[country, SPE_MAX_GRID_DIST]
-    max_road_dist = specs.loc[country, SPE_MAX_ROAD_DIST]
-    pop_tot = specs.loc[country, SPE_POP]
     is_round_two = False
-    pop_cutoff2 = specs.loc[country, SPE_POP_CUTOFF2]
     grid_cutoff2 = 10
     road_cutoff2 = 10
-
     count = 0
     prev_vals = []
     accuracy = 0.005
@@ -277,23 +268,23 @@ def elec_current(df, specs, country):
 
         # Get the calculated electrified ratio, and limit it to within reasonable boundaries
         pop_elec = df.loc[df[SET_ELEC_CURRENT] == 1, SET_POP_CALIB].sum()
-        calculated = pop_elec / pop_tot
+        elec_modelled = pop_elec / pop_tot
 
-        if calculated == 0:
-            calculated = 0.01
-        elif calculated == 1:
-            calculated = 0.99
+        if elec_modelled == 0:
+            elec_modelled = 0.01
+        elif elec_modelled == 1:
+            elec_modelled = 0.99
 
-        if abs(calculated - target) < accuracy:
+        if abs(elec_modelled - elec) < accuracy:
             break
         elif not is_round_two:
-            min_night_lights = sorted([5, min_night_lights-min_night_lights*2*(target-calculated)/target, 60])[1]
-            max_grid_dist = sorted([5, max_grid_dist + max_grid_dist * 2 * (target-calculated)/target, 150])[1]
-            max_road_dist = sorted([0.5, max_road_dist + max_road_dist * 2 * (target-calculated)/target, 50])[1]
-        elif calculated - target < 0:
-            pop_cutoff2 = sorted([0.01, pop_cutoff2 - pop_cutoff2 * (target-calculated)/target, 100000])[1]
-        elif calculated - target > 0:
-            pop_cutoff = sorted([0.01, pop_cutoff - pop_cutoff * 0.5 * (target-calculated)/target, 10000])[1]
+            min_night_lights = sorted([5, min_night_lights - min_night_lights * 2 * (elec - elec_modelled) / elec, 60])[1]
+            max_grid_dist = sorted([5, max_grid_dist + max_grid_dist * 2 * (elec - elec_modelled) / elec, 150])[1]
+            max_road_dist = sorted([0.5, max_road_dist + max_road_dist * 2 * (elec - elec_modelled) / elec, 50])[1]
+        elif elec_modelled - elec < 0:
+            pop_cutoff2 = sorted([0.01, pop_cutoff2 - pop_cutoff2 * (elec - elec_modelled) / elec, 100000])[1]
+        elif elec_modelled - elec > 0:
+            pop_cutoff = sorted([0.01, pop_cutoff - pop_cutoff * 0.5 * (elec - elec_modelled) / elec, 10000])[1]
 
         constraints = '{}{}{}{}{}'.format(pop_cutoff, min_night_lights, max_grid_dist, max_road_dist, pop_cutoff2)
         if constraints in prev_vals and not is_round_two:
@@ -315,11 +306,9 @@ def elec_current(df, specs, country):
 
         count += 1
 
-        specs.loc[country, SPE_MIN_NIGHT_LIGHTS] = min_night_lights
-        specs.loc[country, SPE_MAX_GRID_DIST] = max_grid_dist
-        specs.loc[country, SPE_MAX_ROAD_DIST] = max_road_dist
-        specs.loc[country, SPE_ELEC_MODELLED] = calculated
-        specs.loc[country, SPE_POP_CUTOFF1] = pop_cutoff
-        specs.loc[country, SPE_POP_CUTOFF2] = pop_cutoff2
+    logging.info('Calculate new connections')
+    df.loc[df[SET_ELEC_CURRENT] == 1, SET_NEW_CONNECTIONS] = df[SET_POP_FUTURE] - df[SET_POP_CALIB]
+    df.loc[df[SET_ELEC_CURRENT] == 0, SET_NEW_CONNECTIONS] = df[SET_POP_FUTURE]
+    df.loc[df[SET_NEW_CONNECTIONS] < 0, SET_NEW_CONNECTIONS] = 0
 
-    return df, specs
+    return df, min_night_lights, max_grid_dist, max_road_dist, elec_modelled, pop_cutoff, pop_cutoff2
