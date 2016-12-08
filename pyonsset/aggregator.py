@@ -4,10 +4,8 @@
 # Date: 26 November 2016
 # Python version: 3.5
 
-import pandas as pd
-from collections import defaultdict
 from math import copysign
-from pyonsset.constants import *
+from pyonsset.onsset import *
 
 in_file = 'db/Rwanda/1800/Rwanda_1800_high.csv'
 out_file = 'db/rwanda_agg.csv'
