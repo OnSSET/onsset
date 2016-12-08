@@ -5,6 +5,7 @@
 # Python version: 3.5
 
 import logging
+import pandas as pd
 from math import pi, exp, log
 from pyproj import Proj
 from pyonsset.constants import *
@@ -16,6 +17,21 @@ def condition(df):
     """
     Do any initial data conditioning that may be required.
     """
+
+    logging.info('Ensure that columns that are supposed to be numeric are numeric')
+    df[SET_GHI] = pd.to_numeric(df[SET_GHI], errors='coerce')
+    df[SET_WINDVEL] = pd.to_numeric(df[SET_WINDVEL], errors='coerce')
+    df[SET_NIGHT_LIGHTS] = pd.to_numeric(df[SET_NIGHT_LIGHTS], errors='coerce')
+    df[SET_ELEVATION] = pd.to_numeric(df[SET_ELEVATION], errors='coerce')
+    df[SET_SLOPE] = pd.to_numeric(df[SET_SLOPE], errors='coerce')
+    df[SET_LAND_COVER] = pd.to_numeric(df[SET_LAND_COVER], errors='coerce')
+    df[SET_GRID_DIST_CURRENT] = pd.to_numeric(df[SET_GRID_DIST_CURRENT], errors='coerce')
+    df[SET_GRID_DIST_PLANNED] = pd.to_numeric(df[SET_GRID_DIST_PLANNED], errors='coerce')
+    df[SET_SUBSTATION_DIST] = pd.to_numeric(df[SET_SUBSTATION_DIST], errors='coerce')
+    df[SET_ROAD_DIST] = pd.to_numeric(df[SET_ROAD_DIST], errors='coerce')
+    df[SET_HYDRO_DIST] = pd.to_numeric(df[SET_HYDRO_DIST], errors='coerce')
+    df[SET_HYDRO] = pd.to_numeric(df[SET_HYDRO], errors='coerce')
+    df[SET_SOLAR_RESTRICTION] = pd.to_numeric(df[SET_SOLAR_RESTRICTION], errors='coerce')
 
     logging.info('Replace null values with zero')
     df.fillna(0, inplace=True)
@@ -223,8 +239,8 @@ def pop(df, pop_actual, pop_future, urban, urban_future, urban_cutoff):
     # Project future population, with separate growth rates for urban and rural
     logging.info('Project future population')
 
-    urban_growth = (urban_future * pop_future) / (urban * pop)
-    rural_growth = ((1 - urban_future) * pop_future) / ((1 - urban) * pop)
+    urban_growth = (urban_future * pop_future) / (urban * pop_actual)
+    rural_growth = ((1 - urban_future) * pop_future) / ((1 - urban) * pop_actual)
 
     df[SET_POP_FUTURE] = df.apply(lambda row: row[SET_POP_CALIB] * urban_growth
                                   if row[SET_URBAN] == 1
@@ -236,7 +252,7 @@ def pop(df, pop_actual, pop_future, urban, urban_future, urban_cutoff):
     return df, urban_cutoff, urban_modelled
 
 
-def elec_current(df, elec, pop_cutoff, min_night_lights, max_grid_dist, pop_tot, pop_cutoff2):
+def elec_current(df, elec_actual, pop_cutoff, min_night_lights, max_grid_dist, max_road_dist, pop_tot, pop_cutoff2):
     """
     Calibrate the current electrification status, and future 'pre-electrification' status
     """
@@ -275,16 +291,16 @@ def elec_current(df, elec, pop_cutoff, min_night_lights, max_grid_dist, pop_tot,
         elif elec_modelled == 1:
             elec_modelled = 0.99
 
-        if abs(elec_modelled - elec) < accuracy:
+        if abs(elec_modelled - elec_actual) < accuracy:
             break
         elif not is_round_two:
-            min_night_lights = sorted([5, min_night_lights - min_night_lights * 2 * (elec - elec_modelled) / elec, 60])[1]
-            max_grid_dist = sorted([5, max_grid_dist + max_grid_dist * 2 * (elec - elec_modelled) / elec, 150])[1]
-            max_road_dist = sorted([0.5, max_road_dist + max_road_dist * 2 * (elec - elec_modelled) / elec, 50])[1]
-        elif elec_modelled - elec < 0:
-            pop_cutoff2 = sorted([0.01, pop_cutoff2 - pop_cutoff2 * (elec - elec_modelled) / elec, 100000])[1]
-        elif elec_modelled - elec > 0:
-            pop_cutoff = sorted([0.01, pop_cutoff - pop_cutoff * 0.5 * (elec - elec_modelled) / elec, 10000])[1]
+            min_night_lights = sorted([5, min_night_lights - min_night_lights * 2 * (elec_actual - elec_modelled) / elec_actual, 60])[1]
+            max_grid_dist = sorted([5, max_grid_dist + max_grid_dist * 2 * (elec_actual - elec_modelled) / elec_actual, 150])[1]
+            max_road_dist = sorted([0.5, max_road_dist + max_road_dist * 2 * (elec_actual - elec_modelled) / elec_actual, 50])[1]
+        elif elec_modelled - elec_actual < 0:
+            pop_cutoff2 = sorted([0.01, pop_cutoff2 - pop_cutoff2 * (elec_actual - elec_modelled) / elec_actual, 100000])[1]
+        elif elec_modelled - elec_actual > 0:
+            pop_cutoff = sorted([0.01, pop_cutoff - pop_cutoff * 0.5 * (elec_actual - elec_modelled) / elec_actual, 10000])[1]
 
         constraints = '{}{}{}{}{}'.format(pop_cutoff, min_night_lights, max_grid_dist, max_road_dist, pop_cutoff2)
         if constraints in prev_vals and not is_round_two:
