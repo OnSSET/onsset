@@ -5,10 +5,10 @@
 # Python version: 2.7
 
 from __future__ import absolute_import, division, print_function
+from pyonsset.constants import *
 import logging
 import arcpy
 import csv
-from pyonsset.constants import *
 import os
 import errno
 
@@ -133,7 +133,7 @@ def create(gdb='C:/Users/adm.esa/Desktop/ONSSET/Africa_Onsset.gdb', settlements_
     logging.info('Completed function gis.create()')
 
 
-def export_csv(gdb=r'C:\Users\adm.esa\Desktop\ONSSET\Onsset_Layers.gdb', settlements_fc='settlements', out_file='db/settlements.csv'):
+def export_csv(gdb, settlements_fc, out_file):
     """
     Export a settlements feature class to a csv file that can be used by pandas.
 
@@ -168,7 +168,7 @@ def export_csv(gdb=r'C:\Users\adm.esa\Desktop\ONSSET\Onsset_Layers.gdb', settlem
     logging.info('Completed function gis.export_csv()')
 
 
-def import_csv(in_file, out_fc, gdb=r'C:\Users\adm.esa\Desktop\ONSSET\Onsset_Results_13Sep.gdb'):
+def import_csv(gdb, out_fc, in_file):
     """
     Import the csv file designated by scenario, selection and diesel_high back into ArcGIS.
     The columns with locations in degrees (not metres!) must be labelled X and Y
@@ -258,13 +258,40 @@ def import_csv(in_file, out_fc, gdb=r'C:\Users\adm.esa\Desktop\ONSSET\Onsset_Res
 
 
 if __name__ == "__main__":
-    print(0)
-    #gdb = r'C:\Users\adm.esa\Desktop\ONSSET\output_12Nov.gdb'
-    #in_f = r'C:\Users\adm.esa\Desktop\ONSSET\PyOnSSET\db\run_12Nov\_Africa_combined.csv'
-    #fc = 'africa12nov'
-    #import_csv(in_f, fc, gdb)
+    choice = int(raw_input('Enter 1 to export a layer from ArcGIS, or 2 to import a csv into ArcGIS: '))
 
-    #gdb = r'C:\Users\adm.esa\Documents\ArcGIS\Default.gdb'
-    #in_featureclass = 'africa100km2_COUNTRIES'
-    #out_csv = r'C:\Users\adm.esa\Desktop\ONSSET\PyOnSSET\db/africa100km2.csv'
-    #export_csv(gdb, in_featureclass, out_csv)
+    if choice == 1:  # Export
+        default_export_gdb = r'C:\Users\adm.esa\Desktop\ONSSET\Onsset_Layers.gdb'
+        default_export_fc = 'settlements'
+        default_export_csv = r'C:\Users\adm.esa\Desktop\ONSSET\settlements.csv'
+
+        print('\nLeave responses blank for default values')
+        gdb_path = str(raw_input('Please enter the full path for the source Geodatabase: '))
+        fc_name = str(raw_input('Please enter the name of the feature class to export: '))
+        csv_path = str(raw_input('Please enter the full path for the new csv to create: '))
+
+        gdb_path = gdb_path if len(gdb_path) > 0 else default_export_gdb
+        fc_name = fc_name if len(fc_name) > 0 else default_export_fc
+        csv_path = csv_path if len(csv_path) > 0 else default_export_csv
+
+        proceed = str(raw_input('Export the layer {} from Geodatabase {}\nto the file {}? (y/n) '.format(fc_name, gdb_path, csv_path)))
+        if 'y' in proceed:
+            export_csv(gdb_path, fc_name, csv_path)
+
+    elif choice == 2:  # Import
+        default_import_gdb = r'C:\Users\adm.esa\Desktop\ONSSET\output_12Nov.gdb'
+        default_import_fc = 'settlements_processed'
+        default_import_csv = r'C:\Users\adm.esa\Desktop\ONSSET\settlements.csv'
+
+        print('\nLeave responses blank for default values')
+        csv_path = str(raw_input('Please enter the full path for the new csv to import: '))
+        gdb_path = str(raw_input('Please enter the full path for the destination Geodatabase: '))
+        fc_name = str(raw_input('Please enter the name of the new feature class to create: '))
+
+        gdb_path = gdb_path if len(gdb_path) > 0 else default_import_gdb
+        fc_name = fc_name if len(fc_name) > 0 else default_import_fc
+        csv_path = csv_path if len(csv_path) > 0 else default_import_csv
+
+        proceed = str(raw_input('Import the file {} as {}\nin Geodatabase {}? 2(y/n) '.format(csv_path, fc_name, gdb_path)))
+        if 'y' in proceed:
+            import_csv(gdb_path, fc_name, csv_path)
