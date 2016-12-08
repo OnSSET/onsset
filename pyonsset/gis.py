@@ -5,7 +5,7 @@
 # Python version: 2.7
 
 from __future__ import absolute_import, division, print_function
-from pyonsset.constants import *
+from pyonsset.onsset import *
 import logging
 import arcpy
 import csv
