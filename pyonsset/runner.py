@@ -85,11 +85,11 @@ elif choice == 3:
     output_dir = str(input('Enter the output directory (can contain multiple runs): '))
 
     wb_tiers_all = {1: 7.738, 2: 43.8, 3: 160.6, 4: 423.4, 5: 598.6}
-    wb_tier_urban = int(input('World Bank Tiers of Electricity Access\n'
+    wb_tier_urban = int(input('\nWorld Bank Tiers of Electricity Access\n'
                       '1: {} kWh/hh/year\n2: {} kWh/hh/year\n3: {} kWh/hh/year\n4: {} kWh/hh/year\n5: {} kWh/hh/year\n'
                       'Enter the tier number for urban: '.format(wb_tiers_all[1], wb_tiers_all[2], wb_tiers_all[3],
                                                                  wb_tiers_all[4], wb_tiers_all[5])))
-    wb_tier_rural = int(input('World Bank Tiers of Electricity Access\n'
+    wb_tier_rural = int(input('\nWorld Bank Tiers of Electricity Access\n'
                               '1: {} kWh/hh/year\n2: {} kWh/hh/year\n3: {} kWh/hh/year\n4: {} kWh/hh/year\n5: {} kWh/hh/year\n'
                               'Enter the tier number for rural: '.format(wb_tiers_all[1], wb_tiers_all[2],
                                                                          wb_tiers_all[3],
@@ -117,6 +117,8 @@ elif choice == 3:
             print('You need to first split into a base directory and prep!')
             raise
 
+        discount_rate = 0.08
+
         diesel_price = specs[SPE_DIESEL_PRICE_HIGH][country] if diesel_high else specs[SPE_DIESEL_PRICE_LOW][country]
         grid_price = specs[SPE_GRID_PRICE][country]
         existing_grid_cost_ratio = specs[SPE_EXISTING_GRID_COST_RATIO][country]
@@ -140,21 +142,34 @@ elif choice == 3:
                           'base_to_peak_load_ratio': 0.5, 'system_life': 10, 'efficiency': 0.28}
 
         mg_vals = {'om_of_td_lines': 0.03, 'distribution_losses': 0.05, 'connection_cost_per_hh': 100}
-        grid_vals = {'capacity_factor': 1, 'base_to_peak_load_ratio': grid_base_to_peak, 'om_of_td_lines': 0.03, 'connection_cost_per_hh': 125, 'system_life': 30}
+        grid_vals = {'capacity_factor': 1,
+                     'base_to_peak_load_ratio': grid_base_to_peak,
+                     'om_of_td_lines': 0.03,
+                     'connection_cost_per_hh': 125,
+                     'system_life': 30,
+                     'mv_line_cost': 9000,  # usd/km
+                     'lv_line_cost': 5000,  # usd/km
+                     'mv_line_capacity': 50,  # kw/line
+                     'lv_line_capacity': 10,  # kw/line
+                     'lv_line_max_length': 30,  # km
+                     'hv_line_cost': 53000,  # usd/km
+                     'mv_line_max_length': 50,  # km
+                     'hv_lv_transformer_cost': 5000,  # usd/unit
+                     'mv_increase_rate': 0.1}  # percentage
 
         df = set_elec_targets(df, energy_per_hh_urban, energy_per_hh_rural)
 
         grid_lcoes_urban = get_grid_lcoe_table(energy_per_hh_urban, max_dist, num_people_per_hh, transmission_losses,
-                                                grid_base_to_peak, grid_price, grid_capacity_investment, grid_vals)
+                                                grid_base_to_peak, grid_price, grid_capacity_investment, grid_vals, discount_rate)
         grid_lcoes_rural = get_grid_lcoe_table(energy_per_hh_rural, max_dist, num_people_per_hh, transmission_losses,
-                                               grid_base_to_peak, grid_price, grid_capacity_investment, grid_vals)
+                                               grid_base_to_peak, grid_price, grid_capacity_investment, grid_vals, discount_rate)
 
-        df = techs_only(df, diesel_price, (energy_per_hh_urban, energy_per_hh_rural), num_people_per_hh, mg_vals, mg_hydro_vals, mg_pv_vals,
-                             mg_wind_vals, mg_diesel_vals, sa_pv_vals, sa_diesel_vals)
+        df = techs_only(df, diesel_price, (energy_per_hh_urban, energy_per_hh_rural), num_people_per_hh, grid_vals, mg_vals, mg_hydro_vals, mg_pv_vals,
+                             mg_wind_vals, mg_diesel_vals, sa_pv_vals, sa_diesel_vals, discount_rate)
         df = run_elec(df, grid_lcoes_urban, grid_lcoes_rural, grid_price, existing_grid_cost_ratio, max_dist)
         df = results_columns(df, (energy_per_hh_urban, energy_per_hh_rural), grid_base_to_peak, num_people_per_hh, diesel_price, grid_price,
                                   transmission_losses, grid_capacity_investment, grid_vals, mg_vals, mg_hydro_vals,
-                                  mg_pv_vals, mg_wind_vals, mg_diesel_vals, sa_pv_vals, sa_diesel_vals)
+                                  mg_pv_vals, mg_wind_vals, mg_diesel_vals, sa_pv_vals, sa_diesel_vals, discount_rate)
         calc_summaries(df, country).to_csv(summary_csv, header=True)
 
         df.to_csv(settlements_out_csv, index=False)

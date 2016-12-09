@@ -212,11 +212,6 @@ def grid_penalties(df):
         classification = row[SET_COMBINED_CLASSIFICATION]
         return 1 + (exp(0.85 * abs(1 - classification)) - 1) / 100
 
-        #if classification <= 2: return 1.00
-        #elif classification <= 3: return 1.02
-        #elif classification <= 4: return 1.05
-        #else: return 1.10
-
     logging.info('Classify road dist')
     df[SET_ROAD_DIST_CLASSIFIED] = df.apply(classify_road_dist, axis=1)
 
@@ -426,7 +421,7 @@ def elec_current_and_future(df, elec_actual, pop_cutoff, min_night_lights, max_g
 
 
 def get_grid_lcoe_table(scenario, max_dist, num_people_per_hh, transmission_losses, base_to_peak_load_ratio,
-                        grid_price, grid_capacity_investment, grid_vals):
+                        grid_price, grid_capacity_investment, grid_vals, discount_rate):
     """
     Create the LCOES and capital costs for grid and each technology, as well as the number of people required to be
     grid-connected, for each set of parameters.
@@ -437,7 +432,7 @@ def get_grid_lcoe_table(scenario, max_dist, num_people_per_hh, transmission_loss
     @param diesel_high
     """
 
-    logging.info('Create grid lcoe tables')
+    logging.info('Create grid lcoe tables for target {}'.format(scenario))
 
     people_arr_direct = list(range(1000)) + list(range(1000,10000,10)) + list(range(10000,350000,1000))
     elec_dists = range(0, int(max_dist) + 20)
@@ -457,7 +452,9 @@ def get_grid_lcoe_table(scenario, max_dist, num_people_per_hh, transmission_loss
                                                                       grid_price=grid_price,
                                                                       grid=True,
                                                                       grid_capacity_investment=grid_capacity_investment,
-                                                                      calc_cap_only=False)
+                                                                      calc_cap_only=False,
+                                                                      grid_vals = grid_vals,
+                                                                      discount_rate=discount_rate)
 
     return grid_lcoes
 
@@ -465,7 +462,7 @@ def get_grid_lcoe_table(scenario, max_dist, num_people_per_hh, transmission_loss
 def calc_lcoe(people, scenario, num_people_per_hh, om_of_td_lines, distribution_losses, connection_cost_per_hh,
               base_to_peak_load_ratio, system_life, mv_line_length=0, om_costs=0.0, capital_cost=0, capacity_factor=1.0,
               efficiency=1.0, diesel_price=0.0, additional_mv_line_length=0, grid_price=0.0, grid=False, diesel=False,
-              standalone=False, grid_capacity_investment=0.0, calc_cap_only=False):
+              standalone=False, grid_capacity_investment=0.0, calc_cap_only=False, grid_vals=None, discount_rate=0.08):
 
     # To prevent any div/0 error
     if people == 0:
@@ -476,55 +473,44 @@ def calc_lcoe(people, scenario, num_people_per_hh, om_of_td_lines, distribution_
 
     grid_cell_area = 1  # This was 100, changed to 1 which creates different results but let's go with it
 
-    mv_line_cost = 9000  # USD/km
-    lv_line_cost = 5000  # USD/km
-    discount_rate = 0.08  # percent
-    mv_line_capacity = 50  # kW/line
-    lv_line_capacity = 10  # kW/line
-    lv_line_max_length = 30  # km
-    hv_line_cost = 53000  # USD/km
-    mv_line_max_length = 50  # km
-    hv_lv_transformer_cost = 5000  # USD/unit
-    mv_increase_rate = 0.1  # percentage
-
     consumption = people / num_people_per_hh * scenario  # kWh/year
     average_load = consumption * (1 + distribution_losses) / HOURS_PER_YEAR
     peak_load = average_load / base_to_peak_load_ratio
 
-    no_mv_lines = peak_load / mv_line_capacity
-    no_lv_lines = peak_load / lv_line_capacity
+    no_mv_lines = peak_load / grid_vals['mv_line_capacity']
+    no_lv_lines = peak_load / grid_vals['lv_line_capacity']
     lv_networks_lim_capacity = no_lv_lines / no_mv_lines
-    lv_networks_lim_length = ((grid_cell_area / no_mv_lines) / (lv_line_max_length / sqrt(2))) ** 2
+    lv_networks_lim_length = ((grid_cell_area / no_mv_lines) / (grid_vals['lv_line_max_length'] / sqrt(2))) ** 2
     actual_lv_lines = min([people / num_people_per_hh, max([lv_networks_lim_capacity, lv_networks_lim_length])])
     hh_per_lv_network = (people / num_people_per_hh) / (actual_lv_lines * no_mv_lines)
     lv_unit_length = sqrt(grid_cell_area / (people / num_people_per_hh)) * sqrt(2) / 2
     lv_lines_length_per_lv_network = 1.333 * hh_per_lv_network * lv_unit_length
     total_lv_lines_length = no_mv_lines * actual_lv_lines * lv_lines_length_per_lv_network
     line_reach = (grid_cell_area / no_mv_lines) / (2 * sqrt(grid_cell_area / no_lv_lines))
-    total_length_of_lines = min([line_reach, mv_line_max_length]) * no_mv_lines
+    total_length_of_lines = min([line_reach, grid_vals['mv_line_max_length']]) * no_mv_lines
     additional_hv_lines = max(
-        [0, round(sqrt(grid_cell_area) / (2 * min([line_reach, mv_line_max_length])) / 10, 3) - 1])
+        [0, round(sqrt(grid_cell_area) / (2 * min([line_reach, grid_vals['mv_line_max_length']])) / 10, 3) - 1])
     hv_lines_total_length = (sqrt(grid_cell_area) / 2) * additional_hv_lines * sqrt(grid_cell_area)
     num_transformers = additional_hv_lines + no_mv_lines + (no_mv_lines * actual_lv_lines)
     generation_per_year = average_load * HOURS_PER_YEAR
 
     # The investment and O&M costs are different for grid and non-grid solutions
     if grid:
-        td_investment_cost = hv_lines_total_length * hv_line_cost + \
-                             total_length_of_lines * mv_line_cost + \
-                             total_lv_lines_length * lv_line_cost + \
-                             num_transformers * hv_lv_transformer_cost + \
+        td_investment_cost = hv_lines_total_length * grid_vals['hv_line_cost'] + \
+                             total_length_of_lines * grid_vals['mv_line_cost'] + \
+                             total_lv_lines_length * grid_vals['lv_line_cost'] + \
+                             num_transformers * grid_vals['hv_lv_transformer_cost'] + \
                              (people / num_people_per_hh) * connection_cost_per_hh + \
                              additional_mv_line_length * (
-                                 mv_line_cost * (1 + mv_increase_rate) ** ((additional_mv_line_length / 5) - 1))
+                                 grid_vals['mv_line_cost'] * (1 + grid_vals['mv_increase_rate']) ** ((additional_mv_line_length / 5) - 1))
         td_om_cost = td_investment_cost * om_of_td_lines
         total_investment_cost = td_investment_cost
         total_om_cost = td_om_cost
 
     else:
         total_lv_lines_length *= 0 if standalone else 0.75
-        mv_total_line_cost = mv_line_cost * mv_line_length
-        lv_total_line_cost = lv_line_cost * total_lv_lines_length
+        mv_total_line_cost = grid_vals['mv_line_cost'] * mv_line_length
+        lv_total_line_cost = grid_vals['lv_line_cost'] * total_lv_lines_length
         installed_capacity = peak_load / capacity_factor
         capital_investment = installed_capacity * capital_cost
         td_investment_cost = mv_total_line_cost + lv_total_line_cost + (
@@ -779,8 +765,8 @@ def set_elec_targets(df, scenario_urban, scenario_rural):
     return df
 
 
-def techs_only(df, diesel_price, scenarios, num_people_per_hh, mg_vals, mg_hydro_vals, mg_pv_vals, mg_wind_vals, mg_diesel_vals,
-               sa_pv_vals, sa_diesel_vals):
+def techs_only(df, diesel_price, scenarios, num_people_per_hh, grid_vals, mg_vals, mg_hydro_vals, mg_pv_vals, mg_wind_vals, mg_diesel_vals,
+               sa_pv_vals, sa_diesel_vals, discount_rate):
     """
 
     @param df:
@@ -818,7 +804,9 @@ def techs_only(df, diesel_price, scenarios, num_people_per_hh, mg_vals, mg_hydro
                                      base_to_peak_load_ratio=mg_hydro_vals['base_to_peak_load_ratio'],
                                      system_life=mg_hydro_vals['system_life'],
                                      mv_line_length=row[SET_HYDRO_DIST],
-                                     calc_cap_only=False)
+                                     calc_cap_only=False,
+                                     grid_vals=grid_vals,
+                                     discount_rate=discount_rate)
         if row[SET_HYDRO_DIST] < 5 else 99, axis=1)
 
     logging.info('Calculate minigrid PV LCOE')
@@ -834,7 +822,9 @@ def techs_only(df, diesel_price, scenarios, num_people_per_hh, mg_vals, mg_hydro
                                      om_costs=mg_pv_vals['om_costs'],
                                      base_to_peak_load_ratio=mg_pv_vals['base_to_peak_load_ratio'],
                                      system_life=mg_pv_vals['system_life'],
-                                     calc_cap_only=False)
+                                     calc_cap_only=False,
+                                     grid_vals=grid_vals,
+                                     discount_rate=discount_rate)
         if (row[SET_SOLAR_RESTRICTION] == 1 and row[SET_GHI] > 1000) else 99,
         axis=1)
 
@@ -851,7 +841,9 @@ def techs_only(df, diesel_price, scenarios, num_people_per_hh, mg_vals, mg_hydro
                                      om_costs=mg_wind_vals['om_costs'],
                                      base_to_peak_load_ratio=mg_wind_vals['base_to_peak_load_ratio'],
                                      system_life=mg_wind_vals['system_life'],
-                                     calc_cap_only=False)
+                                     calc_cap_only=False,
+                                     grid_vals=grid_vals,
+                                     discount_rate=discount_rate)
         if row[SET_WINDCF] > 0.1 else 99,
         axis=1)
 
@@ -872,7 +864,9 @@ def techs_only(df, diesel_price, scenarios, num_people_per_hh, mg_vals, mg_hydro
                          efficiency=mg_diesel_vals['efficiency'],
                          diesel_price=diesel_price,
                          diesel=True,
-                         calc_cap_only=False) +
+                         calc_cap_only=False,
+                         grid_vals=grid_vals,
+                         discount_rate=discount_rate) +
         (2 * diesel_price * consumption_mg_diesel * row[SET_TRAVEL_HOURS] / volume_mg_diesel) *
         (1 / mu_mg_diesel) * (1 / LHV_DIESEL),
         axis=1)
@@ -896,7 +890,9 @@ def techs_only(df, diesel_price, scenarios, num_people_per_hh, mg_vals, mg_hydro
                                                                                   diesel_price=diesel_price,
                                                                                   diesel=True,
                                                                                   standalone=True,
-                                                                                  calc_cap_only=False),
+                                                                                  calc_cap_only=False,
+                                                                                  grid_vals=grid_vals,
+                                                                                  discount_rate=discount_rate),
         axis=1)
 
     logging.info('Calculate standalone PV LCOE')
@@ -913,7 +909,9 @@ def techs_only(df, diesel_price, scenarios, num_people_per_hh, mg_vals, mg_hydro
                                      base_to_peak_load_ratio=sa_pv_vals['base_to_peak_load_ratio'],
                                      system_life=sa_pv_vals['system_life'],
                                      standalone=True,
-                                     calc_cap_only=False)
+                                     calc_cap_only=False,
+                                     grid_vals=grid_vals,
+                                     discount_rate=discount_rate)
         if row[SET_GHI] > 1000 else 99,
         axis=1)
 
@@ -929,7 +927,7 @@ def techs_only(df, diesel_price, scenarios, num_people_per_hh, mg_vals, mg_hydro
 
 def results_columns(df, scenarios, grid_btp, num_people_per_hh, diesel_price, grid_price,
                     transmission_losses, grid_capacity_investment, grid_vals, mg_vals, mg_hydro_vals,
-                    mg_pv_vals, mg_wind_vals, mg_diesel_vals, sa_pv_vals, sa_diesel_vals):
+                    mg_pv_vals, mg_wind_vals, mg_diesel_vals, sa_pv_vals, sa_diesel_vals, discount_rate):
 
     def res_investment_cost(row):
         min_tech = row[SET_MINIMUM_OVERALL]
@@ -949,7 +947,9 @@ def results_columns(df, scenarios, grid_btp, num_people_per_hh, diesel_price, gr
                                     diesel_price=diesel_price,
                                     diesel=True,
                                     standalone=True,
-                                    calc_cap_only=True)
+                                    calc_cap_only=True,
+                                     grid_vals=grid_vals,
+                                     discount_rate=discount_rate)
         elif min_tech == SET_LCOE_SA_PV:
             return calc_lcoe(people=row[SET_NEW_CONNECTIONS],
                                     scenario=scenarios[0] if row[SET_URBAN] else scenarios[1],
@@ -963,7 +963,9 @@ def results_columns(df, scenarios, grid_btp, num_people_per_hh, diesel_price, gr
                                     base_to_peak_load_ratio=sa_pv_vals['base_to_peak_load_ratio'],
                                     system_life=sa_pv_vals['system_life'],
                                     standalone=True,
-                                    calc_cap_only=True)
+                                    calc_cap_only=True,
+                                     grid_vals=grid_vals,
+                                     discount_rate=discount_rate)
         elif min_tech == SET_LCOE_MG_WIND:
             return calc_lcoe(people=row[SET_NEW_CONNECTIONS],
                                     scenario=scenarios[0] if row[SET_URBAN] else scenarios[1],
@@ -976,7 +978,9 @@ def results_columns(df, scenarios, grid_btp, num_people_per_hh, diesel_price, gr
                                     om_costs=mg_wind_vals['om_costs'],
                                     base_to_peak_load_ratio=mg_wind_vals['base_to_peak_load_ratio'],
                                     system_life=mg_wind_vals['system_life'],
-                                    calc_cap_only=True)
+                                    calc_cap_only=True,
+                                     grid_vals=grid_vals,
+                                     discount_rate=discount_rate)
         elif min_tech == SET_LCOE_MG_DIESEL:
             return calc_lcoe(people=row[SET_NEW_CONNECTIONS],
                                     scenario=scenarios[0] if row[SET_URBAN] else scenarios[1],
@@ -992,7 +996,9 @@ def results_columns(df, scenarios, grid_btp, num_people_per_hh, diesel_price, gr
                                     efficiency=mg_diesel_vals['efficiency'],
                                     diesel_price=diesel_price,
                                     diesel=True,
-                                    calc_cap_only=True)
+                                    calc_cap_only=True,
+                                     grid_vals=grid_vals,
+                                     discount_rate=discount_rate)
         elif min_tech == SET_LCOE_MG_PV:
             return calc_lcoe(people=row[SET_NEW_CONNECTIONS],
                                     scenario=scenarios[0] if row[SET_URBAN] else scenarios[1],
@@ -1005,7 +1011,9 @@ def results_columns(df, scenarios, grid_btp, num_people_per_hh, diesel_price, gr
                                     om_costs=mg_pv_vals['om_costs'],
                                     base_to_peak_load_ratio=mg_pv_vals['base_to_peak_load_ratio'],
                                     system_life=mg_pv_vals['system_life'],
-                                    calc_cap_only=True)
+                                    calc_cap_only=True,
+                                     grid_vals=grid_vals,
+                                     discount_rate=discount_rate)
         elif min_tech == SET_LCOE_MG_HYDRO:
             return calc_lcoe(people=row[SET_NEW_CONNECTIONS],
                                     scenario=scenarios[0] if row[SET_URBAN] else scenarios[1],
@@ -1019,7 +1027,9 @@ def results_columns(df, scenarios, grid_btp, num_people_per_hh, diesel_price, gr
                                     base_to_peak_load_ratio=mg_hydro_vals['base_to_peak_load_ratio'],
                                     system_life=mg_hydro_vals['system_life'],
                                     mv_line_length=row[SET_HYDRO_DIST],
-                                    calc_cap_only=True)
+                                    calc_cap_only=True,
+                                     grid_vals=grid_vals,
+                                     discount_rate=discount_rate)
         elif min_tech == SET_LCOE_GRID:
             return calc_lcoe(people=row[SET_NEW_CONNECTIONS],
                                     scenario=scenarios[0] if row[SET_URBAN] else scenarios[1],
@@ -1033,7 +1043,9 @@ def results_columns(df, scenarios, grid_btp, num_people_per_hh, diesel_price, gr
                                     grid_price=grid_price,
                                     grid=True,
                                     grid_capacity_investment=grid_capacity_investment,
-                                    calc_cap_only=True)
+                                    calc_cap_only=True,
+                                     grid_vals=grid_vals,
+                                     discount_rate=discount_rate)
         else:
             raise ValueError('A technology has not been accounted for in res_investment_cost()')
 
