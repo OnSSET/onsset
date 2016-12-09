@@ -686,7 +686,8 @@ def elec_direct(df_country, grid_lcoes_urban, grid_lcoes_rural, existing_grid_co
     min_tech_lcoes = df_country[SET_MINIMUM_TECH_LCOE].tolist()
     new_lcoes = df_country[SET_LCOE_GRID].tolist()
 
-    cell_path = np.zeros(len(status)).tolist()
+    cell_path_real = list(np.zeros(len(status)).tolist())
+    cell_path_adjusted = list(np.zeros(len(status)).tolist())
     electrified, unelectrified = separate_elec_status(status)
 
     loops = 1
@@ -699,7 +700,7 @@ def elec_direct(df_country, grid_lcoes_urban, grid_lcoes_rural, existing_grid_co
         for elec in electrified:
             unelectrified_hashed = get_unelectrified_rows(hash_table, elec, x, y, max_dist)
             for unelec in unelectrified_hashed:
-                prev_dist = cell_path[elec]
+                prev_dist = cell_path_real[elec]
                 dist = sqrt((x[elec] - x[unelec]) ** 2 + (y[elec] - y[unelec]) ** 2)
                 if prev_dist + dist < max_dist:
 
@@ -711,24 +712,26 @@ def elec_direct(df_country, grid_lcoes_urban, grid_lcoes_rural, existing_grid_co
                     else:
                         pop_index = 1000 * round(pop_index / 1000)
 
+                    dist_adjusted = grid_penalty_ratio[unelec]*(dist + existing_grid_cost_ratio * prev_dist)
+
                     if urban[unelec]:
-                        grid_lcoe = grid_lcoes_urban[pop_index][int(grid_penalty_ratio[unelec]*(dist + existing_grid_cost_ratio * prev_dist))]
+                        grid_lcoe = grid_lcoes_urban[pop_index][int(dist_adjusted)]
                     else:
-                        grid_lcoe = grid_lcoes_rural[pop_index][int(grid_penalty_ratio[unelec] * (dist + existing_grid_cost_ratio * prev_dist))]
+                        grid_lcoe = grid_lcoes_rural[pop_index][int(dist_adjusted)]
 
 
                     if grid_lcoe < min_tech_lcoes[unelec]:
                         if grid_lcoe < new_lcoes[unelec]:
                             new_lcoes[unelec] = grid_lcoe
-                            cell_path[unelec] = dist + prev_dist
-                            # TODO should add fake distance! (what about places electrified with preelec?
+                            cell_path_real[unelec] = dist + prev_dist
+                            cell_path_adjusted[unelec] = dist_adjusted
                             if unelec not in changes:
                                 changes.append(unelec)
 
         electrified = changes[:]
         unelectrified = [x for x in unelectrified if x not in electrified]
 
-    return new_lcoes, cell_path
+    return new_lcoes, cell_path_adjusted
 
 
 def run_elec(df, grid_lcoes_urban, grid_lcoes_rural, grid_price, existing_grid_cost_ratio, max_dist):
@@ -789,7 +792,6 @@ def techs_only(df, diesel_price, scenarios, num_people_per_hh, grid_vals, mg_val
     p_om_sa_diesel = 0.01  # (USD/kWh) operation, maintenance and amortization
 
     #TODO Limit hydropower
-    #TODO differentiate urban/rural for target, household size...
     logging.info('Calculate minigrid hydro LCOE')
     df[SET_LCOE_MG_HYDRO] = df.apply(
         lambda row: calc_lcoe(people=row[SET_POP_FUTURE],
