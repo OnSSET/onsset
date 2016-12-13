@@ -41,15 +41,11 @@ elif choice == 2:
         print(country)
         settlements_in_csv = os.path.join(base_dir, '{}.csv'.format(country))
 
-        try:
-            df = pd.read_csv(settlements_in_csv)
-        except FileNotFoundError:
-            print('You need to first split into a base directory!')
-            raise
+        onsseter = SettlementProcessor(settlements_in_csv)
 
-        df = condition_df(df)
-        df = grid_penalties(df)
-        df = calc_wind_cfs(df)
+        onsseter.condition_df()
+        onsseter.grid_penalties()
+        onsseter.calc_wind_cfs()
 
         pop_actual = specs.loc[country, SPE_POP]
         pop_future = specs.loc[country, SPE_POP_FUTURE]
@@ -65,9 +61,9 @@ elif choice == 2:
         pop_tot = specs.loc[country, SPE_POP]
         pop_cutoff2 = specs.loc[country, SPE_POP_CUTOFF2]
 
-        df, urban_cutoff, urban_modelled = calibrate_pop_and_urban(df, pop_actual, pop_future, urban, urban_future, urban_cutoff)
-        df, min_night_lights, max_grid_dist, max_road_dist, elec_modelled, pop_cutoff, pop_cutoff2 = \
-            elec_current_and_future(df, elec_actual, pop_cutoff, min_night_lights, max_grid_dist, max_road_dist, pop_tot,
+        urban_cutoff, urban_modelled = onsseter.calibrate_pop_and_urban(pop_actual, pop_future, urban, urban_future, urban_cutoff)
+        min_night_lights, max_grid_dist, max_road_dist, elec_modelled, pop_cutoff, pop_cutoff2 = \
+            onsseter.elec_current_and_future(elec_actual, pop_cutoff, min_night_lights, max_grid_dist, max_road_dist, pop_tot,
                                     pop_cutoff2)
 
         specs.loc[country, SPE_MIN_NIGHT_LIGHTS] = min_night_lights
@@ -78,7 +74,7 @@ elif choice == 2:
         specs.loc[country, SPE_POP_CUTOFF2] = pop_cutoff2
 
         specs.to_excel(specs_path)
-        df.to_csv(settlements_in_csv, index=False)
+        onsseter.df.to_csv(settlements_in_csv, index=False)
 
 elif choice == 3:
     base_dir = str(input('Enter the base file directory containing separated and prepped countries: '))
@@ -111,68 +107,96 @@ elif choice == 3:
         settlements_out_csv = os.path.join(output_dir, '{}_{}_{}.csv'.format(country, wb_tier_urban, diesel_tag))
         summary_csv = os.path.join(output_dir, '{}_{}_{}_summary.csv'.format(country, wb_tier_urban, diesel_tag))
 
-        try:
-            df = pd.read_csv(settlements_in_csv)
-        except FileNotFoundError:
-            print('You need to first split into a base directory and prep!')
-            raise
-
-        discount_rate = 0.08
+        onsseter = SettlementProcessor(settlements_in_csv)
 
         diesel_price = specs[SPE_DIESEL_PRICE_HIGH][country] if diesel_high else specs[SPE_DIESEL_PRICE_LOW][country]
         grid_price = specs[SPE_GRID_PRICE][country]
         existing_grid_cost_ratio = specs[SPE_EXISTING_GRID_COST_RATIO][country]
-        num_people_per_hh = float(specs[SPE_NUM_PEOPLE_PER_HH][country])
-        transmission_losses = float(specs[SPE_GRID_LOSSES][country])
-        grid_capacity_investment = float(specs[SPE_GRID_CAPACITY_INVESTMENT][country])
+        num_people_per_hh_rural = float(specs[SPE_NUM_PEOPLE_PER_HH_RURAL][country])
+        num_people_per_hh_urban = float(specs[SPE_NUM_PEOPLE_PER_HH_URBAN][country])
         max_dist = float(specs[SPE_MAX_GRID_EXTENSION_DIST][country])
-        grid_base_to_peak = float(specs[SPE_BASE_TO_PEAK][country])
-        energy_per_hh_urban = wb_tiers_all[wb_tier_urban] * num_people_per_hh
-        energy_per_hh_rural = wb_tiers_all[wb_tier_rural] * num_people_per_hh
+        energy_per_hh_rural = wb_tiers_all[wb_tier_rural] * num_people_per_hh_rural
+        energy_per_hh_urban = wb_tiers_all[wb_tier_urban] * num_people_per_hh_urban
 
-        mg_hydro_vals = {'capacity_factor': 0.5, 'capital_cost': 5000, 'om_costs':0.02,
-                         'base_to_peak_load_ratio': 1, 'system_life': 30}
-        mg_pv_vals = {'capital_cost': 4300, 'om_costs': 0.015, 'base_to_peak_load_ratio': 0.9, 'system_life': 20}
-        mg_wind_vals = {'capital_cost': 3000, 'om_costs': 0.02, 'base_to_peak_load_ratio': 0.75, 'system_life': 20}
-        mg_diesel_vals = {'capacity_factor': 0.7, 'capital_cost': 721, 'om_costs': 0.1,
-                          'base_to_peak_load_ratio': 0.5, 'system_life': 15, 'efficiency': 0.33}
+        grid_calc = Technology(om_of_td_lines=0.03,
+                               distribution_losses=float(specs[SPE_GRID_LOSSES][country]),
+                               connection_cost_per_hh=125,
+                               base_to_peak_load_ratio=float(specs[SPE_BASE_TO_PEAK][country]),
+                               capacity_factor=1,
+                               system_life=30,
+                               grid_capacity_investment=float(specs[SPE_GRID_CAPACITY_INVESTMENT][country]),
+                               grid_price=grid_price)
 
-        sa_pv_vals = {'capital_cost': 5500, 'om_costs': 0.012, 'base_to_peak_load_ratio': 0.9, 'system_life': 15}
-        sa_diesel_vals = {'capacity_factor': 0.7, 'capital_cost': 938, 'om_costs': 0.1,
-                          'base_to_peak_load_ratio': 0.5, 'system_life': 10, 'efficiency': 0.28}
+        mg_hydro_calc = Technology(om_of_td_lines=0.03,
+                                   distribution_losses=0.05,
+                                   connection_cost_per_hh=100,
+                                   base_to_peak_load_ratio=1,
+                                   capacity_factor=0.5,
+                                   system_life=30,
+                                   capital_cost=5000,
+                                   om_costs=0.02)
 
-        mg_vals = {'om_of_td_lines': 0.03, 'distribution_losses': 0.05, 'connection_cost_per_hh': 100}
-        grid_vals = {'capacity_factor': 1,
-                     'base_to_peak_load_ratio': grid_base_to_peak,
-                     'om_of_td_lines': 0.03,
-                     'connection_cost_per_hh': 125,
-                     'system_life': 30,
-                     'mv_line_cost': 9000,  # usd/km
-                     'lv_line_cost': 5000,  # usd/km
-                     'mv_line_capacity': 50,  # kw/line
-                     'lv_line_capacity': 10,  # kw/line
-                     'lv_line_max_length': 30,  # km
-                     'hv_line_cost': 53000,  # usd/km
-                     'mv_line_max_length': 50,  # km
-                     'hv_lv_transformer_cost': 5000,  # usd/unit
-                     'mv_increase_rate': 0.1}  # percentage
+        mg_wind_calc = Technology(om_of_td_lines=0.03,
+                                  distribution_losses=0.05,
+                                  connection_cost_per_hh=100,
+                                  base_to_peak_load_ratio=0.75,
+                                  capital_cost=3000,
+                                  om_costs=0.02,
+                                  system_life=20)
 
-        df = set_elec_targets(df, energy_per_hh_urban, energy_per_hh_rural)
+        mg_pv_calc = Technology(om_of_td_lines=0.03,
+                                distribution_losses=0.05,
+                                connection_cost_per_hh=100,
+                                base_to_peak_load_ratio=0.9,
+                                system_life=20,
+                                om_costs=0.015,
+                                capital_cost=4300)
 
-        grid_lcoes_urban = get_grid_lcoe_table(energy_per_hh_urban, max_dist, num_people_per_hh, transmission_losses,
-                                                grid_base_to_peak, grid_price, grid_capacity_investment, grid_vals, discount_rate)
-        grid_lcoes_rural = get_grid_lcoe_table(energy_per_hh_rural, max_dist, num_people_per_hh, transmission_losses,
-                                               grid_base_to_peak, grid_price, grid_capacity_investment, grid_vals, discount_rate)
+        sa_pv_calc = Technology(base_to_peak_load_ratio=0.9,
+                                system_life=15,
+                                om_costs=0.012,
+                                capital_cost=5500,
+                                standalone=True)
 
-        df = techs_only(df, diesel_price, (energy_per_hh_urban, energy_per_hh_rural), num_people_per_hh, grid_vals, mg_vals, mg_hydro_vals, mg_pv_vals,
-                             mg_wind_vals, mg_diesel_vals, sa_pv_vals, sa_diesel_vals, discount_rate)
-        df = run_elec(df, grid_lcoes_urban, grid_lcoes_rural, grid_price, existing_grid_cost_ratio, max_dist)
-        df = results_columns(df, (energy_per_hh_urban, energy_per_hh_rural), grid_base_to_peak, num_people_per_hh, diesel_price, grid_price,
-                                  transmission_losses, grid_capacity_investment, grid_vals, mg_vals, mg_hydro_vals,
-                                  mg_pv_vals, mg_wind_vals, mg_diesel_vals, sa_pv_vals, sa_diesel_vals, discount_rate)
-        calc_summaries(df, country).to_csv(summary_csv, header=True)
+        mg_diesel_calc = Technology(om_of_td_lines=0.03,
+                                    distribution_losses=0.05,
+                                    connection_cost_per_hh=100,
+                                    base_to_peak_load_ratio=0.5,
+                                    capacity_factor=0.7,
+                                    system_life=15,
+                                    om_costs=0.1,
+                                    efficiency=0.33,
+                                    capital_cost=721,
+                                    diesel_price=diesel_price,
+                                    diesel_truck_consumption=33.7,
+                                    diesel_truck_volume=15000)
 
-        df.to_csv(settlements_out_csv, index=False)
+        sa_diesel_calc = Technology(base_to_peak_load_ratio=0.5,
+                                    capacity_factor=0.7,
+                                    system_life=10,
+                                    om_costs=0.1,
+                                    capital_cost=938,
+                                    diesel_price=diesel_price,
+                                    standalone=True,
+                                    efficiency=0.28,
+                                    diesel_truck_consumption=14,
+                                    diesel_truck_volume=300)
+
+        onsseter.set_scenario_variables(energy_per_hh_rural, energy_per_hh_urban, num_people_per_hh_rural, num_people_per_hh_urban)
+
+        print('doing grid tables')
+        grid_lcoes_rural = grid_calc.get_grid_table(energy_per_hh_rural, num_people_per_hh_rural, max_dist)
+        grid_lcoes_urban = grid_calc.get_grid_table(energy_per_hh_urban, num_people_per_hh_urban, max_dist)
+
+        onsseter.techs_only(mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc, sa_diesel_calc)
+        onsseter.run_elec(grid_lcoes_rural, grid_lcoes_urban, grid_price, existing_grid_cost_ratio, max_dist)
+        onsseter.results_columns(mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc, sa_diesel_calc, grid_calc)
+
+        summary = onsseter.calc_summaries()
+        summary.name = country
+        summary.to_csv(summary_csv, header=True)
+
+        onsseter.df.to_csv(settlements_out_csv, index=False)
 
     if do_combine:
         print('\n --- Combining --- \n')
