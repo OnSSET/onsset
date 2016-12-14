@@ -24,8 +24,10 @@ if choice == 1:
 
     print('\n --- Splitting --- \n')
 
-    try: os.makedirs(base_dir)
-    except FileExistsError: pass
+    try:
+        os.makedirs(base_dir)
+    except FileExistsError:
+        pass
 
     df = pd.read_csv(settlements_csv)
 
@@ -61,10 +63,11 @@ elif choice == 2:
         pop_tot = specs.loc[country, SPE_POP]
         pop_cutoff2 = specs.loc[country, SPE_POP_CUTOFF2]
 
-        urban_cutoff, urban_modelled = onsseter.calibrate_pop_and_urban(pop_actual, pop_future, urban, urban_future, urban_cutoff)
+        urban_cutoff, urban_modelled = onsseter.calibrate_pop_and_urban(pop_actual, pop_future, urban,
+                                                                        urban_future, urban_cutoff)
         min_night_lights, max_grid_dist, max_road_dist, elec_modelled, pop_cutoff, pop_cutoff2 = \
-            onsseter.elec_current_and_future(elec_actual, pop_cutoff, min_night_lights, max_grid_dist, max_road_dist, pop_tot,
-                                    pop_cutoff2)
+            onsseter.elec_current_and_future(elec_actual, pop_cutoff, min_night_lights,
+                                             max_grid_dist, max_road_dist, pop_tot, pop_cutoff2)
 
         specs.loc[country, SPE_MIN_NIGHT_LIGHTS] = min_night_lights
         specs.loc[country, SPE_MAX_GRID_DIST] = max_grid_dist
@@ -81,15 +84,24 @@ elif choice == 3:
     output_dir = str(input('Enter the output directory (can contain multiple runs): '))
 
     wb_tiers_all = {1: 7.738, 2: 43.8, 3: 160.6, 4: 423.4, 5: 598.6}
-    wb_tier_urban = int(input('\nWorld Bank Tiers of Electricity Access\n'
-                      '1: {} kWh/hh/year\n2: {} kWh/hh/year\n3: {} kWh/hh/year\n4: {} kWh/hh/year\n5: {} kWh/hh/year\n'
-                      'Enter the tier number for urban: '.format(wb_tiers_all[1], wb_tiers_all[2], wb_tiers_all[3],
-                                                                 wb_tiers_all[4], wb_tiers_all[5])))
-    wb_tier_rural = int(input('\nWorld Bank Tiers of Electricity Access\n'
-                              '1: {} kWh/hh/year\n2: {} kWh/hh/year\n3: {} kWh/hh/year\n4: {} kWh/hh/year\n5: {} kWh/hh/year\n'
-                              'Enter the tier number for rural: '.format(wb_tiers_all[1], wb_tiers_all[2],
-                                                                         wb_tiers_all[3],
-                                                                         wb_tiers_all[4], wb_tiers_all[5])))
+    wb_tier_urban = int(input("""\nWorld Bank Tiers of Electricity Access\n
+                              1: {} kWh/person/year\n
+                              2: {} kWh/person/year\n
+                              3: {} kWh/person/year\n
+                              4: {} kWh/person/year\n
+                              5: {} kWh/person/year\n
+                              Enter the tier number for urban: """.format(wb_tiers_all[1], wb_tiers_all[2],
+                                                                          wb_tiers_all[3], wb_tiers_all[4],
+                                                                          wb_tiers_all[5])))
+    wb_tier_rural = int(input("""\nWorld Bank Tiers of Electricity Access\n
+                              1: {} kWh/person/year\n
+                              2: {} kWh/person/year\n
+                              3: {} kWh/person/year\n
+                              4: {} kWh/person/year\n
+                              5: {} kWh/person/year\n
+                              Enter the tier number for rural: """.format(wb_tiers_all[1], wb_tiers_all[2],
+                                                                          wb_tiers_all[3], wb_tiers_all[4],
+                                                                          wb_tiers_all[5])))
 
     diesel_high = True if 'y' in input('Use high diesel value? <y/n> ') else False
     diesel_tag = 'high' if diesel_high else 'low'
@@ -97,8 +109,10 @@ elif choice == 3:
 
     print('\n --- Running scenario --- \n')
 
-    try: os.makedirs(output_dir)
-    except FileExistsError: pass
+    try:
+        os.makedirs(output_dir)
+    except FileExistsError:
+        pass
 
     for country in countries:
         # create country_specs here
@@ -123,7 +137,7 @@ elif choice == 3:
                                connection_cost_per_hh=125,
                                base_to_peak_load_ratio=float(specs[SPE_BASE_TO_PEAK][country]),
                                capacity_factor=1,
-                               system_life=30,
+                               tech_life=30,
                                grid_capacity_investment=float(specs[SPE_GRID_CAPACITY_INVESTMENT][country]),
                                grid_price=grid_price)
 
@@ -132,7 +146,7 @@ elif choice == 3:
                                    connection_cost_per_hh=100,
                                    base_to_peak_load_ratio=1,
                                    capacity_factor=0.5,
-                                   system_life=30,
+                                   tech_life=30,
                                    capital_cost=5000,
                                    om_costs=0.02)
 
@@ -142,18 +156,18 @@ elif choice == 3:
                                   base_to_peak_load_ratio=0.75,
                                   capital_cost=3000,
                                   om_costs=0.02,
-                                  system_life=20)
+                                  tech_life=20)
 
         mg_pv_calc = Technology(om_of_td_lines=0.03,
                                 distribution_losses=0.05,
                                 connection_cost_per_hh=100,
                                 base_to_peak_load_ratio=0.9,
-                                system_life=20,
+                                tech_life=20,
                                 om_costs=0.015,
                                 capital_cost=4300)
 
         sa_pv_calc = Technology(base_to_peak_load_ratio=0.9,
-                                system_life=15,
+                                tech_life=15,
                                 om_costs=0.012,
                                 capital_cost=5500,
                                 standalone=True)
@@ -163,7 +177,7 @@ elif choice == 3:
                                     connection_cost_per_hh=100,
                                     base_to_peak_load_ratio=0.5,
                                     capacity_factor=0.7,
-                                    system_life=15,
+                                    tech_life=15,
                                     om_costs=0.1,
                                     efficiency=0.33,
                                     capital_cost=721,
@@ -173,7 +187,7 @@ elif choice == 3:
 
         sa_diesel_calc = Technology(base_to_peak_load_ratio=0.5,
                                     capacity_factor=0.7,
-                                    system_life=10,
+                                    tech_life=10,
                                     om_costs=0.1,
                                     capital_cost=938,
                                     diesel_price=diesel_price,
@@ -182,15 +196,18 @@ elif choice == 3:
                                     diesel_truck_consumption=14,
                                     diesel_truck_volume=300)
 
-        onsseter.set_scenario_variables(energy_per_hh_rural, energy_per_hh_urban, num_people_per_hh_rural, num_people_per_hh_urban)
+        onsseter.set_scenario_variables(energy_per_hh_rural, energy_per_hh_urban,
+                                        num_people_per_hh_rural, num_people_per_hh_urban)
 
         print('doing grid tables')
         grid_lcoes_rural = grid_calc.get_grid_table(energy_per_hh_rural, num_people_per_hh_rural, max_dist)
         grid_lcoes_urban = grid_calc.get_grid_table(energy_per_hh_urban, num_people_per_hh_urban, max_dist)
 
-        onsseter.techs_only(mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc, sa_diesel_calc)
+        onsseter.calculate_off_grid_lcoes(mg_hydro_calc, mg_wind_calc, mg_pv_calc,
+                                          sa_pv_calc, mg_diesel_calc, sa_diesel_calc)
         onsseter.run_elec(grid_lcoes_rural, grid_lcoes_urban, grid_price, existing_grid_cost_ratio, max_dist)
-        onsseter.results_columns(mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc, sa_diesel_calc, grid_calc)
+        onsseter.results_columns(mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc,
+                                 mg_diesel_calc, sa_diesel_calc, grid_calc)
 
         summary = onsseter.calc_summaries()
         summary.name = country
@@ -208,7 +225,9 @@ elif choice == 3:
             df_add = pd.read_csv(os.path.join(output_dir, '{}_{}_{}.csv'.format(country, wb_tier_urban, diesel_tag)))
             df_base = df_base.append(df_add, ignore_index=True)
 
-            summaries[country] = pd.read_csv(os.path.join(output_dir, '{}_{}_{}_summary.csv'.format(country, wb_tier_urban, diesel_tag)),
+            summaries[country] = pd.read_csv(os.path.join(output_dir, '{}_{}_{}_summary.csv'.format(country,
+                                                                                                    wb_tier_urban,
+                                                                                                    diesel_tag)),
                                              squeeze=True, index_col=0)
 
         print('saving csv')

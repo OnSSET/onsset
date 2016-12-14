@@ -5,12 +5,15 @@
 # Python version: 2.7
 
 from __future__ import absolute_import, division, print_function
-from pyonsset.onsset import *
 import logging
 import arcpy
 import csv
 import os
 import errno
+try:
+    from pyonsset.onsset import *
+except ImportError:
+    pass
 
 logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.DEBUG)
 
@@ -129,16 +132,14 @@ def create(gdb='C:/Users/adm.esa/Desktop/ONSSET/Africa_Onsset.gdb', settlements_
     arcpy.CalculateField_management(settlements_fc, SET_HYDRO_DIST, '!NEAR_DIST! / 1000', 'PYTHON_9.3')
     arcpy.JoinField_management(settlements_fc, 'NEAR_FID', hydro_points,
                                arcpy.Describe(hydro_points).OIDFieldName, [SET_HYDRO])
-    arcpy.DeleteField_management(settlements_fc, 'NEAR_DIST; NEAR_FID')
+    arcpy.AlterField_management(settlements_fc, 'NEAR_FID', SET_HYDRO_FID, SET_HYDRO_FID)
+    arcpy.DeleteField_management(settlements_fc, 'NEAR_DIST')
     logging.info('Completed function gis.create()')
 
 
 def export_csv(gdb, settlements_fc, out_file):
     """
     Export a settlements feature class to a csv file that can be used by pandas.
-
-    @param gdb: the ARcGIS geodatabase holding the layers
-    @param settlements_fc: a name for the new settlements layer
     """
 
     logging.info('Starting function gis.export_csv()...')
@@ -168,15 +169,10 @@ def export_csv(gdb, settlements_fc, out_file):
     logging.info('Completed function gis.export_csv()')
 
 
-def import_csv(gdb, out_fc, in_file):
+def import_csv(gdb, out_fc, in_file, x_col, y_col):
     """
     Import the csv file designated by scenario, selection and diesel_high back into ArcGIS.
-    The columns with locations in degrees (not metres!) must be labelled X and Y
-
-    @param scenario: The scenario target in kWh/hh/year
-    @param selection: The country or subset to import
-    @param diesel_high: Whether to use the high diesel table
-    @param gdb: The geodatabase where the result should be saved
+    The columns with locations in degrees must be specified by x_col and y_col
     """
 
     logging.info('Starting function gis.import_csv()...')
@@ -232,10 +228,10 @@ def import_csv(gdb, out_fc, in_file):
 
             x, y = 0.0, 0.0
             for i, r in enumerate(row):
-                if fields[i] == 'X':
+                if fields[i] == x_col:
                     x = float(r)
                     rowf.append(x)
-                elif fields[i] == 'Y':
+                elif fields[i] == y_col:
                     y = float(r)
                     rowf.append(y)
 
@@ -274,7 +270,9 @@ if __name__ == "__main__":
         fc_name = fc_name if len(fc_name) > 0 else default_export_fc
         csv_path = csv_path if len(csv_path) > 0 else default_export_csv
 
-        proceed = str(raw_input('Export the layer {} from Geodatabase {}\nto the file {}? (y/n) '.format(fc_name, gdb_path, csv_path)))
+        proceed = str(raw_input('Export the layer {} from Geodatabase {}\nto the file {}? (y/n) '.format(fc_name,
+                                                                                                         gdb_path,
+                                                                                                         csv_path)))
         if 'y' in proceed:
             export_csv(gdb_path, fc_name, csv_path)
 
@@ -287,11 +285,15 @@ if __name__ == "__main__":
         csv_path = str(raw_input('Please enter the full path for the new csv to import: '))
         gdb_path = str(raw_input('Please enter the full path for the destination Geodatabase: '))
         fc_name = str(raw_input('Please enter the name of the new feature class to create: '))
+        x_col_name = str(raw_input('Enter the name of the column with x coordinates: '))
+        y_col_name = str(raw_input('Enter the name of the column with y coordinates: '))
 
         gdb_path = gdb_path if len(gdb_path) > 0 else default_import_gdb
         fc_name = fc_name if len(fc_name) > 0 else default_import_fc
         csv_path = csv_path if len(csv_path) > 0 else default_import_csv
 
-        proceed = str(raw_input('Import the file {} as {}\nin Geodatabase {}? 2(y/n) '.format(csv_path, fc_name, gdb_path)))
+        proceed = str(raw_input('Import the file {} as {}\nin Geodatabase {}? (y/n) '.format(csv_path,
+                                                                                             fc_name,
+                                                                                             gdb_path)))
         if 'y' in proceed:
-            import_csv(gdb_path, fc_name, csv_path)
+            import_csv(gdb_path, fc_name, csv_path, x_col_name, y_col_name)

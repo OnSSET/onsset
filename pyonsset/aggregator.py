@@ -32,17 +32,17 @@ for x,row in hash_table.items():
         new_row[SET_X] = x*new_cell_size + copysign(0.45*new_cell_size, x)
         new_row[SET_Y] = y*new_cell_size + copysign(0.45*new_cell_size, y)
 
-        new_row[SET_LCOE_GRID] = df.iloc[df_index].loc[df[SET_MINIMUM_TECH] == SET_LCOE_GRID][SET_NEW_CONNECTIONS].sum() / new_row['NewConnections']
-        new_row[SET_LCOE_MG_HYDRO] = df.iloc[df_index].loc[df[SET_MINIMUM_TECH] == SET_LCOE_MG_HYDRO][SET_NEW_CONNECTIONS].sum() / new_row['NewConnections']
-        new_row[SET_LCOE_MG_WIND] = df.iloc[df_index].loc[df[SET_MINIMUM_TECH] == SET_LCOE_MG_WIND][SET_NEW_CONNECTIONS].sum() / new_row['NewConnections']
-        new_row[SET_LCOE_MG_DIESEL] = df.iloc[df_index].loc[df[SET_MINIMUM_TECH] == SET_LCOE_MG_DIESEL][SET_NEW_CONNECTIONS].sum() / new_row['NewConnections']
-        new_row[SET_LCOE_MG_PV] = df.iloc[df_index].loc[df[SET_MINIMUM_TECH] == SET_LCOE_MG_PV][SET_NEW_CONNECTIONS].sum() / new_row['NewConnections']
-        new_row[SET_LCOE_SA_DIESEL] = df.iloc[df_index].loc[df[SET_MINIMUM_TECH] == SET_LCOE_SA_DIESEL][SET_NEW_CONNECTIONS].sum() / new_row['NewConnections']
-        new_row[SET_LCOE_SA_PV] = df.iloc[df_index].loc[df[SET_MINIMUM_TECH] == SET_LCOE_SA_PV][SET_NEW_CONNECTIONS].sum() / new_row['NewConnections']
+        new_row[SET_LCOE_GRID] = df.iloc[df_index].loc[df[SET_MIN_OFFGRID] == SET_LCOE_GRID][SET_NEW_CONNECTIONS].sum() / new_row['NewConnections']
+        new_row[SET_LCOE_MG_HYDRO] = df.iloc[df_index].loc[df[SET_MIN_OFFGRID] == SET_LCOE_MG_HYDRO][SET_NEW_CONNECTIONS].sum() / new_row['NewConnections']
+        new_row[SET_LCOE_MG_WIND] = df.iloc[df_index].loc[df[SET_MIN_OFFGRID] == SET_LCOE_MG_WIND][SET_NEW_CONNECTIONS].sum() / new_row['NewConnections']
+        new_row[SET_LCOE_MG_DIESEL] = df.iloc[df_index].loc[df[SET_MIN_OFFGRID] == SET_LCOE_MG_DIESEL][SET_NEW_CONNECTIONS].sum() / new_row['NewConnections']
+        new_row[SET_LCOE_MG_PV] = df.iloc[df_index].loc[df[SET_MIN_OFFGRID] == SET_LCOE_MG_PV][SET_NEW_CONNECTIONS].sum() / new_row['NewConnections']
+        new_row[SET_LCOE_SA_DIESEL] = df.iloc[df_index].loc[df[SET_MIN_OFFGRID] == SET_LCOE_SA_DIESEL][SET_NEW_CONNECTIONS].sum() / new_row['NewConnections']
+        new_row[SET_LCOE_SA_PV] = df.iloc[df_index].loc[df[SET_MIN_OFFGRID] == SET_LCOE_SA_PV][SET_NEW_CONNECTIONS].sum() / new_row['NewConnections']
 
         weighted_sum_lcoes = 0
         for i in df_index:
-            weighted_sum_lcoes += df.iloc[i][SET_NEW_CONNECTIONS] * df.iloc[i][SET_MINIMUM_TECH_LCOE]
+            weighted_sum_lcoes += df.iloc[i][SET_NEW_CONNECTIONS] * df.iloc[i][SET_MIN_OFFGRID_LCOE]
         new_row['WeightedLCOE'] = weighted_sum_lcoes / new_row[SET_NEW_CONNECTIONS]
 
         df_agg = df_agg.append(new_row, ignore_index=True)
