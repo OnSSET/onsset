@@ -52,7 +52,6 @@ SET_GRID_PENALTY = 'GridPenalty'
 SET_URBAN = 'IsUrban'  # Whether the site is urban (0 or 1)
 SET_ENERGY_PER_HH = 'EnergyPerHH'
 SET_NUM_PEOPLE_PER_HH = 'NumPeoplePerHH'
-SET_ELEC_PREFIX = 'Elec'
 SET_ELEC_CURRENT = 'ElecStart'  # If the site is currently electrified (0 or 1)
 SET_ELEC_FUTURE = 'ElecFuture'  # If the site has the potential to be 'easily' electrified in future
 SET_NEW_CONNECTIONS = 'NewConnections'  # Number of new people with electricity connections
@@ -845,6 +844,7 @@ class SettlementProcessor:
         hydro_df = self.df[[SET_HYDRO_FID, SET_HYDRO]].drop_duplicates()
         hydro_df[hydro_used] = 0
         hydro_df = hydro_df.set_index(SET_HYDRO_FID)
+        hydro_df = hydro_df.drop_duplicates()  # just in case there are still duplicates
 
         max_hydro_dist = 5  # the max distance in km to consider hydropower viable
 

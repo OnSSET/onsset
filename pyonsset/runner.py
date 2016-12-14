@@ -51,7 +51,7 @@ elif choice == 2:
 
         pop_actual = specs.loc[country, SPE_POP]
         pop_future = specs.loc[country, SPE_POP_FUTURE]
-        urban = specs.loc[country, SPE_URBAN]
+        urban_current = specs.loc[country, SPE_URBAN]
         urban_future = specs.loc[country, SPE_URBAN_FUTURE]
         urban_cutoff = specs.loc[country, SPE_URBAN_CUTOFF]
 
@@ -63,7 +63,7 @@ elif choice == 2:
         pop_tot = specs.loc[country, SPE_POP]
         pop_cutoff2 = specs.loc[country, SPE_POP_CUTOFF2]
 
-        urban_cutoff, urban_modelled = onsseter.calibrate_pop_and_urban(pop_actual, pop_future, urban,
+        urban_cutoff, urban_modelled = onsseter.calibrate_pop_and_urban(pop_actual, pop_future, urban_current,
                                                                         urban_future, urban_cutoff)
         min_night_lights, max_grid_dist, max_road_dist, elec_modelled, pop_cutoff, pop_cutoff2 = \
             onsseter.elec_current_and_future(elec_actual, pop_cutoff, min_night_lights,
@@ -128,7 +128,7 @@ elif choice == 3:
         existing_grid_cost_ratio = specs[SPE_EXISTING_GRID_COST_RATIO][country]
         num_people_per_hh_rural = float(specs[SPE_NUM_PEOPLE_PER_HH_RURAL][country])
         num_people_per_hh_urban = float(specs[SPE_NUM_PEOPLE_PER_HH_URBAN][country])
-        max_dist = float(specs[SPE_MAX_GRID_EXTENSION_DIST][country])
+        max_grid_extension_dist = float(specs[SPE_MAX_GRID_EXTENSION_DIST][country])
         energy_per_hh_rural = wb_tiers_all[wb_tier_rural] * num_people_per_hh_rural
         energy_per_hh_urban = wb_tiers_all[wb_tier_urban] * num_people_per_hh_urban
 
@@ -199,13 +199,15 @@ elif choice == 3:
         onsseter.set_scenario_variables(energy_per_hh_rural, energy_per_hh_urban,
                                         num_people_per_hh_rural, num_people_per_hh_urban)
 
-        print('doing grid tables')
-        grid_lcoes_rural = grid_calc.get_grid_table(energy_per_hh_rural, num_people_per_hh_rural, max_dist)
-        grid_lcoes_urban = grid_calc.get_grid_table(energy_per_hh_urban, num_people_per_hh_urban, max_dist)
+        grid_lcoes_rural = grid_calc.get_grid_table(energy_per_hh_rural, num_people_per_hh_rural,
+                                                    max_grid_extension_dist)
+        grid_lcoes_urban = grid_calc.get_grid_table(energy_per_hh_urban, num_people_per_hh_urban,
+                                                    max_grid_extension_dist)
 
         onsseter.calculate_off_grid_lcoes(mg_hydro_calc, mg_wind_calc, mg_pv_calc,
                                           sa_pv_calc, mg_diesel_calc, sa_diesel_calc)
-        onsseter.run_elec(grid_lcoes_rural, grid_lcoes_urban, grid_price, existing_grid_cost_ratio, max_dist)
+        onsseter.run_elec(grid_lcoes_rural, grid_lcoes_urban, grid_price,
+                          existing_grid_cost_ratio, max_grid_extension_dist)
         onsseter.results_columns(mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc,
                                  mg_diesel_calc, sa_diesel_calc, grid_calc)
 

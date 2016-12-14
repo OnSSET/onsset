@@ -155,7 +155,10 @@ def export_csv(gdb, settlements_fc, out_file):
             raise
 
     # Skips the first two elements (OBJECT_ID and Shape)
-    field_list = [f.name for f in arcpy.ListFields(settlements_fc)[2:]]
+    #field_list = [f.name for f in arcpy.ListFields(settlements_fc)[2:]]
+    field_list = [f.name for f in arcpy.ListFields(settlements_fc)]
+    field_list.remove('OBJECTID')
+    field_list.remove('Shape')
 
     logging.info('Writing output...')
     with open(out_file, 'w') as csvfile:
