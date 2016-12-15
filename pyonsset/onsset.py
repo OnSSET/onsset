@@ -21,7 +21,7 @@ END_YEAR = 2030
 SET_COUNTRY = 'Country'  # This cannot be changed, lots of code will break
 SET_X = 'X'  # Coordinate in kilometres
 SET_Y = 'Y'  # Coordinate in kilometres
-SET_X_DEG = 'X_deg'
+SET_X_DEG = 'X_deg'  # Coordinates in degrees
 SET_Y_DEG = 'Y_deg'
 SET_POP = 'Pop'  # Population in people per point (equally, people per km2)
 SET_POP_CALIB = 'PopStartCalibrated'  # Calibrated population to reference year, same units
@@ -38,8 +38,8 @@ SET_HYDRO = 'Hydropower'  # Hydropower potential in kW
 SET_HYDRO_DIST = 'HydropowerDist'  # Distance to hydropower site in km
 SET_HYDRO_FID = 'HydropowerFID'  # the unique tag for eah hydropower, to not over-utilise
 SET_SUBSTATION_DIST = 'SubstationDist'
-SET_ELEVATION = 'Elevation'
-SET_SLOPE = 'Slope'
+SET_ELEVATION = 'Elevation'  # in metres
+SET_SLOPE = 'Slope'  # in degrees
 SET_LAND_COVER = 'LandCover'
 SET_SOLAR_RESTRICTION = 'SolarRestriction'
 SET_ROAD_DIST_CLASSIFIED = 'RoadDistClassified'
@@ -108,25 +108,34 @@ class Technology:
     """
 
     discount_rate = 0.08
-    grid_cell_area = 1
+    grid_cell_area = 1  # in km2, normally 1km2
 
-    mv_line_cost = 9000
-    lv_line_cost = 5000
-    mv_line_capacity = 50
-    lv_line_capacity = 10
-    lv_line_max_length = 30
-    hv_line_cost = 53000
-    mv_line_max_length = 50
-    hv_lv_transformer_cost = 5000
-    mv_increase_rate = 0.1
+    mv_line_cost = 9000  # USD/km
+    lv_line_cost = 5000  # USD/km
+    mv_line_capacity = 50  # kW/line
+    lv_line_capacity = 10  # kW/line
+    lv_line_max_length = 30  # km
+    hv_line_cost = 53000  # USD/km
+    mv_line_max_length = 50  # km
+    hv_lv_transformer_cost = 5000  # USD/unit
+    mv_increase_rate = 0.1  # percentage
 
-    def __init__(self, tech_life, base_to_peak_load_ratio,
-                 distribution_losses=0, connection_cost_per_hh=0,
-                 om_costs=0.0, capital_cost=0, capacity_factor=1,
-                 efficiency=1.0, diesel_price=0.0, grid_price=0.0,
-                 standalone=False, grid_capacity_investment=0.0,
-                 diesel_truck_consumption=0, diesel_truck_volume=0,
-                 om_of_td_lines=0):
+    def __init__(self,
+                 tech_life,  # in years
+                 base_to_peak_load_ratio,
+                 distribution_losses=0,  # percentage
+                 connection_cost_per_hh=0,  # USD/hh
+                 om_costs=0.0,  # OM costs as percentage of capital costs
+                 capital_cost=0,  # USD/kW
+                 capacity_factor=1.0,  # percentage
+                 efficiency=1.0,  # percentage
+                 diesel_price=0.0,  # USD/litre
+                 grid_price=0.0,  # USD/kWh for grid electricity
+                 standalone=False,
+                 grid_capacity_investment=0.0,  # USD/kW for on-grid capacity investments (excluding grid itself)
+                 diesel_truck_consumption=0,  # litres/hour
+                 diesel_truck_volume=0,  # litres
+                 om_of_td_lines=0):  # percentage
 
         self.distribution_losses = distribution_losses
         self.connection_cost_per_hh = connection_cost_per_hh
@@ -150,7 +159,6 @@ class Technology:
                            hv_lv_transformer_cost, mv_increase_rate):
         cls.discount_rate = discount_rate
         cls.grid_cell_area = grid_cell_area
-
         cls.mv_line_cost = mv_line_cost
         cls.lv_line_cost = lv_line_cost
         cls.mv_line_capacity = mv_line_capacity
@@ -236,6 +244,7 @@ class Technology:
             # If a diesel price has been passed, the technology is diesel
             if self.diesel_price > 0:
                 # And we apply the Szabo formula to calculate the transport cost for the diesel
+                # p = (p_d + 2*p_d*consumption*time/volume)*(1/mu)*(1/LHVd)
                 fuel_cost = (self.diesel_price + 2 * self.diesel_price * self.diesel_truck_consumption * travel_hours /
                              self.diesel_truck_volume) / LHV_DIESEL / self.efficiency
             # Otherwise it's hydro/wind etc with no fuel cost
