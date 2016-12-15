@@ -107,17 +107,27 @@ class Technology:
     input parameters.
     """
 
+    discount_rate = 0.08
+    grid_cell_area = 1
+
+    mv_line_cost = 9000
+    lv_line_cost = 5000
+    mv_line_capacity = 50
+    lv_line_capacity = 10
+    lv_line_max_length = 30
+    hv_line_cost = 53000
+    mv_line_max_length = 50
+    hv_lv_transformer_cost = 5000
+    mv_increase_rate = 0.1
+
     def __init__(self, tech_life, base_to_peak_load_ratio,
-                 om_of_td_lines=0, distribution_losses=0, connection_cost_per_hh=0,
+                 distribution_losses=0, connection_cost_per_hh=0,
                  om_costs=0.0, capital_cost=0, capacity_factor=1,
                  efficiency=1.0, diesel_price=0.0, grid_price=0.0,
                  standalone=False, grid_capacity_investment=0.0,
-                 mv_line_cost=9000, lv_line_cost=5000, discount_rate=0.08,
-                 mv_line_capacity=50, lv_line_capacity=10, lv_line_max_length=30,
-                 hv_line_cost=53000, mv_line_max_length=50, hv_lv_transformer_cost=5000,
-                 mv_increase_rate=0.1, diesel_truck_consumption=0, diesel_truck_volume=0):
+                 diesel_truck_consumption=0, diesel_truck_volume=0,
+                 om_of_td_lines=0):
 
-        self.om_of_td_lines = om_of_td_lines
         self.distribution_losses = distribution_losses
         self.connection_cost_per_hh = connection_cost_per_hh
         self.base_to_peak_load_ratio = base_to_peak_load_ratio
@@ -130,18 +140,26 @@ class Technology:
         self.grid_price = grid_price
         self.standalone = standalone
         self.grid_capacity_investment = grid_capacity_investment
-        self.mv_line_cost = mv_line_cost
-        self.lv_line_cost = lv_line_cost
-        self.discount_rate = discount_rate
-        self.mv_line_capacity = mv_line_capacity
-        self.lv_line_capacity = lv_line_capacity
-        self.lv_line_max_length = lv_line_max_length
-        self.hv_line_cost = hv_line_cost
-        self.mv_line_max_length = mv_line_max_length
-        self.hv_lv_transformer_cost = hv_lv_transformer_cost
-        self.mv_increase_rate = mv_increase_rate
         self.diesel_truck_consumption = diesel_truck_consumption
         self.diesel_truck_volume = diesel_truck_volume
+        self.om_of_td_lines = om_of_td_lines
+
+    @classmethod
+    def set_default_values(cls, discount_rate, grid_cell_area, mv_line_cost, lv_line_cost, mv_line_capacity,
+                           lv_line_capacity, lv_line_max_length, hv_line_cost, mv_line_max_length,
+                           hv_lv_transformer_cost, mv_increase_rate):
+        cls.discount_rate = discount_rate
+        cls.grid_cell_area = grid_cell_area
+
+        cls.mv_line_cost = mv_line_cost
+        cls.lv_line_cost = lv_line_cost
+        cls.mv_line_capacity = mv_line_capacity
+        cls.lv_line_capacity = lv_line_capacity
+        cls.lv_line_max_length = lv_line_max_length
+        cls.hv_line_cost = hv_line_cost
+        cls.mv_line_max_length = mv_line_max_length
+        cls.hv_lv_transformer_cost = hv_lv_transformer_cost
+        cls.mv_increase_rate = mv_increase_rate
 
     def get_lcoe(self, energy_per_hh, people, num_people_per_hh, additional_mv_line_length=0, capacity_factor=0,
                  mv_line_length=0, travel_hours=0, get_investment_cost=False):
@@ -167,8 +185,6 @@ class Technology:
         if capacity_factor == 0:
             capacity_factor = self.capacity_factor
 
-        grid_cell_area = 1  # km2
-
         consumption = people / num_people_per_hh * energy_per_hh  # kWh/year
         average_load = consumption * (1 + self.distribution_losses) / HOURS_PER_YEAR  # kW
         peak_load = average_load / self.base_to_peak_load_ratio  # kW
@@ -176,17 +192,17 @@ class Technology:
         no_mv_lines = peak_load / self.mv_line_capacity
         no_lv_lines = peak_load / self.lv_line_capacity
         lv_networks_lim_capacity = no_lv_lines / no_mv_lines
-        lv_networks_lim_length = ((grid_cell_area / no_mv_lines) / (self.lv_line_max_length / sqrt(2))) ** 2
+        lv_networks_lim_length = ((self.grid_cell_area / no_mv_lines) / (self.lv_line_max_length / sqrt(2))) ** 2
         actual_lv_lines = min([people / num_people_per_hh, max([lv_networks_lim_capacity, lv_networks_lim_length])])
         hh_per_lv_network = (people / num_people_per_hh) / (actual_lv_lines * no_mv_lines)
-        lv_unit_length = sqrt(grid_cell_area / (people / num_people_per_hh)) * sqrt(2) / 2
+        lv_unit_length = sqrt(self.grid_cell_area / (people / num_people_per_hh)) * sqrt(2) / 2
         lv_lines_length_per_lv_network = 1.333 * hh_per_lv_network * lv_unit_length
         total_lv_lines_length = no_mv_lines * actual_lv_lines * lv_lines_length_per_lv_network
-        line_reach = (grid_cell_area / no_mv_lines) / (2 * sqrt(grid_cell_area / no_lv_lines))
+        line_reach = (self.grid_cell_area / no_mv_lines) / (2 * sqrt(self.grid_cell_area / no_lv_lines))
         total_length_of_lines = min([line_reach, self.mv_line_max_length]) * no_mv_lines
         additional_hv_lines = max(
-            [0, round(sqrt(grid_cell_area) / (2 * min([line_reach, self.mv_line_max_length])) / 10, 3) - 1])
-        hv_lines_total_length = (sqrt(grid_cell_area) / 2) * additional_hv_lines * sqrt(grid_cell_area)
+            [0, round(sqrt(self.grid_cell_area) / (2 * min([line_reach, self.mv_line_max_length])) / 10, 3) - 1])
+        hv_lines_total_length = (sqrt(self.grid_cell_area) / 2) * additional_hv_lines * sqrt(self.grid_cell_area)
         num_transformers = additional_hv_lines + no_mv_lines + (no_mv_lines * actual_lv_lines)
         generation_per_year = average_load * HOURS_PER_YEAR
 

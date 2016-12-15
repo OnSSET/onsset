@@ -84,24 +84,15 @@ elif choice == 3:
     output_dir = str(input('Enter the output directory (can contain multiple runs): '))
 
     wb_tiers_all = {1: 7.738, 2: 43.8, 3: 160.6, 4: 423.4, 5: 598.6}
-    wb_tier_urban = int(input("""\nWorld Bank Tiers of Electricity Access\n
-                              1: {} kWh/person/year\n
-                              2: {} kWh/person/year\n
-                              3: {} kWh/person/year\n
-                              4: {} kWh/person/year\n
-                              5: {} kWh/person/year\n
-                              Enter the tier number for urban: """.format(wb_tiers_all[1], wb_tiers_all[2],
-                                                                          wb_tiers_all[3], wb_tiers_all[4],
-                                                                          wb_tiers_all[5])))
-    wb_tier_rural = int(input("""\nWorld Bank Tiers of Electricity Access\n
-                              1: {} kWh/person/year\n
-                              2: {} kWh/person/year\n
-                              3: {} kWh/person/year\n
-                              4: {} kWh/person/year\n
-                              5: {} kWh/person/year\n
-                              Enter the tier number for rural: """.format(wb_tiers_all[1], wb_tiers_all[2],
-                                                                          wb_tiers_all[3], wb_tiers_all[4],
-                                                                          wb_tiers_all[5])))
+    print("""\nWorld Bank Tiers of Electricity Access
+          1: {} kWh/person/year
+          2: {} kWh/person/year
+          3: {} kWh/person/year
+          4: {} kWh/person/year
+          5: {} kWh/person/year""".format(wb_tiers_all[1], wb_tiers_all[2], wb_tiers_all[3],
+                                          wb_tiers_all[4], wb_tiers_all[5]))
+    wb_tier_urban = int(input('Enter the tier number for urban: '))
+    wb_tier_rural = int(input('Enter the tier number for rural: '))
 
     diesel_high = True if 'y' in input('Use high diesel value? <y/n> ') else False
     diesel_tag = 'high' if diesel_high else 'low'
@@ -131,6 +122,18 @@ elif choice == 3:
         max_grid_extension_dist = float(specs[SPE_MAX_GRID_EXTENSION_DIST][country])
         energy_per_hh_rural = wb_tiers_all[wb_tier_rural] * num_people_per_hh_rural
         energy_per_hh_urban = wb_tiers_all[wb_tier_urban] * num_people_per_hh_urban
+
+        Technology.set_default_values(discount_rate=0.08,
+                                      grid_cell_area=1,
+                                      mv_line_cost=9000,
+                                      lv_line_cost=5000,
+                                      mv_line_capacity=50,
+                                      lv_line_capacity=10,
+                                      lv_line_max_length=30,
+                                      hv_line_cost=53000,
+                                      mv_line_max_length=50,
+                                      hv_lv_transformer_cost=5000,
+                                      mv_increase_rate=0.1)
 
         grid_calc = Technology(om_of_td_lines=0.03,
                                distribution_losses=float(specs[SPE_GRID_LOSSES][country]),
