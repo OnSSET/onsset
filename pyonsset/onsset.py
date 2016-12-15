@@ -2,9 +2,10 @@
 # Date: 26 November 2016
 # Python version: 3.5
 
+import os
 import logging
 import pandas as pd
-from math import pi, exp, log, sqrt
+from math import ceil, pi, exp, log, sqrt
 from pyproj import Proj
 import numpy as np
 from collections import defaultdict
@@ -14,8 +15,6 @@ logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.DEBUG)
 # general
 LHV_DIESEL = 9.9445485  # (kWh/l) lower heating value
 HOURS_PER_YEAR = 8760
-START_YEAR = 2015
-END_YEAR = 2030
 
 # Columns in settlements file must match these exactly
 SET_COUNTRY = 'Country'  # This cannot be changed, lots of code will break
@@ -107,6 +106,8 @@ class Technology:
     input parameters.
     """
 
+    start_year = 2015
+    end_year = 2030
     discount_rate = 0.08
     grid_cell_area = 1  # in km2, normally 1km2
 
@@ -154,9 +155,11 @@ class Technology:
         self.om_of_td_lines = om_of_td_lines
 
     @classmethod
-    def set_default_values(cls, discount_rate, grid_cell_area, mv_line_cost, lv_line_cost, mv_line_capacity,
-                           lv_line_capacity, lv_line_max_length, hv_line_cost, mv_line_max_length,
+    def set_default_values(cls, start_year, end_year, discount_rate, grid_cell_area, mv_line_cost, lv_line_cost,
+                           mv_line_capacity, lv_line_capacity, lv_line_max_length, hv_line_cost, mv_line_max_length,
                            hv_lv_transformer_cost, mv_increase_rate):
+        cls.start_year = start_year
+        cls.end_year = end_year
         cls.discount_rate = discount_rate
         cls.grid_cell_area = grid_cell_area
         cls.mv_line_cost = mv_line_cost
@@ -252,7 +255,7 @@ class Technology:
                 fuel_cost = 0
 
         # Perform the time-value LCOE calculation
-        project_life = END_YEAR - START_YEAR
+        project_life = self.end_year - self.start_year
         reinvest_year = 0
 
         # If the technology life is less than the project life, we will have to invest twice to buy it again

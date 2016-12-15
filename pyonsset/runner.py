@@ -123,7 +123,9 @@ elif choice == 3:
         energy_per_hh_rural = wb_tiers_all[wb_tier_rural] * num_people_per_hh_rural
         energy_per_hh_urban = wb_tiers_all[wb_tier_urban] * num_people_per_hh_urban
 
-        Technology.set_default_values(discount_rate=0.08,
+        Technology.set_default_values(start_year=2015,
+                                      end_year=2030,
+                                      discount_rate=0.08,
                                       grid_cell_area=1,
                                       mv_line_cost=9000,
                                       lv_line_cost=5000,
