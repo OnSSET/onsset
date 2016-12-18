@@ -204,15 +204,16 @@ elif choice == 3:
         onsseter.set_scenario_variables(energy_per_hh_rural, energy_per_hh_urban,
                                         num_people_per_hh_rural, num_people_per_hh_urban)
 
+        onsseter.calculate_off_grid_lcoes(mg_hydro_calc, mg_wind_calc, mg_pv_calc,
+                                          sa_pv_calc, mg_diesel_calc, sa_diesel_calc)
+
         grid_lcoes_rural = grid_calc.get_grid_table(energy_per_hh_rural, num_people_per_hh_rural,
                                                     max_grid_extension_dist)
         grid_lcoes_urban = grid_calc.get_grid_table(energy_per_hh_urban, num_people_per_hh_urban,
                                                     max_grid_extension_dist)
-
-        onsseter.calculate_off_grid_lcoes(mg_hydro_calc, mg_wind_calc, mg_pv_calc,
-                                          sa_pv_calc, mg_diesel_calc, sa_diesel_calc)
         onsseter.run_elec(grid_lcoes_rural, grid_lcoes_urban, grid_price,
                           existing_grid_cost_ratio, max_grid_extension_dist)
+
         onsseter.results_columns(mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc,
                                  mg_diesel_calc, sa_diesel_calc, grid_calc)
 
