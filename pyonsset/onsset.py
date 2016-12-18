@@ -869,10 +869,9 @@ class SettlementProcessor:
 
         # A df with all hydropower sites, to ensure that they aren't assigned more capacity than is available
         hydro_used = 'HydropowerUsed'  # the amount of the hydro potential that has been assigned
-        hydro_df = self.df[[SET_HYDRO_FID, SET_HYDRO]].drop_duplicates()
+        hydro_df = self.df[[SET_HYDRO_FID, SET_HYDRO]].drop_duplicates(subset=SET_HYDRO_FID)
         hydro_df[hydro_used] = 0
         hydro_df = hydro_df.set_index(SET_HYDRO_FID)
-        hydro_df = hydro_df.drop_duplicates()  # just in case there are still duplicates
 
         max_hydro_dist = 5  # the max distance in km to consider hydropower viable
 
