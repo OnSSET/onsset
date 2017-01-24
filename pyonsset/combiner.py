@@ -7,10 +7,14 @@
 
 import pandas as pd
 import os
+from pyonsset.onsset import *
+
+os.chdir('..')
+os.chdir('db')
 
 scenarios = [1, 2, 3, 4, 5]
 diesel = ['low', 'high']
-output_dir = 'db/run_12Nov'
+output_dir = 'run_18Dec'
 output_africa = 'africa_combined.csv'
 output_wb_selection = 'nzt.csv'
 country_codes_wb_selection = {'Nigeria': 566, 'Tanzania': 834, 'Zambia': 894}
@@ -33,32 +37,32 @@ for diesel_tag in diesel:
         print(diesel_tag, scenario)
         df_add = pd.read_csv(os.path.join(output_dir, '{}_{}.csv'.format(scenario, diesel_tag)))
         if scenario == 1 and diesel_tag in 'low':
-            df['X'] = df_add['X_deg']
-            df['Y'] = df_add['Y_deg']
-            df['CountryCode'] = df_add['Country']
-            df['Population'] = df_add['Pop2030']
-            df['Newconnections'] = df_add['NewConnections']
-            df['GridDistCu'] = df_add['GridDistCurrent']
-            df['GridDistPl'] = df_add['GridDistPlan']
-            df['RoadDist'] = df_add['RoadDist']
-            df['GHI'] = df_add['GHI']
-            df['WindCF'] = df_add['WindCF']
-            df['Hydropower'] = df_add['Hydropower'] * 1000  # convert to Watts
-            df['loce_sa_diesel_low'] = df_add['lcoe_sa_diesel']
-            df['HydropowerDist'] = df_add['HydropowerDist']
-            df['IsUrban'] = df_add['IsUrban']
+            df['X'] = df_add[SET_X_DEG]
+            df['Y'] = df_add[SET_Y_DEG]
+            df['CountryCode'] = df_add[SET_COUNTRY]
+            df['Population'] = df_add[SET_POP_FUTURE]
+            df['Newconnections'] = df_add[SET_NEW_CONNECTIONS]
+            df['GridDistCu'] = df_add[SET_GRID_DIST_CURRENT]
+            df['GridDistPl'] = df_add[SET_GRID_DIST_PLANNED]
+            df['RoadDist'] = df_add[SET_ROAD_DIST]
+            df['GHI'] = df_add[SET_GHI]
+            df['WindCF'] = df_add[SET_WINDCF]
+            df['Hydropower'] = df_add[SET_HYDRO] * 1000  # convert to Watts
+            df['loce_sa_diesel_low'] = df_add[SET_LCOE_SA_DIESEL]
+            df['HydropowerDist'] = df_add[SET_HYDRO_DIST]
+            df['IsUrban'] = df_add[SET_URBAN]
         elif scenario == 1 and diesel_tag in 'high':
-            df['loce_sa_diesel_high'] = df_add['lcoe_sa_diesel']
+            df['loce_sa_diesel_high'] = df_add[SET_LCOE_SA_DIESEL]
 
         new1 = scenario_codes['{}{}'.format(scenario, diesel_tag)]
         new2 = 'LCOE{}'.format(new1)
         new3 = 'NewCapacity{}'.format(new1)
         new4 = 'Investment{}'.format(new1)
 
-        df[new1] = df_add['minimum_overall_code']
-        df[new2] = df_add['minimum_overall_lcoe']
-        df[new3] = df_add['NewCapacity'] * 1000  # convert to Watts
-        df[new4] = df_add['InvestmentCost']
+        df[new1] = df_add[SET_MIN_OVERALL_CODE]
+        df[new2] = df_add[SET_MIN_OVERALL_LCOE]
+        df[new3] = df_add[SET_NEW_CAPACITY] * 1000  # convert to Watts
+        df[new4] = df_add[SET_INVESTMENT_COST]
 
 round_to_int = {'Population': 0, 'NewConnections': 0, 'NewCapacityL1': 0, 'NewCapacityL2': 0, 'NewCapacityL3': 0,
       'NewCapacityL4': 0, 'NewCapacityL5': 0, 'NewCapacityN1': 0, 'NewCapacityN2': 0, 'NewCapacityN3': 0,
