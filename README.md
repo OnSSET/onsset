@@ -10,12 +10,14 @@ KTH-dESA researchers are developing an innovative Open Source Spatial Electrific
 # Online interfaces
 
 Results from a previous run have been made available here, with a simple online interface:
+
 [Universal Electrification Access](https://un-desa-modelling.github.io/electrification-paths-visualisation/)
 
 
 # Publications
 
 A peer-reviewed article has been published in the journal *Energy for Sustainable Development*.
+
 [A GIS-based approach for electrification planning—A case study on Nigeria](http://www.sciencedirect.com/science/article/pii/S0973082615000952)
 
 This includes input data, the complete methodology and a case study with results for Nigeria.
