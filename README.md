@@ -23,7 +23,7 @@ This interface is not a model but it provides the user easy access to the method
 # Publications
 
 
-[1. A GIS-based approach for electrification planning—A case study on Nigeria](http://www.sciencedirect.com/science/article/pii/S0973082615000952)
+###[1. A GIS-based approach for electrification planning—A case study on Nigeria](http://www.sciencedirect.com/science/article/pii/S0973082615000952)
 
 A peer-reviewed article has been published in the journal *Energy for Sustainable Development*.
 
@@ -32,7 +32,7 @@ This includes input data, the complete methodology and a case study with results
 ![Optimal electrification mix in Nigeria](/resources/nigeria_electrification_map.png "Optimal electrification mix in Nigeria")
 
 
-[2. The benefits of geospatial planning in energy access – A case study on Ethiopia]
+###[2. The benefits of geospatial planning in energy access – A case study on Ethiopia]
 (http://www.sciencedirect.com/science/article/pii/S0143622816300522)
 
 A peer-reviewed article has been published in the journal *Applied Geography*.
@@ -42,7 +42,7 @@ This includes input data, the complete methodology and a case study with results
 ![Optimal electrification mix and spatial levelized cost of electricity in Ethiopia](/resources/Ethiopia_optimalmix_LCOE.png "Optimal electrification mix and spatial levelized cost of electricity in Ethiopia")
 
 
-[3. A cost comparison of technology approaches for improving access to electricity services]
+###[3. A cost comparison of technology approaches for improving access to electricity services]
 (http://www.sciencedirect.com/science/article/pii/S036054421501631X)
 
 This includes the complete costing methodology. 
