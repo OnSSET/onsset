@@ -23,3 +23,13 @@ A peer-reviewed article has been published in the journal *Energy for Sustainabl
 This includes input data, the complete methodology and a case study with results for Nigeria.
 
 ![Optimal electrification mix in Nigeria](/resources/nigeria_electrification_map.png "Optimal electrification mix in Nigeria")
+
+
+A peer-reviewed article has been published in the journal *Applied Geography*.
+
+[The benefits of geospatial planning in energy access – A case study on Ethiopia]
+(http://www.sciencedirect.com/science/article/pii/S0143622816300522)
+
+This includes input data, the complete methodology and a case study with results for Ethiopia.
+
+![Optimal electrification mix and spatial levelized cost of electricity in Ethiopia](/resources/nigeria_electrification_map.png "Optimal electrification mix in Nigeria")
