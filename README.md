@@ -34,3 +34,13 @@ A peer-reviewed article has been published in the journal *Applied Geography*.
 This includes input data, the complete methodology and a case study with results for Ethiopia.
 
 ![Optimal electrification mix and spatial levelized cost of electricity in Ethiopia](/resources/Ethiopia_optimalmix_LCOE.png "Optimal electrification mix and spatial levelized cost of electricity in Ethiopia")
+
+
+[3. A cost comparison of technology approaches for improving access to electricity services]
+(http://www.sciencedirect.com/science/article/pii/S036054421501631X)
+
+This includes the complete costing methodology. 
+
+![Least cost LCOEs in Nigeria as a function of the distance to the grid and population density
+](/resources/Nigeria_LCOE_surface.png "Least cost LCOEs in Nigeria as a function of the distance to the grid and population density
+")
