@@ -16,19 +16,20 @@ Results from a previous run have been made available here, with a simple online 
 
 # Publications
 
-A peer-reviewed article has been published in the journal *Energy for Sustainable Development*.
 
 [1. A GIS-based approach for electrification planning—A case study on Nigeria](http://www.sciencedirect.com/science/article/pii/S0973082615000952)
+
+A peer-reviewed article has been published in the journal *Energy for Sustainable Development*.
 
 This includes input data, the complete methodology and a case study with results for Nigeria.
 
 ![Optimal electrification mix in Nigeria](/resources/nigeria_electrification_map.png "Optimal electrification mix in Nigeria")
 
 
-A peer-reviewed article has been published in the journal *Applied Geography*.
-
 [2. The benefits of geospatial planning in energy access – A case study on Ethiopia]
 (http://www.sciencedirect.com/science/article/pii/S0143622816300522)
+
+A peer-reviewed article has been published in the journal *Applied Geography*.
 
 This includes input data, the complete methodology and a case study with results for Ethiopia.
 
