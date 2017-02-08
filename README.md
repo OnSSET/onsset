@@ -5,6 +5,8 @@ See the Jupyter version here: [PyOnSSET-jupyter](https://github.com/KTH-dESA/PyO
 
 # OnSSET
 
+(/resources/ONSSET LOGO.png)
+
 KTH-dESA researchers are developing an innovative Open Source Spatial Electrification Toolkit. OnSSET is an open source, spatial electrification tool estimating, analyzing and visualizing the most cost effective electrification option (grid, mini grid & stand-alone) for the achievement of electricity access goals. The tool focuses on the assessment and deployment of conventional and renewable energy technologies aiming at ensuring access to affordable, reliable, sustainable and modern energy for all (SDG 7). OnSSET is a tool, designed to ﬁll the gap between the analytical toolbox available to the energy research community and energy planners throughout the world. The tool was initially applied to Nigeria, Ethiopia and India, featuring in the World Energy Outlook 2014 and 2015 and the World Bank Global Tracking Framework 2015. OnSSET has recently been applied to 44 Sub-Saharan African countries and  10 Latin American countries. This effort forms the basis of United Nations suite of tools to promote capacity development for achieving aspects of Sustainable Development Goal 7 (SDG7), such as access to affordable supplies of modern sustainable energy for all.
 
 # Online interfaces
