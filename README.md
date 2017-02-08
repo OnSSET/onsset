@@ -32,4 +32,4 @@ A peer-reviewed article has been published in the journal *Applied Geography*.
 
 This includes input data, the complete methodology and a case study with results for Ethiopia.
 
-![Optimal electrification mix and spatial levelized cost of electricity in Ethiopia](/resources/nigeria_electrification_map.png "Optimal electrification mix in Nigeria")
+![Optimal electrification mix and spatial levelized cost of electricity in Ethiopia](/resources/Ethiopia_optimalmix_LCOE.png "Optimal electrification mix and spatial levelized cost of electricity in Ethiopia")
