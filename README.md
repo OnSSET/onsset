@@ -23,7 +23,8 @@ This interface is not a model but it provides the user easy access to the method
 # Publications
 
 
-###[1. A GIS-based approach for electrification planning—A case study on Nigeria](http://www.sciencedirect.com/science/article/pii/S0973082615000952)
+###[1. A GIS-based approach for electrification planning—A case study on Nigeria]
+(http://www.sciencedirect.com/science/article/pii/S0973082615000952)
 
 A peer-reviewed article has been published in the journal *Energy for Sustainable Development*.
 
