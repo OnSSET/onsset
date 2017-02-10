@@ -70,7 +70,7 @@ Examples: _pip install scipy_, _pip install matplotlib_
 
 ![install new module](/resources/pip2.png "install new module")
  
-You can find more in [here] (https://www.youtube.com/watch?v=FKwicZF7xNE).
+You can find more [here] (https://www.youtube.com/watch?v=FKwicZF7xNE).
 
 3. Manual installation
 In case pip doesn’t work, you can install the required modules manually. More information can be found [here] (https://www.youtube.com/watch?v=jnpC_Ib_lbc). 
