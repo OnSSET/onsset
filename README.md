@@ -15,7 +15,7 @@ See the Jupyter version here: [PyOnSSET-jupyter](https://github.com/KTH-dESA/PyO
 
 # Online interfaces
 
-The online interface [Universal Electrification Access](https://un-desa-modelling.github.io/electrification-paths-visualisation/)is part of the modelling tools for sustainable development and is based on **ONSSET**. 
+The online interface [Universal Electrification Access](https://un-desa-modelling.github.io/electrification-paths-visualisation/) is part of the modelling tools for sustainable development and is based on **ONSSET**. 
 This interface is not a model but it provides the user easy access to the methodology behind **ONSSET**, the datasets used and key results -with regards to electrification planning - obtained for a set of predefined scenarios and model runs for developing countries in SSA and Latin America. 
 
 http://www.un.org/sustainabledevelopment/energy/
