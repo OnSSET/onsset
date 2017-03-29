@@ -1,4 +1,4 @@
-![onsset logo](/resources/onsset logo 3.png)
+![OnSSET](/resources/onsset_logo_3.png "OnSSET")
 
 # OnSSET
 
