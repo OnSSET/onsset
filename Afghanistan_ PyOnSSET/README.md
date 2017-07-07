@@ -1,7 +1,7 @@
 # Afghanistan_PyOnSSET
 Python implementation of the OpeN Source Spatial Electrification Toolkit (ONSSET) for Afghanistan.
 
-# Important information prior running the model
+## Important information prior running the model
 
 The electrification analysis with OnSSET draws the information necessary for the model to work from two supplementary csv files.
 
