@@ -9,8 +9,7 @@ The first file (specs) contains most of the inputs parameters of the analysis (s
 
 The second file contains all the GIS information (21 columns) for the settlements to be included in the analysis. This csv file has by convention the same name with the country it represents (e.g. in this case "Afghanistan.csv"). When prepared, this file shall be placed within the bd file as well.
 
-KTH dESA has prepared two verions of the Afghanistan.csv file able to run the electrification analysis with 1 and 10 km spatial resolution respectively. The files can be directy downloaded at [Energydata.info](https://energydata.info/)
-.
+KTH dESA has prepared two versions of the Afghanistan.csv file able to run the electrification analysis with 1 and 10 km spatial resolution respectively. The files can be directy downloaded at [Energydata.info](https://energydata.info/).
 A simplified - online -  version of the Afghan OnSSET model is available [here.](http://35.163.178.100:8891/login?next=%2Ftree)
 
 
