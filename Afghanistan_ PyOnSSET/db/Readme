@@ -1,3 +1,5 @@
+#Important information prior running the model
+
 The electrification analysis with OnSSET draws the information necessary for the model to work from two supplementary csv files.
 
 The first file containing most of the sensitivity parameters of the analysis (total population, urban population ratio, diesel price etc.)
