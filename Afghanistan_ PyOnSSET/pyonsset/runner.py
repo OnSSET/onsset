@@ -1,11 +1,11 @@
 # Pulls all the other functions together to make magic!
 #
 # Author: Christopher Arderne Last modified by Alexandros Korkovelos
-# Date: 3 December 2017
+# Date: 07 July 2017
 # Python version: 3.5
 
 import os
-from PyOnSSET.pyonsset.onsset import *
+from pyonsset.onsset import *
 
 os.chdir('..')
 os.chdir('db')
@@ -16,7 +16,7 @@ specs = pd.read_excel(specs_path, index_col=0)
 countries = str(input('countries: ')).split()
 countries = specs.index.tolist() if 'all' in countries else countries
 
-choice = int(input('Enter 1 to split, 2 to prep, 3 to run a scenario: '))
+choice = int(input('2 to prep, 3 to run a scenario: '))
 
 if choice == 1:
     settlements_csv = str(input('Enter the name of the file containing all countries: '))
