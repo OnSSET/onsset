@@ -54,6 +54,7 @@ feasible if the purpose is to meet a relatively small electricity demand or for 
 
 .. image::  img/GridExtension.png
     :align: center
+    
 **Mini-grids (Wind Turbines, Solar PVs, Mini/Small Hydro, Diesel gensets):**
 Mini grids usually provide electricity from small power plants with generating capacity of few MW.
 They tap locally available energy resources such as solar, hydro, wind, or can use commonly available fuels such as diesel.
@@ -74,7 +75,6 @@ not high and depends mainly on size. Batteries, allowing for electricity when da
     
     .. image::  img/StandAlone.png
         :align: center
-
 
 Brief description of the electrification algorithm
 ****************************************************************
@@ -104,7 +104,6 @@ These conditions include:
 
 a) lower cost of generating, transmitting and distributing electricity as compared to the off-grid
 technologies and
-
 b) not causing the total additional MV grid length to exceed 50 km if it is connected. 
 
 If these conditions are verified, the settlement status is set to electrified (by the national grid). At the same time, the algorithm
