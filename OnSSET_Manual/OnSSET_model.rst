@@ -13,16 +13,16 @@ The optimal technology mix and investment required to fully electrify a country 
 
 3)  Local energy resources availability and off-grid power systems costs.
  
+The following paragraphs describe in brief how an electrification anaysis with OnSSET works. 
+
 
 Electricity demand
 *******************
-
-The goal of OnSSET is clear, to identify the mix of technologies that will fully electrify the population of a region within certain timeframes. That is, OnSSET only accounts for residential electricity demand. 
+The goal of OnSSET is clear, to identify the mix of technologies that will help to fully electrify the population of a country within a certain timeframe. That is, OnSSET only accounts for residential electricity demand. 
 
 Geo-location of population and current electrification status
 -------------------------------------------------------------
-
-Using open population density datasets, OnSSET can identify where population whithin the study area. Depending on the number of people living in a settlement, OnSSET categorizes a grid-cell (called settlement from now on) into urban or rural. Other geospatial information such as the distance of a settlement from the national electricity grid, its distance from the road network and its brightness at night (night time lights satellite imagery), helps OnSSET identify the current electrification status per location. Each settlement is the divided into electrified or not electrified.
+Using population density maps, OnSSET can identify where population is located whithin the study area. Depending on the number of people living in a settlement, OnSSET categorizes a grid-cell (called settlement from now on) into urban or rural. Other geospatial information such as the distance of a settlement from the national electricity grid, its distance from the road network and its brightness index at night (from satellite imagery), helps OnSSET identify the current electrification status per location. Each settlement is characterized as electrified or un-electrified.
 
     .. image::  img/AfghanElec.png
         :scale: 80 %
@@ -30,17 +30,14 @@ Using open population density datasets, OnSSET can identify where population whi
 
 Residential Electricity Demand
 ------------------------------
-
-Once the electrified and non-electrified population has been spatially identified, OnSSET uses population growth rates per type of settlement (urban/rural) to estimate the projected population in the end year of the analysis (e.g. 2030). This is one of the two parameters we need to know to quantify and locate the future electricity demand. The second parameter is the target level of
+Once the electrified and un-electrified population has been spatially identified, OnSSET uses population growth rates per type of settlement (urban/rural) to estimate the projected population at the end year of the analysis (e.g. 2030). This is one of the two parameters we need to know to quantify and locate the future electricity demand. The second parameter is the target level of
 electricity access; OnSSET adopts the consumption levels suggested by the Global Tracking Framework (2015).
 
     .. image::  img/TierFramework.png
         :scale: 80 %
         :align: center
 
-Consumption levels start from 8 kWh/person/year, enough to support minor daily activities (few hours of lighting, phone charging etc.) and reach up to 598 kWh/person/year, supporting the use of heavier or continuous appliances like refrigerator, washing machine, oven etc. OnSSET provides the option of selecting different access tiers for rural and urban areas. 
-
-Finally, the combination of population and electrification consumption level, indicates electricity demand for residential purposes per location.
+Consumption levels start from 8 kWh/person/year, enough to support minor daily activities (few hours of lighting, phone charging, radio etc.) and reach up to 598 kWh/person/year, supporting the use of heavier or continuous appliances in a household like refrigerator, washing machine, oven etc. The combination of projected population and targeted consumption level, indicates the electricity demand for residential purposes per location. Note, that OnSSET provides the option of selecting different access tiers for rural and urban areas. 
 
                         **Electricity Demand = Population in 2030 X Selected Access Tier**
 
@@ -49,17 +46,14 @@ Finally, the combination of population and electrification consumption level, in
 Electricity supply
 ******************
 
-OnSSET uses GIS data in order to grasp the spatial and temporal fluctuation of energy resources. These, are later translated into techno-economic inputs and are very useful in assessing the performance of various technologies that tap into these resources.
+OnSSET uses GIS to seize location specific information of power infrastructure. It also relies on GIS data in order to grasp the spatial and temporal fluctuation of energy resources. All these data, are later translated into techno-economic inputs and are very useful in assessing the performance of various technologies.
 
 Energy resources assessment
 ---------------------------
 
 **Wind energy potential and capacity factors**
 
-GIS wind speed data are used to calculate the capacity factor. The latter is defined as the ratio of the yearly expected
-wind energy production to the energy production if the wind turbine were to operate at its rated power throughout the
-year. The capacity factor reflects the potential wind power at a given site and it can be used for comparing different
-sites before the installation of wind power plants. Documentation on wind power assessment is available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/Wind>`_.
+Wind speed data extracted into a GIS environment are used to calculate wind turbine capacity factors per location. The latter is defined as the ratio of the yearly expected wind energy production to the energy production if the wind turbine were to operate at its rated power throughout the year. The capacity factor reflects the potential wind power at a given site and it can be used for comparing different sites before the installation of wind power plants. Additional documentation on wind power assessment is available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/Wind>`_.
 
 .. image::  img/AfghanCF.png
     :scale: 80 %
@@ -92,44 +86,20 @@ Diesel is an important energy carrier, especially in remote areas of many develo
 Electrification options
 -----------------------
 
-Over the last few decades, access to electricity has been established by connecting households and businesses to the national
-interconnected electricity central grid. However, technological innovation in renewable energy sources and concerns about social inclusion have added a handful of technologies to feasibly generate electricity in a decentralized manner resorting to mini-grids or standalone alternatives. Seven configurations of energy technologies are considered in each cell by OnSSET. These have be divided into the three aforementioned categories; grid-extension, mini-grids and standalone systems.
+Over the last few decades, access to electricity in many parts of the world has been primarily achieved through the extension of the national electricity grid. Levereging on economies of scale, centralized grids offer electricity at low costs. Power grid expansion is however a capital intensive and lenthy process. In contrary, decentralized power system configurations i.e. mini-grids or stand-alone systems may be a better fit for electrification of remote, sparsely populated areas. Technological advances over the past decades along with innovative business models, have made such systems rather cost competitive. In addition, if based on local renewable sources they increase supply reliability while decreasing reliance on imported fuels.
 
-**Grid extension:**
+OnSSET estimates and compares the performance of seven technological congigurations that they fall within three main categoroes: grid-extension, mini-grids and stand-alone systems.
+
+**Grid extension**
+--------------
 
 Central grids can offer low generating costs. However, grid extension might not be economically or socially
 feasible if the purpose is to meet a relatively small electricity demand or for remotely located areas.
 
 .. image::  img/GridExtension.png
     :align: center
-    
-**Mini-grids (Wind Turbines, Solar PVs, Mini/Small Hydro, Diesel gensets):**
 
-Mini grids usually provide electricity from small power plants with generating capacity of few MW.
-They tap locally available energy resources such as solar, hydro, wind, or can use commonly available fuels such as diesel.
-Overall, they can provide affordable electricity to rural and remote areas with low-medium electricity consumption habits.
-Cost-wise, if based on renewable sources, they usually have moderate to high upfront investment costs but
-small operational monetary costs and no fuel costs. On the other hand, diesel generator sets (gensets) are a mature
-technology with low upfront investment cost but subjected to operational costs depending on diesel pump price and
-transport costs fluctuations.
-
-    .. image::  img/MiniGrid.png
-        :scale: 85 %
-        :align: center
-
-**SA (Solar PVs, Diesel gensets):**
-
-As mini grids, these systems are usually based on local energy resources but the difference is that these can produce
-only few kWh per day, suitable to cover the electricity demand of a single household or a small business, but no more.
-Stand-alone systems do not require a T&D network nor construction investments. The capital cost of these systems is
-not high and depends mainly on size. Batteries, allowing for electricity when dark, may increase the upfront cost for PV systems.
-    
-    .. image::  img/StandAlone.png
-        :scale: 85 %
-        :align: center
-
-Brief description of the electrification algorithm
---------------------------------------------------
+**Brief description of the electrification algorithm**
 The electrification algorithm procedure is based on two separate, yet complementary processes. On the one hand, a GIS
 analysis is required to obtain a settlement table referencing each settlement’s position –i.e., its x and y coordinates
 – and information related to demand, resource, availability, infrastructure and economic activities. Night-time light
@@ -164,8 +134,8 @@ electrified, and thus until all settlements to which the grid can be economicall
 are not connected to the grid will get access to electricity through mini grid or stand-alone systems. This decision is
 based on a cost comparison process where the off-grid technology which can meet the electricity demand at the lowest LCOE
 selected for each cell.
-
-**Penalty cost assignment to electricity grid expansion processess**
+    
+*Penalty cost assignment to electricity grid expansion processess*
 
 The expansion of the transmission network to areas lacking access is a capital intensive process. The investment costs
 are influenced by several factors such as the capacity, the type and the length of the lines as well as by the topology
@@ -173,3 +143,35 @@ of the subjected area. In this analysis, a number of geospatial factors that aff
 transmission network are identified and considered in order to assign an incremental capital cost in locations that
 indicate specific topological features. More particularly, investment cost is influenced by elevation, the road network,
 land cover type, slope gradient and distance from substations.
+    
+    
+**Mini-grids** - Wind Turbines, Solar PVs, Mini/Small Hydro, Diesel generators
+-------------------------------------------------------------------------------
+
+Mini grids usually provide electricity from small power plants with generating capacity of few MW.
+They tap locally available energy resources such as solar, hydro, wind, or can use commonly available fuels such as diesel.
+Overall, they can provide affordable electricity to rural and remote areas with low-medium electricity consumption habits.
+Cost-wise, if based on renewable sources, they usually have moderate to high upfront investment costs but
+small operational monetary costs and no fuel costs. On the other hand, diesel generator sets (gensets) are a mature
+technology with low upfront investment cost but subjected to operational costs depending on diesel pump price and
+transport costs fluctuations.
+
+    .. image::  img/MiniGrid.png
+        :scale: 85 %
+        :align: center
+
+**Stand-alone systems (SA)** - Solar PVs, Diesel generators
+-----------------------------------------------------------
+
+As mini grids, these systems are usually based on local energy resources but the difference is that these can produce
+only few kWh per day, suitable to cover the electricity demand of a single household or a small business, but no more.
+Stand-alone systems do not require a T&D network nor construction investments. The capital cost of these systems is
+not high and depends mainly on size. Batteries, allowing for electricity when dark, may increase the upfront cost for PV systems.
+    
+    .. image::  img/StandAlone.png
+        :scale: 85 %
+        :align: center
+
+
+
+
