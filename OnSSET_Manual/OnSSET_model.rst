@@ -167,5 +167,10 @@ not high and depends mainly on size. Batteries, allowing for electricity when da
         :scale: 85 %
         :align: center
 
+Methodology Overview
+********************
 
+OnSSET methodology is illustrated in the following figure:
 
+    .. image::  img/Methodology.png
+        :align: center
