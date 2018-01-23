@@ -16,36 +16,30 @@ Finally, the model identifies the technology that offers the lowest cost of gene
 The following paragraphs elaborate on how demand and supply are defined in OnSSET. 
 
 Electricity demand
-**********************
+*******************
 
 The goal of OnSSET is clear, to identify the mix of technologies that will fully electrify the population of a region within certain timeframes. That is, OnSSET only accounts for residential electricity demand. 
 
-**Geo-location of population and current status**
+**Geo-location of population and current electrification status**
 
 Using open population density datasets, OnSSET can identify where population whithin the study area. Depending on the number of people living in a settlement, OnSSET categorizes a grid-cell (called settlement from now on) into urban or rural. Other geospatial information such as the distance of a settlement from the national electricity grid, its distance from the road network and its brightness at night (night time lights satellite imagery), helps OnSSET identify the current electrification status per location. Each settlement is the divided into electrified or not electrified.
 
     .. image::  img/RwandaElec.png
         :align: center
 
-OnSSET finds the least-cost electrification strategy based on the residential electricity demand. At first the cells
-that are likely to already be electrified by the national grid are identified, whereas the remaining cells are considered
-unelectrified. This is based on geospatial data as described in the following section to match the official statistics
-for the electrified population.
+**Residential Electricity Demand**
 
-Once the electrified and non-electrified population has been spatially identified, we incorporate the expected
-population growth rates per region to estimate the total population in the eng year of the analysis (e.g. 2030). This is one of the two parameters we need to know to quantify and locate the future electricity demand. The second parameter is the target level of
-electricity access; the modelling adopts the consumption levels defined as electricity access tiers by the Global
-Tracking Framework (2015).
+Once the electrified and non-electrified population has been spatially identified, OnSSET uses population growth rates per type of settlement (urban/rural) to estimate the projected population in the end year of the analysis (e.g. 2030). This is one of the two parameters we need to know to quantify and locate the future electricity demand. The second parameter is the target level of
+electricity access; OnSSET adopts the consumption levels suggested by the Global Tracking Framework (2015).
 
     .. image::  img/TierFramework.png
         :align: center
 
-These tiers indicate electricity consumption levels starting from 8 kWh/person/year, enough
-electricity only enough for task lightning, charge a phone or power a radio (Tier 1), up to approx. 598 kWh/person/year,
-allowing for enough electricity to run several heavy or continuous appliances like refrigerator, washing machine, oven etc.
-(Tier 5). The model currently allows the user to specify different target tiers for urban rural population.
-The combination of the population and assumed electrification consumption levels allows estimations regarding the future
-electricity demand per location by 2030.
+Consumption levels start from 8 kWh/person/year, enough to support minor daily activities (few hours of lighting, phone charging etc.) and reach up to 598 kWh/person/year, supporting the use of heavier or continuous appliances like refrigerator, washing machine, oven etc. OnSSET provides the option of selecting different access tiers for rural and urban areas. 
+
+Finally, the combination of population and electrification consumption level, indicates electricity demand for residential purposes per location.
+
+            *** Electricity Demand = Population in 2030 X Selected Access Tier
 
 
 Electrification options
