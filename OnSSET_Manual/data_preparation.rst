@@ -227,7 +227,7 @@ A projection is necessary every time a map is created and all map projections di
     .. image:: img/crs1.png
         :width: 350px
         :height: 200px
-        :align: center
+        :align: right
 
     .. image:: img/crs2.png
         :width: 300
