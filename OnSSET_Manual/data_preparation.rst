@@ -208,7 +208,7 @@ Using the GIS Commands for processing file provided by KTH dESA.
 
 .. note::
 
-   A fully updated version of this code is available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/Solar>`_. 
+   A fully updated version of this code is available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/Python_Commands_For_Processing_GIS_Data>`_. 
 
 
 Manual GIS processing using ArcGIS
