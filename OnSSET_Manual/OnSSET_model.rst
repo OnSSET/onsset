@@ -149,13 +149,7 @@ land cover type, slope gradient and distance from substations.
 **Mini-grids** - Wind Turbines, Solar PVs, Mini/Small Hydro, Diesel generators
 -------------------------------------------------------------------------------
 
-Mini grids usually provide electricity from small power plants with generating capacity of few MW.
-They tap locally available energy resources such as solar, hydro, wind, or can use commonly available fuels such as diesel.
-Overall, they can provide affordable electricity to rural and remote areas with low-medium electricity consumption habits.
-Cost-wise, if based on renewable sources, they usually have moderate to high upfront investment costs but
-small operational monetary costs and no fuel costs. On the other hand, diesel generator sets (gensets) are a mature
-technology with low upfront investment cost but subjected to operational costs depending on diesel pump price and
-transport costs fluctuations.
+Mini-grids usually provide electricity from small power plants with generating capacity of few MW. They tap locally available energy resources such as solar, hydro, wind, or can use commonly available fuels such as diesel. Overall, they can provide affordable electricity to rural and remote areas with low-medium electricity consumption habits. Cost-wise, if based on renewable sources, they usually have moderate to high upfront investment costs but small operational monetary costs and no fuel costs. On the other hand, diesel generator sets (gensets) are a mature technology with low upfront investment cost but subjected to operational costs depending on diesel pump price and transport costs fluctuations.
 
     .. image::  img/MiniGrid.png
         :scale: 85 %
@@ -164,7 +158,7 @@ transport costs fluctuations.
 **Stand-alone systems (SA)** - Solar PVs, Diesel generators
 -----------------------------------------------------------
 
-As mini grids, these systems are usually based on local energy resources but the difference is that these can produce
+As mini-grids, these systems are usually based on local energy resources but the difference is that these can produce
 only few kWh per day, suitable to cover the electricity demand of a single household or a small business, but no more.
 Stand-alone systems do not require a T&D network nor construction investments. The capital cost of these systems is
 not high and depends mainly on size. Batteries, allowing for electricity when dark, may increase the upfront cost for PV systems.
@@ -172,7 +166,6 @@ not high and depends mainly on size. Batteries, allowing for electricity when da
     .. image::  img/StandAlone.png
         :scale: 85 %
         :align: center
-
 
 
 
