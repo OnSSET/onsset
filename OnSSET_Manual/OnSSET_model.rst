@@ -28,7 +28,6 @@ electricity access; the modelling adopts the consumption levels defined as elect
 Tracking Framework (2015).
 
     .. image::  img/TierFramework.png
-        :scale: 85 %
         :align: center
 
 These tiers indicate electricity consumption levels starting from 8 kWh/person/year, enough
@@ -53,6 +52,9 @@ categories; grid-extension, mini-grids and standalone systems.
 Central grids can offer low generating costs. However, grid extension might not be economically or socially
 feasible if the purpose is to meet a relatively small electricity demand or for remotely located areas.
 
+    .. image::  img/GridExtension.png
+        :align: center
+        
 **Mini-grids (Wind Turbines, Solar PVs, Mini/Small Hydro, Diesel gensets):**
 Mini grids usually provide electricity from small power plants with generating capacity of few MW.
 They tap locally available energy resources such as solar, hydro, wind, or can use commonly available fuels such as diesel.
@@ -62,11 +64,17 @@ small operational monetary costs and no fuel costs. On the other hand, diesel ge
 technology with low upfront investment cost but subjected to operational costs depending on diesel pump price and
 transport costs fluctuations.
 
+    .. image::  img/MiniGrid.png
+        :align: center
+
 **SA (Solar PVs, Diesel gensets):**
 As mini grids, these systems are usually based on local energy resources but the difference is that these can produce
 only few kWh per day, suitable to cover the electricity demand of a single household or a small business, but no more.
 Stand-alone systems do not require a T&D network nor construction investments. The capital cost of these systems is
 not high and depends mainly on size. Batteries, allowing for electricity when dark, may increase the upfront cost for PV systems.
+    
+    .. image::  img/StandAlone.png
+        :align: center
 
 
 Brief description of the electrification algorithm
