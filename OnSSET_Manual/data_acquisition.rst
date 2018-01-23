@@ -478,21 +478,7 @@ Raster Preparation Methodology using NASA datasets
 
 .. note::
 
-    In order to create the the global solar radiation raster the following steps are necessary:
-
-    * Download the global radiation data from Atmospheric Science data center of NASA:  https://eosweb.larc.nasa.gov/cgi-bin/sse/global.cgi?email=skip@larc.nasa.gov
-
-    * Bring the downloaded data in csv format.
-
-    * In ArcGIS go to *File* -> *Add data* -> *Add XY data*.
-
-    * In the new window choose the solar data file and assign X field and Y field to the columns representing latitude and longitude respectively.
-
-    * Once the data are inserted, use the spatial analyst tool interpolation to create the raster. It should be mentioned here that as z value you select the average annual radiation. If there is not such an option you should create it in the csv file. In previous case Spline function was used.
-
-    * GHI Raster is ready.
-
-      Other data sources may provide average values ready to use without these additional processing steps
+Documentation on solar power assessment is available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/Solar>`_. 
 
 
 
@@ -520,47 +506,14 @@ Raster Preparation Methodology using NASA datsets
 
 .. note::
 
-    Inserting the data in ArcGIS
-
-    - Open http://disc.sci.gsfc.nasa.gov/mdisc/data-holdings.
-
-    - Go to *Data Holdings* -> *Data Subsetter*.
-
-    - Select: Monthly IAU 2d ocean surface diagnostics (tavgM_2d_ocn_Nx).
-
-    - Select area, duration and variable (U10m and V10m).
-
-    - Get the NetCDF format.
-
-    - You ll find a list of .nc files to download. You can insert these files in ArcGIS either by a simple dragging or follow the procedure of "Make NetCDF Raster Layer".
-
-    Processing the data
-
-    - A raster layer needs to be created for every month.
-
-    - Open the Raster Calculator and perform the following expression:  *SquareRoot(Power(EastJan10m,2)+Power(NorthJan10m,2))*
-
-    - The result is the aggregated wind profile for January.
-
-    - Follow the same process for each month.
-
-    - Then (with Raster Calculator) calculate the average value for the whole year by simply adding every month and dividing by 12.
-
-    - Project the result.
-
-    - The Raster is ready.
-
-    - This process has been done analyzing 1 year data points. Collecting and analyzing 20 years data is ongoing work.
-
-      Other data sources may provide average values ready to use without these additional processing steps
+   Additional documentation on wind power assessment is available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/Wind>`_.
 
 
 Hydro potential
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-.. warning::
-
-    **TO BE UPDATED**
+Hydro
+---------
 
 +----------------------------+-------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------+
 | Hydro data                 | Type                                                                                            | Link                                                                                                                                                            | Remarks                                                                                               |                                                                       |
@@ -612,3 +565,8 @@ Hydro potential
 | HEC-GeoHMS                 | Hydrologic Engineering Center                                                                   | http://www.hec.usace.army.mil/software/hec-geohms/downloads.aspx                                                                                                |                                                                                                       |                                                                       |
 +----------------------------+-------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------+
 
+Raster Preparation Methodology
+------------------------------
+.. note::
+
+Documentation on hydropower assessment together with a GIS based assessment tool are available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/HydroPower>`_. 
