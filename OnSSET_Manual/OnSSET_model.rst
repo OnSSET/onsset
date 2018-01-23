@@ -1,18 +1,22 @@
 OnSSET Model
 =============
 
-OnSSET determines the least-cost electrification strategy in a region based on minimizing the Levelized Cost of Electricity generation (LCOE). The study area is divided into a mesh of square grid cells, then four parameters determine the LCOE per location assuming
-full electrification by 2030:
+OnSSET in a nutsell
+*******************
 
-1)  Target level and quality of energy access, i.e., the amount of electricity that already electrified and yet to
-    be electrified households will be provided with, measured in kWh/person/year.
+OnSSET is a bottom-up medium to long term optimization model. Its principle is simple. It tries to much the estimated electricity demand with the most cost effective supply option for each location. First, the study area is divided into a mesh of square grid cells, each one of which is accomplanied with characteristics (e.g. population density, land type, distance from existing power infrastructure etc.) defined by its location. Then, these characteristics are aggregated and used to informed formulas estimating the Levelized Cost of Electricity generation (LCOE) for seven technologies. These can vary based on: 
 
-2)  Population density, measured in people/km^2.
+1)  The target level and quality of energy access, i.e., the amount of electricity that already electrified and yet to
+    be electrified population will be provided with, measured in kWh/person/year.
 
-3)  Local grid connection characteristics including the distance from the nearest grid (km) and the
+2)  Local grid connection characteristics including the distance from the nearest grid (km) and the
     average national cost of grid supplied electricity ($/kWh).
 
-4)  Local renewable energy resource availability and diesel costs.
+3)  Local renewable energy resource availability and diesel costs.
+
+Finally, the model identifies the technology that offers the lowest cost of generating electricity per location and calculates the capacity and investment requirements that its deployment entails, if universal access is to be achieved within the defined timeframe (e.g. 2030).
+
+The following paragraphs elaborate on how demand and supply 
 
 Electricity demand
 **********************
