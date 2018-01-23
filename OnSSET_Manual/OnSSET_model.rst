@@ -1,14 +1,13 @@
 OnSSET Model
 =============
 
-OnSSET determines the least-cost electrification strategy in a region based on minimizing LCOE.
-The study area is divided into a mesh of square grid cells, then four parameters determine the LCOE per location assuming
+OnSSET determines the least-cost electrification strategy in a region based on minimizing the Levelized Cost of Electricity generation (LCOE). The study area is divided into a mesh of square grid cells, then four parameters determine the LCOE per location assuming
 full electrification by 2030:
 
 1)  Target level and quality of energy access, i.e., the amount of electricity that already electrified and yet to
-    be electrified households will be provided with, measured in kWh/household/year.
+    be electrified households will be provided with, measured in kWh/person/year.
 
-2)  Population density, measured in households/km^2.
+2)  Population density, measured in people/km^2.
 
 3)  Local grid connection characteristics including the distance from the nearest grid (km) and the
     average national cost of grid supplied electricity ($/kWh).
@@ -23,15 +22,14 @@ that are likely to already be electrified by the national grid are identified, w
 unelectrified. This is based on geospatial data as described in the following section to match the official statistics
 for the electrified population.
 
-Once the electrified and non-electrified population has been spatially identified, we need to incorporate the expected
-population growth rates per region to estimate the total population in 2030. This is one of the two parameters we need
-to know to quantify and locate the future electricity demand. The second parameter is the target level of
+Once the electrified and non-electrified population has been spatially identified, we incorporate the expected
+population growth rates per region to estimate the total population in the eng year of the analysis (e.g. 2030). This is one of the two parameters we need to know to quantify and locate the future electricity demand. The second parameter is the target level of
 electricity access; the modelling adopts the consumption levels defined as electricity access tiers by the Global
 Tracking Framework (2015).
 These tiers indicate electricity consumption levels starting from 22 kWh/hh/year, enough
 electricity only enough for task lightning, charge a phone or power a radio (Tier 1), up to approx. 2195 kWh/hh/year,
 allowing for enough electricity to run several heavy or continuous appliances like refrigerator, washing machine, oven etc.
-(Tier 5). The model currently allows the user to specify one target tier for urban households and one tier for rural households.
+(Tier 5). The model currently allows the user to specify different target tiers for urban rural population.
 The combination of the population and assumed electrification consumption levels allows estimations regarding the future
 electricity demand per location by 2030.
 
@@ -39,7 +37,7 @@ electricity demand per location by 2030.
 Electrification options
 *****************************
 
-Over decades, access to electricity has been established by connecting households and businesses to the national
+Over the last few decades, access to electricity has been established by connecting households and businesses to the national
 interconnected electricity central grid. However, technological innovation in renewable energy sources and concerns
 about social inclusion have added a handful of technologies to feasibly generate electricity in a decentralized
 manner resorting to mini-grids or standalone alternatives. Seven configurations
@@ -76,7 +74,7 @@ order to identify the presently electrified populations. The initial electrifica
 (electrified) or 0 (non-electrified).
 
 The algorithm calculates the cost of generating electricity at each cell for different electrification configurations
-based on the local specificities and cost related parameters. Depending on the energy demand, transmission and distribution
+based on the local specificities and cost related parameters. Depending on the electricity demand, transmission and distribution
 network requirements, energy resource availability etc. the LCOE for each of the seven technology configurations is
 calculated in each cell. The LCOE of a specific technology option represents the final cost of electricity required for
 the overall system to break even over the project lifetime.
@@ -90,9 +88,14 @@ the overall system to break even over the project lifetime.
 Once the LCOEs for all the off-grid technology configurations have been calculated the grid extension algorithm is
 executed. For each cell electrified by the national grid the algorithm iterates through all
 non-electrified cells to test if the conditions for their connection to the electrified cell are fulfilled.
-These conditions include a) lower cost of generating, transmitting and distributing electricity as compared to the off-grid
-technologies b) not causing the total additional MV grid length to exceed 50 km if it is connected. If these
-conditions are verified, the settlement status is set to electrified (by the national grid). At the same time, the algorithm
+These conditions include:
+
+a) lower cost of generating, transmitting and distributing electricity as compared to the off-grid
+technologies and
+
+b) not causing the total additional MV grid length to exceed 50 km if it is connected. 
+
+If these conditions are verified, the settlement status is set to electrified (by the national grid). At the same time, the algorithm
 stores the length of the additional MV lines that have been built thus far by the model to connect this new settlement.
 This is required to ensure all newly electrified cells comply with the 50 km limit for the length of MV lines. Further,
 this is also used to consider cost increases for each additional MV extension, due to the requirement to strengthen the
@@ -114,10 +117,10 @@ land cover type, slope gradient and distance from substations.
 
 
 Renewable energy resource potentials
----------------------------------------
+************************************
 
 Wind energy potential and capacity factors
-******************************************
+------------------------------------------
 
 GIS wind speed data is used to calculate the capacity factor. The latter is defined as the ratio of the yearly expected
 wind energy production to the energy production if the wind turbine were to operate at its rated power throughout the
@@ -125,7 +128,7 @@ year. The capacity factor reflects the potential wind power at a given site and 
 sites before the installation of wind power plants.
 
 Solar energy potential
-***********************
+----------------------
 
 Solar data that provides insights about the global horizontal irradiation (GHI - kWh/m^2/time). The LCOE of stand-alone
 solar PVs is calculated based on the radiation and the system costs. The LCOE of mini-grids solar PVs is calculated based
