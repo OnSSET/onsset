@@ -56,11 +56,8 @@ wind energy production to the energy production if the wind turbine were to oper
 year. The capacity factor reflects the potential wind power at a given site and it can be used for comparing different
 sites before the installation of wind power plants. Full documentation on wind power assessment is available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/Wind>`_.
 
-    .. image::  img/AfghanWind.png
-        :align: left
-
     .. image::  img/AfghanCF.png
-        :align: right 
+        :align: center
         
 Solar energy potential
 ----------------------
