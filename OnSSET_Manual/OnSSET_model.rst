@@ -39,7 +39,7 @@ Consumption levels start from 8 kWh/person/year, enough to support minor daily a
 
 Finally, the combination of population and electrification consumption level, indicates electricity demand for residential purposes per location.
 
-            *** Electricity Demand = Population in 2030 X Selected Access Tier
+            *** Electricity Demand = Population in 2030 X Selected Access Tier ***
 
 
 Electrification options
