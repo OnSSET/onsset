@@ -26,6 +26,10 @@ Once the electrified and non-electrified population has been spatially identifie
 population growth rates per region to estimate the total population in the eng year of the analysis (e.g. 2030). This is one of the two parameters we need to know to quantify and locate the future electricity demand. The second parameter is the target level of
 electricity access; the modelling adopts the consumption levels defined as electricity access tiers by the Global
 Tracking Framework (2015).
+
+.. figure::  img/TierFramework.jpg
+   :align:   center
+   
 These tiers indicate electricity consumption levels starting from 22 kWh/hh/year, enough
 electricity only enough for task lightning, charge a phone or power a radio (Tier 1), up to approx. 2195 kWh/hh/year,
 allowing for enough electricity to run several heavy or continuous appliances like refrigerator, washing machine, oven etc.
