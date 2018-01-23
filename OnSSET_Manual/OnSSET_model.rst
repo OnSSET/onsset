@@ -170,7 +170,7 @@ not high and depends mainly on size. Batteries, allowing for electricity when da
 Methodology Overview
 ********************
 
-OnSSET methodology is illustrated in the following figure:
+Here follows an overview of the methodology behing OnSSET..
 
     .. image::  img/Methodology.png
         :align: center
