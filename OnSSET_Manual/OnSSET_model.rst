@@ -102,10 +102,10 @@ executed. For each cell electrified by the national grid the algorithm iterates 
 non-electrified cells to test if the conditions for their connection to the electrified cell are fulfilled.
 These conditions include:
 
-a) lower cost of generating, transmitting and distributing electricity as compared to the off-grid
+a.lower cost of generating, transmitting and distributing electricity as compared to the off-grid
 technologies and
 
-b) not causing the total additional MV grid length to exceed 50 km if it is connected. 
+b.not causing the total additional MV grid length to exceed 50 km if it is connected. 
 
 If these conditions are verified, the settlement status is set to electrified (by the national grid). At the same time, the algorithm
 stores the length of the additional MV lines that have been built thus far by the model to connect this new settlement.
