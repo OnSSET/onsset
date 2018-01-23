@@ -118,6 +118,7 @@ Relevant projects
 `energydata.info <https://energydata.info>`_ is an open data platform providing access to datasets and data analytics that are relevant to the energy sector. It has been developed as a public good available to governments, development organizations, non-governmental organizations, academia, civil society and individuals to share data and analytics that can help achieving the United Nations’ "Sustainable Development Goal 7" of ensuring access to affordable, reliable, sustainable and modern energy for all.
 
 .. figure::  img/energydata.png
+   :scale: 70 %
    :align:   center
 
 Libraries and directories for various types of GIS data
