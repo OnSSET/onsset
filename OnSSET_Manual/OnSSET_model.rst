@@ -1,5 +1,5 @@
 The OnSSET Model
-=============
+================
 
 OnSSET is a bottom-up medium to long term optimization model. Its principle is simple. It tries to much the estimated electricity demand with the most cost effective supply option for each location. 
 
@@ -91,7 +91,7 @@ Over the last few decades, access to electricity in many parts of the world has 
 OnSSET estimates and compares the performance of seven technological congigurations that they fall within three main categoroes: grid-extension, mini-grids and stand-alone systems.
 
 **Grid extension**
---------------
+----------------
 
 Central grids can offer low generating costs. However, grid extension might not be economically or socially
 feasible if the purpose is to meet a relatively small electricity demand or for remotely located areas.
@@ -100,6 +100,7 @@ feasible if the purpose is to meet a relatively small electricity demand or for 
     :align: center
 
 **Brief description of the electrification algorithm**
+
 The electrification algorithm procedure is based on two separate, yet complementary processes. On the one hand, a GIS
 analysis is required to obtain a settlement table referencing each settlement’s position –i.e., its x and y coordinates
 – and information related to demand, resource, availability, infrastructure and economic activities. Night-time light
@@ -135,7 +136,7 @@ are not connected to the grid will get access to electricity through mini grid o
 based on a cost comparison process where the off-grid technology which can meet the electricity demand at the lowest LCOE
 selected for each cell.
     
-*Penalty cost assignment to electricity grid expansion processess*
+**Penalty cost assignment to electricity grid expansion processess**
 
 The expansion of the transmission network to areas lacking access is a capital intensive process. The investment costs
 are influenced by several factors such as the capacity, the type and the length of the lines as well as by the topology
