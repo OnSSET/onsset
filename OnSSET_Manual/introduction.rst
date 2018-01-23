@@ -1,9 +1,9 @@
-Universal access to electricityby 2030
-======================================
+Universal access to electricity
+===============================
 
 The 2030 Agenda for Sustainable Development has set the goal of universal access to electricity by 2030 (`SDG7 <http://www.un.org/sustainabledevelopment/energy/>`_. The challenge is significant. It involves reaching population with limited income, often living in sparsely populated areas, mostly in developing and least developed countries. The choice of which technology to use for increasing electricity access, depends on a number of parameters, from social to techno-economic including e.g. target level of energy access, local population density, distance to the national grid and local resource availability. These parameters are spatial in nature, making geospatial information very useful for their evaluation on both regional, national and sub-national scale.
 
-KTH-dESA researchers are developing an innovative Open Source Spatial Electrification Toolkit (OnSSET). OnSSET is a bottom up optimization energy modelling tool, that estimates, analyzes and visualizes the most cost effective electrification option (grid, mini grid & stand-alone) for the achievement of electricity access goals. To do so, OnSSET takes into account spatially explicit characteristics related to energy. Such data include population density and distribution, proximity to transmission and road network, nighttime lights, local renewable energy potential etc.​
+KTH-dESA researchers are developing an innovative Open Source Spatial Electrification Toolkit (OnSSET). OnSSET is a bottom up optimization energy modelling tool, that estimates, analyzes and visualizes the most cost effective electrification option (grid, mini grid & stand-alone) for the achievement of electricity access goals. To do so, OnSSET takes into account spatially explicit characteristics related to energy. Such data include population density and distribution, proximity to transmission and road network, nighttime lights, local renewable energy potential etc.
 
 What is OnSSET?
 ****************
