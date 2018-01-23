@@ -1,7 +1,7 @@
 OnSSET Model
 =============
 
-OnSSET is a bottom-up medium to long term optimization model. Its principle is simple. It tries to much the estimated electricity demand with the most cost effective supply option for each location. First, the study area is divided into a mesh of square grid cells, each one of which is accomplanied with characteristics (e.g. population density, land type, distance from existing power infrastructure etc.) defined by its location. Then, these characteristics are aggregated and used to informed formulas estimating the Levelized Cost of Electricity generation (LCOE) for seven technologies. These can vary based on: 
+OnSSET is a bottom-up medium to long term optimization model. Its principle is simple. It tries to much the estimated electricity demand with the most cost effective supply option for each location. First, the study area is divided into a mesh of square grid cells, each one of which is accomplanied with characteristics (e.g. population density, land type, distance from existing power infrastructure etc.) defined by its location. Then, these characteristics are aggregated and used to informed formulas estimating the Levelized Cost of Electricity generation (LCoE) for seven technologies. These can vary based on: 
 
 1)  The target level and quality of energy access, i.e., the amount of electricity that already electrified and yet to
     be electrified population will be provided with, measured in kWh/person/year.
@@ -41,6 +41,8 @@ Finally, the combination of population and electrification consumption level, in
 
                         **Electricity Demand = Population in 2030 X Selected Access Tier**
 
+
+
 Electricity supply
 ******************
 
@@ -66,13 +68,25 @@ GIS data for Global Horizontal Irradiation (GHI - kWh/m^2/time) are used to indi
 .. image::  img/AfghanSolar.png
         :align: center
 
+**Hydropower potential**
+
+A number of GIS datasets (runoff, accumulation, elevation, river network) have been utilized in a novel methodology developed by KTH dESA in order to spatially identify potential site for small scale hydropower deployment. Documentation on hydropower assessment together with a GIS based assessment tool are available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/HydroPower>`_. 
+
+.. image::  img/AfghanHydro.png
+        :align: center
+
+**Transportation Cost for Diesel**
+
+Diesel is an important energy carrier, especially in remote areas of many developing countries. Therefore, it could not be missing from the OnSSET analysis. Transportation of diesel incurs costs, which may lead to high costs of electricity for isolated and low populated communities. OnSSET uses GIS datasets that indicate travel time and distance from main urban hubs, in order to calculate and assign transportation costs for diesel in each location. These costs are then included as fuel costs in the calculation of LCoE for diesel gensets. Documentation on diesel cost assessment is available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/DieselCost>`_. 
+
+.. image::  img/AfghanDiesel.png
+        :align: center
+
+Electrification options
+-----------------------
 
 Over the last few decades, access to electricity has been established by connecting households and businesses to the national
-interconnected electricity central grid. However, technological innovation in renewable energy sources and concerns
-about social inclusion have added a handful of technologies to feasibly generate electricity in a decentralized
-manner resorting to mini-grids or standalone alternatives. Seven configurations
-of energy technologies are considered in each cell by OnSSET. These have be divided into the three aforementioned
-categories; grid-extension, mini-grids and standalone systems.
+interconnected electricity central grid. However, technological innovation in renewable energy sources and concerns about social inclusion have added a handful of technologies to feasibly generate electricity in a decentralized manner resorting to mini-grids or standalone alternatives. Seven configurations of energy technologies are considered in each cell by OnSSET. These have be divided into the three aforementioned categories; grid-extension, mini-grids and standalone systems.
 
 **Grid extension:**
 Central grids can offer low generating costs. However, grid extension might not be economically or socially
@@ -103,7 +117,7 @@ not high and depends mainly on size. Batteries, allowing for electricity when da
         :align: center
 
 Brief description of the electrification algorithm
-****************************************************************
+--------------------------------------------------
 The electrification algorithm procedure is based on two separate, yet complementary processes. On the one hand, a GIS
 analysis is required to obtain a settlement table referencing each settlement’s position –i.e., its x and y coordinates
 – and information related to demand, resource, availability, infrastructure and economic activities. Night-time light
@@ -139,8 +153,7 @@ are not connected to the grid will get access to electricity through mini grid o
 based on a cost comparison process where the off-grid technology which can meet the electricity demand at the lowest LCOE
 selected for each cell.
 
-Penalty cost assignment to electricity grid expansion processess
-*****************************************************************
+**Penalty cost assignment to electricity grid expansion processess**
 
 The expansion of the transmission network to areas lacking access is a capital intensive process. The investment costs
 are influenced by several factors such as the capacity, the type and the length of the lines as well as by the topology
@@ -148,6 +161,3 @@ of the subjected area. In this analysis, a number of geospatial factors that aff
 transmission network are identified and considered in order to assign an incremental capital cost in locations that
 indicate specific topological features. More particularly, investment cost is influenced by elevation, the road network,
 land cover type, slope gradient and distance from substations.
-
-
-
