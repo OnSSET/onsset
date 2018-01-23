@@ -25,6 +25,7 @@ The goal of OnSSET is clear, to identify the mix of technologies that will fully
 Using open population density datasets, OnSSET can identify where population whithin the study area. Depending on the number of people living in a settlement, OnSSET categorizes a grid-cell (called settlement from now on) into urban or rural. Other geospatial information such as the distance of a settlement from the national electricity grid, its distance from the road network and its brightness at night (night time lights satellite imagery), helps OnSSET identify the current electrification status per location. Each settlement is the divided into electrified or not electrified.
 
     .. image::  img/AfghanElec.png
+        :scale: 80 %
         :align: center
 
 **Residential Electricity Demand**
@@ -33,6 +34,7 @@ Once the electrified and non-electrified population has been spatially identifie
 electricity access; OnSSET adopts the consumption levels suggested by the Global Tracking Framework (2015).
 
     .. image::  img/TierFramework.png
+        :scale: 80 %
         :align: center
 
 Consumption levels start from 8 kWh/person/year, enough to support minor daily activities (few hours of lighting, phone charging etc.) and reach up to 598 kWh/person/year, supporting the use of heavier or continuous appliances like refrigerator, washing machine, oven etc. OnSSET provides the option of selecting different access tiers for rural and urban areas. 
@@ -59,28 +61,32 @@ year. The capacity factor reflects the potential wind power at a given site and 
 sites before the installation of wind power plants. Documentation on wind power assessment is available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/Wind>`_.
 
 .. image::  img/AfghanCF.png
-        :align: center
+    :scale: 80 %
+    :align: center
         
 **Solar energy potential**
 
 GIS data for Global Horizontal Irradiation (GHI - kWh/m^2/time) are used to indicate the available solar energy that Photovoltaic (PV) systems can utilize per location. This layer is combined with additional datasets that are used to define restriction zones for mini-grid PV installations such as protected areas, reserved forests etc. Documentation on solar power assessment is available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/Solar>`_. 
 
 .. image::  img/AfghanSolar.png
-        :align: center
+    :scale: 80 %
+    :align: center
 
 **Hydropower potential**
 
 A number of GIS datasets (runoff, accumulation, elevation, river network) have been utilized in a novel methodology developed by KTH dESA in order to spatially identify potential site for small scale hydropower deployment. Documentation on hydropower assessment together with a GIS based assessment tool are available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/HydroPower>`_. 
 
 .. image::  img/AfghanHydro.png
-        :align: center
+    :scale: 80 %
+    :align: center
 
 **Transportation Cost for Diesel**
 
 Diesel is an important energy carrier, especially in remote areas of many developing countries. Therefore, it could not be missing from the OnSSET analysis. Transportation of diesel incurs costs, which may lead to high costs of electricity for isolated and low populated communities. OnSSET uses GIS datasets that indicate travel time and distance from main urban hubs, in order to calculate and assign transportation costs for diesel in each location. These costs are then included as fuel costs in the calculation of LCoE for diesel gensets. Documentation on diesel cost assessment is available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/DieselCost>`_. 
 
 .. image::  img/AfghanDiesel.png
-        :align: center
+    :scale: 80 %
+    :align: center
 
 Electrification options
 -----------------------
@@ -89,6 +95,7 @@ Over the last few decades, access to electricity has been established by connect
 interconnected electricity central grid. However, technological innovation in renewable energy sources and concerns about social inclusion have added a handful of technologies to feasibly generate electricity in a decentralized manner resorting to mini-grids or standalone alternatives. Seven configurations of energy technologies are considered in each cell by OnSSET. These have be divided into the three aforementioned categories; grid-extension, mini-grids and standalone systems.
 
 **Grid extension:**
+
 Central grids can offer low generating costs. However, grid extension might not be economically or socially
 feasible if the purpose is to meet a relatively small electricity demand or for remotely located areas.
 
@@ -96,6 +103,7 @@ feasible if the purpose is to meet a relatively small electricity demand or for 
     :align: center
     
 **Mini-grids (Wind Turbines, Solar PVs, Mini/Small Hydro, Diesel gensets):**
+
 Mini grids usually provide electricity from small power plants with generating capacity of few MW.
 They tap locally available energy resources such as solar, hydro, wind, or can use commonly available fuels such as diesel.
 Overall, they can provide affordable electricity to rural and remote areas with low-medium electricity consumption habits.
@@ -108,6 +116,7 @@ transport costs fluctuations.
         :align: center
 
 **SA (Solar PVs, Diesel gensets):**
+
 As mini grids, these systems are usually based on local energy resources but the difference is that these can produce
 only few kWh per day, suitable to cover the electricity demand of a single household or a small business, but no more.
 Stand-alone systems do not require a T&D network nor construction investments. The capital cost of these systems is
