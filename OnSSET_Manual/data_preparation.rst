@@ -206,6 +206,9 @@ Using the GIS Commands for processing file provided by KTH dESA.
     # outpath = r"C:\Users\Dimitris\Desktop\OnSSET" this is moved at the top
     arcpy.TableToTable_conversion(settlements_fc,outpath,"AfghanistanSett10k")
 
+.. note::
+
+   A fully updated version of this code is available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/Solar>`_. 
 
 
 Manual GIS processing using ArcGIS
