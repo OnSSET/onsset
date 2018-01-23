@@ -51,10 +51,8 @@ categories; grid-extension, mini-grids and standalone systems.
 **Grid extension:**
 Central grids can offer low generating costs. However, grid extension might not be economically or socially
 feasible if the purpose is to meet a relatively small electricity demand or for remotely located areas.
-
-    .. image::  img/GridExtension.png
-        :align: center
-        
+.. image::  img/GridExtension.png
+    :align: center
 **Mini-grids (Wind Turbines, Solar PVs, Mini/Small Hydro, Diesel gensets):**
 Mini grids usually provide electricity from small power plants with generating capacity of few MW.
 They tap locally available energy resources such as solar, hydro, wind, or can use commonly available fuels such as diesel.
