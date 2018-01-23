@@ -54,20 +54,18 @@ Energy resources assessment
 GIS wind speed data are used to calculate the capacity factor. The latter is defined as the ratio of the yearly expected
 wind energy production to the energy production if the wind turbine were to operate at its rated power throughout the
 year. The capacity factor reflects the potential wind power at a given site and it can be used for comparing different
-sites before the installation of wind power plants. Full documentation on wind power assessment is available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/Wind>`_.
-
-    .. image::  img/AfghanWind.png
-        :align: left
+sites before the installation of wind power plants. Documentation on wind power assessment is available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/Wind>`_.
 
 .. image::  img/AfghanCF.png
-        :align: right
+        :align: center
         
-Solar energy potential
-----------------------
+**Solar energy potential**
 
-Solar data that provides insights about the global horizontal irradiation (GHI - kWh/m^2/time). The LCOE of stand-alone
-solar PVs is calculated based on the radiation and the system costs. The LCOE of mini-grids solar PVs is calculated based
-on the above parameters and the population density of settlements.
+GIS data for Global Horizontal Irradiation (GHI - kWh/m^2/time) are used to indicate the available solar energy that Photovoltaic (PV) systems can utilize per location. This layer is combined with additional datasets that are used to define restriction zones for mini-grid PV installations such as protected areas, reserved forests etc. Documentation on solar power assessment is available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/Solar>`_. 
+
+.. image::  img/AfghanSolar.png
+        :align: center
+
 
 Over the last few decades, access to electricity has been established by connecting households and businesses to the national
 interconnected electricity central grid. However, technological innovation in renewable energy sources and concerns
