@@ -1,13 +1,16 @@
+Introduction to OnSSET
+======================
+
 Universal access to electricity
-===============================
+*******************************
 
 The 2030 Agenda for Sustainable Development has set the goal of universal access to electricity by 2030 (`SDG7) <http://www.un.org/sustainabledevelopment/energy/>`_. The challenge is significant. It involves reaching population with limited income, often living in sparsely populated areas, mostly in developing and least developed countries. The choice of which technology to use for increasing electricity access, depends on a number of parameters, from social to techno-economic including e.g. target level of energy access, local population density, distance to the national grid and local resource availability. These parameters are spatial in nature, making geospatial information very useful for their evaluation on both regional, national and sub-national scale.
 
 .. figure::  img/sdg7-onsset-org.png
    :align:   center
 
-What does OnSSET fit?
-*********************
+What is OnSSET?
+***************
 Over the past few year, the division of Energy Systems Analysis at KTH has been embracing the advancements in the geospatial field, by developing together with partners  an open source, geospatial electrification toolkit – the Open Source Spatial Electrification Tool (OnSSET). OnSSET is a GIS  based tool developed to identify the least-cost electrification option(s) between seven alternative configurations:
 
 * Grid connection/extension
@@ -29,5 +32,3 @@ OnSSET output, can be used to support policy development for electrification by 
 * How does fuel cost for diesel compares with high upfront cost of renewables in terms of subsidy schemes (continuous vs one-time subsidy)?
 
 To the current state, OnSSET has supported electrification efforts in many countries around the globe including Afghanistan, Nigeria, Ethiopia, Kenya, India, Tanzania and Madagascar as part of joint collaboration with the World Bank and the United Nations. These organizations, have warmly embraced the tool on their fight towards energy poverty, through its used in the development of online platforms aiming at supporting data and information access in the field or electrification. In addition, OnSSET has featured in several peer reviewd publications including the World Energy Outlook in 2014, 2015 and 2017. 
-
-
