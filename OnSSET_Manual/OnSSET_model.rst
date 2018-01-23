@@ -1,9 +1,6 @@
 OnSSET Model
 =============
 
-OnSSET in a nutsell
-*******************
-
 OnSSET is a bottom-up medium to long term optimization model. Its principle is simple. It tries to much the estimated electricity demand with the most cost effective supply option for each location. First, the study area is divided into a mesh of square grid cells, each one of which is accomplanied with characteristics (e.g. population density, land type, distance from existing power infrastructure etc.) defined by its location. Then, these characteristics are aggregated and used to informed formulas estimating the Levelized Cost of Electricity generation (LCOE) for seven technologies. These can vary based on: 
 
 1)  The target level and quality of energy access, i.e., the amount of electricity that already electrified and yet to
@@ -16,10 +13,19 @@ OnSSET is a bottom-up medium to long term optimization model. Its principle is s
 
 Finally, the model identifies the technology that offers the lowest cost of generating electricity per location and calculates the capacity and investment requirements that its deployment entails, if universal access is to be achieved within the defined timeframe (e.g. 2030).
 
-The following paragraphs elaborate on how demand and supply 
+The following paragraphs elaborate on how demand and supply are defined in OnSSET. 
 
 Electricity demand
 **********************
+
+The goal of OnSSET is clear, to identify the mix of technologies that will fully electrify the population of a region within certain timeframes. That is, OnSSET only accounts for residential electricity demand. 
+
+**Geo-location of population and current status**
+
+Using open population density datasets, OnSSET can identify where population whithin the study area. Depending on the number of people living in a settlement, OnSSET categorizes a grid-cell (called settlement from now on) into urban or rural. Other geospatial information such as the distance of a settlement from the national electricity grid, its distance from the road network and its brightness at night (night time lights satellite imagery), helps OnSSET identify the current electrification status per location. Each settlement is the divided into electrified or not electrified.
+
+    .. image::  img/RwandaElec.png
+        :align: center
 
 OnSSET finds the least-cost electrification strategy based on the residential electricity demand. At first the cells
 that are likely to already be electrified by the national grid are identified, whereas the remaining cells are considered
