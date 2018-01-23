@@ -1,19 +1,18 @@
 The OnSSET Model
 =============
 
-OnSSET is a bottom-up medium to long term optimization model. Its principle is simple. It tries to much the estimated electricity demand with the most cost effective supply option for each location. First, the study area is divided into a mesh of square grid cells, each one of which is accomplanied with characteristics (e.g. population density, land type, distance from existing power infrastructure etc.) defined by its location. Then, these characteristics are aggregated and used to informed formulas estimating the Levelized Cost of Electricity generation (LCoE) for seven technologies. These can vary based on: 
+OnSSET is a bottom-up medium to long term optimization model. Its principle is simple. It tries to much the estimated electricity demand with the most cost effective supply option for each location. 
 
-1)  The target level and quality of energy access, i.e., the amount of electricity that already electrified and yet to
-    be electrified population will be provided with, measured in kWh/person/year.
+First, the study area is divided into a mesh of square grid cells, each one of which is accomplanied with characteristics (e.g. population density, land type, distance from existing power infrastructure etc.) defined by its location. Then, these characteristics are aggregated and used to informed formulas estimating the Levelized Cost of Electricity generation (LCoE) for seven technologies. Finally, the model identifies the technology that offers the lowest cost of generating electricity per location and calculates the capacity and investment requirements that its deployment entails.
 
-2)  Local grid connection characteristics including the distance from the nearest grid (km) and the
-    average national cost of grid supplied electricity ($/kWh).
+The optimal technology mix and investment required to fully electrify a country within a defined timeframe (e.g. 2030) can vary significantly depending on demand and supply characteristics, such as:
 
-3)  Local renewable energy resource availability and diesel costs.
+1)  The level of electricity access to be achieved in a country (kWh/person/year).
 
-Finally, the model identifies the technology that offers the lowest cost of generating electricity per location and calculates the capacity and investment requirements that its deployment entails, if universal access is to be achieved within the defined timeframe (e.g. 2030).
+2)  The current status and plans of the national electricity grid along with its associated costs.
 
-The following paragraphs elaborate on how demand and supply are defined in OnSSET through the case study of Afghanistan. 
+3)  Local energy resources availability and off-grid power systems costs.
+ 
 
 Electricity demand
 *******************
