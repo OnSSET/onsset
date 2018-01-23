@@ -27,7 +27,7 @@ population growth rates per region to estimate the total population in the eng y
 electricity access; the modelling adopts the consumption levels defined as electricity access tiers by the Global
 Tracking Framework (2015).
 
-.. figure::  img/TierFramework.jpg
+.. figure::  img/TierFramework.png
    :align:   center
    
 These tiers indicate electricity consumption levels starting from 22 kWh/hh/year, enough
