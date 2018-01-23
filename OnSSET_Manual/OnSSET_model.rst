@@ -28,7 +28,7 @@ electricity access; the modelling adopts the consumption levels defined as elect
 Tracking Framework (2015).
 
 .. figure::  img/TierFramework.png
-   :align:   center
+   :align:   right
    
 These tiers indicate electricity consumption levels starting from 22 kWh/hh/year, enough
 electricity only enough for task lightning, charge a phone or power a radio (Tier 1), up to approx. 2195 kWh/hh/year,
