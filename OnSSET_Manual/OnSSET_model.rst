@@ -1,4 +1,4 @@
-OnSSET Model
+The OnSSET Model
 =============
 
 OnSSET is a bottom-up medium to long term optimization model. Its principle is simple. It tries to much the estimated electricity demand with the most cost effective supply option for each location. First, the study area is divided into a mesh of square grid cells, each one of which is accomplanied with characteristics (e.g. population density, land type, distance from existing power infrastructure etc.) defined by its location. Then, these characteristics are aggregated and used to informed formulas estimating the Levelized Cost of Electricity generation (LCoE) for seven technologies. These can vary based on: 
@@ -20,7 +20,8 @@ Electricity demand
 
 The goal of OnSSET is clear, to identify the mix of technologies that will fully electrify the population of a region within certain timeframes. That is, OnSSET only accounts for residential electricity demand. 
 
-**Geo-location of population and current electrification status**
+Geo-location of population and current electrification status
+-------------------------------------------------------------
 
 Using open population density datasets, OnSSET can identify where population whithin the study area. Depending on the number of people living in a settlement, OnSSET categorizes a grid-cell (called settlement from now on) into urban or rural. Other geospatial information such as the distance of a settlement from the national electricity grid, its distance from the road network and its brightness at night (night time lights satellite imagery), helps OnSSET identify the current electrification status per location. Each settlement is the divided into electrified or not electrified.
 
@@ -28,7 +29,8 @@ Using open population density datasets, OnSSET can identify where population whi
         :scale: 80 %
         :align: center
 
-**Residential Electricity Demand**
+Residential Electricity Demand
+------------------------------
 
 Once the electrified and non-electrified population has been spatially identified, OnSSET uses population growth rates per type of settlement (urban/rural) to estimate the projected population in the end year of the analysis (e.g. 2030). This is one of the two parameters we need to know to quantify and locate the future electricity demand. The second parameter is the target level of
 electricity access; OnSSET adopts the consumption levels suggested by the Global Tracking Framework (2015).
@@ -113,6 +115,7 @@ technology with low upfront investment cost but subjected to operational costs d
 transport costs fluctuations.
 
     .. image::  img/MiniGrid.png
+        :scale: 85 %
         :align: center
 
 **SA (Solar PVs, Diesel gensets):**
@@ -123,6 +126,7 @@ Stand-alone systems do not require a T&D network nor construction investments. T
 not high and depends mainly on size. Batteries, allowing for electricity when dark, may increase the upfront cost for PV systems.
     
     .. image::  img/StandAlone.png
+        :scale: 85 %
         :align: center
 
 Brief description of the electrification algorithm
