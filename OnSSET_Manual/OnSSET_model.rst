@@ -31,8 +31,8 @@ Tracking Framework (2015).
         :scale: 85 %
         :align: center
 
-These tiers indicate electricity consumption levels starting from 8 kWh/hh/year, enough
-electricity only enough for task lightning, charge a phone or power a radio (Tier 1), up to approx. 2195 kWh/hh/year,
+These tiers indicate electricity consumption levels starting from 8 kWh/person/year, enough
+electricity only enough for task lightning, charge a phone or power a radio (Tier 1), up to approx. 598 kWh/person/year,
 allowing for enough electricity to run several heavy or continuous appliances like refrigerator, washing machine, oven etc.
 (Tier 5). The model currently allows the user to specify different target tiers for urban rural population.
 The combination of the population and assumed electrification consumption levels allows estimations regarding the future
