@@ -13,7 +13,7 @@ OnSSET is a bottom-up medium to long term optimization model. Its principle is s
 
 Finally, the model identifies the technology that offers the lowest cost of generating electricity per location and calculates the capacity and investment requirements that its deployment entails, if universal access is to be achieved within the defined timeframe (e.g. 2030).
 
-The following paragraphs elaborate on how demand and supply are defined in OnSSET. 
+The following paragraphs elaborate on how demand and supply are defined in OnSSET through the case study of Afghanistan. 
 
 Electricity demand
 *******************
@@ -24,7 +24,7 @@ The goal of OnSSET is clear, to identify the mix of technologies that will fully
 
 Using open population density datasets, OnSSET can identify where population whithin the study area. Depending on the number of people living in a settlement, OnSSET categorizes a grid-cell (called settlement from now on) into urban or rural. Other geospatial information such as the distance of a settlement from the national electricity grid, its distance from the road network and its brightness at night (night time lights satellite imagery), helps OnSSET identify the current electrification status per location. Each settlement is the divided into electrified or not electrified.
 
-    .. image::  img/RwandaElec.png
+    .. image::  img/AfghanElec.png
         :align: center
 
 **Residential Electricity Demand**
@@ -39,11 +39,35 @@ Consumption levels start from 8 kWh/person/year, enough to support minor daily a
 
 Finally, the combination of population and electrification consumption level, indicates electricity demand for residential purposes per location.
 
-            *** Electricity Demand = Population in 2030 X Selected Access Tier ***
+                        **Electricity Demand = Population in 2030 X Selected Access Tier**
 
+Electricity supply
+******************
 
-Electrification options
-*****************************
+OnSSET uses GIS data in order to grasp the spatial and temporal fluctuation of energy resources. These, are later translated into techno-economic inputs and are very useful in assessing the performance of various technologies that tap into these resources.
+
+Energy resources assessment
+---------------------------
+
+**Wind energy potential and capacity factors**
+
+GIS wind speed data are used to calculate the capacity factor. The latter is defined as the ratio of the yearly expected
+wind energy production to the energy production if the wind turbine were to operate at its rated power throughout the
+year. The capacity factor reflects the potential wind power at a given site and it can be used for comparing different
+sites before the installation of wind power plants. Full documentation on wind power assessment is available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/Wind>`_.
+
+    .. image::  img/AfghanWind.png
+        :align: left
+
+    .. image::  img/AfghanCF.png
+        :align: right 
+        
+Solar energy potential
+----------------------
+
+Solar data that provides insights about the global horizontal irradiation (GHI - kWh/m^2/time). The LCOE of stand-alone
+solar PVs is calculated based on the radiation and the system costs. The LCOE of mini-grids solar PVs is calculated based
+on the above parameters and the population density of settlements.
 
 Over the last few decades, access to electricity has been established by connecting households and businesses to the national
 interconnected electricity central grid. However, technological innovation in renewable energy sources and concerns
@@ -128,20 +152,4 @@ indicate specific topological features. More particularly, investment cost is in
 land cover type, slope gradient and distance from substations.
 
 
-Renewable energy resource potentials
-************************************
 
-Wind energy potential and capacity factors
-------------------------------------------
-
-GIS wind speed data is used to calculate the capacity factor. The latter is defined as the ratio of the yearly expected
-wind energy production to the energy production if the wind turbine were to operate at its rated power throughout the
-year. The capacity factor reflects the potential wind power at a given site and it can be used for comparing different
-sites before the installation of wind power plants.
-
-Solar energy potential
-----------------------
-
-Solar data that provides insights about the global horizontal irradiation (GHI - kWh/m^2/time). The LCOE of stand-alone
-solar PVs is calculated based on the radiation and the system costs. The LCOE of mini-grids solar PVs is calculated based
-on the above parameters and the population density of settlements.
