@@ -1,0 +1,21 @@
+Inserting the data in ArcGIS
+
+- Open http://disc.sci.gsfc.nasa.gov/mdisc/data-holdings
+- Go to Data Holdings -> Data Subsetter
+- Select: Monthly IAU 2d ocean surface diagnostics (tavgM_2d_ocn_Nx)
+- Select area, duration and variable (U10m and V10m)
+- Get the NetCDF format
+- You ll find a list of .nc files to download. You can insert these files in ArcGIS either by a simple dragging or follow the procedure of "Make NetCDF Raster Layer"
+
+Processing the data
+
+- A raster layer need to be created for every month.
+- Open the Raster Calculator and perform the following expressiom:
+
+SquareRoot(Power(EastJan10m,2)+Power(NorthJan10m,2))
+
+- The result is the aggregated wind profile for January.
+- Follow the same process for each month.
+- Then (with Raster Calculator) calculate the average value for the whole year by simply adding every month and dividing by 12.
+- Project the result 
+- Done 
