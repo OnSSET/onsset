@@ -507,7 +507,7 @@ Raster Preparation Methodology using NASA datsets
 
 .. note::
 
-   Additional documentation on wind power assessment is available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/Wind>`_.
+Additional documentation on wind power assessment is available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/Wind>`_.
 
 
 Hydro potential
