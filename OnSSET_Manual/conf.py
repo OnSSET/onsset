@@ -48,7 +48,7 @@ master_doc = 'index'
 # General information about the project.
 project = 'OnSSET'
 copyright = '2017, KTH-dESA'
-author = 'Konstantinos Filippos Pegios'
+author = 'KTH Team'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
