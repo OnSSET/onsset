@@ -27,10 +27,10 @@ population growth rates per region to estimate the total population in the eng y
 electricity access; the modelling adopts the consumption levels defined as electricity access tiers by the Global
 Tracking Framework (2015).
 
-        .. image::  img/TierFramework.png
-            :width: 200px
-            :height: 120px
-            :align:   center
+                .. figure::  img/TierFramework.png
+                    :width: 200px
+                    :height: 120px
+                    :align:   center
    
 These tiers indicate electricity consumption levels starting from 22 kWh/hh/year, enough
 electricity only enough for task lightning, charge a phone or power a radio (Tier 1), up to approx. 2195 kWh/hh/year,
