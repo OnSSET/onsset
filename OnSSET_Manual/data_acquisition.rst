@@ -347,6 +347,53 @@ Land cover
 | World                 | Various Rasters on Land Use                                                                  | various                 | 1980-2014                     | EarthStat                  | http://www.earthstat.org/data-download/                                        |
 +-----------------------+----------------------------------------------------------------------------------------------+-------------------------+-------------------------------+----------------------------+--------------------------------------------------------------------------------+
 
+The model classifies the land cover in order to calculate the grid extension penalties. The default classification values
+are based on the MODIS dataset found `here <http://glcf.umd.edu/data/lc/>`_, where the legend ranges from 0-16 with the values and corresponding land
+cover type can be seen below. If land cover data is retrieved from other data sources with different classification
+values they should be reclassified in GIS (using the Reclassify tool in ArcGIS) to match those below. Alternatively changes can be made
+in the Python code instead. If this reclassification is not performed it may lead to an incorrect grid penalty factor or,
+if the highest values are above 16, an error message while running the code.
+
+
++-------+------------------------------------+
+| Value | Label                              |
++-------+------------------------------------+
+| 0     | Water                              |
++-------+------------------------------------+
+| 1     | Evergreen Needleleaf forest        |
++-------+------------------------------------+
+| 2     | Evergreen Broadleaf forest         |
++-------+------------------------------------+
+| 3     | Deciduous Needleleaf forest        |
++-------+------------------------------------+
+| 4     | Deciduous Broadleaf forest         |
++-------+------------------------------------+
+| 5     | Mixed forest                       |
++-------+------------------------------------+
+| 6     | Closed shrublands                  |
++-------+------------------------------------+
+| 7     | Open shrublands                    |
++-------+------------------------------------+
+| 8     | Woody savannas                     |
++-------+------------------------------------+
+| 9     | Savannas                           |
++-------+------------------------------------+
+| 10    | Grasslands                         |
++-------+------------------------------------+
+| 11    | Permanent wetlands                 |
++-------+------------------------------------+
+| 12    | Croplands                          |
++-------+------------------------------------+
+| 13    | Urban and built-up                 |
++-------+------------------------------------+
+| 14    | Cropland/Natural vegetation mosaic |
++-------+------------------------------------+
+| 15    | Snow and ice                       |
++-------+------------------------------------+
+| 16    | Barren or sparsely vegetated       |
++-------+------------------------------------+
+
+
 Others
 --------------
 
@@ -564,53 +611,4 @@ Hydro potential
 +----------------------------+-------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------+
 | HEC-GeoHMS                 | Hydrologic Engineering Center                                                                   | http://www.hec.usace.army.mil/software/hec-geohms/downloads.aspx                                                                                                |                                                                                                       |                                                                       |
 +----------------------------+-------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------+
-
-Land cover
-++++++++++++++++++++++++++++++++++++++
-
-The model classifies the land cover in order to calculate the grid extension penalties. The default classification values
-are based on the MODIS dataset found `here <http://glcf.umd.edu/data/lc/>`_, where the legend ranges from 0-16 with the values and corresponding land
-cover type can be seen below. If land cover data is retrieved from other data sources with different classification
-values they should be reclassified in GIS (using the Reclassify tool in ArcGIS) to match those below. Alternatively changes can be made
-in the Python code instead. If this reclassification is not performed it may lead to an incorrect grid penalty factor or,
-if the highest values are above 16, an error message while running the code.
-
-
-+-------+------------------------------------+
-| Value | Label                              |
-+-------+------------------------------------+
-| 0     | Water                              |
-+-------+------------------------------------+
-| 1     | Evergreen Needleleaf forest        |
-+-------+------------------------------------+
-| 2     | Evergreen Broadleaf forest         |
-+-------+------------------------------------+
-| 3     | Deciduous Needleleaf forest        |
-+-------+------------------------------------+
-| 4     | Deciduous Broadleaf forest         |
-+-------+------------------------------------+
-| 5     | Mixed forest                       |
-+-------+------------------------------------+
-| 6     | Closed shrublands                  |
-+-------+------------------------------------+
-| 7     | Open shrublands                    |
-+-------+------------------------------------+
-| 8     | Woody savannas                     |
-+-------+------------------------------------+
-| 9     | Savannas                           |
-+-------+------------------------------------+
-| 10    | Grasslands                         |
-+-------+------------------------------------+
-| 11    | Permanent wetlands                 |
-+-------+------------------------------------+
-| 12    | Croplands                          |
-+-------+------------------------------------+
-| 13    | Urban and built-up                 |
-+-------+------------------------------------+
-| 14    | Cropland/Natural vegetation mosaic |
-+-------+------------------------------------+
-| 15    | Snow and ice                       |
-+-------+------------------------------------+
-| 16    | Barren or sparsely vegetated       |
-+-------+------------------------------------+
 
