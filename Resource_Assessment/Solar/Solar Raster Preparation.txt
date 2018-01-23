@@ -1,0 +1,11 @@
+In order to create the the global solar radiation raster the following steps are necessary:
+
+ - Download the global radiation data from Atmospheric Science data center of NASA
+	(https://eosweb.larc.nasa.gov/cgi-bin/sse/global.cgi?email=skip@larc.nasa.gov)
+ - Bring the downloaded data in csv format.
+ - In ArcGIS go to file -> add data -> add XY data
+ - In the opened window choose the solar data file and assign X field and Y field to the columns representing latitude and longitude respectively
+ - Once the data are inserted use the spatial analyst tool interpolation to create the raster
+It should be mentioned here that as z value you selecte the average annual radiation. If there is not such an option you should create in the csv file
+In previous case Spline function was used.
+ - Radiation Raster is ready
