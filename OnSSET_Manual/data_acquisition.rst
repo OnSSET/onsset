@@ -36,14 +36,7 @@ The selection of a particular data model, vector or raster, is dependent on the 
 GIS data collection and processing
 ******************************************
 
-* OnSSET is a GIS-based tool and therefore requires data in a geographical format. In the context of the power sector, necessary data include those on current and planned infrastructure (electric grid networks, road networks, power plants, industry, public facilities), population characteristics (distribution, location), economic and industrial activity, and local renewable energy flows.
-
-* Before a model can be built, one must acquire the “layers” of data outlined above. More often than not, each layer must be acquired on its own. The final outcome is a multilayer map conveying all the information necessary to initiate an OnSSET electrification analysis.
-
-* The spatial resolution of the final map depends on the availability of input data and on the targeted level of accuracy. OnSSET can handle various levels of input data, with typical resolutions ranging from 1x1 kilometers (km) to 10x10 km.
-
-* The selection of inputs usually involves a trade-off between the time needed for computation and the desired level of detail. The modeler has to decide which resolution best fits the purpose of the analysis. All analyses using OnSSET require that the following layers be obtained and processed:
-
+OnSSET is a GIS-based tool and therefore requires data in a geographical format. In the context of the power sector, necessary data include those on current and planned infrastructure (electric grid networks, road networks, power plants, industry, public facilities), population characteristics (distribution, location), economic and industrial activity, and local renewable energy flows. The table below lists all layers required for an OnSSET analysis. 
 
 +----+---------------------------+-----------------+---------------------------------------------------------------------------------+
 | #  | Dataset                   | Type            | Description                                                                     |
@@ -138,6 +131,12 @@ GIS data collection and processing
 |    |                           |                 | map etc.).                                                                      |
 |    |                           |                 |                                                                                 |
 +----+---------------------------+-----------------+---------------------------------------------------------------------------------+
+
+.. note::
+ 
+   * Before a model can be built, one must acquire the layers of data outlined above. More often than not, each layer must be acquired on its own. The final outcome is a multilayer map conveying all the information necessary to initiate an OnSSET electrification analysis.
+
+   * The spatial resolution of the final map depends on the availability of input data and on the targeted level of accuracy. OnSSET can handle various levels of input data, with typical resolutions ranging from 1x1 kilometers (km) to 10x10 km. The selection of inputs usually involves a trade-off between the time needed for computation and the desired level of detail. The modeler has to decide which resolution best fits the purpose of the analysis. 
 
 
 GIS data sources
