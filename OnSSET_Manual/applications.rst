@@ -24,22 +24,9 @@ A `Web-based application <http://electrification.energydata.info/presentation/>`
 OnSSET Online Tool
 *******************
 
-For those who would like to just take a taste of an OnSSET electrification analysis, KTH dESA has developed an online interface that allows the user identify electrification pathways for a selected country 
-
-The online tool is an easy and quick way to explore OnSSET capabilities by conducting an electrification analysis for a selected country in seven simple steps.
-
-http://www.onsset.org/online-tool.html
-
-`OnSSET for Policy Makers & Country Officials <http://35.163.178.100:8889/login?next=%2Ftree>`_
-
-`OnSSET for Corporate Users <http://35.163.178.100:8890/login?next=%2Ftree>`_
-
-`OnSSET for Students <http://35.163.178.100:8900/login>`_
-
-`OnSSET for Afghanistan <http://35.163.178.100:8891/login?next=%2Ftree>`_
+For those who would like to take a deeper dive into OnSSET modelling, KTH dESA has developed an `Online Interface <http://www.onsset.org/online-tool.html/>`_ that allows the user identify electrification pathways for a selected country and develop few alternative scenarios. The interface guides the user through a step by step process by providing a brief explanation of input data and model's functions.
 
     .. image::  img/onssetorg.png
         :scale: 10 %
         :align: center
        
-
