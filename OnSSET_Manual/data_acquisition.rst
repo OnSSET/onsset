@@ -1,6 +1,38 @@
 GIS data acquisition
 ============================
 
+Geographic Information Systems
+******************************
+
+A Geographic Information System (GIS) is an integrated set of hardware and software tools,  designed to capture, store, manipulate, analyse, manage, and digitally present spatial (or geographic) data and related attribute information. GIS can relate information from different sources, using two key index variables space (or location) and time. Common GIS data types (models) include: 
+
+**Spatial Data:** Describe the absolute and relative location of geographic features.
+
+    * Vectors
+
+        - Arcs (Polylines): Line segments forming individual linear features
+        - Polygons: Areas enclosed by arcs
+        - Points: Single coordinate pairs
+
+        .. image:: img/vector.png
+            :width: 200px
+            :height: 120px
+            :align: center
+
+    * Rasters
+
+        - Grid-Cells: single column/row positions
+        - Cell size: Resolution or else the accuracy of the data
+
+        .. image:: img/raster.png
+            :width: 200px
+            :height: 120px
+            :align: center
+
+**Attribute data:** Describe characteristics of the spatial features. These characteristics can be quantitative and/or qualitative in nature. Attribute data is often referred to as tabular data.
+
+The selection of a particular data model, vector or raster, is dependent on the source and type of data, as well as the intended use of the data. Certain analytical procedures require raster data while others are better suited to vector data.
+
 GIS data collection and processing
 ******************************************
 
