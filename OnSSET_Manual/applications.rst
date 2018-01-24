@@ -38,5 +38,8 @@ http://www.onsset.org/online-tool.html
 
 `OnSSET for Afghanistan <http://35.163.178.100:8891/login?next=%2Ftree>`_
 
-
+    .. image::  img/onssetorg.png
+        :scale: 10 %
+        :align: center
+       
 
