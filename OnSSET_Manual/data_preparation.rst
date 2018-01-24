@@ -1,61 +1,101 @@
 GIS data preparation
 ========================
 
-GIS preparation
-******************
+Once all 16 layers have been succesfully acquired, the user would need to prepare the datasets for their input into the OnSSET model. This requires the creation of a .csv file. There are five steps that need to be undertaken to process the GIS data so that it can be used for an OnSSET analysis.
+
+**Step 1. Proper data types and coordinate system** 
+---------------------------------------------------
+
+In this first step the user would need to secure that you have all the 16 datasets have been properly overlayed within a GIS environment. IT is common that layers in this stage are un-projected and at their initial geographic co-ordinate system (e.g. WGS84).
+
+**Step 2. Layer projection** 
+---------------------------------------------------
+
+In this step the user would need to project every single layer using the projection system that is suitable for your study area (e.g. WGS 1984 World Mercator). Here follow few important kew aspects.
+
+**Projection** is the systematic transformation of the latitude and longitude of a location into a pair of two dimensional coordinates or else the position of this location on a plane (flat) surface. A projection is necessary every time a map is created and all map projections distort the surface in some fashion.
+
+.. note::
+    Ellipsoid, Datum & Geographic Coordinate System
+
+    **Coordinate System:** Simply put, it is a way of describing a spatial property relative to a center.
+
+    **Datum:** The center and orientation of the ellipsoid
+
+    .. image:: img/crs1.png
+        :width: 350px
+        :height: 200px
+        :align: center
+
+    .. image:: img/crs2.png
+        :width: 300
+        :height: 150
+        :align: center
+
+Make sure you that you use **World Geodetic Datum 1984 (WGS84)** for all layers. Check by right-clicking on the layer in ArcGIS and select *Properties* then look at the *Source* tab. If this is not the case the datasets need to be projected to this coordinate System. This is done in 3 steps
+
+* Open the Project tool in ArcMap (Data Management Tools --> Projections and Transformations --> Project or simply type project in the search bar).
+
+* In the field that says *Input Dataset or Feature Class* select the dataset that you wish to project
+
+* The next step is to select the *Output Coordinate System*. This can be done in two ways.
+
+    1. If you already have a layer with the right coordinate system simply open up the layer folder and choose WGS 1984.
+
+                .. figure:: img/fig11.jpg
+                    :width: 300px
+                    :height: 100px
+                    :align: center
+
+    2. If you do not have a layer with the right coordinate system open up the the following path: **Projected Coordinate Systems** --> **UTM** --> **WGS 1984** and choose an UTM Zone. The easiest way to find the UTM zone is to google it i.e. "Tanzania UTM zone". You can also use the following source: http://coordtrans.com/coordtrans/guide.asp?section=SupportedCountries (all countries are not available. For cases in which you have more than one UTM zone option chose one and be consistent.
 
 
+**Slope**
 
-Common Data types (models)
----------------------------
+The slope map is not downloaded as a dataset but rather generated from the elevation map. In order to create the slope map certain steps need to be followed.
 
-**Spatial Data:** Describe the absolute and relative location of geographic features.
+1. In ArcMap open the slope tool (Spatial Analyst Tools --> Surface --> slope or simply type in the search bar).
 
-    * Vectors
+2. You will be asked to specify the input file. For this use your elevation map. When the input file is chosen the box with the output file should automatically be filled in
 
-        - Arcs (Polylines): Line segments forming individual linear features
-        - Polygons: Areas enclosed by arcs
-        - Points: Single coordinate pairs
+3. Make sure that the output measurement is set to **degree**
 
-        .. image:: img/vector.png
-            :width: 200px
-            :height: 120px
-            :align: center
+4. The last step is to enter a value for the **Z-factor**. For this the following table can be used:
+
+                           +----------+------------+
+                           | Latitude | Z-factor   |
+                           +----------+------------+
+                           | 0        | 0.00000898 |
+                           +----------+------------+
+                           | 10       | 0.00000912 |
+                           +----------+------------+
+                           | 20       | 0.00000956 |
+                           +----------+------------+
+                           | 30       | 0.00001036 |
+                           +----------+------------+
+                           | 40       | 0.00001171 |
+                           +----------+------------+
+                           | 50       | 0.00001395 |
+                           +----------+------------+
+                           | 60       | 0.00001792 |
+                           +----------+------------+
+                           | 70       | 0.00002619 |
+                           +----------+------------+
+                           | 80       | 0.00005156 |
+                           +----------+------------+
+
+**Step 3. Create and populate a geo-database** 
+---------------------------------------------------
+
+The used will not need to create and generate a geo-database containing all the projected layers of the analysis under the proper naming convention. Further documentation on the process is available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/Python_Commands_For_Processing_GIS_Data>`_.
 
 
-    * Rasters
+**Step 4. Inform the Settlements' layer** 
+---------------------------------------------------
 
-        - Grid-Cells: single column/row positions
-        - Cell size: Resolution or else the accuracy of the data
+Once the geo-database is filled in with all the layers, we can make use of it in order to combine all layers together into a single table. The principle is simple. We will use the population layer in order to create a base table. Every row in this table represents a grid cell. The, we will adhere one by one all the layers into this table so that every row (grid cell) acquires its specific characteristics based on its location. One can perform the process manually by identifying the tools in the GIS environment of his preference. 
 
-        .. image:: img/raster.png
-            :width: 200px
-            :height: 120px
-            :align: center
-
-**Attribute data:** Describe characteristics of the spatial features. These characteristics can be quantitative and/or qualitative in nature. Attribute data is often referred to as tabular data.
-
-OnSSET dataset preparation
----------------------------
-
-There are five steps that need to be undertaken to process the GIS data so that it can be used for an OnSSET analysis.
-
-**Step 1.** Secure that you have all the 16 datasets required as layers onto your map (the geographic coordinate systems should be WGS84).
-
-**Step 2.** Project every single layer using the WGS 1984 World Mercator system.
-
-**Step 3.** Create and populate a geo-database with all the layers needed and the correct naming convention.
-
-**Step 4.** Use GIS functions and tools to assign a number of important attributes to every single settlement
-(please note the spatial resolution at the starting point).
-
-**Step 5.** Save the data to a csv file with naming conventions matching the Python code
-
-There are two options to complete these steps. Either they are performed using a set of Python commands provided by KTH dESA
-or they are performed manually in the GIS software.
-
-Using the GIS Commands for processing file provided by KTH dESA.
--------------------------------------------------------------------
+In order to facilitate the process KTH dESA has prepared a batch of python commands that can directly be ran by the user using the python command window. Here follows an example of these commands. **Note!** These commands have been developed for python version 2 and work properly in the ArcGIS environment. In case the user chooses a different GIS environment (e.g. Grass, Qgis etc.) these commands might need slight modification. 
 
     **Example:**
 
@@ -211,107 +251,16 @@ Using the GIS Commands for processing file provided by KTH dESA.
    A fully updated version of this code is available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/Python_Commands_For_Processing_GIS_Data>`_. 
 
 
-Manual GIS processing using ArcGIS
-----------------------------------------
+**Step 5. Preparing the .csv file** 
+---------------------------------------------------
 
-Projecting coordinate systems
-++++++++++++++++++++++++++++++++++++++++++++++++
+Once the process finishes, the settlements file is almost ready. The settlements layer contains the population points throughout the country’s territory along with 16 attributes that are useful for conducting the electrification analysis with OnSSET. In order to continue with the electrification model, this layer needs to be extracted from GIS to a .csv file. Here are two options of how this action can be performed. 
 
-**Projection** is the systematic transformation of the latitude and longitude of a location into a pair of two dimensional coordinates or else the position of this location on a plane (flat) surface.
-A projection is necessary every time a map is created and all map projections distort the surface in some fashion.
+1.	Use the **DBF_TO_CSV tool** which has been developed for this exact reason by KTH dESA. The tool is available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/Python_Commands_For_Processing_GIS_Data>`_.
 
-.. note::
-    Ellipsoid, Datum & Geographic Coordinate System
+2.	The settlements file is a shapefile. That is, a dbf file is always existing in the same directory. This dbf file contains the trivial information of the settlements file and can be opened via Excel. Then one can use excel to save the file as csv.
 
-    **Coordinate System:** Simply put, it is a way of describing a spatial property relative to a center.
-
-    **Datum:** The center and orientation of the ellipsoid
-
-    .. image:: img/crs1.png
-        :width: 350px
-        :height: 200px
-        :align: center
-
-    .. image:: img/crs2.png
-        :width: 300
-        :height: 150
-        :align: center
-
-Make sure you that you use **World Geodetic Datum 1984 (WGS84)** for all layers. Check by right-clicking on the layer in ArcGIS and select *Properties* then look at the *Source* tab. If this is not the case the datasets need to be projected to this coordinate System. This is done in 3 steps
-
-* Open the Project tool in ArcMap (Data Management Tools --> Projections and Transformations --> Project or simply type project in the search bar).
-
-* In the field that says *Input Dataset or Feature Class* select the dataset that you wish to project
-
-* The next step is to select the *Output Coordinate System*. This can be done in two ways.
-
-    1. If you already have a layer with the right coordinate system simply open up the layer folder and choose WGS 1984.
-
-                .. figure:: img/fig11.jpg
-                    :width: 300px
-                    :height: 100px
-                    :align: center
-
-    2. If you do not have a layer with the right coordinate system open up the the following path: **Projected Coordinate Systems** --> **UTM** --> **WGS 1984** and choose an UTM Zone. The easiest way to find the UTM zone is to google it i.e. "Tanzania UTM zone". You can also use the following source: http://coordtrans.com/coordtrans/guide.asp?section=SupportedCountries (all countries are not available. For cases in which you have more than one UTM zone option chose one and be consistent.
-
-
-**Slope**
-
-The slope map is not downloaded as a dataset but rather generated from the elevation map. In order to create the slope map certain steps need to be followed.
-
-1. In ArcMap open the slope tool (Spatial Analyst Tools --> Surface --> slope or simply type in the search bar).
-
-2. You will be asked to specify the input file. For this use your elevation map. When the input file is chosen the box with the output file should automatically be filled in
-
-3. Make sure that the output measurement is set to **degree**
-
-4. The last step is to enter a value for the **Z-factor**. For this the following table can be used:
-
-                           +----------+------------+
-                           | Latitude | Z-factor   |
-                           +----------+------------+
-                           | 0        | 0.00000898 |
-                           +----------+------------+
-                           | 10       | 0.00000912 |
-                           +----------+------------+
-                           | 20       | 0.00000956 |
-                           +----------+------------+
-                           | 30       | 0.00001036 |
-                           +----------+------------+
-                           | 40       | 0.00001171 |
-                           +----------+------------+
-                           | 50       | 0.00001395 |
-                           +----------+------------+
-                           | 60       | 0.00001792 |
-                           +----------+------------+
-                           | 70       | 0.00002619 |
-                           +----------+------------+
-                           | 80       | 0.00005156 |
-                           +----------+------------+
-
-In which the latitude is the central latitude of the study area
-
-
-Exporting the data from ArcGIS to .csv
-***************************************
-
-In order to be able to make the analysis all the data from ArcMap need to be transfered to an .csv file. This will
-make it possible to run the analysis in Python. This might be a rather time consuming task depending on the
-resolution of the study area. In order to transfer all the data to .csv files 6 steps need to be taken.
-
-1. Create a raster basemap of the study area. The values in this map are not important. The only thing that you need to make sure is that you have the right resolution on it.
-
-2. In ArcMap open the Sample tool (Spatial Analyst Tools --> Extraction --> Sample or simply type sample in the search bar)
-
-3. In the field "Input raster" enter the dataset that you would like to sample (The dataset that you have to sample are described below ).
-
-4. In the field "Input location raster or point feature" enter the dataset that you created in step 1
-
-5. When these steps are completed you should end up with a table in ArcMap in order to get it to a csv file open the Table to Excel tool in ArcMap (Conversion tools --> Excel --> Table to Excel or simply type table to excel in the search bar).
-
-6. Here you chose the input table as the table you recieved after finishing sample.
-
-By following these steps you should be left with an excel file with X and Y coordinates as well as a value in every grid cell for the dataset that you have chosen to sample. When these steps are done you also need to put all of the excel files into one single file with every column having the names given by OnSSET's naming convention.
+By following these steps you should be left with a .csv file with X and Y coordinates as well as a value in every grid cell for the dataset that you have chosen to sample. When these steps are done you also need to put all of the excel files into one single file with every column having the names given by OnSSET's naming convention. Find a python code performing this in a quick and easy manner `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/Python_Commands_For_Processing_GIS_Data>`_. 
 
 .. note::
     You can sample more than one dataset at a time. However this could lead to difficulties when creating the
@@ -363,44 +312,5 @@ The table below shows all the parameters that should be sampled and put into the
 | HydropowerFID            | ID of the nearest hydropower potential                                                                                                                   |
 +--------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------+
 
-
 .. note::
     It is very important that the columns in the csv-file are named exactly as they are namned in the **Parameter**-column in the table above.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
