@@ -142,18 +142,22 @@ OnSSET is a GIS-based tool and therefore requires data in a geographical format.
 GIS data sources
 *****************
 
-Relevant projects
-++++++++++++++++++++
+EnergyData.info 
+++++++++++++++++
 
-**KTH Division of Energy Systems Analysis** contributes with relevant datasets for electrification planning and applications to the development of an open database for energy related information.
-`energydata.info <https://energydata.info>`_ is an open data platform providing access to datasets and data analytics that are relevant to the energy sector. It has been developed as a public good available to governments, development organizations, non-governmental organizations, academia, civil society and individuals to share data and analytics that can help achieving the United Nations’ "Sustainable Development Goal 7" of ensuring access to affordable, reliable, sustainable and modern energy for all.
+Every day governments, private sector and development aid organizations collect data to inform, prepare and implement policies and investments. Yet, while elaborate reports are made public, the data underpinning the analysis remain locked in a computer out of reach. Because of this, the tremendous value they could bring to public and private actors in data-poor environments is too often lost. 
+
+`energydata.info <https://energydata.info>`_ is an open data platform launched recently by The World Bank Group and several partners, trying to change energy data paucity. It has been developed as a public good available to governments, development organizations, non-governmental organizations, academia, civil society and individuals to share data and analytics that can help achieving universal access to modern energy services. The database considers a variety of open, geospatial datasets of various context and granularity. **KTH Division of Energy Systems Analysis** contributes on a contnuous basis by providing relevant datasets for electrification planning.
 
 .. figure::  img/energydata.png
    :scale: 70 %
    :align:   center
 
-Libraries and directories for various types of GIS data
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Indicative open libraries of GIS data
+++++++++++++++++++++++++++++++++++++++
+
+Over the past few years, KTH dESA has been actively involved in the field of geospatial analysis. The following table presents a list of libraries and directories that provide access to open GIS data.
 
 +----------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
 | Source                     | Type                | Link                                                                                                                                      |
@@ -189,8 +193,8 @@ Libraries and directories for various types of GIS data
 | Africa Information Highway | Different types     | http://dataportal.opendataforafrica.org/                                                                                                  |
 +----------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
 
-Country specific data
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Country specific databases
++++++++++++++++++++++++++++
 
 +----------------------+------------------------------------------------------------------------------------+
 | Country              | Source                                                                             |
