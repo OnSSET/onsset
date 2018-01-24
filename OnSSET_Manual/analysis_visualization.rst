@@ -150,5 +150,5 @@ to generate a map. For the X and Y Field choose X and Y for coordinates in km or
 In the Z field enter the value that should be displayed, e.g. *MinimumOverall* for technology choice and *MinimumOverallLCOE*
 for the minimum LCOE of all technologies.
 
-.. image:: img/A2.jpg
+.. image:: img/A2.png
             :align: center
