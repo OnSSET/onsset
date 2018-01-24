@@ -202,7 +202,7 @@ with high diesel price).
 The following step is to enter the electricity target simply by typing the tier number between 1-5 and pressing enter for
 urban and rural areas respectively. The annual household electricity consumption is displayed in the terminal:
 
-.. image:: img/A1.jpg
+.. image:: img/A1.png
             :align: center
 
 Next step is to choose between the high and low diesel price from the specs file. For the question ``Use high diesel value? <y/n> ``
