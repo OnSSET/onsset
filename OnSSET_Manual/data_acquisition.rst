@@ -33,8 +33,95 @@ A Geographic Information System (GIS) is an integrated set of hardware and soft
 
 The selection of a particular data model, vector or raster, is dependent on the source and type of data, as well as the intended use of the data. Certain analytical procedures require raster data while others are better suited to vector data.
 
-GIS data collection and processing
-******************************************
+GIS data sources
+*****************
+
+EnergyData.info 
+++++++++++++++++
+
+Every day governments, private sector and development aid organizations collect data to inform, prepare and implement policies and investments. Yet, while elaborate reports are made public, the data underpinning the analysis remain locked in a computer out of reach. Because of this, the tremendous value they could bring to public and private actors in data-poor environments is too often lost. 
+
+`Energydata.info <https://energydata.info>`_ is an open data platform launched recently by The World Bank Group and several partners, trying to change energy data paucity. It has been developed as a public good available to governments, development organizations, non-governmental organizations, academia, civil society and individuals to share data and analytics that can help achieving universal access to modern energy services. The database considers a variety of open, geospatial datasets of various context and granularity. **KTH Division of Energy Systems Analysis** contributes on a contnuous basis by providing relevant datasets for electrification planning.
+
+.. figure::  img/energydata.png
+   :scale: 70 %
+   :align:   center
+
+
+Indicative open libraries of GIS data
+++++++++++++++++++++++++++++++++++++++
+
+Over the past few years, KTH dESA has been actively involved in the field of geospatial analysis. The following table presents a list of libraries and directories that provide access to open GIS data.
+
++----------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
+| Source                     | Type                | Link                                                                                                                                      |
++============================+=====================+===========================================================================================================================================+
+| Penn                       | World per region    | http://guides.library.upenn.edu/content.php?pid=324392&sid=2655131                                                                        |
++----------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
+| MIT                        | World per region    | http://libguides.mit.edu/c.php?g=176295&p=1161383                                                                                         |
++----------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
+| EDEnextdata                | World per region    | https://www.edenextdata.com/?q=content/global-gis-datasets-links-0#Population%20Infrastructure%20Topography%20and%20Administration%20Data |
++----------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
+| Stanford                   | World per region    | https://lib.stanford.edu/GIS/data                                                                                                         |
++----------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
+| GIS Lounge                 | Finding GIS data    | http://www.gislounge.com/data-and-gis-resources/                                                                                          |
++----------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
+| World Countries            | Different countries | http://www.gislounge.com/data-and-gis-resources/                                                                                          |
++----------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
+| dragons8mycat              | Different countries | https://dragons8mycat.wordpress.com/gis-data-sources/                                                                                     |
++----------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
+| rtwilson                   | Different types     | http://freegisdata.rtwilson.com/                                                                                                          |
++----------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
+| Planet OSM                 | Different types     | http://planet.osm.org/                                                                                                                    |
++----------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
+| Berkeley                   | Different types     | http://gif.berkeley.edu/resources/data_subject.html                                                                                       |
++----------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
+| Kings College              | Different types     | http://www.policysupport.org/waterworld                                                                                                   |
++----------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
+| CSRC                       | Different types     | http://rslab.sr.unh.edu/gdatalinks.html                                                                                                   |
++----------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
+| Data Discovery Center      | Different types     | http://ddc.unh.edu/                                                                                                                       |
++----------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
+| Spatial Hydrology          | Different types     | http://www.spatialhydrology.com/datawarehouse.html                                                                                        |
++----------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
+| Africa Information Highway | Different types     | http://dataportal.opendataforafrica.org/                                                                                                  |
++----------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
+
+Country specific databases
++++++++++++++++++++++++++++
+
+With geospatial analysis gaining momentun in many research areas, many countries have set up their own geo-databases in an effort to facilitate interdisciplinary research activities under a geospatial context. Here are few examples:
+
++----------------------+------------------------------------------------------------------------------------+
+| Country              | Source                                                                             |
++======================+====================================================================================+
+| Bolivia              | http://geo.gob.bo/#viewer                                                          |
++----------------------+------------------------------------------------------------------------------------+
+| Brazil               | http://www.ibge.gov.br/english/geociencias/default_prod.shtm#REC_NAT               |
++----------------------+------------------------------------------------------------------------------------+
+| East Timor           | http://goleaddog.com/gis-map/asia/timor-leste/                                     |
++----------------------+------------------------------------------------------------------------------------+
+| Kenya                | https://opendata.go.ke/                                                            |
++----------------------+------------------------------------------------------------------------------------+
+| Malawi               | http://www.masdap.mw/                                                              |
++----------------------+------------------------------------------------------------------------------------+
+| Namibia              | http://www.uni-koeln.de/sfb389/e/e1/download/atlas_namibia/main_namibia_atlas.html |
++----------------------+------------------------------------------------------------------------------------+
+| Nepal                | http://geoportal.icimod.org/                                                       |
++----------------------+------------------------------------------------------------------------------------+
+| Philippines          | http://www.philgis.org/freegisdata.htm                                             |
++----------------------+------------------------------------------------------------------------------------+
+| Rwanda               | http://www.statistics.gov.rw/geodata                                               |
++----------------------+------------------------------------------------------------------------------------+
+| Russia               | http://gis-lab.info/qa/vmap0-eng.html                                              |
++----------------------+------------------------------------------------------------------------------------+
+| Uganda               | http://www.gis-uganda.de/Energy-GIS/                                               |
++----------------------+------------------------------------------------------------------------------------+
+| United Arab Emirates | http://enviroportal.ead.ae/geoportal/catalog/download/download.page                |
++----------------------+------------------------------------------------------------------------------------+
+
+GIS data in OnSSET
+*******************
 
 OnSSET is a GIS-based tool and therefore requires data in a geographical format. In the context of the power sector, necessary data include those on current and planned infrastructure (electric grid networks, road networks, power plants, industry, public facilities), population characteristics (distribution, location), economic and industrial activity, and local renewable energy flows. The table below lists all layers required for an OnSSET analysis. 
 
@@ -139,94 +226,9 @@ OnSSET is a GIS-based tool and therefore requires data in a geographical format.
    * The spatial resolution of the final map depends on the availability of input data and on the targeted level of accuracy. OnSSET can handle various levels of input data, with typical resolutions ranging from 1x1 kilometers (km) to 10x10 km. The selection of inputs usually involves a trade-off between the time needed for computation and the desired level of detail. The modeler has to decide which resolution best fits the purpose of the analysis. 
 
 
-GIS data sources
-*****************
+GIS basic datasets
++++++++++++++++++++
 
-EnergyData.info 
-++++++++++++++++
-
-Every day governments, private sector and development aid organizations collect data to inform, prepare and implement policies and investments. Yet, while elaborate reports are made public, the data underpinning the analysis remain locked in a computer out of reach. Because of this, the tremendous value they could bring to public and private actors in data-poor environments is too often lost. 
-
-`energydata.info <https://energydata.info>`_ is an open data platform launched recently by The World Bank Group and several partners, trying to change energy data paucity. It has been developed as a public good available to governments, development organizations, non-governmental organizations, academia, civil society and individuals to share data and analytics that can help achieving universal access to modern energy services. The database considers a variety of open, geospatial datasets of various context and granularity. **KTH Division of Energy Systems Analysis** contributes on a contnuous basis by providing relevant datasets for electrification planning.
-
-.. figure::  img/energydata.png
-   :scale: 70 %
-   :align:   center
-
-
-Indicative open libraries of GIS data
-++++++++++++++++++++++++++++++++++++++
-
-Over the past few years, KTH dESA has been actively involved in the field of geospatial analysis. The following table presents a list of libraries and directories that provide access to open GIS data.
-
-+----------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
-| Source                     | Type                | Link                                                                                                                                      |
-+============================+=====================+===========================================================================================================================================+
-| Penn                       | World per region    | http://guides.library.upenn.edu/content.php?pid=324392&sid=2655131                                                                        |
-+----------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
-| MIT                        | World per region    | http://libguides.mit.edu/c.php?g=176295&p=1161383                                                                                         |
-+----------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
-| EDEnextdata                | World per region    | https://www.edenextdata.com/?q=content/global-gis-datasets-links-0#Population%20Infrastructure%20Topography%20and%20Administration%20Data |
-+----------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
-| Stanford                   | World per region    | https://lib.stanford.edu/GIS/data                                                                                                         |
-+----------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
-| GIS Lounge                 | Finding GIS data    | http://www.gislounge.com/data-and-gis-resources/                                                                                          |
-+----------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
-| World Countries            | Different countries | http://www.gislounge.com/data-and-gis-resources/                                                                                          |
-+----------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
-| dragons8mycat              | Different countries | https://dragons8mycat.wordpress.com/gis-data-sources/                                                                                     |
-+----------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
-| rtwilson                   | Different types     | http://freegisdata.rtwilson.com/                                                                                                          |
-+----------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
-| Planet OSM                 | Different types     | http://planet.osm.org/                                                                                                                    |
-+----------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
-| Berkeley                   | Different types     | http://gif.berkeley.edu/resources/data_subject.html                                                                                       |
-+----------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
-| Kings College              | Different types     | http://www.policysupport.org/waterworld                                                                                                   |
-+----------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
-| CSRC                       | Different types     | http://rslab.sr.unh.edu/gdatalinks.html                                                                                                   |
-+----------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
-| Data Discovery Center      | Different types     | http://ddc.unh.edu/                                                                                                                       |
-+----------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
-| Spatial Hydrology          | Different types     | http://www.spatialhydrology.com/datawarehouse.html                                                                                        |
-+----------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
-| Africa Information Highway | Different types     | http://dataportal.opendataforafrica.org/                                                                                                  |
-+----------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
-
-Country specific databases
-+++++++++++++++++++++++++++
-
-+----------------------+------------------------------------------------------------------------------------+
-| Country              | Source                                                                             |
-+======================+====================================================================================+
-| Bolivia              | http://geo.gob.bo/#viewer                                                          |
-+----------------------+------------------------------------------------------------------------------------+
-| Brazil               | http://www.ibge.gov.br/english/geociencias/default_prod.shtm#REC_NAT               |
-+----------------------+------------------------------------------------------------------------------------+
-| East Timor           | http://goleaddog.com/gis-map/asia/timor-leste/                                     |
-+----------------------+------------------------------------------------------------------------------------+
-| Kenya                | https://opendata.go.ke/                                                            |
-+----------------------+------------------------------------------------------------------------------------+
-| Malawi               | http://www.masdap.mw/                                                              |
-+----------------------+------------------------------------------------------------------------------------+
-| Namibia              | http://www.uni-koeln.de/sfb389/e/e1/download/atlas_namibia/main_namibia_atlas.html |
-+----------------------+------------------------------------------------------------------------------------+
-| Nepal                | http://geoportal.icimod.org/                                                       |
-+----------------------+------------------------------------------------------------------------------------+
-| Philippines          | http://www.philgis.org/freegisdata.htm                                             |
-+----------------------+------------------------------------------------------------------------------------+
-| Rwanda               | http://www.statistics.gov.rw/geodata                                               |
-+----------------------+------------------------------------------------------------------------------------+
-| Russia               | http://gis-lab.info/qa/vmap0-eng.html                                              |
-+----------------------+------------------------------------------------------------------------------------+
-| Uganda               | http://www.gis-uganda.de/Energy-GIS/                                               |
-+----------------------+------------------------------------------------------------------------------------+
-| United Arab Emirates | http://enviroportal.ead.ae/geoportal/catalog/download/download.page                |
-+----------------------+------------------------------------------------------------------------------------+
-
-
-GIS basic elements
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 Administrative boundaries
 --------------------------------
 
@@ -477,8 +479,9 @@ Methodology for Open Street Map data and Osmosis
     * Open Street Map toolbox should be downloaded in ArcGIS if not available in order to load osm files. OSM data provide access to a tremendous amount of information of various types. Feel free to explore the potential and share the results with an enthusiastic community.
 
 
-Global horizontal irradiation
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Datasets that require further precessing
+++++++++++++++++++++++++++++++++++++++++
+
 Solar GHI
 --------------
 
@@ -517,9 +520,6 @@ Raster Preparation Methodology using NASA datasets
 Documentation on solar power assessment is available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/Solar>`_. 
 
 
-
-Global wind speeds
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 Wind
 ---------
 
@@ -544,9 +544,6 @@ Raster Preparation Methodology using NASA datsets
 
 Additional documentation on wind power assessment is available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/Wind>`_.
 
-
-Hydro potential
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 Hydro
 ---------
