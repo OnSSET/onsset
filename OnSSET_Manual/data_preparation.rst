@@ -87,7 +87,7 @@ The slope map is not downloaded as a dataset but rather generated from the eleva
 **Step 3. Create and populate a geo-database** 
 ---------------------------------------------------
 
-The used will not need to create and generate a geo-database containing all the projected layers of the analysis under the proper naming convention. Further documentation on the process is available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/Python_Commands_For_Processing_GIS_Data>`_.
+The used will not need to create and generate a geo-database containing all the projected layers of the analysis under the proper naming convention. Further documentation on the process is available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/Prepare_The_Geodatabase>`_.
 
 
 **Step 4. Inform the Settlements' layer** 
@@ -256,11 +256,11 @@ In order to facilitate the process KTH dESA has prepared a batch of python comma
 
 Once the process finishes, the settlements file is almost ready. The settlements layer contains the population points throughout the country’s territory along with 16 attributes that are useful for conducting the electrification analysis with OnSSET. In order to continue with the electrification model, this layer needs to be extracted from GIS to a .csv file. Here are two options of how this action can be performed. 
 
-1.	Use the **DBF_TO_CSV tool** which has been developed for this exact reason by KTH dESA. The tool is available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/Python_Commands_For_Processing_GIS_Data>`_.
+1.	Use the **DBF_TO_CSV tool** which has been developed for this exact reason by KTH dESA. The tool is available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/DBF_to_CSV>`_.
 
 2.	The settlements file is a shapefile. That is, a dbf file is always existing in the same directory. This dbf file contains the trivial information of the settlements file and can be opened via Excel. Then one can use excel to save the file as csv.
 
-By following these steps you should be left with a .csv file with X and Y coordinates as well as a value in every grid cell for the dataset that you have chosen to sample. When these steps are done you also need to put all of the excel files into one single file with every column having the names given by OnSSET's naming convention. Find a python code performing this in a quick and easy manner `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/Python_Commands_For_Processing_GIS_Data>`_. 
+By following these steps you should be left with a .csv file with X and Y coordinates as well as a value in every grid cell for the dataset that you have chosen to sample. When these steps are done you also need to put all of the excel files into one single file with every column having the names given by OnSSET's naming convention. Find a python code performing this in a quick and easy manner `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/Conditioning>`_. 
 
 .. note::
     You can sample more than one dataset at a time. However this could lead to difficulties when creating the
