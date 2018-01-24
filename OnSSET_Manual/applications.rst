@@ -8,7 +8,7 @@ United Nations app
 
 The `online interface Universal Electrification Access <https://un-desa-modelling.github.io/electrification-paths-visualisation/>`_ is part of the modelling tools for sustainable development and is based on OnSSET. This interface is not a model but it provides the user easy access to the methodology behind OnSSET, the datasets used and key results -with regards to electrification planning - obtained for a set of 30 scenarios and model runs for 54 developing countries in Sub-Saharan Africa and Latin America.
 
-    .. image::  img/UNPlatform.png
+    .. image::  img/UNPlatform.PNG
         :scale: 50 %
         :align: center
         
