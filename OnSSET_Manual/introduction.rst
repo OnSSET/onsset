@@ -1,4 +1,4 @@
-[TEST] Introduction to OnSSET
+Introduction to OnSSET
 ======================
 
 Universal access to electricity
