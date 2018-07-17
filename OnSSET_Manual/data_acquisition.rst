@@ -111,7 +111,7 @@ With geospatial analysis gaining momentun in many research areas, many countries
 GIS data in OnSSET
 *******************
 
-OnSSET is a GIS-based tool and therefore requires data in a geographical format. In the context of the power sector, necessary data include those on current and planned infrastructure (electric grid networks, road networks, power plants, industry, public facilities), population characteristics (distribution, location), economic and industrial activity, and local renewable energy flows. The table below lists all layers required for an OnSSET analysis. 
+OnSSET is a GIS-based tool and therefore requires data in a geographical format. In the context of the power sector, necessary data includes those on current and planned infrastructure (electric grid networks, road networks, power plants, industry, public facilities), population characteristics (distribution, location), economic and industrial activity, and local renewable energy flows. The table below lists all layers required for an OnSSET analysis. 
 
 +----+---------------------------+-----------------+---------------------------------------------------------------------------------+
 | #  | Dataset                   | Type            | Description                                                                     |
@@ -121,8 +121,8 @@ OnSSET is a GIS-based tool and therefore requires data in a geographical format.
 |    |                           |                 | basis of the ONSSET analysis as it is directly connected with the electricity   |
 |    |                           |                 | demand and the assignment of energy access goals.                               |
 +----+---------------------------+-----------------+---------------------------------------------------------------------------------+
-| 2  | Administrative boundaries | Raster          | Includes information (e.g. name) of the country(s) to be modelled and           |
-|    |                           |                 | delineates the boundaries of the analysis.                                      |
+| 2  | Administrative boundaries | Polygon         | Delineates the boundaries of the analysis.                                      |
+|    |                           |                 |                                                                                 |
 |    |                           |                 |                                                                                 |
 +----+---------------------------+-----------------+---------------------------------------------------------------------------------+
 | 3  | Existing grid network     | Line shapefile  | Used to identify and spatially calibrate the currently                          |
@@ -134,48 +134,36 @@ OnSSET is a GIS-based tool and therefore requires data in a geographical format.
 |    |                           |                 | population. It is also used in order to specify grid extension suitability.     |
 |    |                           |                 |                                                                                 |
 +----+---------------------------+-----------------+---------------------------------------------------------------------------------+
-| 5  | Power plants              | Point shapefile | Current/Future power plant infrastructure                                       |
+| 5  | Roads                     | Line shapefile  | Current Road infrastructure                                                     |
 |    |                           |                 | used                                                                            |
 |    |                           |                 | to,identify and spatially calibrate the                                         |
 |    |                           |                 | currently electrified/non-electrified population. It is also used in order to   |
 |    |                           |                 | specify grid extension suitability.                                             |
 |    |                           |                 |                                                                                 |
 +----+---------------------------+-----------------+---------------------------------------------------------------------------------+
-| 6  | Mines & Queries           | Point shapefile | Being very important in                                                         |
-|    |                           |                 | electrification processes, mines are usually used                               |
-|    |                           |                 | in order to specify grid extension suitability.                                 |
-|    |                           |                 |                                                                                 |
-+----+---------------------------+-----------------+---------------------------------------------------------------------------------+
-| 7  | Roads                     | Line shapefile  | Current Road infrastructure                                                     |
-|    |                           |                 | used                                                                            |
-|    |                           |                 | to,identify and spatially calibrate the                                         |
-|    |                           |                 | currently electrified/non-electrified population. It is also used in order to   |
-|    |                           |                 | specify grid extension suitability.                                             |
-|    |                           |                 |                                                                                 |
-+----+---------------------------+-----------------+---------------------------------------------------------------------------------+
-| 8  | Planned grid network      | Point shapefile | Represents the future plans for the                                             |
+| 6  | Planned grid network      | Point shapefile | Represents the future plans for the                                             |
 |    |                           |                 | extension of the national electric grid. It also includes extension to          |
 |    |                           |                 | current/future substations, power plants, mines and queries.                    |
 |    |                           |                 |                                                                                 |
 +----+---------------------------+-----------------+---------------------------------------------------------------------------------+
-| 9  | Nighttime lights          | Raster          | Dataset used to,identify and spatially calibrate the                            |
+| 7  | Nighttime lights          | Raster          | Dataset used to,identify and spatially calibrate the                            |
 |    |                           |                 | currently electrified/non-electrified population.                               |
 |    |                           |                 |                                                                                 |
 +----+---------------------------+-----------------+---------------------------------------------------------------------------------+
-| 10 | GHI                       | Raster          | Provide information                                                             |
+| 8  | GHI                       | Raster          | Provide information                                                             |
 |    |                           |                 | about                                                                           |
 |    |                           |                 | the Global Horizontal Irradiation (kWh/m2/year)                                 |
 |    |                           |                 | over an area. This is later used to identify the availability/suitability of    |
 |    |                           |                 | Photovoltaic systems.                                                           |
 |    |                           |                 |                                                                                 |
 +----+---------------------------+-----------------+---------------------------------------------------------------------------------+
-| 11 | Wind speed                | Raster          | Provide information                                                             |
+| 9  | Wind speed                | Raster          | Provide information                                                             |
 |    |                           |                 | about                                                                           |
 |    |                           |                 | the wind velocity (m/sec) over an area. This is later used to identify the      |
 |    |                           |                 | availability/suitability of wind power (using Capacity factors).                |
 |    |                           |                 |                                                                                 |
 +----+---------------------------+-----------------+---------------------------------------------------------------------------------+
-| 12 | Hydro power potential     | Point shapefile | Points showing potential mini/small                                             |
+| 10 | Hydro power potential     | Point shapefile | Points showing potential mini/small                                             |
 |    |                           |                 | hydropower potential. Dataset developed by KTH dESA                             |
 |    |                           |                 | including environmental, social and topological restrictions                    |
 |    |                           |                 | and provides                                                                    |
@@ -183,28 +171,31 @@ OnSSET is a GIS-based tool and therefore requires data in a geographical format.
 |    |                           |                 | should also provide such information to reassure the proper model function.     |
 |    |                           |                 |                                                                                 |
 +----+---------------------------+-----------------+---------------------------------------------------------------------------------+
-| 13 | Travel time               | Raster          | Visualizes spatially the travel                                                 |
+| 11 | Travel time               | Raster          | Visualizes spatially the travel                                                 |
 |    |                           |                 | time required to reach from any individual cell to the closest town with        |
 |    |                           |                 | population more than 50,000 people.                                             |
 |    |                           |                 |                                                                                 |
 +----+---------------------------+-----------------+---------------------------------------------------------------------------------+
-| 14 | Elevation Map             | Raster          | Filled DEM maps are use in a number                                             |
+| 12 | Elevation Map             | Raster          | Filled DEM maps are use in a number                                             |
 |    |                           |                 | of processes                                                                    |
 |    |                           |                 | in                                                                              |
 |    |                           |                 | the analysis (Energy potentials, restriction zones, grid extension suitability  |
 |    |                           |                 | map etc.).                                                                      |
 |    |                           |                 |                                                                                 |
 +----+---------------------------+-----------------+---------------------------------------------------------------------------------+
-| 15 | Slope                     | Raster          | A sub product of DEM, used in                                                   |
+| 13 | Slope                     | Raster          | A sub product of DEM, used in                                                   |
 |    |                           |                 | forming restriction zones and to specify grid extension suitability.            |
 |    |                           |                 |                                                                                 |
 +----+---------------------------+-----------------+---------------------------------------------------------------------------------+
-| 16 | Land Cover                | Raster          | Land cover maps are use in a number                                             |
+| 14 | Land Cover                | Raster          | Land cover maps are use in a number                                             |
 |    |                           |                 | of processes                                                                    |
 |    |                           |                 | in                                                                              |
 |    |                           |                 | the analysis (Energy potentials, restriction zones, grid extension suitability  |
 |    |                           |                 | map etc.).                                                                      |
 |    |                           |                 |                                                                                 |
++----+---------------------------+-----------------+---------------------------------------------------------------------------------+
+| 15 | Solar Restriction         | Raster          | Solar Restriction maps are used in                                              |
+|    |                           |                 | order to determine areas in which the use of PV-technologies is prohibited      |
 +----+---------------------------+-----------------+---------------------------------------------------------------------------------+
 
 .. note::
@@ -223,19 +214,11 @@ Administrative boundaries
 +-----------------------+-----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------+------+-------------+------------------------------------------------------------------------------------------------------+
 |        Coverage       |          Type         |                                                                            Resolution                                                                            | Year |    Source   |                                                 Link                                                 |
 +=======================+=======================+==================================================================================================================================================================+======+=============+======================================================================================================+
-|         World         |       shapefile       |       Counties,,provinces, departments, bibhag, bundeslander, daerah istimewa, fivondronana,,krong, landsvæðun, opština, sous-préfectures, counties & thana      | 2011 |     GADM    |                                       http://gadm.org/version2                                       |
-+-----------------------+-----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------+------+-------------+------------------------------------------------------------------------------------------------------+
-|         World         |      geodatabase      |  Counties,,provinces, departments, bibhag, bundeslander, daerah istimewa, fivondronana,,krong, landsvæðun, opština, sous-préfectures, counties & thana (1 layer) | 2011 |     GADM    |                                       http://gadm.org/version2                                       |
-+-----------------------+-----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------+------+-------------+------------------------------------------------------------------------------------------------------+
-|         World         |      geodatabase      | Counties,,provinces, departments, bibhag, bundeslander, daerah istimewa, fivondronana,,krong, landsvæðun, opština, sous-préfectures, counties & thana (5 layers) |      |     GADM    |                                       http://gadm.org/version2                                       |
+|         World         |       shapefile       |       Counties,,provinces, departments, bibhag, bundeslander, daerah istimewa, fivondronana,,krong, landsvæðun, opština, sous-préfectures, counties & thana      | 2011 |     GADM    |                                      https://gadm.org/                                       |
 +-----------------------+-----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------+------+-------------+------------------------------------------------------------------------------------------------------+
 | World,(& per country) |       shapefile       |                                                                             Countries                                                                            | 2011 |   DIVA-GIS  |                                     http://www.diva-gis.org/Data                                     |
 +-----------------------+-----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------+------+-------------+------------------------------------------------------------------------------------------------------+
-|         World         |   shapefile/CSV/KML   |                                                                             Countries                                                                            | 2014 |  GeoCommons |                                   http://geocommons.com/source/CDC                                   |
-+-----------------------+-----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------+------+-------------+------------------------------------------------------------------------------------------------------+
 |         Europe        | geodatabase/shapefile |                                                                       Countries, provinces                                                                       | 2013 |   Eurostat  | http://ec.europa.eu/eurostat/web/gisco/geodata/reference-data/administrative-units-statistical-units |
-+-----------------------+-----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------+------+-------------+------------------------------------------------------------------------------------------------------+
-|         Africa        | geodatabase/shapefile |                                                                             Countries                                                                            |  na  | Map Library |   http://www.mapmakerdata.co.uk.s3-website-eu-west-1.amazonaws.com/library/stacks/Africa/index.htm   |
 +-----------------------+-----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------+------+-------------+------------------------------------------------------------------------------------------------------+
 
 Population data
