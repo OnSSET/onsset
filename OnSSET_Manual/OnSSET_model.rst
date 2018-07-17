@@ -1,9 +1,9 @@
 The OnSSET Model
 ================
 
-OnSSET is a bottom-up medium to long term optimization model. Its principle is simple. It tries to much the estimated electricity demand with the most cost effective supply option for each location. 
+OnSSET is a bottom-up medium to long term optimization model. Its principle is simple. It tries to estimate electricity demand and the most cost effective supply option for each location. 
 
-First, the study area is divided into a mesh of square grid cells, each one of which is accomplanied with characteristics (e.g. population density, land type, distance from existing power infrastructure etc.) defined by its location. Then, these characteristics are aggregated and used to informed formulas estimating the Levelized Cost of Electricity generation (LCoE) for seven technologies. Finally, the model identifies the technology that offers the lowest cost of generating electricity per location and calculates the capacity and investment requirements that its deployment entails.
+First, the study area is divided into a mesh of square grid cells, each one of which is accompanied with a number of characteristics (e.g. population density, land type, distance from existing power infrastructure etc.) defined by its location. Then, these characteristics are aggregated and used to informe formulas estimating the Levelized Cost of Electricity generation (LCoE) for seven technology configurations. Finally, the model identifies the configuration that offers the lowest cost of generating electricity per location and calculates the capacity and investment requirements that its deployment entails.
 
 The optimal technology mix and investment required to fully electrify a country within a defined timeframe (e.g. 2030) can vary significantly depending on demand and supply characteristics, such as:
 
@@ -36,8 +36,8 @@ electricity access; OnSSET adopts the consumption levels suggested by the Global
     .. image::  img/TierFramework.png
         :scale: 80 %
         :align: center
-
-Consumption levels start from 8 kWh/person/year, enough to support minor daily activities (few hours of lighting, phone charging, radio etc.) and reach up to 598 kWh/person/year, supporting the use of heavier or continuous appliances in a household like refrigerator, washing machine, oven etc. The combination of projected population and targeted consumption level, indicates the electricity demand for residential purposes per location. Note, that OnSSET provides the option of selecting different access tiers for rural and urban areas. 
+        
+Consumption levels start from 8 kWh/person/year, enough to support minor daily activities (few hours of lighting, phone charging, radio etc.) and reach up to 598 kWh/person/year, supporting the use of heavier or continuous appliances in a household like refrigerator, washing machine, oven etc. These values can easily be changed in the OnSSET model in order to better fit the study area of your choice. The combination of projected population and targeted consumption level, indicates the electricity demand for residential purposes per location. Note, that OnSSET provides the option of selecting different access tiers for rural and urban areas. 
 
                         **Electricity Demand = Population in 2030 X Selected Access Tier**
 
@@ -69,7 +69,7 @@ GIS data for Global Horizontal Irradiation (GHI - kWh/m^2/time) are used to indi
 
 **Hydropower potential**
 
-A number of GIS datasets (runoff, accumulation, elevation, river network) have been utilized in a novel methodology developed by KTH dESA in order to spatially identify potential site for small scale hydropower deployment. Documentation on hydropower assessment together with a GIS based assessment tool are available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/HydroPower>`_. 
+A number of GIS datasets (runoff, accumulation, elevation, river network) have been utilized in a novel methodology developed by KTH dESA in order to spatially identify potential site for small scale hydropower deployment. Documentation on hydropower assessment together with a GIS based assessment tool is available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/HydroPower>`_. 
 
 .. image::  img/AfghanHydro.png
     :scale: 80 %
@@ -77,7 +77,7 @@ A number of GIS datasets (runoff, accumulation, elevation, river network) have b
 
 **Transportation Cost for Diesel**
 
-Diesel is an important energy carrier, especially in remote areas of many developing countries. Therefore, it could not be missing from the OnSSET analysis. Transportation of diesel incurs costs, which may lead to high costs of electricity for isolated and low populated communities. OnSSET uses GIS datasets that indicate travel time and distance from main urban hubs, in order to calculate and assign transportation costs for diesel in each location. These costs are then included as fuel costs in the calculation of LCoE for diesel gensets. Documentation on diesel cost assessment is available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/DieselCost>`_. 
+Diesel is an important energy carrier, especially in remote areas of many developing countries and is therefore included in the OnSSET analysis. Transportation of diesel incurs costs, which may lead to high costs of electricity for isolated and low populated communities. OnSSET uses GIS datasets that indicate travel time and distance from main urban hubs, in order to calculate and assign transportation costs for diesel in each location. These costs are then included as fuel costs in the calculation of LCoE for diesel gensets. Documentation on diesel cost assessment is available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/DieselCost>`_. 
 
 .. image::  img/AfghanDiesel.png
     :scale: 80 %
@@ -98,53 +98,6 @@ feasible if the purpose is to meet a relatively small electricity demand or for 
 
 .. image::  img/GridExtension.png
     :align: center
-
-**Brief description of the electrification algorithm**
-
-The electrification algorithm procedure is based on two separate, yet complementary processes. On the one hand, a GIS
-analysis is required to obtain a settlement table referencing each settlement’s position –i.e., its x and y coordinates
-– and information related to demand, resource, availability, infrastructure and economic activities. Night-time light
-datasets are used in combination with population density and distribution, the transmission and the road network in
-order to identify the presently electrified populations. The initial electrification status is listed as either 1
-(electrified) or 0 (non-electrified).
-
-The algorithm calculates the cost of generating electricity at each cell for different electrification configurations
-based on the local specificities and cost related parameters. Depending on the electricity demand, transmission and distribution
-network requirements, energy resource availability etc. the LCOE for each of the seven technology configurations is
-calculated in each cell. The LCOE of a specific technology option represents the final cost of electricity required for
-the overall system to break even over the project lifetime.
-
-.. note::
-
-    The LCOE calculations for the mini-grid and standalone electrification options reflect the total system costs while
-    the LCOE for the grid option is the sum of the average LCOE of the national grid plus the marginal LCOE of
-    transmitting and distributing electricity from the national grid to the demand location.
-
-Once the LCOEs for all the off-grid technology configurations have been calculated the grid extension algorithm is
-executed. For each cell electrified by the national grid the algorithm iterates through all
-non-electrified cells to test if the conditions for their connection to the electrified cell are fulfilled.
-These conditions include: a) lower cost of generating, transmitting and distributing electricity as compared to the off-grid
-technologies and b) not causing the total additional MV grid length to exceed 50 km if it is connected. 
-
-If these conditions are verified, the settlement status is set to electrified (by the national grid). At the same time, the algorithm
-stores the length of the additional MV lines that have been built thus far by the model to connect this new settlement.
-This is required to ensure all newly electrified cells comply with the 50 km limit for the length of MV lines. Further,
-this is also used to consider cost increases for each additional MV extension, due to the requirement to strengthen the
-previously built grid line. This process is repeated with the newly electrified cells until no additional cells are being
-electrified, and thus until all settlements to which the grid can be economically extended are reached. Settlements that
-are not connected to the grid will get access to electricity through mini grid or stand-alone systems. This decision is
-based on a cost comparison process where the off-grid technology which can meet the electricity demand at the lowest LCOE
-selected for each cell.
-    
-**Penalty cost assignment to electricity grid expansion processess**
-
-The expansion of the transmission network to areas lacking access is a capital intensive process. The investment costs
-are influenced by several factors such as the capacity, the type and the length of the lines as well as by the topology
-of the subjected area. In this analysis, a number of geospatial factors that affect the investment costs of the
-transmission network are identified and considered in order to assign an incremental capital cost in locations that
-indicate specific topological features. More particularly, investment cost is influenced by elevation, the road network,
-land cover type, slope gradient and distance from substations.
-    
     
 **Mini-grids** - Wind Turbines, Solar PVs, Mini/Small Hydro, Diesel generators
 -------------------------------------------------------------------------------
@@ -172,3 +125,49 @@ Methodology Overview
 
     .. image::  img/Methodology.png
         :align: center
+
+**Brief description of the electrification algorithm**
+
+The electrification algorithm procedure is based on two separate, yet complementary processes. On the one hand, a GIS
+analysis is required to obtain a settlement table referencing each settlement’s position –i.e., its x and y coordinates
+– and information related to demand, resource, availability, infrastructure and economic activities. Night-time light
+datasets are used in combination with population density and distribution, the transmission and the road network in
+order to identify the presently electrified populations. The initial electrification status is listed as either 1
+(electrified) or 0 (non-electrified).
+
+The algorithm calculates the cost of generating electricity at each cell for different electrification configurations
+based on the local specificities and cost related parameters. Depending on the electricity demand, transmission and distribution
+network requirements, energy resource availability etc. the LCoE for each of the seven technology configurations is
+calculated in each cell. The LCoE of a specific technology option represents the final cost of electricity required for
+the overall system to break even over the project lifetime.
+
+.. note::
+
+    The LCoE calculations for the mini-grid and standalone electrification options reflect the total system costs while
+    the LCoE for the grid option is the sum of the average LCoE of the national grid plus the marginal LCoE of
+    transmitting and distributing electricity from the national grid to the demand location.
+
+Once the LCoEs for all the off-grid technology configurations have been calculated the grid extension algorithm is
+executed. For each cell electrified by the national grid the algorithm iterates through all
+non-electrified cells to test if the conditions for their connection to the electrified cell are fulfilled.
+These conditions include: a) lower cost of generating, transmitting and distributing electricity as compared to the off-grid
+technologies and b) not causing the total additional MV grid length to exceed 50 km if it is connected. 
+
+If these conditions are verified, the settlement status is set to electrified (by the national grid). At the same time, the algorithm
+stores the length of the additional MV lines that have been built thus far by the model to connect this new settlement.
+This is required to ensure all newly electrified cells comply with the 50 km limit for the length of MV lines. Further,
+this is also used to consider cost increases for each additional MV extension, due to the requirement to strengthen the
+previously built grid line. This process is repeated with the newly electrified cells until no additional cells are being
+electrified, and thus until all settlements to which the grid can be economically extended are reached. Settlements that
+are not connected to the grid will get access to electricity through mini grid or stand-alone systems. This decision is
+based on a cost comparison process where the off-grid technology which can meet the electricity demand at the lowest LCoE
+selected for each cell.
+    
+**Penalty cost assignment to electricity grid expansion processess**
+
+The expansion of the transmission network to areas lacking access is a capital intensive process. The investment costs
+are influenced by several factors such as the capacity, the type and the length of the lines as well as by the topology
+of the subjected area. In this analysis, a number of geospatial factors that affect the investment costs of the
+transmission network are identified and considered in order to assign an incremental capital cost in locations that
+indicate specific topological features. More particularly, investment cost is influenced by elevation, the road network,
+land cover type, slope gradient and distance from substations.
