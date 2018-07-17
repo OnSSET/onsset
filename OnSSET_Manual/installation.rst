@@ -4,16 +4,16 @@ Software installation
 Requirements
 **********************
 
-**ArcGIS**
+**QGIS**
 
 OnSSET is a spatial electrification tool and as such highly relies on the usage of Geographic Information Systems (GIS). A GIS environment is therefore necessary for two main reasons:
 
-*	Extract trivial characteristics for the electrification analysis from GIS layers and combine them all together in a format easy to read by the python code (a .csv file with all the attributes per population point).
+*	Extract trivial characteristics for the electrification analysis from GIS layers and combine them all together in a format easy to read in python (a .csv file with all the attributes per population point).
 *	Visualize the final results in maps.
 
-In the current stage, OnSSET relies on ArcGIS, however any alternative open source GIS environment can be used (e.g. QGIS, SAGA and/or GRASS).
-Find instructions for a free trial installation of ArcGIS `here <http://www.esri.com/landing-pages/software/arcgis/arcgis-desktop-student-trial>`_ or download open source QGIS from the official `website <http://www.qgis.org/en/site/>`_.
+Historically OnSSET has relied on ArcGIS, but recently the process has been moved to open source GIS environments. OnSSET in it's current form relies on QGIS (together with in QGIS included tools from SAGA, GDAL and GRASS)
 
+Download QGIS for free from the official `website <http://www.qgis.org/en/site/>`_.
 
 **Python - Anaconda package**
 
@@ -26,7 +26,7 @@ Python itself can be downloaded and installed for free from the official `websit
 
 *	**PyCharm**
 
-Integrated Development Environments are used in order to ease the programming process when multiple or long scripts are required. There are plenty of IDEs developed for Python (you can find a few `here <http://noeticforce.com/best-python-ide-for-programmers-windows-and-mac>`_). KTH dESA has been using PyCharm as the standard IDE to run OnSSET.
+Integrated Development Environments are used in order to ease the programming process when multiple or long scripts are required. There are plenty of IDEs developed for Python, KTH dESA has been using PyCharm as the standard IDE to run OnSSET.
 
 *	**Jupyter notebook (via Anaconda)**
 
@@ -34,11 +34,10 @@ Jupyter notebook is a console-based, interactive computing approach providing a 
 
 **GitHub**
 
-GitHub is a web-based Git repository hosting service. It provides access control and several collaboration features such as bug tracking, feature requests, task management, and wikis for every project. OnSSET is an open source tool therefore the code behind it is open and freely accessible to any user. The code behind OnSSET tool is called “PyOnsset” and is available in KTH dESA’s Github space. A GitHub account will allow you to propose changes, modifications and upgrades to the existing code. Access KTH dESA’s repository on `Github <https://github.com/KTH-dESA>`_.
+GitHub is a web-based Git repository hosting service. It provides access control and several collaboration features such as bug tracking, feature requests, task management, and wikis for every project. OnSSET is an open source tool therefore the code behind it is open and freely accessible to any user. The code behind the OnSSET tool is called “PyOnsset” and is available in KTH dESA’s Github space. A GitHub account will allow you to propose changes, modifications and upgrades to the existing code. Access KTH dESA’s repository on `Github <https://github.com/KTH-dESA>`_.
 
 Software installation and setup
 ********************************
-
 1. Download **Anaconda** `here <https://www.continuum.io/downloads>`_ and install.
 
 * Please make sure that you download the version that is compatible with your operating system (Windows/MacOS/Linux - In case you run Windows open the *Windows Control Panel*, go to *System and Security  System* and check e.g. Windows 32-bit or 64-bit).
