@@ -422,23 +422,21 @@ Methodology for Open Street Map data and Osmosis
 
 .. note::
 
-    * Open Street Map (OSM) is a collaborative project that intends to provide free and open access data used in mapping the world. This document aims at describing in brief the methodology used in order to obtain OSM data and transform them in compatible and useful information with the use of Osmosis and ArcGIS.
+    * Open Street Map (OSM) is a collaborative project that intends to provide free and open access data used in mapping the world. This document aims at describing in brief the methodology used in order to obtain OSM data and transform them in compatible and useful information with the use of Osmosis and QGIS.
 
     * To begin with, bulk download of updated OSM data can be performed through the Planet OSM: http://planet.osm.org/.
 
     * The files can be downloaded as .xml and .pbf format. However, due to the large volume of data there are various mirrors/extracts that provide access to masked data for different regions of the planet. More information can be found here: http://wiki.openstreetmap.org/wiki/Planet.osm#Downloading. In previous cases Geofabrik.de and bbbike.org where used successfully.
 
-    * It should be mentioned at this point that an interesting tool is the Overpass API. More specifically, using quarry and convert forms and redirecting to Overpass Turbo it is possible to utilize the wizard function and obtain required data for a defined area. The area is delineated by the map shown in the screen while data types include nodes, ways and relations. The data can be exported in various formats with .kml and .gpx being compatible with the latest versions of ArcGIS. (As an example use the word: power in the wizard function and you will get the power related information depicted on the map). A disadvantage of this method is that the restrictions in the area size, which is limited to 100 square km.
+    * It should be mentioned at this point that an interesting tool is the Overpass API. More specifically, using quarry and convert forms and redirecting to Overpass Turbo it is possible to utilize the wizard function and obtain required data for a defined area. The area is delineated by the map shown in the screen while data types include nodes, ways and relations. The data can be exported in various formats with .kml (amongst others) being compatible with the latest versions of QGIS. (As an example use the word: power in the wizard function and you will get the power related information depicted on the map). A disadvantage of this method is that the restrictions in the area size, which is limited to 100 square km.
 
-    * Coming back to the other sources (Geofabrik, BBBike), data can be downloaded per region in osm.pbf format. In order to be able to insert these data in ArcGIS a necessary transformation is required. This transformation is performed by Osmosis.
+    * Coming back to the other sources (Geofabrik, BBBike), data can be downloaded per region in .pbf format. In the latest version of QGIS it is possible to insert this data directly by simply dragging the file onto the QGIS window. However, since the files are usually very large it is recommended to transform the .pbf into a spatialite database. 
+   
+    * To do this transformation open up the OSGeo shell follwoing with your installation, navigate to the folder in which you have your .pbf file (by typing cd [folder path]) and enter the following line ogr2ogr -f SQLite X.sqlite Y.pbf (note change X to the name you want to use for your spatialite database and Y to the name of your downloaded .pbf file)
+    
+    * Once This transformation is finished (it may take some time) drag this new file into QGIS and work with it instead of the .pbf file.
 
-    * Osmosis is a command line Java application for processing of OSM data. Its application may take a few moments. Instructions can be found in the following websites: http://wiki.openstreetmap.org/wiki/Osmosis/Quick_Install_(Windows) and http://learnosm.org/en/osm-data/osmosis/.
-
-    * Once installed Osmosis is operated as cmd function. In order to code in Osmosis tag information is required. In the following site more information can be found on the available tags and key values: https://taginfo.openstreetmap.org/.
-
-    * Furthermore, additional information regarding the coding process in Osmosis can be found here: http://wiki.openstreetmap.org/wiki/Osmosis/Detailed_Usage_0.43.
-
-    * Open Street Map toolbox should be downloaded in ArcGIS if not available in order to load osm files. OSM data provide access to a tremendous amount of information of various types. Feel free to explore the potential and share the results with an enthusiastic community.
+    * OSM data provide access to a tremendous amount of information of various types. Feel free to explore the potential and share the results with an enthusiastic community.
 
 
 Datasets that require further precessing
