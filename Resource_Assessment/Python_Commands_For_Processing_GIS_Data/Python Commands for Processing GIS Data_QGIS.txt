@@ -367,6 +367,6 @@ settlements.updateFields()
 
 # Save as a csv file
 settlements.setName(settlements_fc)
-QgsVectorFileWriter.writeAsVectorFormat(settlements, workspace + r"/" + settlements_fc + ".csv", "utf-8", settlements.crs(), "CSV")
+QgsVectorFileWriter.writeAsVectorFormat(settlements, workspace + r"/" + settlements_fc + "_Unconditioned.csv", "utf-8", settlements.crs(), "CSV")
 
 
