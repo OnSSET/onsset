@@ -477,47 +477,47 @@ In order to facilitate the process KTH dESA has prepared a batch of python comma
     1.	Open QGIS 
     2.	Open the python console 
          .. image:: img/step2.png
-              :width: 150
+              :width: 520
               :height: 100
               :align: center
                     
     3.	This will open up the python console in QGIS. In here you can write commands and run different tools included in QGIS.
     
           .. image:: img/step3.png
-              :width: 150
+              :width: 368
               :height: 100
               :align: center
  
     4.	By clicking on “Show editor” (marked in red in the image below). You will open up the editor window of the python version           following with your installation of QGIS. 
  
          .. image:: img/step4.png
-              :width: 150
+              :width: 368
               :height: 100
               :align: center
     5.	In the editor you can write and run your own python scripts. In order to run the extraction code copy and paste it into this        window.
             
          .. image:: img/step5.png
-              :width: 150
+              :width: 368
               :height: 100
               :align: center
 
     6.	When the code is pasted in you can finally run the code. Do so by clicking on the blue play button at the top of the screen.
         
          .. image:: img/step6.png
-              :width: 150
+              :width: 368
               :height: 100
               :align: center
 
     7.	After running the code you will see that two new folders have been added to your workspace; Assist and Assist2. In the Assist       folder there will be a csv with the same name as you specified in settlements_fc. This file includes some empty rows and hence it       still needs conditioning in order to work with OnSSET. 
  
          .. image:: img/step7a.png
-              :width: 150
-              :height: 100
+              :width: 200
+              :height: 400
               :align: center
               
          .. image:: img/step7b.PNG
-              :width: 150
-              :height: 100
+              :width: 200
+              :height: 400
               :align: center
 
 **Step 5. Conditioning** 
