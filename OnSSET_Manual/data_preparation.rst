@@ -452,23 +452,23 @@ In order to facilitate the process KTH dESA has prepared a batch of python comma
    **2. Additional concerns**
        *1.*	In line 14 make sure that the link to the workspace is correct (remember: the workspace is where the folders with the                   datasets are located). Make sure the path does not include any special characters or spaces as this could potentially                   cause errors.
                 .. image:: img/Line14.png
-                    :width: 150
+                    :width: 1000
                     :height: 100
                     :align: center
        *2.*  In line 17 make sure that you enter the coordinate system that you want to project your datasets to. The datasets used                   in the analysis are often in a default coordinate system (e.g. WGS 84) if you wish to change that you can enter the EPSG               code of your target coordinate system (remember to include the “EPSG” part if that is included in the code).
                .. image:: img/Line17.png
-                    :width: 150
+                    :width: 1000
                     :height: 100
                     :align: center
        *3.*  In line 20 put settlements_fc equal to your study area. Whatever you put here will be the name of your output file from                 the code.
                 .. image:: img/Line20.png
-                    :width: 150
+                    :width: 1000
                     :height: 100
                     :align: center
        
        *4.*  In line 24 you might have to change the column name. In order to determine the amount of hydropower in all the                           potential points QGIS needs to know the name of the column in which the hydropower potential is given (open the attribute               table of your dataset and write down the name of the column that contains the potential outputs).
                 .. image:: img/Line24.png
-                    :width: 150
+                    :width: 1000
                     :height: 100
                     :align: center
                     
