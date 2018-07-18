@@ -30,15 +30,15 @@ Select “Download ZIP” from the "Clone or Download" tab and save the zipped f
 5. Once you have set your working directory, select “pyonsset”, and from the drop-down menu double-click on a) onsset.py and b) runner.py in that order, in order to open them.
 
 .. image:: img/fig3.png
-            :width: 400px
-            :height: 200px
+            :width: 200px
+            :height: 150px
             :align: center
 
 6. Now that you have opened “onsset.py”, right-click on its tab and click on “Create/Select ‘onsset’…”.
 
 .. image:: img/fig4.png
             :width: 400px
-            :height: 200px
+            :height: 300px
             :align: center
 .. note::
 
@@ -54,7 +54,7 @@ Select “Download ZIP” from the "Clone or Download" tab and save the zipped f
 
         .. image:: img/fig6.png
             :width: 200px
-            :height: 50px
+            :height: 40px
             :align: center
 
         *  Repeat the same steps explained above for “runner.py” only if you get a “Process finished with exit code 0” message in the built-in console. Otherwise, move to step 7 before you run “runner.py”.
@@ -141,7 +141,7 @@ at the bottom of the window and look like:
 
 .. image:: img/fig10.jpg
             :width: 700px
-            :height: 250px
+            :height: 200px
             :align: center
 
 First the program will ask for the name of the specs file. Enter the name of the specs file and press enter, and remember to include the file extension. The specs
