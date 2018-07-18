@@ -470,27 +470,78 @@ In order to facilitate the process KTH dESA has prepared a batch of python comma
     **Please make sure that the datasets are named exactly as they are in the column named “Data” and that the folders are named as in the column “Corresponding Folder”**.
    
    **2. Additional concerns**
-       *1*	In line 14 make sure that the link to the workspace is correct (remember: the workspace is where the folders with the                   datasets are located). Make sure the path does not include any special characters or spaces as this could potentially                   cause errors.
+       *1.*	In line 14 make sure that the link to the workspace is correct (remember: the workspace is where the folders with the                   datasets are located). Make sure the path does not include any special characters or spaces as this could potentially                   cause errors.
                 .. image:: img/Line14.png
                     :width: 300
                     :height: 200
                     :align: center
-       *2*  In line 17 make sure that you enter the coordinate system that you want to project your datasets to. The datasets used                   in the analysis are often in a default coordinate system (e.g. WGS 84) if you wish to change that you can enter the EPSG               code of your target coordinate system (remember to include the “EPSG” part if that is included in the code).
+       *2.*  In line 17 make sure that you enter the coordinate system that you want to project your datasets to. The datasets used                   in the analysis are often in a default coordinate system (e.g. WGS 84) if you wish to change that you can enter the EPSG               code of your target coordinate system (remember to include the “EPSG” part if that is included in the code).
                .. image:: img/Line17.png
                     :width: 300
                     :height: 200
                     :align: center
-       *3*  In line 20 put settlements_fc equal to your study area. Whatever you put here will be the name of your output file from                 the code.
+       *3.*  In line 20 put settlements_fc equal to your study area. Whatever you put here will be the name of your output file from                 the code.
                 .. image:: img/Line20.png
                     :width: 300
                     :height: 200
                     :align: center
        
-       *4*  In line 24 you might have to change the column name. In order to determine the amount of hydropower in all the                           potential points QGIS needs to know the name of the column in which the hydropower potential is given (open the attribute               table of your dataset and write down the name of the column that contains the potential outputs).
+       *4.*  In line 24 you might have to change the column name. In order to determine the amount of hydropower in all the                           potential points QGIS needs to know the name of the column in which the hydropower potential is given (open the attribute               table of your dataset and write down the name of the column that contains the potential outputs).
                 .. image:: img/Line24.png
                     :width: 300
                     :height: 200
                     :align: center
+                    
+    **3. Running the code**
+    
+    1.	Open QGIS 
+    2.	Open the python console 
+         .. image:: img/step2.png
+              :width: 300
+              :height: 200
+              :align: center
+                    
+    3.	This will open up the python console in QGIS. In here you can write commands and run different tools included in QGIS.
+    
+          .. image:: img/step3.png
+              :width: 300
+              :height: 200
+              :align: center
+ 
+    4.	By clicking on “Show editor” (marked in red in the image below). You will open up the editor window of the python version           following with your installation of QGIS. 
+ 
+         .. image:: img/step4.png
+              :width: 300
+              :height: 200
+              :align: center
+    5.	In the editor you can write and run your own python scripts. In order to run the extraction code copy and paste it into this        window.
+            
+         .. image:: img/step5.png
+              :width: 300
+              :height: 200
+              :align: center
+
+    6.	When the code is pasted in you can finally run the code. Do so by clicking on the blue play button at the top of the screen.
+        
+         .. image:: img/step6.png
+              :width: 300
+              :height: 200
+              :align: center
+
+    7.	After running the code you will see that two new folders have been added to your workspace; Assist and Assist2. In the Assist       folder there will be a csv with the same name as you specified in settlements_fc. This file includes some empty rows and hence it       still needs conditioning in order to work with OnSSET. 
+ 
+         .. image:: img/step7a.png
+              :width: 300
+              :height: 200
+              :align: center
+              
+         .. image:: img/step7b.png
+              :width: 300
+              :height: 200
+              :align: center
+ 
+
+
 
 
 **Step 5. Preparing the .csv file** 
