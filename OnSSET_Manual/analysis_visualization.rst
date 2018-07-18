@@ -144,11 +144,31 @@ Maps output
 
 Visualization of the model outputs are an important part of a geospatial electrification analysis. This allows for an easy display
 of electrification strategies and enhanced understanding of the results.
-The most flexible way of visualizing the results are to create the maps using a GIS program. In ArcGIS, go to *File>Add Data>Add Data*
-and select the result .csv file containing the scenario results to be displayed. Next, right-click on the table that was imported and select *Display XY Data*
+The most flexible way of visualizing the results are to create the maps using a GIS program. In QGIS, go to *Layer>Add Layer>Add Delimited TextLayer*
+and select the result .csv file containing the scenario results to be displayed. Next, choose the column with the coordinates as well as the projection system
 to generate a map. For the X and Y Field choose X and Y for coordinates in km or X_deg and Y_deg for coordinates in degrees.
-In the Z field enter the value that should be displayed, e.g. *MinimumOverall* for technology choice and *MinimumOverallLCOE*
-for the minimum LCOE of all technologies.
 
-.. image:: img/A2.png
-            :align: center
+.. image:: img/vizstep1.PNG
+    :width: 350px
+    :height: 200px
+    :align: center
+
+
+After doing this you get a point layer in your layer panel. Right-click on the layer and go to *Properties>Symbiology*. Remove the border of all the circles. 
+
+.. image:: img/vizstep2.png
+    :width: 350px
+    :height: 200px
+    :align: center
+
+And then you can choose how to vizualise your data. Choose **Categorized** for discrete data and **Graduated** for continuous data. In column choose the data you want to vizualise and then click on classify. 
+
+.. image:: img/vizstep3.png
+    :width: 350px
+    :height: 200px
+    :align: center
+    
+.. image:: img/vizstep4.png
+    :width: 350px
+    :height: 200px
+    :align: center
