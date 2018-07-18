@@ -455,7 +455,7 @@ In order to facilitate the process KTH dESA has prepared a batch of python comma
     1. **Setting up the workspace**
     When all of the datasets have been generated and projected to a common projection system they need to be saved in appropriate folders before running the code. The image below shows an image of the workspace necessary for the analysis, these folders need to be set up accordingly and filled in with the corresponding datasets. 
     
-        .. image:: img/workspace.png
+    .. image:: img/workspace.png
         :width: 300
         :height: 200
         :align: center
