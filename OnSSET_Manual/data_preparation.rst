@@ -535,7 +535,7 @@ In order to facilitate the process KTH dESA has prepared a batch of python comma
               :height: 200
               :align: center
               
-         .. image:: img/step7b.png
+         .. image:: img/step7b.PNG
               :width: 300
               :height: 200
               :align: center
