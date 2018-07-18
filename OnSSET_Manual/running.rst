@@ -37,8 +37,8 @@ Select “Download ZIP” from the "Clone or Download" tab and save the zipped f
 6. Now that you have opened “onsset.py”, right-click on its tab and click on “Create/Select ‘onsset’…”.
 
 .. image:: img/fig4.png
-            :width: 400px
-            :height: 225px
+            :width: 300px
+            :height: 300px
             :align: center
 .. note::
 
