@@ -1,46 +1,36 @@
 GIS data preparation
 ========================
 
-Once all necessary layers have been succesfully acquired, the user would need to prepare the datasets for their input into the OnSSET model. This requires the creation of a .csv file. There are five steps that need to be undertaken to process the GIS data so that it can be used for an OnSSET analysis.
+Once all necessary layers have been succesfully acquired, the user would need to prepare the datasets for their input into the OnSSET model. This requires the creation of a .csv file. There are four steps that need to be undertaken to process the GIS data so that it can be used for an OnSSET analysis.
 
 **Step 1. Proper data types and coordinate system** 
 ---------------------------------------------------
 
-In this first step the user would need to secure that you have all the datasets have been properly overlayed within a GIS environment. It is common that layers in this stage are un-projected and at their initial geographic co-ordinate system (e.g. WGS84).
+In this first step the user would need to secure all the datasets that have been downloaded overlaye within a GIS environment. Before starting the analysis make sure that all datasets have the same coordiante system (preferably **World Geodetic Datum 1984 (WGS84)**) You can check the coordinate system of your layers by importing them into QGIS and then right-clicking on them and open the **Properties** window. In the Properties window go to the **Information** tab, here the coordinate system used is listed under *CRS* for both rasters and vectors. 
 
 **Step 2. Layer projection** 
 ---------------------------------------------------
 
-In this step the user would need to determine the projection system he/she wish to use. Projection systems always distort the datasets and the system chosen should be one that minimizes this distortion. There is no need to manually project the datasets yourself it is however good to have an idea of which system to use before starting to work with the datasets.
+In this step the user would need to determine the projection system he/she wish to use. Projection systems always distort the datasets and the system chosen should be one that minimizes this distortion. There is no need to manually project the datasets yourself (the extraction code presented furhter down does this for you) it is however good to have an idea of which system to use before starting to work with the datasets.
 Here follows a few important key aspects.
 
 **Projection** is the systematic transformation of the latitude and longitude of a location into a pair of two dimensional coordinates or else the position of this location on a plane (flat) surface. A projection is necessary every time a map is created and all map projections distort the surface in some fashion.
 
-.. note::
-    Ellipsoid, Datum & Geographic Coordinate System
+**Coordinate System:** Simply put, it is a way of describing a spatial property relative to a center.
 
-    **Coordinate System:** Simply put, it is a way of describing a spatial property relative to a center.
+**Datum:** The center and orientation of the ellipsoid
 
-    **Datum:** The center and orientation of the ellipsoid
+.. image:: img/crs1.png
+    :width: 350px
+    :height: 200px
+    :align: center
 
-    .. image:: img/crs1.png
-        :width: 350px
-        :height: 200px
-        :align: center
+.. image:: img/crs2.png
+    :width: 300
+    :height: 150
+    :align: 
 
-    .. image:: img/crs2.png
-        :width: 300
-        :height: 150
-        :align: 
-
-Before starting the analysis make sure that all datasets have the same coordiante system (preferably **World Geodetic Datum 1984 (WGS84)**) You can check the coordinate system of your layers by importing them into QGIS and then right-clickin on them and open the **Properties** window. In the Properties window go to the **Information** tab, here the coordinate system used is listed under *CRS* for both raster and vector datasets. 
-
-**Step 3. Import all the layers into QGIS** 
----------------------------------------------------
-
-When all of the datasets are gathered and the user has made sure that the datasets are all in the same coordinate system import them into QGIS 
-
-**Step 4. Inform the Settlements' layer** 
+**Step 3. Inform the Settlements' layer** 
 ---------------------------------------------------
 
 Once the previous steps are finished, we can combine all layers together into a single table. The principle is simple. We will use the population layer in order to create a base table. Every row in this table represents a grid cell. Then, we will adhere one by one all the layers into this table so that every row (grid cell) acquires its specific characteristics based on its location. One can perform the process manually by identifying the tools in the GIS environment of his preference. 
@@ -520,7 +510,7 @@ In order to facilitate the process KTH dESA has prepared a batch of python comma
               :height: 400
               :align: center
 
-**Step 5. Conditioning** 
+**Step 4. Conditioning** 
 ---------------------------------------------------
 If you after the previous step open the CSV file you will see that some of the columns have names that do not make sense. Additionally three of the columns; nighttime lights, solar restrictions and landcover; all have empty rows. These empty rows are supposed to have the value zero. This problems can be dealt manually, but to facilitate the process KTH-dESA has developed a python code named **Conditioning** that automates the process.
 This code is avaiable `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/Conditioning>`_. 
