@@ -446,8 +446,19 @@ In order to facilitate the process KTH dESA has prepared a batch of python comma
 
 .. note::
 
-   A fully updated version of this code is available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/Python_Commands_For_Processing_GIS_Data>`_. 
+   A fully updated version of this code is available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/Python_Commands_For_Processing_GIS_Data>`_.
+   
 
+.. note::
+    In order to run the code in QGIS certain things need to be set up properly. In the following steps these things will be described. **NOTE** it is possible to set things up differently, but if this is done then the code will most likely need changes as well. 
+    
+    1. **Setting up the workspace**
+    When all of the datasets have been generated and projected to a common projection system they need to be saved in appropriate folders before running the code. The image below shows an image of the workspace necessary for the analysis, these folders need to be set up accordingly and filled in with the corresponding datasets. 
+    
+        .. image:: img/workspace.png
+        :width: 300
+        :height: 200
+        :align: center
 
 **Step 5. Preparing the .csv file** 
 ---------------------------------------------------
