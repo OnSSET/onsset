@@ -6,13 +6,13 @@ Once all necessary layers have been succesfully acquired, the user would need to
 **Step 1. Proper data types and coordinate system** 
 ---------------------------------------------------
 
-In this first step the user would need to secure all the datasets that have been downloaded overlaye within a GIS environment. Before starting the analysis make sure that all datasets have the same coordiante system (preferably **World Geodetic Datum 1984 (WGS84)**) You can check the coordinate system of your layers by importing them into QGIS and then right-clicking on them and open the **Properties** window. In the Properties window go to the **Information** tab, here the coordinate system used is listed under *CRS* for both rasters and vectors. 
+In this first step the user would need to secure all the datasets. Before starting the analysis make sure that all datasets have the same coordiante system (preferably **World Geodetic Datum 1984 (WGS84)**) You can check the coordinate system of your layers by importing them into QGIS and then right-clicking on them and open the **Properties** window. In the Properties window go to the **Information** tab, here the coordinate system used is listed under *CRS* for both rasters and vectors. 
 
 **Step 2. Layer projection** 
 ---------------------------------------------------
 
 In this step the user would need to determine the projection system he/she wish to use. Projection systems always distort the datasets and the system chosen should be one that minimizes this distortion. There is no need to manually project the datasets yourself (the extraction code presented furhter down does this for you) it is however good to have an idea of which system to use before starting to work with the datasets.
-Here follows a few important key aspects.
+Here follows a few important key aspects:
 
 **Projection** is the systematic transformation of the latitude and longitude of a location into a pair of two dimensional coordinates or else the position of this location on a plane (flat) surface. A projection is necessary every time a map is created and all map projections distort the surface in some fashion.
 
@@ -33,9 +33,9 @@ Here follows a few important key aspects.
 **Step 3. Inform the Settlements' layer** 
 ---------------------------------------------------
 
-Once the previous steps are finished, we can combine all layers together into a single table. The principle is simple. We will use the population layer in order to create a base table. Every row in this table represents a grid cell. Then, we will adhere one by one all the layers into this table so that every row (grid cell) acquires its specific characteristics based on its location. One can perform the process manually by identifying the tools in the GIS environment of his preference. 
+Once the previous steps are finished, we can combine all layers together into a single table. The principle is simple. We will use the population layer in order to create a base table. Every row in this table represents a grid cell. Then, we will adhere one by one all the layers into this table so that every row (grid cell) acquires its specific characteristics based on its location. One can perform the process manually by identifying the tools in the GIS environment of his/her preference. 
 
-In order to facilitate the process KTH dESA has prepared a batch of python commands that can directly be ran directly in the QGIS script runner. Here follows an example of these commands. **Note!** These commands have been developed for python version 3 and work properly in the QGIS environment as long as it is QGIS version 3.0 or newer. In case the user chooses a different GIS environment (e.g. Grass, ArcGIS etc.) these commands might need modifications.
+In order to facilitate the process KTH dESA has prepared a batch of python commands that can be ran directly in the QGIS script runner. Here follows an example of these commands. **Note!** These commands have been developed for python version 3 and work properly in the QGIS environment as long as it is QGIS version 3.0 or newer. In case the user chooses a different GIS environment (e.g. Grass, ArcGIS etc.) these commands might need modifications.
 
 
     **Example:**
@@ -448,12 +448,12 @@ In order to facilitate the process KTH dESA has prepared a batch of python comma
        *2.*  In line 17 make sure that you enter the coordinate system that you want to project your datasets to. The datasets used                   in the analysis are often in a default coordinate system (e.g. WGS 84) if you wish to change that you can enter the EPSG               code of your target coordinate system (remember to include the “EPSG” part if that is included in the code).
                .. image:: img/Line17.png
                     :width: 1000
-                    :height: 70
+                    :height: 55
                     :align: center
        *3.*  In line 20 put settlements_fc equal to your study area. Whatever you put here will be the name of your output file from                 the code.
                 .. image:: img/Line20.png
                     :width: 1000
-                    :height: 70
+                    :height: 55
                     :align: center
        
        *4.*  In line 24 you might have to change the column name. In order to determine the amount of hydropower in all the                           potential points QGIS needs to know the name of the column in which the hydropower potential is given (open the attribute               table of your dataset and write down the name of the column that contains the potential outputs).
@@ -498,7 +498,7 @@ In order to facilitate the process KTH dESA has prepared a batch of python comma
               :height: 141
               :align: center
 
-    7.	After running the code you will see that two new folders have been added to your workspace; Assist and Assist2. In the Assist       folder there will be a csv with the same name as you specified in settlements_fc. This file includes some empty rows and hence it       still needs conditioning in order to work with OnSSET. 
+    7.	After running the code you will see that two new folders have been added to your workspace; Assist and Assist2. These folder will inlcude some different datasets that have been generated in the process (usually it is OK to overlook these).
  
          .. image:: img/step7a.png
               :width: 584
