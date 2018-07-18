@@ -35,26 +35,6 @@ Here follows a few important key aspects.
 
 Before starting the analysis make sure that all datasets have the same coordiante system (preferably **World Geodetic Datum 1984 (WGS84)**) You can check the coordinate system of your layers by importing them into QGIS and then right-clickin on them and open the **Properties** window. In the Properties window go to the **Information** tab, here the coordinate system used is listed under *CRS* for both raster and vector datasets. 
 
-
-    .. note::
-    Ellipsoid, Datum & Geographic Coordinate System
-
-    **Coordinate System:** Simply put, it is a way of describing a spatial property relative to a center.
-
-    **Datum:** The center and orientation of the ellipsoid
-
-    .. image:: img/crs1.png
-        :width: 350px
-        :height: 200px
-        :align: center
-
-    .. image:: img/crs2.png
-        :width: 300
-        :height: 150
-        :align: center
-
-Before starting the analysis make sure that all datasets have the same coordiante system (preferably **World Geodetic Datum 1984 (WGS84)**) You can check the coordinate system of your layers by importing them into QGIS and then right-clickin on them and open the **Properties** window. In the Properties window go to the **Information** tab, here the coordinate system used is listed under *CRS* for both raster and vector datasets. 
-
 **Step 3. Import all the layers into QGIS** 
 ---------------------------------------------------
 
