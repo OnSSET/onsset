@@ -539,25 +539,15 @@ In order to facilitate the process KTH dESA has prepared a batch of python comma
               :width: 300
               :height: 200
               :align: center
- 
 
-
-
-
-**Step 5. Preparing the .csv file** 
+**Step 5. Conditioning** 
 ---------------------------------------------------
-
-Once the process finishes, the settlements file is almost ready. The settlements layer contains the population points throughout the country’s territory along with 16 attributes that are useful for conducting the electrification analysis with OnSSET. In order to continue with the electrification model, this layer needs to be extracted from GIS to a .csv file. Here are two options of how this action can be performed. 
-
-1.	Use the **DBF_TO_CSV tool** which has been developed for this exact reason by KTH dESA. The tool is available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/DBF_to_CSV>`_.
-
-2.	The settlements file is a shapefile. That is, a dbf file is always existing in the same directory. This dbf file contains the trivial information of the settlements file and can be opened via Excel. Then one can use excel to save the file as csv.
-
-By following these steps you should be left with a .csv file with X and Y coordinates as well as a value in every grid cell for the dataset that you have chosen to sample. When these steps are done you also need to put all of the excel files into one single file with every column having the names given by OnSSET's naming convention. Find a python code performing this in a quick and easy manner `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/Conditioning>`_. 
+If you after the previous step open the CSV file you will see that some of the columns have names that do not make sense. Additionally three of the columns; nighttime lights, solar restrictions and landcover; all have empty rows. These empty rows are supposed to have the value zero. This problems can be dealt manually, but to facilitate the process KTH-dESA has developed a python code named **Conditioning** that automates the process.
+This code is avaiable `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/Conditioning>`_. 
 
 .. note::
-    You can sample more than one dataset at a time. However this could lead to difficulties when creating the
-    input file for OnSSET. It also requires a significant amount of computational capacity.
+    Depending on the name of the datasets that you use the renaming part might have to be altered. Also make sure that the code is tailored towards your study i.e. make sure that the settlement layer has the right name and that the workspace variable is pointing to the right directory etc. 
+
 
 GIS country file
 ------------------------------
