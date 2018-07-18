@@ -172,3 +172,5 @@ And then you can choose how to vizualise your data. Choose **Categorized** for d
     :width: 350px
     :height: 200px
     :align: center
+
+After these steps you can easily create your own maps and include north arrows, legends and scale bars by going to *Project>New Print Layout*
