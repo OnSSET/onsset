@@ -4,7 +4,7 @@ import pandas as pd
 workspace = r'C:\OSGeo4W64\Ghana Example'
 settlements_fc = 'Ghana Example'
 
-a = pd.read_csv(workspace + r"/" + settlements_fc + ".csv", sep = ";")
+a = pd.read_csv(workspace + r"/" + settlements_fc + "_Unconditioned.csv", sep = ";")
 
 # Fix all the columns so that they work in OnSSET
 a.rename(columns ={'pop2015'+ settlements_fc[0:3]:'Pop'}, inplace = True)
