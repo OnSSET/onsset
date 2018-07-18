@@ -432,7 +432,7 @@ Methodology for Open Street Map data and Osmosis
 
     * Coming back to the other sources (Geofabrik, BBBike), data can be downloaded per region in .pbf format. In the latest version of QGIS it is possible to insert this data directly by simply dragging the file onto the QGIS window. However, since the files are usually very large it is recommended to transform the .pbf into a spatialite database. 
    
-    * To do this transformation open up the OSGeo shell follwoing with your installation, navigate to the folder in which you have your .pbf file (by typing cd [folder path]) and enter the following line ogr2ogr -f SQLite X.sqlite Y.pbf (note change X to the name you want to use for your spatialite database and Y to the name of your downloaded .pbf file)
+    * To do this transformation open up the OSGeo shell follwoing with your installation, navigate to the folder in which you have your .pbf file (by typing cd [folder path]) and enter the following line: **ogr2ogr -f SQLite X.sqlite Y.pbf** (note change **X** to the name you want to use for your spatialite database and **Y** to the name of your downloaded .pbf file)
     
     * Once This transformation is finished (it may take some time) drag this new file into QGIS and work with it instead of the .pbf file.
 
