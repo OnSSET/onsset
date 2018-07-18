@@ -149,28 +149,28 @@ and select the result .csv file containing the scenario results to be displayed.
 to generate a map. For the X and Y Field choose X and Y for coordinates in km or X_deg and Y_deg for coordinates in degrees.
 
 .. image:: img/vizstep1.PNG
-    :width: 350px
-    :height: 200px
+    :width: 700px
+    :height: 400px
     :align: center
 
 
 After doing this you get a point layer in your layer panel. Right-click on the layer and go to *Properties>Symbiology*. Remove the border of all the circles. 
 
 .. image:: img/vizstep2.png
-    :width: 350px
-    :height: 200px
+    :width: 700px
+    :height: 400px
     :align: center
 
 And then you can choose how to vizualise your data. Choose **Categorized** for discrete data and **Graduated** for continuous data. In column choose the data you want to vizualise and then click on classify. 
 
 .. image:: img/vizstep3.png
-    :width: 350px
-    :height: 200px
+    :width: 700px
+    :height: 400px
     :align: center
     
 .. image:: img/vizstep4.png
-    :width: 350px
-    :height: 200px
+    :width: 700px
+    :height: 400px
     :align: center
 
 After these steps you can easily create your own maps and include north arrows, legends and scale bars by going to *Project>New Print Layout*
