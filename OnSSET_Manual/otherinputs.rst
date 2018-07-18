@@ -124,8 +124,7 @@ For the diesel price the best option is to find the diesel price directly from t
 In cases for which this is not possible you should try to find the crude oil price in your country.
 1.15 is an emperical value used in order to estimate the diesel price ($/liter) from the crude oil price($/liter).
 It is assumed that the price of diesel is 15% higher than the crude oil price. If you have difficulties finding the
-crude oil price in your area of interest or are would like to do a sensitivity analysis with realistic you can refer to
-e.g. http://www.oecd-ilibrary.org/energy/world-energy-outlook_20725302.
+crude oil price in your area of interest you can refer to e.g. http://www.oecd-ilibrary.org/energy/world-energy-outlook_20725302.
 
 Household size
 *****************
