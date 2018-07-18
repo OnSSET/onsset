@@ -38,7 +38,7 @@ Select “Download ZIP” from the "Clone or Download" tab and save the zipped f
 
 .. image:: img/fig4.png
             :width: 400px
-            :height: 300px
+            :height: 225px
             :align: center
 .. note::
 
