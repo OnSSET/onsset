@@ -452,7 +452,7 @@ In order to facilitate the process KTH dESA has prepared a batch of python comma
 .. note::
     In order to run the code in QGIS certain things need to be set up properly. In the following steps these things will be described. **NOTE** it is possible to set things up differently, but if this is done then the code will most likely need changes as well. 
     
-    1. **Setting up the workspace**
+    **1. Setting up the workspace**
     When all of the datasets have been generated and projected to a common projection system they need to be saved in appropriate folders before running the code. The image below shows an image of the workspace necessary for the analysis, these folders need to be set up accordingly and filled in with the corresponding datasets. 
     
     .. image:: img/Workspace.png
@@ -469,6 +469,29 @@ In order to facilitate the process KTH dESA has prepared a batch of python comma
         
     **Please make sure that the datasets are named exactly as they are in the column named “Data” and that the folders are named as in the column “Corresponding Folder”**.
    
+   **2. Additional concerns**
+       *1*	In line 14 make sure that the link to the workspace is correct (remember: the workspace is where the folders with the                   datasets are located). Make sure the path does not include any special characters or spaces as this could potentially                   cause errors.
+                .. image:: img/Line14.png
+                    :width: 300
+                    :height: 200
+                    :align: center
+       *2*  In line 17 make sure that you enter the coordinate system that you want to project your datasets to. The datasets used                   in the analysis are often in a default coordinate system (e.g. WGS 84) if you wish to change that you can enter the EPSG               code of your target coordinate system (remember to include the “EPSG” part if that is included in the code).
+               .. image:: img/Line17.png
+                    :width: 300
+                    :height: 200
+                    :align: center
+       *3*  In line 20 put settlements_fc equal to your study area. Whatever you put here will be the name of your output file from                 the code.
+                .. image:: img/Line20.png
+                    :width: 300
+                    :height: 200
+                    :align: center
+       
+       *4*  In line 24 you might have to change the column name. In order to determine the amount of hydropower in all the                           potential points QGIS needs to know the name of the column in which the hydropower potential is given (open the attribute               table of your dataset and write down the name of the column that contains the potential outputs).
+                .. image:: img/Line24.png
+                    :width: 300
+                    :height: 200
+                    :align: center
+
 
 **Step 5. Preparing the .csv file** 
 ---------------------------------------------------
