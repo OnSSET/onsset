@@ -460,9 +460,9 @@ In order to facilitate the process KTH dESA has prepared a batch of python comma
         :height: 200
         :align: center
     
-   To run a basic OnSSET analysis you will need 14 datasets. These 14 datasets should be saved in their corresponding folder. Two of the datasets (planned and existing transmission lines) should both be saved in the transmission network folder. The slope map will be generated in the code using the elevation map and therefore there is no need to download it. The datasets needed are: 
+    To run a basic OnSSET analysis you will need 14 datasets. These 14 datasets should be saved in their corresponding folder. Two of the datasets (planned and existing transmission lines) should both be saved in the transmission network folder. The slope map will be generated in the code using the elevation map and therefore there is no need to download it. The datasets needed are: 
    
-   .. image:: img/DatasetNames.png
+    .. image:: img/DatasetNames.png
         :width: 300
         :height: 200
         :align: center
