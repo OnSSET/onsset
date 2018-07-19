@@ -21,12 +21,13 @@ a.rename(columns ={'GridDistCu':'GridDistCurrent'}, inplace = True)
 a.rename(columns ={'GridDistPl':'GridDistPlan'}, inplace = True)
 a.rename(columns ={'Hydropow_1':'HydropowerFID'}, inplace = True)
 a.rename(columns ={'Hydropow_2':'HydropowerDist'}, inplace = True)
-a.rename(columns ={'Transforme':'TransformerDist'}, inplace = True)
+
 
 a['Country'] = settlements_fc
 a['NightLights'].fillna(0,inplace=True)
 a['LandCover'].fillna(0,inplace=True)
 a['SolarRestriction'].fillna(0,inplace=True)
+a['TravelHours'].fillna(0,inplace=True)
 a['Hydropower']*=0.001
 a['TransformerDist']*=0.001
 a.to_csv(workspace + r"/" + settlements_fc + ".csv", index = False)
