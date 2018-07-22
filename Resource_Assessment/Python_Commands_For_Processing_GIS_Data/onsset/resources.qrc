@@ -1,5 +1,0 @@
-<RCC>
-    <qresource prefix="/plugins/OnSSET" >
-        <file>icon.png</file>
-    </qresource>
-</RCC>
