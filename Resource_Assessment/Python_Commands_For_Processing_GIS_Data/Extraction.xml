@@ -3,7 +3,7 @@
 <article lang="">
   <para>&lt;?xml version="1.0"?&gt;</para>
   <para>&lt;plugins&gt;</para>
-  <para>    &lt;pyqgis_plugin name="OnSSET_Extract to Excel" version="0.1"&gt;</para>
+  <para>    &lt;pyqgis_plugin name="Extract to Excel" version="0.1"&gt;</para>
   <para>        &lt;description&gt;This plugin shows sensitive data&lt;/description&gt;</para>
   <para>        &lt;homepage&gt;www.onsset.org&lt;/homepage&gt;</para>
   <para>        &lt;qgis_minimum_version&gt;3.0&lt;/qgis_minimum_version&gt;</para>
