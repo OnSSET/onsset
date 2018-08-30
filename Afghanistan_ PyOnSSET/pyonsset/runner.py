@@ -5,7 +5,7 @@
 # Python version: 3.5
 
 import os
-from pyonsset.onsset import *
+from onsset import *
 
 os.chdir('..')
 os.chdir('db')
