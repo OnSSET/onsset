@@ -51,7 +51,7 @@ if choice == 0:
         df.loc[df[SET_COUNTRY] == country].to_csv(base_dir + '.csv', index=False)
 
 elif choice == 1:
-    messagebox.showinfo('OnSSET', 'Open the file containing separated countries')
+    messagebox.showinfo('OnSSET', 'Open the csv file containing the extracted GIS data')
     base_dir = filedialog.askopenfilename()
     messagebox.showinfo('OnSSET', 'Browse to result folder and name the calibrated file')
     output_dir = filedialog.asksaveasfilename()
