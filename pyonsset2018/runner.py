@@ -8,17 +8,28 @@
 
 import os
 from onsset import *
+import tkinter as tk
+from tkinter import filedialog, messagebox
+
+root = tk.Tk()
+root.withdraw()
+root.attributes("-topmost", True)
+
+messagebox.showinfo('OnSSET', 'Open the specs file')
+specs_path = filedialog.askopenfilename()
+
+specs = pd.read_excel(specs_path, index_col=0)
 
 coordinate_units = 1000 # 1000 if coordinates are in m, 1 if coordinates are in km
 
-specs_directory = str(input('Enter the directory of the specs file: '))
-os.chdir(specs_directory)
-specs_path = str(input('Enter the name of the specs file: '))
-
-try:
-    specs = pd.read_excel(specs_path, index_col=0)
-except FileNotFoundError:
-    specs = pd.read_excel(str(specs_path + '.xlsx'), index_col=0)
+# specs_directory = str(input('Enter the directory of the specs file: '))
+# os.chdir(specs_directory)
+# specs_path = str(input('Enter the name of the specs file: '))
+#
+# try:
+#     specs = pd.read_excel(specs_path, index_col=0)
+# except FileNotFoundError:
+#     specs = pd.read_excel(str(specs_path + '.xlsx'), index_col=0)
 
 countries = str(input('countries: ')).split()
 countries = specs.index.tolist() if 'all' in countries else countries
@@ -26,47 +37,31 @@ countries = specs.index.tolist() if 'all' in countries else countries
 choice = int(input('1 to calibrate and prep, 2 to run a scenario: '))
 
 if choice == 0:
-    settlements_csv = str(input('Enter the name of the file containing extracted GIS data for all countries: '))
-    base_dir = str(input('Enter the base file directory to save the split countries: '))
+    messagebox.showinfo('OnSSET', 'Open the csv file with GIS data')
+    settlements_csv = filedialog.askopenfilename()
+    messagebox.showinfo('OnSSET', 'Select the folder to save split countries')
+    base_dir = filedialog.asksaveasfilename()
 
     print('\n --- Splitting --- \n')
 
-    try:
-        os.makedirs(base_dir)
-    except FileExistsError:
-        pass
-
     df = pd.read_csv(settlements_csv)
-
-    try:
-        df[SET_GHI]
-    except ValueError:
-        df = pd.read_csv(settlements_csv, sep=';')
-        try:
-            df[SET_GHI]
-        except ValueError:
-            print('Column "GHI" not found, check column names in csv-file')
-            raise
 
     for country in countries:
         print(country)
-        df.loc[df[SET_COUNTRY] == country].to_csv(os.path.join(base_dir, '{}.csv'.format(country)), index=False)
+        df.loc[df[SET_COUNTRY] == country].to_csv(base_dir + '.csv', index=False)
 
 elif choice == 1:
-    base_dir = str(input('Enter the file directory containing extracted GIS data: '))
-    output_dir = str(input('Enter the output directory for the calibrated and prepped file: '))
-
-    try:
-        os.makedirs(output_dir)
-    except FileExistsError:
-        pass
+    messagebox.showinfo('OnSSET', 'Open the file containing separated countries')
+    base_dir = filedialog.askopenfilename()
+    messagebox.showinfo('OnSSET', 'Browse to result folder and name the calibrated file')
+    output_dir = filedialog.asksaveasfilename()
 
     print('\n --- Prepping --- \n')
 
     for country in countries:
         print(country)
-        settlements_in_csv = os.path.join(base_dir, '{}.csv'.format(country))
-        settlements_out_csv = os.path.join(output_dir, '{}.csv'.format(country))
+        settlements_in_csv = base_dir  # os.path.join(base_dir, '{}.csv'.format(country))
+        settlements_out_csv = output_dir + '.csv'  # os.path.join(output_dir, '{}.csv'.format(country))
 
         onsseter = SettlementProcessor(settlements_in_csv)
 
@@ -111,9 +106,6 @@ elif choice == 1:
         onsseter.df.to_csv(settlements_out_csv, index=False)
 
 elif choice == 2:
-    base_dir = str(input('Enter the file directory containing the calibrated and prepped csv file: '))
-    output_dir = str(input('Enter the output directory for the results (can contain multiple scenario runs): '))
-
     wb_tiers_all = {1: 8, 2: 44, 3: 160, 4: 423, 5: 598}
     print("""\nWorld Bank Tiers of Electricity Access
           1: {} kWh/person/year
@@ -128,25 +120,23 @@ elif choice == 2:
     diesel_high = True if 'y' in input('Use high diesel value? <y/n> ') else False
     diesel_tag = 'high' if diesel_high else 'low'
 
+    messagebox.showinfo('OnSSET', 'Open the csv file with calibrated GIS data')
+    base_dir = filedialog.askopenfilename()
+    messagebox.showinfo('OnSSET', 'Browse to result folder and name the scenario to save outputs')
+    output_dir = filedialog.asksaveasfilename()
+
     # Uncomment row below if running multiple countries/regions
     do_combine = False
     # do_combine = True if 'y' in input('Combine countries into a single file? <y/n> ') else False
 
     print('\n --- Running scenario --- \n')
 
-    try:
-        os.makedirs(output_dir)
-    except FileExistsError:
-        pass
-
     for country in countries:
         # create country_specs here
         print(' --- {} --- {} --- {} --- '.format(country, wb_tier_urban, diesel_tag))
-        settlements_in_csv = os.path.join(base_dir, '{}.csv'.format(country))
-        settlements_out_csv = os.path.join(output_dir, '{}_{}_{}_{}.csv'.format(country, wb_tier_urban,
-                                                                                wb_tier_rural, diesel_tag))
-        summary_csv = os.path.join(output_dir, '{}_{}_{}_{}_summary.csv'.format(country, wb_tier_urban,
-                                                                                wb_tier_rural, diesel_tag))
+        settlements_in_csv = base_dir
+        settlements_out_csv = output_dir + '.csv'
+        summary_csv = output_dir + 'summary.csv'
 
         onsseter = SettlementProcessor(settlements_in_csv)
 
