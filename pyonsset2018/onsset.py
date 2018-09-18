@@ -199,7 +199,7 @@ class Technology:
             capacity_factor = self.capacity_factor
 
         consumption = people / num_people_per_hh * energy_per_hh  # kWh/year
-        average_load = consumption * (1 + self.distribution_losses) / HOURS_PER_YEAR  # kW
+        average_load = consumption / (1 - self.distribution_losses) / HOURS_PER_YEAR  # kW
         peak_load = average_load / self.base_to_peak_load_ratio  # kW
 
         no_mv_lines = peak_load / self.mv_line_capacity
@@ -1072,7 +1072,6 @@ class SettlementProcessor:
                 return mg_hydro_calc.get_lcoe(energy_per_hh=row[SET_ENERGY_PER_HH],
                                               people=row[SET_POP_FUTURE],
                                               num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
-
                                               mv_line_length=row[SET_HYDRO_DIST],
                                               get_investment_cost=True)
             elif min_tech == SET_LCOE_GRID:
@@ -1108,25 +1107,32 @@ class SettlementProcessor:
         logging.info('Calculate new capacity')
         self.df.loc[self.df[SET_MIN_OVERALL] == SET_LCOE_GRID, SET_NEW_CAPACITY] = (
             (self.df[SET_NEW_CONNECTIONS] * self.df[SET_ENERGY_PER_HH] / self.df[SET_NUM_PEOPLE_PER_HH]) /
-            (HOURS_PER_YEAR * grid_calc.capacity_factor * grid_calc.base_to_peak_load_ratio))
+            (HOURS_PER_YEAR * grid_calc.capacity_factor * grid_calc.base_to_peak_load_ratio
+             * (1 - grid_calc.distribution_losses)))
         self.df.loc[self.df[SET_MIN_OVERALL] == SET_LCOE_MG_HYDRO, SET_NEW_CAPACITY] = (
             (self.df[SET_NEW_CONNECTIONS] * self.df[SET_ENERGY_PER_HH] / self.df[SET_NUM_PEOPLE_PER_HH]) /
-            (HOURS_PER_YEAR * mg_hydro_calc.capacity_factor * mg_hydro_calc.base_to_peak_load_ratio))
+            (HOURS_PER_YEAR * mg_hydro_calc.capacity_factor * mg_hydro_calc.base_to_peak_load_ratio
+             * (1 - mg_hydro_calc.distribution_losses)))
         self.df.loc[self.df[SET_MIN_OVERALL] == SET_LCOE_MG_PV, SET_NEW_CAPACITY] = (
             (self.df[SET_NEW_CONNECTIONS] * self.df[SET_ENERGY_PER_HH] / self.df[SET_NUM_PEOPLE_PER_HH]) /
-            (HOURS_PER_YEAR * (self.df[SET_GHI] / HOURS_PER_YEAR) * mg_pv_calc.base_to_peak_load_ratio))
+            (HOURS_PER_YEAR * (self.df[SET_GHI] / HOURS_PER_YEAR) * mg_pv_calc.base_to_peak_load_ratio
+             * (1 - mg_pv_calc.distribution_losses)))
         self.df.loc[self.df[SET_MIN_OVERALL] == SET_LCOE_MG_WIND, SET_NEW_CAPACITY] = (
             (self.df[SET_NEW_CONNECTIONS] * self.df[SET_ENERGY_PER_HH] / self.df[SET_NUM_PEOPLE_PER_HH]) /
-            (HOURS_PER_YEAR * self.df[SET_WINDCF] * mg_wind_calc.base_to_peak_load_ratio))
+            (HOURS_PER_YEAR * self.df[SET_WINDCF] * mg_wind_calc.base_to_peak_load_ratio
+             * (1 - mg_wind_calc.distribution_losses)))
         self.df.loc[self.df[SET_MIN_OVERALL] == SET_LCOE_MG_DIESEL, SET_NEW_CAPACITY] = (
             (self.df[SET_NEW_CONNECTIONS] * self.df[SET_ENERGY_PER_HH] / self.df[SET_NUM_PEOPLE_PER_HH]) /
-            (HOURS_PER_YEAR * mg_diesel_calc.capacity_factor * mg_diesel_calc.base_to_peak_load_ratio))
+            (HOURS_PER_YEAR * mg_diesel_calc.capacity_factor * mg_diesel_calc.base_to_peak_load_ratio
+             * (1 - mg_diesel_calc.distribution_losses)))
         self.df.loc[self.df[SET_MIN_OVERALL] == SET_LCOE_SA_DIESEL, SET_NEW_CAPACITY] = (
             (self.df[SET_NEW_CONNECTIONS] * self.df[SET_ENERGY_PER_HH] / self.df[SET_NUM_PEOPLE_PER_HH]) /
-            (HOURS_PER_YEAR * sa_diesel_calc.capacity_factor * sa_diesel_calc.base_to_peak_load_ratio))
+            (HOURS_PER_YEAR * sa_diesel_calc.capacity_factor * sa_diesel_calc.base_to_peak_load_ratio
+             * (1 - sa_diesel_calc.distribution_losses)))
         self.df.loc[self.df[SET_MIN_OVERALL] == SET_LCOE_SA_PV, SET_NEW_CAPACITY] = (
             (self.df[SET_NEW_CONNECTIONS] * self.df[SET_ENERGY_PER_HH] / self.df[SET_NUM_PEOPLE_PER_HH]) /
-            (HOURS_PER_YEAR * (self.df[SET_GHI] / HOURS_PER_YEAR) * sa_pv_calc.base_to_peak_load_ratio))
+            (HOURS_PER_YEAR * (self.df[SET_GHI] / HOURS_PER_YEAR) * sa_pv_calc.base_to_peak_load_ratio
+             * (1 - sa_pv_calc.distribution_losses)))
 
         logging.info('Calculate investment cost')
         self.df[SET_INVESTMENT_COST] = self.df.apply(res_investment_cost, axis=1)
