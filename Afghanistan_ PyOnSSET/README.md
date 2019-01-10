@@ -12,4 +12,6 @@ The second file contains all the GIS information (21 columns) for the settlement
 KTH dESA has prepared two versions of the Afghanistan.csv file able to run the electrification analysis with 1 and 10 km spatial resolution respectively. The files can be directy downloaded at [Energydata.info](https://energydata.info/).
 A simplified - online -  version of the Afghan OnSSET model is available [here.](http://www.onsset.org/online-tool.html)
 
+A new version of the OnSSET electrification model that takes into account the effect of conflict has been added separately in January 2019. Code and files related to this version can be identified by the tag "Conflict" in their name. The model works otherwise in similar manner.
 
+For any additional information please contact the KTH team [here.](http://www.onsset.org/contact--forum.html)
