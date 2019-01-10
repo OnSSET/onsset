@@ -1,9 +1,8 @@
 # Pulls all the other functions together to make magic!
-# Author: Christopher Arderne
-# Date: 26 November 2016
-# Python version: 3.5
+# Author: KTH dESA Last modified by Alexandros Korkovelos
+# Date: 23 November 2018
+# Python version: 3.7
 
-# Updated June 2018 by Andreas Sahlberg (KTH dESA)
 # Modified grid algorithm and population calibration to improve computational speed
 
 import os
