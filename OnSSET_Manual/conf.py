@@ -47,7 +47,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'OnSSET'
-copyright = '2018, KTH-dESA'
+copyright = '2019, KTH-dESA'
 author = 'KTH Team'
 
 # The version info for the project you're documenting, acts as replacement for
