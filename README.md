@@ -10,7 +10,7 @@ OnSSET-2016 was initially applied to Nigeria, Ethiopia and India, featuring in t
 
 # PyOnSSET
 
-the **PyOnSSET** folder contains the (python) scripts on which OnSSET is based upon. Together there are two sample files required for testing the model on you local machine.
+The **PyOnSSET** folder contains the (python) scripts on which OnSSET is based upon. Together there are two sample files required for testing the model on you local machine.
 
 OnSSET-2016 requires python 3; best to install through [anaconda distribution](https://www.anaconda.com/distribution/).
 
