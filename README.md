@@ -16,15 +16,19 @@ OnSSET-2016 requires python 3; best to install through [anaconda distribution](h
 
 # Related publications
 
-**A GIS-based approach for electrification planning - A case study on Nigeria** (available [here)](http://www.sciencedirect.com/science/article/pii/S0973082615000952)
+**1. A GIS-based approach for electrification planning - A case study on Nigeria** (available [here)](http://www.sciencedirect.com/science/article/pii/S0973082615000952)
 
 ![](/resources/nigeria_electrification_map.png "Optimal electrification mix in Nigeria")
 
-**The benefits of geospatial planning in energy access – A case study on Ethiopia** (available[here)](http://www.sciencedirect.com/science/article/pii/S0143622816300522)
+
+
+**2. The benefits of geospatial planning in energy access – A case study on Ethiopia** (available [here)](http://www.sciencedirect.com/science/article/pii/S0143622816300522)
 
 ![](/resources/Ethiopia_optimalmix_LCOE.png "Optimal electrification mix and spatial levelized cost of electricity in Ethiopia")
 
-**A cost comparison of technology approaches for improving access to electricity services** (available [here)](http://www.sciencedirect.com/science/article/pii/S036054421501631X)
+
+
+**3. A cost comparison of technology approaches for improving access to electricity services** (available [here)](http://www.sciencedirect.com/science/article/pii/S036054421501631X)
 
 ![](/resources/Nigeria_LCOE_surface.png "Least cost LCOEs in Nigeria as a function of the distance to the grid and population density
 ")
