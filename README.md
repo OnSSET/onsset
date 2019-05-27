@@ -1,7 +1,7 @@
 gep_onsset
 =================================
 
-[![PyPI version](https://badge.fury.io/py/gridfinder.svg)](https://test.pypi.org/project/gons-test/) [![Documentation Status](https://readthedocs.org/projects/gep-onsset/badge/?version=latest)](https://gep-onsset.readthedocs.io/en/latest/?badge=latest)
+[![PyPI version](https://badge.fury.io/py/gridfinder.svg)](https://test.pypi.org/project/gons-test/) [![Build Status](https://travis-ci.org/global-electrification-platform/gep-onsset.svg?branch=master)](https://travis-ci.org/global-electrification-platform/gep-onsset) [![Documentation Status](https://readthedocs.org/projects/gep-onsset/badge/?version=latest)](https://gep-onsset.readthedocs.io/en/latest/?badge=latest)
 
 Documentation: https://package-template1.readthedocs.io/en/latest/
 
