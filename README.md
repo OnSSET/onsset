@@ -28,7 +28,7 @@ gons_test requires Python >= 3.5 with the following packages installed:
 **Install with pip**
 
 ```
-python -m pip install -i https://test.pypi.org/simple/ gons-test
+python -m pip install -i https://test.pypi.org/simple/ gep-onsset
 ```
 
 **Install from GitHub**
