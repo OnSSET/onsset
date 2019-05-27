@@ -1,6 +1,6 @@
 language: python
 python:
-  - "3.7"
+  - "3.5"
 
 # easiest way of getting rtree
 before_install:
