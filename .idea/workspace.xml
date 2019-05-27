@@ -10,13 +10,22 @@
   </component>
   <component name="FileEditorManager">
     <leaf>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/gep-onsset/gep_onsset.py">
           <provider selected="true" editor-type-id="text-editor">
             <state>
               <folding>
                 <element signature="e#101#110#0" expanded="true" />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/setup.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="527">
+              <caret line="31" column="46" selection-start-line="31" selection-start-column="46" selection-end-line="31" selection-end-column="46" />
             </state>
           </provider>
         </entry>
@@ -41,6 +50,7 @@
         <option value="$PROJECT_DIR$/gep-onsset/gep-onsset.py" />
         <option value="$PROJECT_DIR$/gep-onsset/gep_runner.py" />
         <option value="$PROJECT_DIR$/setup.py" />
+        <option value="$PROJECT_DIR$/docs/source/conf.py" />
       </list>
     </option>
   </component>
@@ -243,19 +253,26 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/setup.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="192">
-          <caret line="31" column="46" selection-start-line="31" selection-start-column="46" selection-end-line="31" selection-end-column="46" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/gep-onsset/gep_onsset.py">
       <provider selected="true" editor-type-id="text-editor">
         <state>
           <folding>
             <element signature="e#101#110#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/docs/source/conf.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="226">
+          <caret line="152" column="72" selection-start-line="152" selection-start-column="72" selection-end-line="152" selection-end-column="72" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/setup.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="527">
+          <caret line="31" column="46" selection-start-line="31" selection-start-column="46" selection-end-line="31" selection-end-column="46" />
         </state>
       </provider>
     </entry>

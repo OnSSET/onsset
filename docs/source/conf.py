@@ -19,9 +19,9 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'Define package name'
+project = 'gep_onsset'
 copyright = '2019'
-author = 'Define author'
+author = 'KTH dESA'
 
 # The short X.Y version
 version = 'Version 2019.0'
@@ -101,7 +101,7 @@ html_static_path = ['nstatic']
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'packagenamedoc'
+htmlhelp_basename = 'gep_onssetdoc'
 
 
 # -- Options for LaTeX output ------------------------------------------------
@@ -128,8 +128,8 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'packagename.tex', 'package name',
-     'Define author', 'manual'),
+    (master_doc, 'gep_onsset.tex', 'gep_onsset',
+     'KTH dESA', 'manual'),
 ]
 
 
@@ -138,7 +138,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'package name',
+    (master_doc, 'gep_onsset',
      [author], 1)
 ]
 
@@ -149,7 +149,7 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'package name',
-     author, 'package name', 'One line description of project.',
+    (master_doc, 'gep_onsset',
+     author, 'gep_onsset', 'Modified version of the OnSSET model for GEP',
      'Miscellaneous'),
 ]

@@ -1,4 +1,4 @@
-﻿Example 2
+﻿Scenario run
 =================================
 
 Scope

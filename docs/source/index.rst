@@ -1,4 +1,4 @@
-Welcome to Package_Name User's Guide!
+Welcome to gep_onsset User's Guide!
 ===============================================
 
 .. figure::  images/test.png
@@ -19,9 +19,9 @@ Contents
    :maxdepth: 3
 
    Overview
-   Example 1
-   Example 2
-   Example 3
+   Input data
+   Scenario run
+   Results
    FAQ
    Contact
    License
