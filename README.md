@@ -44,3 +44,5 @@ pip install -r requirements.txt
 The use of GEP generator requires also installation of 
 - IPython
 - jupyter
+- matplotlib
+- seaborn
