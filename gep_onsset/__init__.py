@@ -7,4 +7,4 @@ gep-onsset package contains the following modules:
 
 __version__ = "2019.0"
 
-from .test_package_kthdesa import *
+from .gep_onsset import *
