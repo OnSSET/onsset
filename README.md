@@ -13,7 +13,7 @@ This repository contains the source code of the Open Source Spatial Electrificat
 
 **Requirements**
 
-gons_test requires Python >= 3.5 with the following packages installed:
+gep_onsset requires Python >= 3.5 with the following packages installed:
 - et-xmlfile>=1.0
 - jdcal>=1.4
 - numpy>=1.16
@@ -46,3 +46,8 @@ The use of GEP generator requires also installation of
 - jupyter
 - matplotlib
 - seaborn
+
+## Contact
+For more information regarding the tool, its functionality and implementation please contact the development team at https://www.desa.kth.se.
+
+For any other inquiries and potential collaboration please refer to http://www.Globalelectrificationplatform.com.
