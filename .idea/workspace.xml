@@ -2,7 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="e93a7d35-a972-4eb6-920b-c6aa8e928aaf" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/GEP_Generator.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/GEP_Generator.ipynb" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -43,8 +42,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/gep_onsset/gep_onsset.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="201">
-              <caret line="833" column="34" selection-start-line="833" selection-start-column="34" selection-end-line="833" selection-end-column="34" />
+            <state relative-caret-position="371">
+              <caret line="855" column="58" selection-start-line="855" selection-start-column="58" selection-end-line="855" selection-end-column="58" />
             </state>
           </provider>
         </entry>
@@ -55,6 +54,7 @@
     <findStrings>
       <find>elec_current</find>
       <find>read_csv</find>
+      <find>pd.read</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -225,7 +225,6 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-7" y="-7" width="1550" height="838" extended-state="6" />
-    <editor active="true" />
     <layout>
       <window_info content_ui="combo" id="Project" order="0" weight="0.24983476" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
@@ -281,8 +280,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/gep_onsset/gep_onsset.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="201">
-          <caret line="833" column="34" selection-start-line="833" selection-start-column="34" selection-end-line="833" selection-end-column="34" />
+        <state relative-caret-position="371">
+          <caret line="855" column="58" selection-start-line="855" selection-start-column="58" selection-end-line="855" selection-end-column="58" />
         </state>
       </provider>
     </entry>
