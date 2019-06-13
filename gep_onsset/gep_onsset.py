@@ -836,6 +836,16 @@ class SettlementProcessor:
             print("Please make sure that the country name you provided and the .csv file, both have the same name")
             raise
 
+        try:
+            self.df[SET_GHI]
+        except ValueError:
+            self.df = pd.read_csv(path, sep=';')
+            try:
+                self.df[SET_GHI]
+            except ValueError:
+                print('Column "GHI" not found, check column names in calibrated csv-file')
+                raise
+
     def condition_df(self):
         """
         Do any initial data conditioning that may be required.
