@@ -838,7 +838,7 @@ class SettlementProcessor:
 
         try:
             self.df[SET_GHI]
-        except ValueError:
+        except KeyError:
             self.df = pd.read_csv(path, sep=';')
             try:
                 self.df[SET_GHI]
