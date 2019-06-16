@@ -2,6 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="e93a7d35-a972-4eb6-920b-c6aa8e928aaf" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/GEP_Generator.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/GEP_Generator.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/gep_onsset/gep_onsset.py" beforeDir="false" afterPath="$PROJECT_DIR$/gep_onsset/gep_onsset.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -33,8 +35,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/gep_onsset/gep_runner.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="230">
-              <caret line="154" column="32" selection-start-line="154" selection-start-column="32" selection-end-line="154" selection-end-column="32" />
+            <state relative-caret-position="201">
+              <caret line="194" column="57" lean-forward="true" selection-start-line="194" selection-start-column="57" selection-end-line="194" selection-end-column="57" />
             </state>
           </provider>
         </entry>
@@ -42,8 +44,11 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/gep_onsset/gep_onsset.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="380">
-              <caret line="839" column="28" lean-forward="true" selection-start-line="839" selection-start-column="28" selection-end-line="839" selection-end-column="28" />
+            <state relative-caret-position="278">
+              <caret line="208" column="23" selection-start-line="208" selection-start-column="23" selection-end-line="208" selection-end-column="23" />
+              <folding>
+                <element signature="e#9947#26262#0" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -55,7 +60,50 @@
       <find>elec_current</find>
       <find>read_csv</find>
       <find>pd.read</find>
+      <find>total_energy_</find>
+      <find>set_total_energy_per_cell</find>
+      <find>set_defaul</find>
+      <find>distribution_losses</find>
+      <find>HV_line_cost</find>
+      <find>MV_line_type</find>
+      <find>MV_line_amperage_limit</find>
+      <find>MV_line_cost</find>
+      <find>LV_line_type</find>
+      <find>LV_line_max_length</find>
+      <find>power_fact</find>
+      <find>service_Transf_type</find>
+      <find>service_Transf_cost</find>
+      <find>max_nodes_per_serv_trans</find>
+      <find>MV_LV_sub_station_type</find>
+      <find>MV_LV_sub_station_cost</find>
+      <find>MV_MV_sub_station_cost</find>
+      <find>MV_LV_sub_station_cost</find>
+      <find>HV_LV_sub_station_type</find>
+      <find>HV_LV_sub_station_cost</find>
+      <find>HV_MV_sub_station_cost</find>
+      <find>power_factor</find>
+      <find>load_moment</find>
     </findStrings>
+    <replaceStrings>
+      <replace>self.HV_line_type</replace>
+      <replace>self.HV_line_cost</replace>
+      <replace>self.MV_line_type</replace>
+      <replace>self.MV_line_amperage_limit</replace>
+      <replace>self.MV_line_cost</replace>
+      <replace>self.LV_line_cost</replace>
+      <replace>self.LV_line_max_length</replace>
+      <replace>self.service_Transf_type</replace>
+      <replace>self.service_Transf_cost</replace>
+      <replace>self.max_nodes_per_serv_trans</replace>
+      <replace>self.MV_LV_sub_station_type</replace>
+      <replace>self.MV_MV_sub_station_cost</replace>
+      <replace>self.MV_LV_sub_station_cost</replace>
+      <replace>self.HV_LV_sub_station_type</replace>
+      <replace>self.HV_LV_sub_station_cost</replace>
+      <replace>self.HV_MV_sub_station_cost</replace>
+      <replace>self.power_factor</replace>
+      <replace>self.load_moment</replace>
+    </replaceStrings>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -277,15 +325,18 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/gep_onsset/gep_runner.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="230">
-          <caret line="154" column="32" selection-start-line="154" selection-start-column="32" selection-end-line="154" selection-end-column="32" />
+        <state relative-caret-position="201">
+          <caret line="194" column="57" lean-forward="true" selection-start-line="194" selection-start-column="57" selection-end-line="194" selection-end-column="57" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/gep_onsset/gep_onsset.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="380">
-          <caret line="839" column="28" lean-forward="true" selection-start-line="839" selection-start-column="28" selection-end-line="839" selection-end-column="28" />
+        <state relative-caret-position="278">
+          <caret line="208" column="23" selection-start-line="208" selection-start-column="23" selection-end-line="208" selection-end-column="23" />
+          <folding>
+            <element signature="e#9947#26262#0" />
+          </folding>
         </state>
       </provider>
     </entry>

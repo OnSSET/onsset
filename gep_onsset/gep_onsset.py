@@ -192,11 +192,39 @@ class Technology:
         self.om_of_td_lines = om_of_td_lines
 
     @classmethod
-    def set_default_values(cls, base_year, start_year, end_year, discount_rate):
+    def set_default_values(cls, base_year, start_year, end_year, discount_rate, HV_line_type=69, HV_line_cost=53000,
+                           MV_line_type=33, MV_line_amperage_limit=8.0, MV_line_cost=7000, LV_line_type=0.240,
+                           LV_line_cost=4250, LV_line_max_length=0.5, service_Transf_type=50, service_Transf_cost=4250,
+                           max_nodes_per_serv_trans=300, MV_LV_sub_station_type=400, MV_LV_sub_station_cost=10000,
+                           MV_MV_sub_station_cost=10000, HV_LV_sub_station_type=1000, HV_LV_sub_station_cost=25000,
+                           HV_MV_sub_station_cost=25000, power_factor=0.9, load_moment=9643):
         cls.base_year = base_year
         cls.start_year = start_year
         cls.end_year = end_year
+
+        # RUN_PARAM: Here are the assumptions related to cost and physical properties of grid extension elements
+        # REVIEW - A final revision is needed before publishing
         cls.discount_rate = discount_rate
+        cls.HV_line_type = HV_line_type  # kV
+        cls.HV_line_cost = HV_line_cost  # $/km for 69kV
+        cls.MV_line_type = MV_line_type  # kV
+        cls.MV_line_amperage_limit = MV_line_amperage_limit  # Ampere (A)
+        cls.MV_line_cost = MV_line_cost  # $/km  for 11-33 kV
+        cls.LV_line_type = LV_line_type  # kV
+        cls.LV_line_cost = LV_line_cost # $/km
+        cls.LV_line_max_length = LV_line_max_length  # km
+        cls.service_Transf_type = service_Transf_type  # kVa
+        cls.service_Transf_cost = service_Transf_cost  # $/unit
+        cls.max_nodes_per_serv_trans = max_nodes_per_serv_trans  # maximum number of nodes served by each service transformer
+        cls.MV_LV_sub_station_type = MV_LV_sub_station_type  # kVa
+        cls.MV_LV_sub_station_cost = MV_LV_sub_station_cost  # $/unit
+        cls.MV_MV_sub_station_cost = MV_MV_sub_station_cost  # $/unit
+        cls.HV_LV_sub_station_type = HV_LV_sub_station_type  # kVa
+        cls.HV_LV_sub_station_cost = HV_LV_sub_station_cost  # $/unit
+        cls.HV_MV_sub_station_cost = HV_MV_sub_station_cost  # $/unit
+        cls.power_factor = power_factor
+        cls.load_moment = load_moment  # for 50mm aluminum conductor under 5% voltage drop (kW m)
+        # simultaneous_usage = 0.06         # Not used eventually - maybe in an updated version
 
     def pv_diesel_hybrid(self, energy_per_hh,  # kWh/household/year as defined
                          max_ghi,  # highest annual GHI value encountered in the GIS data
@@ -453,7 +481,6 @@ class Technology:
                                 # first number is PV size, second is diesel, third is battery
         return lcoe_table, pv_table, diesel_table, investment_table, load_curve[19], choice_table
 
-
     def get_lcoe(self, energy_per_cell, people, num_people_per_hh, start_year, end_year, new_connections,
                  total_energy_per_cell, prev_code, grid_cell_area, conf_status=0, additional_mv_line_length=0,
                  capacity_factor=0,
@@ -473,33 +500,6 @@ class Technology:
         mv_line_length required for hydro
         travel_hours required for diesel
         """
-
-        # RUN_PARAM: Here are the assumptions related to cost and physical properties of grid extension elements
-        # REVIEW - A final revision is needed before publishing
-        HV_line_type = 69  # kV
-        HV_line_cost = 53000  # $/km for 69kV
-
-        MV_line_type = 33  # kV
-        MV_line_amperage_limit = 8.0  # Ampere (A)
-        MV_line_cost = 7000  # $/km  for 11-33 kV
-
-        LV_line_type = 0.240  # kV
-        LV_line_cost = 4250  # $/km for 0.4 kV
-        LV_line_max_length = 0.5  # km
-
-        service_Transf_type = 50  # kVa
-        service_Transf_cost = 4250  # $/unit
-        max_nodes_per_serv_trans = 300  # maximum number of nodes served by each service transformer
-        MV_LV_sub_station_type = 400  # kVa
-        MV_LV_sub_station_cost = 10000  # $/unit
-        MV_MV_sub_station_cost = 10000  # $/unit
-        HV_LV_sub_station_type = 1000  # kVa
-        HV_LV_sub_station_cost = 25000  # $/unit
-        HV_MV_sub_station_cost = 25000  # $/unit
-
-        power_factor = 0.9
-        load_moment = 9643  # for 50mm aluminum conductor under 5% voltage drop (kW m)
-        # simultaneous_usage = 0.06         # Not used eventually - maybe in an updated version
 
         if people == 0:
             # If there are no people, the investment cost is zero.
@@ -567,26 +567,26 @@ class Technology:
                 peak_load = 1
 
             # Sizing HV/MV
-            HV_to_MV_lines = HV_line_cost / MV_line_cost
-            max_MV_load = MV_line_amperage_limit * MV_line_type * HV_to_MV_lines
+            HV_to_MV_lines = self.HV_line_cost / self.MV_line_cost
+            max_MV_load = self.MV_line_amperage_limit * self.MV_line_type * HV_to_MV_lines
 
             MV_km = 0
             HV_km = 0
             if peak_load <= max_MV_load and additional_mv_line_length < 50 and self.grid_price > 0:
-                MV_amperage = MV_LV_sub_station_type / MV_line_type
-                No_of_MV_lines = ceil(peak_load / (MV_amperage * MV_line_type))
+                MV_amperage = self.MV_LV_sub_station_type / self.MV_line_type
+                No_of_MV_lines = ceil(peak_load / (MV_amperage * self.MV_line_type))
                 MV_km = additional_mv_line_length * No_of_MV_lines
             elif self.grid_price > 0:
-                HV_amperage = HV_LV_sub_station_type / HV_line_type
-                No_of_HV_lines = ceil(peak_load / (HV_amperage * HV_line_type))
+                HV_amperage = self.HV_LV_sub_station_type / self.HV_line_type
+                No_of_HV_lines = ceil(peak_load / (HV_amperage * self.HV_line_type))
                 HV_km = additional_mv_line_length * No_of_HV_lines
 
-            Smax = peak_load / power_factor
-            max_tranformer_area = pi * LV_line_max_length ** 2
+            Smax = peak_load / self.power_factor
+            max_tranformer_area = pi * self.LV_line_max_length ** 2
             total_nodes = (people / num_people_per_hh) + productive_nodes
 
             try:
-                no_of_service_transf = ceil(max(Smax / service_Transf_type, total_nodes / max_nodes_per_serv_trans,
+                no_of_service_transf = ceil(max(Smax / self.service_Transf_type, total_nodes / self.max_nodes_per_serv_trans,
                                                 grid_cell_area / max_tranformer_area))
             except ValueError:
                 no_of_service_transf = 1
@@ -596,7 +596,7 @@ class Technology:
             cluster_radius = (grid_cell_area / pi) ** 0.5
 
             # Sizing LV lines in settlement
-            if 2 / 3 * cluster_radius * transformer_load * 1000 < load_moment:
+            if 2 / 3 * cluster_radius * transformer_load * 1000 < self.load_moment:
                 cluster_lv_lines_length = 2 / 3 * cluster_radius * no_of_service_transf
                 cluster_mv_lines_length = 0
             else:
@@ -615,13 +615,13 @@ class Technology:
             No_of_HV_MV_subs += additional_transformer  # to connect the MV line to the HV grid
 
             if cluster_mv_lines_length > 0 and HV_km > 0:
-                No_of_HV_MV_subs = ceil(peak_load / HV_LV_sub_station_type)  # 1
+                No_of_HV_MV_subs = ceil(peak_load / self.HV_LV_sub_station_type)  # 1
             elif cluster_mv_lines_length > 0 and MV_km > 0:
-                No_of_MV_MV_subs = ceil(peak_load / MV_LV_sub_station_type)  # 1
+                No_of_MV_MV_subs = ceil(peak_load / self.MV_LV_sub_station_type)  # 1
             elif cluster_lv_lines_length > 0 and HV_km > 0:
-                No_of_HV_LV_subs = ceil(peak_load / HV_LV_sub_station_type)  # 1
+                No_of_HV_LV_subs = ceil(peak_load / self.HV_LV_sub_station_type)  # 1
             else:
-                No_of_MV_LV_subs = ceil(peak_load / MV_LV_sub_station_type)  # 1
+                No_of_MV_LV_subs = ceil(peak_load / self.MV_LV_sub_station_type)  # 1
 
             LV_km = cluster_lv_lines_length + transformer_lv_lines_length
             MV_km  # += cluster_mv_lines_length
@@ -666,18 +666,18 @@ class Technology:
         conf_grid_pen = {0: 1, 1: 1.1, 2: 1.25, 3: 1.5, 4: 2}
         # The investment and O&M costs are different for grid and non-grid solutions
         if self.grid_price > 0:
-            td_investment_cost = (hv_lines_total_length * HV_line_cost * (
+            td_investment_cost = (hv_lines_total_length * self.HV_line_cost * (
                     1 + self.existing_grid_cost_ratio * elec_loop) +
-                                  mv_lines_connection_length * MV_line_cost * (
+                                  mv_lines_connection_length * self.MV_line_cost * (
                                           1 + self.existing_grid_cost_ratio * elec_loop) +
-                                  total_lv_lines_length * LV_line_cost +
-                                  mv_lines_distribution_length * MV_line_cost +
-                                  num_transformers * service_Transf_cost +
+                                  total_lv_lines_length * self.LV_line_cost +
+                                  mv_lines_distribution_length * self.MV_line_cost +
+                                  num_transformers * self.service_Transf_cost +
                                   total_nodes * self.connection_cost_per_hh +
-                                  No_of_HV_LV_substation * HV_LV_sub_station_cost +
-                                  No_of_HV_MV_substation * HV_MV_sub_station_cost +
-                                  No_of_MV_MV_substation * MV_MV_sub_station_cost +
-                                  No_of_MV_LV_substation * MV_LV_sub_station_cost) * conf_grid_pen[conf_status]
+                                  No_of_HV_LV_substation * self.HV_LV_sub_station_cost +
+                                  No_of_HV_MV_substation * self.HV_MV_sub_station_cost +
+                                  No_of_MV_MV_substation * self.MV_MV_sub_station_cost +
+                                  No_of_MV_LV_substation * self.MV_LV_sub_station_cost) * conf_grid_pen[conf_status]
             td_investment_cost = td_investment_cost * grid_penalty_ratio
             td_om_cost = td_investment_cost * self.om_of_td_lines
 
@@ -690,9 +690,9 @@ class Technology:
             conflict_mg_pen = {0: 1, 1: 1.05, 2: 1.125, 3: 1.25, 4: 1.5}
             total_lv_lines_length *= 0 if self.standalone else 1
             mv_lines_distribution_length *= 0 if self.standalone else 1
-            mv_total_line_cost = MV_line_cost * mv_lines_distribution_length * conflict_mg_pen[conf_status]
-            lv_total_line_cost = LV_line_cost * total_lv_lines_length * conflict_mg_pen[conf_status]
-            service_transformer_total_cost = 0 if self.standalone else num_transformers * service_Transf_cost * \
+            mv_total_line_cost = self.MV_line_cost * mv_lines_distribution_length * conflict_mg_pen[conf_status]
+            lv_total_line_cost = self.LV_line_cost * total_lv_lines_length * conflict_mg_pen[conf_status]
+            service_transformer_total_cost = 0 if self.standalone else num_transformers * self.service_Transf_cost * \
                                                                        conflict_mg_pen[conf_status]
             installed_capacity = peak_load / capacity_factor
             td_investment_cost = mv_total_line_cost + lv_total_line_cost + total_nodes * self.connection_cost_per_hh + service_transformer_total_cost
@@ -798,18 +798,18 @@ class Technology:
                 return np.sum(discounted_investments) + self.grid_capacity_investment * peak_load
             #return np.sum(discounted_investments) + (self.grid_capacity_investment * peak_load)
         elif get_investment_cost_lv:
-            return total_lv_lines_length * (LV_line_cost * conf_grid_pen[conf_status])
+            return total_lv_lines_length * (self.LV_line_cost * conf_grid_pen[conf_status])
         elif get_investment_cost_mv:
-            return (mv_lines_connection_length * MV_line_cost * (1 + self.existing_grid_cost_ratio * elec_loop) +
-                    mv_lines_distribution_length * MV_line_cost) * conf_grid_pen[conf_status]
+            return (mv_lines_connection_length * self.MV_line_cost * (1 + self.existing_grid_cost_ratio * elec_loop) +
+                    mv_lines_distribution_length * self.MV_line_cost) * conf_grid_pen[conf_status]
         elif get_investment_cost_hv:
-            return hv_lines_total_length * (HV_line_cost * conf_grid_pen[conf_status]) * \
+            return hv_lines_total_length * (self.HV_line_cost * conf_grid_pen[conf_status]) * \
                    (1 + self.existing_grid_cost_ratio * elec_loop)
         elif get_investment_cost_transformer:
-            return (No_of_HV_LV_substation * HV_LV_sub_station_cost +
-                    No_of_HV_MV_substation * HV_MV_sub_station_cost +
-                    No_of_MV_MV_substation * MV_MV_sub_station_cost +
-                    No_of_MV_LV_substation * MV_LV_sub_station_cost) * conf_grid_pen[conf_status]
+            return (No_of_HV_LV_substation * self.HV_LV_sub_station_cost +
+                    No_of_HV_MV_substation * self.HV_MV_sub_station_cost +
+                    No_of_MV_MV_substation * self.MV_MV_sub_station_cost +
+                    No_of_MV_LV_substation * self.MV_LV_sub_station_cost) * conf_grid_pen[conf_status]
         elif get_investment_cost_connection:
             return total_nodes * self.connection_cost_per_hh
         elif get_capacity:
