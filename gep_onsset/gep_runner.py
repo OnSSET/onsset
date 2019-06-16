@@ -83,13 +83,14 @@ elif choice == 2:
         start_year = int(SpecsData.loc[0, SPE_START_YEAR])
         end_year = int(SpecsData.loc[0, SPE_END_YEAR])
 
+        intermediate_year = 2025
         elec_actual = SpecsData.loc[0, SPE_ELEC]
         elec_actual_urban = SpecsData.loc[0, SPE_ELEC_URBAN]
         elec_actual_rural = SpecsData.loc[0, SPE_ELEC_RURAL]
         pop_tot = SpecsData.loc[0, SPE_POP]
 
         urban_modelled = onsseter.calibrate_pop_and_urban(pop_actual, pop_future_high, pop_future_low, urban_current,
-                                                          urban_future, start_year, end_year)
+                                                          urban_future, start_year, end_year, intermediate_year)
 
         elec_modelled, rural_elec_ratio, urban_elec_ratio = \
             onsseter.elec_current_and_future(elec_actual, elec_actual_urban, elec_actual_rural, pop_tot, start_year)

@@ -1057,7 +1057,7 @@ class SettlementProcessor:
             self.df[SET_WTFtier + "{}".format(num)] = wb_tiers_all[num]
 
     def calibrate_pop_and_urban(self, pop_actual, pop_future_high, pop_future_low, urban_current, urban_future,
-                                start_year, end_year):
+                                start_year, end_year, intermediate_year):
         """
         Calibrate the actual current population, the urban split and forecast the future population
         """
@@ -1069,7 +1069,7 @@ class SettlementProcessor:
         # And use this ratio to calibrate the population in a new column
         self.df[SET_POP_CALIB] = self.df.apply(lambda row: row[SET_POP] * pop_ratio, axis=1)
         self.df[SET_ELEC_POP_CALIB] = self.df[SET_ELEC_POP] * pop_ratio
-        if max(self.df[SET_URBAN]) == 2:
+        if max(self.df[SET_URBAN]) == 3: # THIS OPTION IS CURRENTLY DISABLED
             calibrate = True if 'n' in input(
                 'Use urban definition from GIS layer <y/n> (n=model calibration):') else False
         else:
@@ -1128,7 +1128,7 @@ class SettlementProcessor:
             yearly_rural_growth_rate_low = rural_growth_low ** (1 / project_life)
 
         # RUN_PARAM: Define here the years for which results should be provided in the output file.
-        yearsofanalysis = [2025, 2030]
+        yearsofanalysis = [intermediate_year, end_year]
 
         for year in yearsofanalysis:
             self.df[SET_POP + "{}".format(year) + 'High'] = self.df.apply(lambda row: row[SET_POP_CALIB] *
@@ -1631,45 +1631,51 @@ class SettlementProcessor:
         if prio == 2:
             changes = []
             for unelec in unelectrified:
-                if planned_td_dist[unelec] < auto_intensification:
-                    consumption = enerperhh[unelec]  # kWh/year
-                    average_load = consumption / (1 - grid_calc.distribution_losses) / HOURS_PER_YEAR  # kW
-                    peak_load = average_load / grid_calc.base_to_peak_load_ratio  # kW
-                    dist = planned_td_dist[unelec]
-                    dist_adjusted = grid_penalty_ratio[unelec] * dist
+                try:
+                    if planned_td_dist[unelec] < auto_intensification:
+                        consumption = enerperhh[unelec]  # kWh/year
+                        average_load = consumption / (1 - grid_calc.distribution_losses) / HOURS_PER_YEAR  # kW
+                        peak_load = average_load / grid_calc.base_to_peak_load_ratio  # kW
+                        dist = planned_td_dist[unelec]
+                        dist_adjusted = grid_penalty_ratio[unelec] * dist
 
-                    grid_lcoe = 0.001
+                        grid_lcoe = 0.001
 
-                    if (new_grid_capacity + peak_load < grid_capacity_limit) \
-                            and (new_connections[unelec] / nupppphh[unelec] < grid_connect_limit):
-                        new_lcoes[unelec] = grid_lcoe
-                        cell_path_real[unelec] = dist
-                        cell_path_adjusted[unelec] = dist_adjusted
-                        new_grid_capacity += peak_load
-                        grid_connect_limit -= new_connections[unelec] / nupppphh[unelec]
-                        elecorder[unelec] = 0
-                        changes.append(unelec)
+                        if (new_grid_capacity + peak_load < grid_capacity_limit) \
+                                and (new_connections[unelec] / nupppphh[unelec] < grid_connect_limit):
+                            new_lcoes[unelec] = grid_lcoe
+                            cell_path_real[unelec] = dist
+                            cell_path_adjusted[unelec] = dist_adjusted
+                            new_grid_capacity += peak_load
+                            grid_connect_limit -= new_connections[unelec] / nupppphh[unelec]
+                            elecorder[unelec] = 0
+                            changes.append(unelec)
+                except KeyError:
+                    pass
 
             electrified.extend(changes[:])
             unelectrified = set(unelectrified).difference(electrified)
 
         filtered_unelectrified = []
         for unelec in unelectrified:
-            grid_lcoe = grid_calc.get_lcoe(energy_per_cell=enerperhh[unelec],
-                                           start_year=year - timestep,
-                                           end_year=end_year,
-                                           people=pop[unelec],
-                                           new_connections=new_connections[unelec],
-                                           total_energy_per_cell=total_energy_per_cell[unelec],
-                                           prev_code=prev_code[unelec],
-                                           num_people_per_hh=nupppphh[unelec],
-                                           grid_cell_area=grid_cell_area[unelec],
-                                           conf_status=confl[unelec],
-                                           travel_hours=travl[unelec],
-                                           additional_mv_line_length=0,
-                                           elec_loop=0)
-            if grid_lcoe < min_code_lcoes[unelec]:
-                filtered_unelectrified.append(unelec)
+            try:
+                grid_lcoe = grid_calc.get_lcoe(energy_per_cell=enerperhh[unelec],
+                                               start_year=year - timestep,
+                                               end_year=end_year,
+                                               people=pop[unelec],
+                                               new_connections=new_connections[unelec],
+                                               total_energy_per_cell=total_energy_per_cell[unelec],
+                                               prev_code=prev_code[unelec],
+                                               num_people_per_hh=nupppphh[unelec],
+                                               grid_cell_area=grid_cell_area[unelec],
+                                               conf_status=confl[unelec],
+                                               travel_hours=travl[unelec],
+                                               additional_mv_line_length=0,
+                                               elec_loop=0)
+                if grid_lcoe < min_code_lcoes[unelec]:
+                    filtered_unelectrified.append(unelec)
+            except KeyError:
+                pass
         unelectrified = filtered_unelectrified
 
 
