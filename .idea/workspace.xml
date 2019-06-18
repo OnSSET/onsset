@@ -9,39 +9,12 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="FileEditorManager">
-    <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/setup.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="527">
-              <caret line="31" column="46" selection-start-line="31" selection-start-column="46" selection-end-line="31" selection-end-column="46" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/gep_onsset/__init__.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="170">
-              <caret line="10" selection-start-line="10" selection-end-line="10" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/gep_onsset/gep_runner.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="6256">
-              <caret line="373" column="40" selection-start-line="373" selection-start-column="40" selection-end-line="373" selection-end-column="40" />
-            </state>
-          </provider>
-        </entry>
-      </file>
+    <leaf>
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/gep_onsset/gep_onsset.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="626">
-              <caret line="2672" column="55" lean-forward="true" selection-start-line="2672" selection-start-column="55" selection-end-line="2672" selection-end-column="55" />
+            <state relative-caret-position="252">
+              <caret line="2069" column="89" lean-forward="true" selection-start-line="2069" selection-start-column="89" selection-end-line="2069" selection-end-column="89" />
             </state>
           </provider>
         </entry>
@@ -266,6 +239,7 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-7" y="-7" width="1550" height="838" extended-state="6" />
+    <editor active="true" />
     <layout>
       <window_info content_ui="combo" id="Project" order="0" weight="0.24983476" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
@@ -345,8 +319,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/gep_onsset/gep_onsset.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="626">
-          <caret line="2672" column="55" lean-forward="true" selection-start-line="2672" selection-start-column="55" selection-end-line="2672" selection-end-column="55" />
+        <state relative-caret-position="252">
+          <caret line="2069" column="89" lean-forward="true" selection-start-line="2069" selection-start-column="89" selection-end-line="2069" selection-end-column="89" />
         </state>
       </provider>
     </entry>
