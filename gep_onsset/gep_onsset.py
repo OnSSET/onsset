@@ -1721,8 +1721,7 @@ class SettlementProcessor:
 
                 node = (x[unelec], y[unelec])
                 closest_elec_node = closest_elec(node, elec_nodes2)
-                dist = haversine(x[electrified[closest_elec_node]], y[electrified[closest_elec_node]], x[unelec],
-                                 y[unelec])
+                dist = planned_mv_dist[unelec]
                 dist_adjusted = grid_penalty_ratio[unelec] * dist
                 if dist + cell_path_real[
                     electrified[closest_elec_node]] <= max_dist:  # or year - timestep == start_year: CHECK
