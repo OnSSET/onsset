@@ -1,7 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="e93a7d35-a972-4eb6-920b-c6aa8e928aaf" name="Default Changelist" comment="" />
+    <list default="true" id="e93a7d35-a972-4eb6-920b-c6aa8e928aaf" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/gep-onsset.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/gep-onsset.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/GEP_Generator.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/GEP_Generator.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gep_onsset/gep_onsset.py" beforeDir="false" afterPath="$PROJECT_DIR$/gep_onsset/gep_onsset.py" afterDir="false" />
+    </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -9,12 +15,29 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="FileEditorManager">
-    <leaf>
-      <file pinned="false" current-in-tab="true">
+    <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/gep_onsset/gep_onsset.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="252">
-              <caret line="2069" column="89" lean-forward="true" selection-start-line="2069" selection-start-column="89" selection-end-line="2069" selection-end-column="89" />
+            <state relative-caret-position="137">
+              <caret line="3114" lean-forward="true" selection-start-line="3114" selection-end-line="3114" />
+              <folding>
+                <element signature="e#153159#158453#0" />
+                <element signature="e#146535#150309#0" />
+                <element signature="e#150357#154688#0" />
+                <element signature="e#154736#155227#0" />
+                <element signature="e#171516#172584#0" />
+                <element signature="e#172757#173507#0" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/gep_onsset/gep_runner.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="149">
+              <caret line="348" column="32" lean-forward="true" selection-start-line="348" selection-start-column="32" selection-end-line="348" selection-end-column="32" />
             </state>
           </provider>
         </entry>
@@ -23,16 +46,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>elec_current</find>
-      <find>read_csv</find>
-      <find>pd.read</find>
-      <find>total_energy_</find>
-      <find>set_total_energy_per_cell</find>
-      <find>set_defaul</find>
-      <find>distribution_losses</find>
-      <find>HV_line_cost</find>
-      <find>MV_line_type</find>
-      <find>MV_line_amperage_limit</find>
       <find>MV_line_cost</find>
       <find>LV_line_type</find>
       <find>LV_line_max_length</find>
@@ -49,6 +62,20 @@
       <find>power_factor</find>
       <find>load_moment</find>
       <find>further</find>
+      <find>elec_extension</find>
+      <find>def get_lcoe</find>
+      <find>planned_td_dist</find>
+      <find>pre_electrification</find>
+      <find>pre_new_lines</find>
+      <find>get_unelectrified_rows</find>
+      <find>apply_limitat</find>
+      <find>current_mv_</find>
+      <find>apply_limitations</find>
+      <find>mv_lines</find>
+      <find>mv_line_dis</find>
+      <find>apply_limit</find>
+      <find>auto</find>
+      <find>apply_limi</find>
     </findStrings>
     <replaceStrings>
       <replace>self.HV_line_type</replace>
@@ -83,11 +110,13 @@
         <option value="$PROJECT_DIR$/docs/source/conf.py" />
         <option value="$PROJECT_DIR$/gep_onsset/__init__.py" />
         <option value="$PROJECT_DIR$/gep_onsset/gep_onsset.py" />
+        <option value="$PROJECT_DIR$/gep_onsset/gep_runner.py" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds" extendedState="6">
-    <option name="x" value="675" />
+    <option name="x" value="-10" />
+    <option name="y" value="-10" />
     <option name="width" value="700" />
     <option name="height" value="735" />
   </component>
@@ -95,29 +124,11 @@
     <navigator proportions="" version="1">
       <foldersAlwaysOnTop value="true" />
     </navigator>
-    <panes>
-      <pane id="Scope" />
-      <pane id="ProjectPane">
-        <subPane>
-          <expand>
-            <path>
-              <item name="gep-onsset" type="b2602c69:ProjectViewProjectNode" />
-              <item name="gep-onsset" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="gep-onsset" type="b2602c69:ProjectViewProjectNode" />
-              <item name="gep-onsset" type="462c0819:PsiDirectoryNode" />
-              <item name="gep_onsset" type="462c0819:PsiDirectoryNode" />
-            </path>
-          </expand>
-          <select />
-        </subPane>
-      </pane>
-    </panes>
+    <panes />
   </component>
   <component name="PropertiesComponent">
     <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="last_opened_file_path" value="C:/" />
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
   </component>
   <component name="RunDashboard">
@@ -132,7 +143,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.gep_runner">
+  <component name="RunManager" selected="Python.gep_runner (1)">
     <configuration name="gep-onsset" type="PythonConfigurationType" factoryName="Python">
       <module name="gep-onsset" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -196,6 +207,27 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <configuration name="gep_runner (1)" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="gep-onsset" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/gep_onsset" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/gep_onsset/gep_runner.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <configuration name="gep_runner" type="PythonConfigurationType" factoryName="Python">
       <module name="gep-onsset" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -222,7 +254,13 @@
       <item itemvalue="Python.gep-runner" />
       <item itemvalue="Python.gep_onsset" />
       <item itemvalue="Python.gep_runner" />
+      <item itemvalue="Python.gep_runner (1)" />
     </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python.gep_runner (1)" />
+      </list>
+    </recent_temporary>
   </component>
   <component name="SvnConfiguration">
     <configuration />
@@ -239,47 +277,25 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-7" y="-7" width="1550" height="838" extended-state="6" />
-    <editor active="true" />
     <layout>
       <window_info content_ui="combo" id="Project" order="0" weight="0.24983476" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" />
-      <window_info anchor="bottom" id="Run" order="2" weight="0.3289689" />
+      <window_info anchor="bottom" id="Run" order="2" weight="0.3286119" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" />
       <window_info anchor="bottom" id="Version Control" order="7" />
-      <window_info anchor="bottom" id="Terminal" order="8" />
-      <window_info anchor="bottom" id="Event Log" order="9" side_tool="true" />
+      <window_info anchor="bottom" id="Event Log" order="8" side_tool="true" />
+      <window_info anchor="bottom" id="Terminal" order="9" weight="0.3286119" />
       <window_info anchor="bottom" id="Python Console" order="10" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
     </layout>
-  </component>
-  <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/gep_onsset/gep_onsset.py</url>
-          <line>2646</line>
-          <option name="timeStamp" value="1" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/gep_onsset/gep_onsset.py</url>
-          <line>2647</line>
-          <option name="timeStamp" value="2" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/gep_onsset/gep_onsset.py</url>
-          <line>2648</line>
-          <option name="timeStamp" value="3" />
-        </line-breakpoint>
-      </breakpoints>
-    </breakpoint-manager>
   </component>
   <component name="editorHistoryManager">
     <entry file="file://$PROJECT_DIR$/gep-onsset/gep-runner.py" />
@@ -310,17 +326,37 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/gep_onsset/gep_runner.py">
+    <entry file="file:////ug.kth.se/dfs/home/a/s/asahl/appdata/xp.V2/Documents/Bolivia/onsset (2).py" />
+    <entry file="file:////ug.kth.se/dfs/home/a/s/asahl/appdata/xp.V2/Documents/Bolivia/runner (2).py" />
+    <entry file="file://P:/ITM/egi_esa/IEA_WEO_2017/WEO_codes_SEP/CSVmerger.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="6256">
-          <caret line="373" column="40" selection-start-line="373" selection-start-column="40" selection-end-line="373" selection-end-column="40" />
+        <state relative-caret-position="259">
+          <caret line="28" column="27" lean-forward="true" selection-start-line="28" selection-start-column="27" selection-end-line="28" selection-end-column="27" />
+          <folding>
+            <element signature="e#0#19#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/gep_onsset/gep_onsset.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="252">
-          <caret line="2069" column="89" lean-forward="true" selection-start-line="2069" selection-start-column="89" selection-end-line="2069" selection-end-column="89" />
+        <state relative-caret-position="137">
+          <caret line="3114" lean-forward="true" selection-start-line="3114" selection-end-line="3114" />
+          <folding>
+            <element signature="e#153159#158453#0" />
+            <element signature="e#146535#150309#0" />
+            <element signature="e#150357#154688#0" />
+            <element signature="e#154736#155227#0" />
+            <element signature="e#171516#172584#0" />
+            <element signature="e#172757#173507#0" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/gep_onsset/gep_runner.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="149">
+          <caret line="348" column="32" lean-forward="true" selection-start-line="348" selection-start-column="32" selection-end-line="348" selection-end-column="32" />
         </state>
       </provider>
     </entry>
