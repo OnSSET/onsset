@@ -803,7 +803,7 @@ class Technology:
             if mg_hybrid:
                 return add_investments + np.sum(discounted_investments)
             else:
-                return np.sum(discounted_investments) + self.grid_capacity_investment * peak_load
+                return np.sum(discounted_investments) + self.grid_capacity_investment * peak_load / discount_factor[step]
         elif get_investment_cost_lv:
             return total_lv_lines_length * (self.LV_line_cost * conf_grid_pen[conf_status])
         elif get_investment_cost_mv:
