@@ -878,7 +878,7 @@ class SettlementProcessor:
         self.df.fillna(0, inplace=True)
 
         logging.info('Sort by country, Y and X')
-        self.df.sort_values(by=[SET_COUNTRY, SET_Y_DEG, SET_X_DEG], inplace=True)
+        self.df.sort_values(by=[SET_Y_DEG, SET_X_DEG], inplace=True)
 
     def grid_penalties(self):
         """
@@ -1350,9 +1350,9 @@ class SettlementProcessor:
 
             print('The modelled electrification rate achieved is {0:.2f}.'
                   'Urban elec. rate is {1:.2f} and Rural elec. rate is {2:.2f}. \n'
-                  'If this is not acceptable please revise this part of the algorithm'.format(elec_modelled,
-                                                                                              urban_elec_ratio,
-                                                                                              rural_elec_ratio))
+                  'If this is not acceptable please revise this part of the algorithm'.format(elec_modelled-elec_actual,
+                                                                                              urban_elec_ratio-elec_actual_urban,
+                                                                                              rural_elec_ratio-elec_actual_rural))
             condition = 1
 
         self.df[SET_ELEC_FUTURE_GRID + "{}".format(start_year)] = \
@@ -2348,7 +2348,7 @@ class SettlementProcessor:
 
         logging.info('Determine electrification limits')
         choice = int(prioritization)
-
+        elec_limit_origin = eleclimit
         if (eleclimit == 1) & (choice != 4):
             self.df[SET_LIMIT + "{}".format(year)] = 1
             self.df[SET_INVEST_PER_CAPITA + "{}".format(year)] = self.df[SET_INVESTMENT_COST + "{}".format(year)] / \
@@ -2668,7 +2668,7 @@ class SettlementProcessor:
                 self.df.loc[
                     self.df[SET_MIN_OVERALL_LCOE + "{}".format(year)] > min_lcoe, SET_LIMIT + "{}".format(year)] = 0
 
-        print("The electrification rate achieved in {} is {:.1f} %".format(year, elecrate * 100))
+        print("The electrification rate achieved in {} is {:.1f} %".format(year, elecrate - elec_limit_origin))
 
     def final_decision(self, mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc,
                        sa_diesel_calc, grid_calc, hybrid_1, hybrid_2, hybrid_3, hybrid_4, hybrid_5, year, end_year,
