@@ -44,7 +44,7 @@ if choice == 1:
         df.loc[df[SET_COUNTRY] == country].to_csv(base_dir + '.csv', index=False)
 
 elif choice == 2:
-    SpecsData = pd.read_excel(specs_path, sheet_name='SpecsData')
+    SpecsData = pd.read_excel(specs_path, sheetname='SpecsData')
     messagebox.showinfo('OnSSET', 'Open the file containing separated countries')
     base_dir = filedialog.askopenfilename()
     messagebox.showinfo('OnSSET', 'Browse to result folder and name the calibrated file')
@@ -53,7 +53,7 @@ elif choice == 2:
     print('\n --- Prepping --- \n')
 
     for country in countries:
-        print(country)
+        print(SpecsData.loc[0, SPE_COUNTRY])
         settlements_in_csv = base_dir
         settlements_out_csv = output_dir + '.csv'
 
@@ -131,11 +131,11 @@ elif choice == 3:
 
     print('\n --- Running scenario --- \n')
 
-    ScenarioInfo = pd.read_excel(specs_path, sheet_name='ScenarioInfo')
+    ScenarioInfo = pd.read_excel(specs_path, sheetname='ScenarioInfo')
     Scenarios = ScenarioInfo['Scenario']
-    ScenarioParameters = pd.read_excel(specs_path, sheet_name='ScenarioParameters')
-    SpecsData = pd.read_excel(specs_path, sheet_name='SpecsDataCalib')
-
+    ScenarioParameters = pd.read_excel(specs_path, sheetname='ScenarioParameters')
+    SpecsData = pd.read_excel(specs_path, sheetname='SpecsDataCalib')
+    print(SpecsData.loc[0, SPE_COUNTRY])
     for scenario in Scenarios:
         print('Scenario: ' + str(scenario + 1))
         countryID = SpecsData.iloc[0]['CountryCode']
