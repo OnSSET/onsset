@@ -2668,7 +2668,7 @@ class SettlementProcessor:
                 self.df.loc[
                     self.df[SET_MIN_OVERALL_LCOE + "{}".format(year)] > min_lcoe, SET_LIMIT + "{}".format(year)] = 0
 
-        print("The electrification rate achieved in {} is {:.1f} %".format(year, elecrate - elec_limit_origin))
+        print("The electrification rate achieved in {} is {:.1f} %".format(year, (elecrate - elec_limit_origin)*100))
 
     def final_decision(self, mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc,
                        sa_diesel_calc, grid_calc, hybrid_1, hybrid_2, hybrid_3, hybrid_4, hybrid_5, year, end_year,
