@@ -1,16 +1,11 @@
 Welcome to gep_onsset User's Guide!
 ===============================================
 
-.. figure::  images/test.png
-   :align:   center
-
-Package Name
+gep_onsset
 +++++++++++++++++++++++++++++++++++++++++
-At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident, similique sunt in culpa qui officia deserunt mollitia animi, id est laborum et dolorum fuga. 
+**gep_onsset** is a modified version of OnSSET model, openly distributed as `gep-onsset. <https://github.com/global-electrification-platform/gep-onsset>`_. It was developed to support the functionalities of the `Global electrification Platform <http://www.globalelectrificationplatform.com/>`_. The package is available at `pypi <https://test.pypi.org/project/gep-onsset/>`_ but installation is also possible through github.
 
-Et harum quidem rerum facilis est et expedita distinctio. Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat facere possimus, omnis voluptas assumenda est, omnis dolor repellendus. Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe eveniet ut et voluptates repudiandae sint et molestiae non recusandae. 
-
-Itaque earum rerum hic tenetur a sapiente delectus, ut aut reiciendis voluptatibus maiores alias consequatur aut perferendis doloribus asperiores repellat
+.. note::  This user guide is currently under development. Fully-fledged documentation over the use of **gep_onsset** will become available later in 2019. In the meantime feel free to take sneak peek of similar supporting material `here <https://onsset-manual.readthedocs.io/en/latest/>`_.
 
 Contents
 +++++++++++++++++++++
@@ -18,13 +13,9 @@ Contents
 .. toctree::
    :maxdepth: 3
 
-   Overview
-   Input data
-   Scenario run
-   Results
-   FAQ
-   Contact
-   License
+   Overview.rst
+   Contact.rst
+   License.rst
 
 
 
