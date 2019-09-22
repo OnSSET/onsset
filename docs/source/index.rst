@@ -13,9 +13,9 @@ Contents
 .. toctree::
    :maxdepth: 3
 
-   Overview.rst
-   Contact.rst
-   License.rst
+   Overview
+   Contact
+   License
 
 
 
