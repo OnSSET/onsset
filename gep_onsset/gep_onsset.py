@@ -1247,7 +1247,7 @@ class SettlementProcessor:
                             break
 
                 pop_elec = self.df.loc[self.df[SET_ELEC_CURRENT] == 1, SET_ELEC_POP_CALIB].sum()
-                elec_modelled = pop_elec / pop_tot
+                elec_modelled = pop_elec / total_pop
 
                 # REVIEW. Added new calibration step for pop not meeting original steps, if prev elec pop is too small
                 i = 0
@@ -1256,8 +1256,8 @@ class SettlementProcessor:
                     if i < 50:
                         pop_elec_2 = self.df.loc[(self.df[SET_ELEC_CURRENT] == 0) & (self.df[SET_POP_CALIB] > min_pop) &
                                                  (self.df[SET_CALIB_GRID_DIST] < td_dist_2), SET_POP_CALIB].sum()
-                        if (pop_elec + pop_elec_2) / pop_tot > elec_actual:
-                            elec_modelled = (pop_elec + pop_elec_2) / pop_tot
+                        if (pop_elec + pop_elec_2) / total_pop > elec_actual:
+                            elec_modelled = (pop_elec + pop_elec_2) / total_pop
                             self.df.loc[(self.df[SET_ELEC_CURRENT] == 0) & (self.df[SET_POP_CALIB] > min_pop) &
                                         (self.df[SET_CALIB_GRID_DIST] < td_dist_2), SET_ELEC_POP_CALIB] = self.df[
                                 SET_POP_CALIB]
@@ -1272,13 +1272,13 @@ class SettlementProcessor:
                             SET_POP_CALIB]
                         self.df.loc[(self.df[SET_ELEC_CURRENT] == 0) & (self.df[SET_POP_CALIB] > min_pop) &
                                     (self.df[SET_CALIB_GRID_DIST] < td_dist_2), SET_ELEC_CURRENT] = 1
-                        elec_modelled = (pop_elec + pop_elec_2) / pop_tot
+                        elec_modelled = (pop_elec + pop_elec_2) / total_pop
                         break
 
                 if elec_modelled > elec_actual:
                     self.df[SET_ELEC_POP_CALIB] *= elec_actual / elec_modelled
                 pop_elec = self.df.loc[self.df[SET_ELEC_CURRENT] == 1, SET_ELEC_POP_CALIB].sum()
-                elec_modelled = pop_elec / pop_tot
+                elec_modelled = pop_elec / total_pop
 
             # RUN_PARAM: Calibration parameters if only HV lines are available
             else:
@@ -1310,7 +1310,7 @@ class SettlementProcessor:
                         "The rural settlements identified as electrified are lower than in statistics; Please re-adjust the calibration conditions")
 
                 pop_elec = self.df.loc[self.df[SET_ELEC_CURRENT] == 1, SET_ELEC_POP_CALIB].sum()
-                elec_modelled = pop_elec / pop_tot
+                elec_modelled = pop_elec / total_pop
 
                 # REVIEW. Added new calibration step for pop not meeting original steps, if prev elec pop is too small
                 i = 0
@@ -1319,8 +1319,8 @@ class SettlementProcessor:
                     if i < 50:
                         pop_elec_2 = self.df.loc[(self.df[SET_ELEC_CURRENT] == 0) & (self.df[SET_POP_CALIB] > min_pop) &
                                                  (self.df[SET_CALIB_GRID_DIST] < td_dist_2), SET_POP_CALIB].sum()
-                        if (pop_elec + pop_elec_2) / pop_tot > elec_actual:
-                            elec_modelled = (pop_elec + pop_elec_2) / pop_tot
+                        if (pop_elec + pop_elec_2) / total_pop > elec_actual:
+                            elec_modelled = (pop_elec + pop_elec_2) / total_pop
                             self.df.loc[(self.df[SET_ELEC_CURRENT] == 0) & (self.df[SET_POP_CALIB] > min_pop) &
                                         (self.df[SET_CALIB_GRID_DIST] < td_dist_2), SET_ELEC_POP_CALIB] = self.df[
                                 SET_POP_CALIB]
@@ -1335,13 +1335,13 @@ class SettlementProcessor:
                             SET_POP_CALIB]
                         self.df.loc[(self.df[SET_ELEC_CURRENT] == 0) & (self.df[SET_POP_CALIB] > min_pop) &
                                     (self.df[SET_CALIB_GRID_DIST] < td_dist_2), SET_ELEC_CURRENT] = 1
-                        elec_modelled = (pop_elec + pop_elec_2) / pop_tot
+                        elec_modelled = (pop_elec + pop_elec_2) / total_pop
                         break
 
                 if elec_modelled > elec_actual:
                     self.df[SET_ELEC_POP_CALIB] *= elec_actual / elec_modelled
                 pop_elec = self.df.loc[self.df[SET_ELEC_CURRENT] == 1, SET_ELEC_POP_CALIB].sum()
-                elec_modelled = pop_elec / pop_tot
+                elec_modelled = pop_elec / total_pop
 
             urban_elec_ratio = self.df.loc[(self.df[SET_ELEC_CURRENT] == 1) & (
                     self.df[SET_URBAN] > 1), SET_ELEC_POP_CALIB].sum() / urban_pop
