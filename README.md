@@ -1,4 +1,4 @@
-gep_onsset
+onsset
 =================================
 
 [![PyPI version](https://badge.fury.io/py/gridfinder.svg)](https://test.pypi.org/project/gep-onsset/)  [![Build Status](https://travis-ci.org/global-electrification-platform/gep-onsset.svg?branch=master)](https://travis-ci.org/global-electrification-platform/gep-onsset) [![Documentation Status](https://readthedocs.org/projects/gep-onsset/badge/?version=latest)](https://gep-onsset.readthedocs.io/en/latest/?badge=latest)
@@ -7,13 +7,13 @@ Documentation: https://gep-onsset.readthedocs.io/en/latest/index.html#
 
 # Scope
 
-This repository contains the source code of the Open Source Spatial Electrification Tool ([OnSSET](http://www.onsset.org/)) as used to inform [electrification investment outlooks](http://gep-explorer.surge.sh/) for the Global Electrification Platform. The repository also includes sample test files available in ```.\test_data``` and sample output files available in ```.\sample_output```. More information on how to replicate, run and interprate results are available in [user's guide.](https://gep-onsset.readthedocs.io/en/latest/index.html#)
+This repository contains the source code of the Open Source Spatial Electrification Tool ([OnSSET](http://www.onsset.org/)). The repository also includes sample test files available in ```.\test_data``` and sample output files available in ```.\sample_output```. 
 
 ## Installation
 
 **Requirements**
 
-gep_onsset requires Python >= 3.5 with the following packages installed:
+OnSSET requires Python >= 3.5 with the following packages installed:
 - et-xmlfile>=1.0
 - jdcal>=1.4
 - numpy>=1.16
@@ -48,6 +48,5 @@ The use of GEP generator requires also installation of
 - seaborn
 
 ## Contact
-For more information regarding the tool, its functionality and implementation please contact the development team at https://www.desa.kth.se.
+For more information regarding the tool, its functionality and implementation please visit https://www.onsset.org or contact the development team at seap@desa.kth.se.
 
-For any other inquiries and potential collaboration please refer to http://www.Globalelectrificationplatform.com.
