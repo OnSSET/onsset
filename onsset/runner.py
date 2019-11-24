@@ -5,7 +5,7 @@
 # Python version: 3.5
 
 import os
-from gep_onsset import *
+from onsset import *
 import pandas as pd
 import tkinter as tk
 from tkinter import filedialog, messagebox
