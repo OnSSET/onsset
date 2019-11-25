@@ -1,34 +1,51 @@
-# OnSSET-2016
+onsset
+=================================
 
-In 2016, KTH-dESA researchers have developed an innovative geospatial electrification model called the Open Source Spatial Electrification Toolkit (**OnSSET**). 
+[![PyPI version](https://badge.fury.io/py/gridfinder.svg)](https://test.pypi.org/project/gep-onsset/)  [![Build Status](https://travis-ci.org/global-electrification-platform/gep-onsset.svg?branch=master)](https://travis-ci.org/global-electrification-platform/gep-onsset) [![Documentation Status](https://readthedocs.org/projects/gep-onsset/badge/?version=latest)](https://gep-onsset.readthedocs.io/en/latest/?badge=latest)
 
-OnSSET is  a bottom up, least cost electrification modelling tool, that estimates the most cost effective electrification option (grid, mini grid & stand-alone) for the achievement of electricity access goals. To do so, OnSSET takes into account spatially explicit characteristics related to energy. Such data include population distribution, proximity to transmission and road network, nighttime lights, local renewable energy potential among others.
+Documentation: https://gep-onsset.readthedocs.io/en/latest/index.html#
 
-OnSSET focuses on the assessment and deployment of conventional and renewable energy technologies aiming at ensuring access to affordable, reliable, sustainable and modern energy for all. It is a complementary approach to existing energy planning models which do not consider geographical characteristics related to energy and aims to provide invaluable support to policy and decision makers on least-cost electrification strategies.
+# Scope
 
-OnSSET-2016 was initially applied to Nigeria, Ethiopia and India, featuring in the World Energy Outlook 2014 and 2015 and the Global Tracking Framework 2015. It has also been applied to 44 Sub-Saharan African and 10 Latin American countries as part of the [Universal Electrification Access](https://un-modelling.github.io/modelling-tools/#geo-electricity) led by the United Nations.
+This repository contains the source code of the Open Source Spatial Electrification Tool ([OnSSET](http://www.onsset.org/)). The repository also includes sample test files available in ```.\test_data``` and sample output files available in ```.\sample_output```.
 
-# PyOnSSET
+## Installation
 
-The **PyOnSSET** folder contains the (python) scripts on which OnSSET is based upon. Together there are two sample files required for testing the model on you local machine.
+**Requirements**
 
-OnSSET-2016 requires python 3; best to install through [anaconda distribution](https://www.anaconda.com/distribution/).
-
-# Related publications
-
-**1. A GIS-based approach for electrification planning - A case study on Nigeria** (available [here)](http://www.sciencedirect.com/science/article/pii/S0973082615000952)
-
-![](/resources/nigeria_electrification_map.png "Optimal electrification mix in Nigeria")
-
-
-
-**2. The benefits of geospatial planning in energy access – A case study on Ethiopia** (available [here)](http://www.sciencedirect.com/science/article/pii/S0143622816300522)
-
-![](/resources/Ethiopia_optimalmix_LCOE.png "Optimal electrification mix and spatial levelized cost of electricity in Ethiopia")
+OnSSET requires Python >= 3.5 with the following packages installed:
+- et-xmlfile>=1.0
+- jdcal>=1.4
+- numpy>=1.16
+- openpyxl>=2.6
+- pandas>=0.24
+- python-dateutil>=2.8
+- pytz==2019.1
+- six>=1.12
+- xlrd>=1.2
 
 
+**Install with pip**
 
-**3. A cost comparison of technology approaches for improving access to electricity services** (available [here)](http://www.sciencedirect.com/science/article/pii/S036054421501631X)
+```
+python -m pip install -i https://test.pypi.org/simple/ gep-onsset
+```
 
-![](/resources/Nigeria_LCOE_surface.png "Least cost LCOEs in Nigeria as a function of the distance to the grid and population density
-")
+**Install from GitHub**
+
+Download or clone the repository and install the required packages (preferably in a virtual environment):
+
+```
+git clone https://github.com/global-electrification-platform/gep-onsset.git
+cd gep-onsset
+pip install -r requirements.txt
+```
+
+The use of GEP generator requires also installation of
+- IPython
+- jupyter
+- matplotlib
+- seaborn
+
+## Contact
+For more information regarding the tool, its functionality and implementation please visit https://www.onsset.org or contact the development team at seap@desa.kth.se.
