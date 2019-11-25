@@ -1,9 +1,9 @@
 onsset
 =================================
 
-[![PyPI version](https://badge.fury.io/py/gridfinder.svg)](https://test.pypi.org/project/gep-onsset/)  [![Build Status](https://travis-ci.org/global-electrification-platform/gep-onsset.svg?branch=master)](https://travis-ci.org/global-electrification-platform/gep-onsset) [![Documentation Status](https://readthedocs.org/projects/gep-onsset/badge/?version=latest)](https://gep-onsset.readthedocs.io/en/latest/?badge=latest)
+[![PyPI version](https://badge.fury.io/py/gridfinder.svg)](https://test.pypi.org/project/gep-onsset/)  [![Build Status](https://travis-ci.org/onsset/onsset.svg?branch=master)](https://travis-ci.org/onsset/onsset) [![Documentation Status](https://readthedocs.org/projects/onsset/badge/?version=latest)](https://onsset.readthedocs.io/en/latest/?badge=latest)
 
-Documentation: https://gep-onsset.readthedocs.io/en/latest/index.html#
+Documentation: https://onsset.readthedocs.io/en/latest/index.html#
 
 # Scope
 
@@ -28,17 +28,17 @@ OnSSET requires Python >= 3.5 with the following packages installed:
 **Install with pip**
 
 ```
-python -m pip install -i https://test.pypi.org/simple/ gep-onsset
+pip install onsset
 ```
 
 **Install from GitHub**
 
-Download or clone the repository and install the required packages (preferably in a virtual environment):
+Download or clone the repository and install the package in `develop` (editable) mode:
 
 ```
-git clone https://github.com/global-electrification-platform/gep-onsset.git
+git clone https://github.com/onsset/onsset.git
 cd gep-onsset
-pip install -r requirements.txt
+python setup.py develop
 ```
 
 The use of GEP generator requires also installation of
