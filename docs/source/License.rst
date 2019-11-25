@@ -1,7 +1,9 @@
+License
+=================================
+
 MIT License
 
-Copyright (c) 2019 Andreas Sahlberg, Alexandros Korkovelos,
-Dimitrios Mentis, Christopher Arderne, Babak Khavari
+Copyright (c) 2019 The division of Energy Systems Analysis at KTH
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
