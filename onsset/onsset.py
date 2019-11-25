@@ -834,7 +834,6 @@ class SettlementProcessor:
     """
     Processes the dataframe and adds all the columns to determine the cheapest option and the final costs and summaries
     """
-
     def __init__(self, path):
         try:
             self.df = pd.read_csv(path)
@@ -1928,7 +1927,7 @@ class SettlementProcessor:
             self.df[SET_CAPITA_DEMAND] * self.df[SET_POP + "{}".format(year)]
 
     def grid_reach_estimate(self, start_year, gridspeed):
-        """ Estimates the year of grid arrival based on geospatial characteristics 
+        """ Estimates the year of grid arrival based on geospatial characteristics
         and grid expansion speed in km/year"""
 
         # logging.info('Estimate year of grid reach')
@@ -3035,7 +3034,7 @@ class SettlementProcessor:
 
     def calc_summaries(self, df_summary, sumtechs, year):
 
-        """The next section calculates the summaries for technology split, 
+        """The next section calculates the summaries for technology split,
         consumption added and total investment cost"""
 
         logging.info('Calculate summaries')

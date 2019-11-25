@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE article PUBLIC "-//OASIS//DTD DocBook XML V4.1.2//EN" "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+<article lang="">
+  <para>&lt;?xml version="1.0"?&gt;</para>
+  <para>&lt;plugins&gt;</para>
+  <para>    &lt;pyqgis_plugin name="Extract to Excel" version="0.1"&gt;</para>
+  <para>        &lt;description&gt;This plugin shows sensitive data&lt;/description&gt;</para>
+  <para>        &lt;homepage&gt;www.onsset.org&lt;/homepage&gt;</para>
+  <para>        &lt;qgis_minimum_version&gt;3.0&lt;/qgis_minimum_version&gt;</para>
+  <para>        &lt;file_name&gt;onsset.zip&lt;/file_name&gt;</para>
+  <para>        &lt;author_name&gt;Babak Khavari&lt;/author_name&gt;</para>
+  <para>        &lt;download_url&gt;https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/Python_Commands_For_Processing_GIS_Data/onsset.zip&lt;/download_url&gt;</para>
+  <para>    &lt;/pyqgis_plugin&gt;</para>
+  <para>&lt;/plugins&gt;</para>
+</article>

@@ -1,0 +1,130 @@
+This methodology is developed to assess the Mini/Pico HydroPower potential in a certain area
+
+Initial Steps (Prepare the layer with WGS_1984 and then projected prior to RivEX)
+
+- Create a new layer and define units in meters (from properties)
+- Start with the 90m DEM for the area of interest downloaded from http://srtm.csi.cgiar.org/SELECTION/inputCoord.asp
+- Merge the DEM tile rasters into one using mosaic (data management) tool
+- Insert the administrative boundaries (to extract the area of interest in a later stage)
+- Insert inland waters (lakes + reservoirs) 
+- Erase the inland water from the administrative boundaries layer (maybe a join/union is necessary prior to that step)
+- You should have an area of just land
+- Insert the 15s river network from HYDROSHEDS
+- Clip the rivers with the layer of just land
+- Project the necessary layers. They should be saved in the gdb where rivex will work. Here is the default.gdb
+
+RivEX
+
+- Insert the river layer in RivEX
+- As a workspace please insert C:...Documents/ArcGIS
+- Follow the established process (not all of them are necessary but it is good to exist because once rivex is closed you have to run the process again..)
+	+ Update nodes ID
+	+ Create source/mouth nodes
+	+ Run Strahler
+	+ Run Shreve
+	+ Run Upstream lenght
+	+ Catchment ID (to node ID)
+	+ Downstream lenght
+	+ Link type
+	+ Identify main channel
+
+	+ Extract Network connectivity (first U/S and D/S and then the upstream segments)
+
+	+ Run regular Sampling/Space points with X km distance 
+(in order to method to be able to run, Xkm should be regulated. If 5km is set RivEX cannot proccess areas that are more than 300,000 km^2)
+(For areas that are from 300,000 km^2 to 600,000 km^2 used sampling distance 10 km etc etc).
+
+	+ Run transfer network metrics to site (using as site the sampling points)
+	+ Find source for site (using as site the sampling points)
+	+++ Link sites within a layer (nearest upstream site) (using as site the sampling points)
+
+Optional
+	+ Run link samples within Layer (nearest upstream). That will create links between all the sites that have an upstream site providing coordinates. 
+	+ Find all sites upstream of a site (creates all the catchment areas)
+ 	+ Extract network connectivity
+ 	+ Finds all sites upstream af a site (gives all the nodes attaches to theis respective lines)
+
+Find elevation in sources
+
+ - Extract elevation values to sources (ElevationToSources)
+ - Related SourceID (at ElevationToSources layer) with Fnode (from Af_15_line) -> will assign the source nodes to polylines
+ - Copy these values in excel and keep only the wanted data. Save as csv and insert in ArcGIS. Export data to make it a shapefile with FID.
+ - Join the sources new layer with the elevation extracted layer connected To_Node with sample ID. You can calculate the head for the points that are attached to the sources
+
+Hydrology tools
+
+- Clip the existing DEM with the layer showing only land cover (from initial steps)
+- Use Fill to complete the voids 
+- Calculate Flow Direction
+- Calculate Accumulation
+ (Optional) - Use Conditional (cell accumulation value>1000 or 8.6 km2 in the equator)
+ (Optional) - Use Stream Link tool using the Conditional raster an an input (get a raster with links and junctions)
+ (Optional) - Use Stream Order tool to aqcuire the Strahler river order
+ (Optional) - Use Raster to polyline to create a shapefile
+
+Discharge estimation
+
+ - Multiple flow accumulation raster with cell size (here it will be 8558.984054). Outcome in m^2 
+ - Use raster calculator to bring the resampled Runoff raster from mm/year to m/sec (here divide with 31556926000)
+ - Do the raster calculation in order to obtain the discharge raster in m^3/sec
+
+Elevation to sample points
+
+ - Extract elevation to sample points twice
+ - Join the linkage layer two times with the elevation extraction layers. The first time select join From_Node with Sample _ID and the second time To_Node with Sample_ID
+ - Create the new field and calculate the potential head by substracting the elevation value from to_node to From_Node
+ - Select and Copy all the values in an excell sheet. Here you can keep only the From_node info and the potenial head on them.
+ 
+Power potential estimation
+
+- Connect the discharge layer to that. Get the potential power in these points.
+- Calculate the hydropower potential with the hydropower equation P= ñ*g*Q*H*ht*Hg (Here as Q use the 60% of the estimated discharge as 40% is environmental flow)
+- Keep the values of P between 100kW and 1000kW
+- These points provide the theoritical potential of Mini Hydropower plants in the interested area
+
+Restrictions
+
+- Distance below 1 km from National parks and protected areas
+- Distance below 1 km from agricultural facilities
+- Distance below 200 m from residential disctricts
+
+End
+
+---------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------------
+
+Second method applied to Rwanda (optional)
+
+- Find the potential sites (points) acquired from RivEX
+- Use Snap pour points tool with these points as feature class input and the accumulation raster
+- Use Watershed tool with the Snap pour point raster and flow direction raster as input
+- Convert the watersheds into polygons and calculate geometry
+- Use the global Runoff Raster and resample it to 0.000833 resolution
+- Use zanal statistics to get the raster values assigned to polygons
+- Calculate potential discharge using runoff value and area (geometry)
+- Overlay (spatial Join) the polygons with the points and assing the potential discharge to the points
+
+- For all the potential sites use zonal statistics with the (resampled) Runoff to find the mean discharge
+- For all the potential sites use zonal statistics with elevation to find min-max
+- For the sites that they have not upstream site use as head the mean elevation minus min elevation in the polygon
+- For the sites that have upstream site use the head calculated (by the elevation difference) and as Q the sum of the discharge
+
+----------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------
+
+Notes
+
+srtm_43_13_ProjectRaster
+Fill_srtm_431
+Extract_Fill2
+FlowDir_Extr3
+FlowAcc_Flo11
+Con_FlowAcc18
+SnapPou_Ugan1
+Watersh_Flo24
+RasterT_Waters14
+Uganda_Project
+Uganda_Erase_Project
+LakesAndReservoirs_Project
+af_riv_15s_Clip11_Project
+Extract_tif12_Resample_Proje

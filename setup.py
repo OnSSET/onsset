@@ -8,15 +8,15 @@ Modified version of the Open Source Spatial Electrification Tool (OnSSET) to ser
 """
 
 setuptools.setup(
-    name='gep_onsset',
+    name='onsset',
     version='2019.0',
-    author='KTH dESA',
+    author='Andreas Sahlberg, Alexandros Korkovelos, Dimitrios Mentis, Christopher Arderne, Babak Khavari',
     author_email=' seap@desa.kth.se',
-    description='OnSSET model for GEP',
+    description='OnSSET model',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url='https://github.com/global-electrification-platform/gep-onsset',
-    packages=['gep_onsset'],
+    url='https://github.com/onsset/onsset',
+    packages=['onsset'],
     install_requires=[
         'et-xmlfile>=1.0',
         'jdcal>=1.4',
@@ -29,8 +29,8 @@ setuptools.setup(
         'xlrd>=1.2',
     ],
     classifiers=[
-        'Programming Language :: Python :: 3.5',
-        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+        'Programming Language :: Python :: 3',
+        'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
     ],
 )

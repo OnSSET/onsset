@@ -1,0 +1,33 @@
+import pandas as pd
+
+
+workspace = r'C:\OSGeo4W64\Ghana Example'
+settlements_fc = 'Ghana Example'
+
+a = pd.read_csv(workspace + r"/" + settlements_fc + "_Unconditioned.csv", sep = ";")
+
+# Fix all the columns so that they work in OnSSET
+a.rename(columns ={'pop2015'+ settlements_fc[0:3]:'Pop'}, inplace = True)
+a.rename(columns ={'elevationt':'Elevation'}, inplace = True)
+a.rename(columns ={'landcover' + settlements_fc[0]:'LandCover'}, inplace = True)
+a.rename(columns ={'nightlight':'NightLights'}, inplace = True)
+a.rename(columns ={'slopetif':'Slope'}, inplace = True)
+a.rename(columns ={'ghitif':'GHI'}, inplace = True)
+a.rename(columns ={'SolarRestr':'SolarRestriction'}, inplace = True)
+a.rename(columns ={'traveltime':'TravelHours'}, inplace = True)
+a.rename(columns ={'windveltif':'WindVel'}, inplace = True)
+a.rename(columns ={'Substation':'SubstationDist'}, inplace = True)
+a.rename(columns ={'GridDistCu':'GridDistCurrent'}, inplace = True)
+a.rename(columns ={'GridDistPl':'GridDistPlan'}, inplace = True)
+a.rename(columns ={'Hydropow_1':'HydropowerFID'}, inplace = True)
+a.rename(columns ={'Hydropow_2':'HydropowerDist'}, inplace = True)
+
+
+a['Country'] = settlements_fc
+a['NightLights'].fillna(0,inplace=True)
+a['LandCover'].fillna(0,inplace=True)
+a['SolarRestriction'].fillna(0,inplace=True)
+a['TravelHours'].fillna(0,inplace=True)
+a['Hydropower']*=0.001
+a['TransformerDist']*=0.001
+a.to_csv(workspace + r"/" + settlements_fc + ".csv", index = False)

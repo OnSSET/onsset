@@ -1,0 +1,372 @@
+# Import the following packages in order to run code
+import sys
+import os
+from qgis.core import *
+from PyQt5.QtGui import *
+from processing.core.Processing import Processing
+Processing.initialize()
+import processing
+
+
+### Things that need to be changed
+# This is the workspace with all the datasets that you wish to use should be here in corresponding sub-folders.
+# The workspace has to include the subfolders with all of the 16 layers
+workspace = r'C:\OSGeo4W64\Lesotho'
+
+#This is the epsg code of the coordinate system that you wish to project your datasets TO
+projCord = "EPSG:3395"
+
+#The name of the settlement that you are analysing this will be name of your output csv file
+settlements_fc = 'Lesotho'
+
+#The name of the column including your hydropower potential in either kW, MW or W (This is important to specify for
+#the hydrolayer later on in hte code.
+hydropowerField = "power"
+
+#We will create two additional folders in every run calling them Assist and Assist2 these folders are used in order for
+#the code to run more smoothly.
+if not os.path.exists(workspace + r"/Assist"):
+     os.makedirs(workspace + r"/Assist")
+
+if not os.path.exists(workspace + r"/Assist2"):
+     os.makedirs(workspace + r"/Assist2")
+
+assistingFolder = workspace + r"/Assist"
+assistingFolder2 = workspace + r"/Assist2"
+
+# The naming of all the datasets, make sure that the datasets are named as they are named here
+pop = 'pop2015'
+ghi = 'ghi'
+windvel = 'windvel'
+travel = 'traveltime'
+grid_existing = 'existing_grid'
+grid_planned = 'planned_grid'
+hydro_points = 'hydro_points'
+admin = 'admin_0'
+roads = 'roads'
+nightlight = 'nightlights'
+substations = 'substations'
+elevation = 'elevation'
+slope = 'slope'
+land_cover = 'landcover'
+solar_restriction = 'solar_restrictions'
+
+
+# Import admin polygon
+# We import it in order to clip the population dataset (in case the population dataset is global)
+admin = workspace + r'/Admin/' + admin + '.shp'
+
+# Creata a "extent" layer, this will be used to clip all the other datasets in the analysis, this way we will not have null values.
+ext = QgsVectorLayer(admin,'','ogr').extent()
+
+xmin = ext.xMinimum()-1
+xmax = ext.xMaximum()+1
+ymin = ext.yMinimum()-1
+ymax = ext.yMaximum()+1
+
+# Createas a coords string. This is important for some of the calculations below
+coords = '{},{},{},{}'.format(xmin, xmax, ymin, ymax)
+
+# Clip population map with admin and create point layer
+pop_data = workspace + r"/Population_2015/"+ pop + ".tif"
+processing.run("gdal:cliprasterbymasklayer", {'INPUT':pop_data,'MASK':admin,'NODATA':None,'ALPHA_BAND':False,'CROP_TO_CUTLINE':True,'KEEP_RESOLUTION':True,'OPTIONS':'','DATA_TYPE':5,'OUTPUT':workspace + r'/Population_2015/' + pop + settlements_fc[0:3] +'.tif'})
+processing.run("saga:rastervaluestopoints", {'GRIDS':[workspace + r'/Population_2015/' + pop + settlements_fc[0:3] +'.tif'],'POLYGONS':None,'NODATA        ':True,'TYPE':0,'SHAPES': workspace + r'/Population_2015/Pop.shp'})
+
+# Projecting the population points
+processing.run("native:reprojectlayer", {'INPUT':workspace + r'/Population_2015/Pop.shp','TARGET_CRS':projCord,'OUTPUT':workspace + r'/Population_2015/' + pop + '.shp'})
+Pop = QgsVectorLayer(workspace + r'/Population_2015/' + pop + '.shp','','ogr')
+
+# Identify the field showing the population
+field_ids = []
+fieldnames = set(['pop2015'+ settlements_fc[0:3]])
+for field in Pop.fields():
+    if field.name() not in fieldnames:
+      field_ids.append(Pop.fields().indexFromName(field.name()))
+
+# Remove all the fields that are not the population field identified above
+Pop.dataProvider().deleteAttributes(field_ids)
+Pop.updateFields()
+
+# Raster datasets
+# Create elevation and slope maps.
+# 1. Clip the elevation map with the extent layer.
+# 2. Create a terrain slope map with the elevation layer
+# 3. Reprojects the slope and elevation maps to the coordinates specified above
+# 4. Interpolates the elevation and slope maps in order to avoid null values
+processing.run("gdal:cliprasterbyextent", {'INPUT':workspace + r'/DEM/' + elevation + '.tif','PROJWIN':coords,'NODATA':None,'OPTIONS':'','DATA_TYPE':5,'OUTPUT':workspace + r'/DEM/' + elevation + settlements_fc[0:3] +'.tif'})
+processing.run("gdal:slope", {'INPUT':workspace + r'/DEM/' + elevation + settlements_fc[0:3] +'.tif','BAND':1,'SCALE':111120,'AS_PERCENT':False,'COMPUTE_EDGES':False,'ZEVENBERGEN':False,'OPTIONS':'','OUTPUT':workspace + r"/Slope/" + slope + settlements_fc[0:3] + ".tif"})
+processing.run("gdal:warpreproject", {'INPUT':workspace + r"/Slope/" + slope + settlements_fc[0:3] + ".tif",'SOURCE_CRS':None,'TARGET_CRS':projCord,'NODATA':0,'TARGET_RESOLUTION':0,'OPTIONS':'','RESAMPLING':0,'DATA_TYPE':5,'TARGET_EXTENT':None,'TARGET_EXTENT_CRS':None,'MULTITHREADING':False,'OUTPUT':workspace + r'/Slope/' + slope + settlements_fc[0:3] +'_Proj.tif'})
+processing.run("gdal:warpreproject", {'INPUT':workspace + r'/DEM/' + elevation + settlements_fc[0:3] +'.tif','SOURCE_CRS':None,'TARGET_CRS':projCord,'NODATA':0,'TARGET_RESOLUTION':0,'OPTIONS':'','RESAMPLING':0,'DATA_TYPE':5,'TARGET_EXTENT':None,'TARGET_EXTENT_CRS':None,'MULTITHREADING':False,'OUTPUT':workspace + r'/DEM/' + elevation + settlements_fc[0:3] +'_Proj.tif'})
+processing.run("gdal:fillnodata", {'INPUT':workspace + r'/Slope/' + slope + settlements_fc[0:3] +'_Proj.tif','BAND':1,'DISTANCE':10,'ITERATIONS':0,'NO_MASK':False,'MASK_LAYER':None,'OUTPUT':assistingFolder2 +r'/' + slope + ".tif"})
+processing.run("gdal:fillnodata", {'INPUT':workspace + r'/DEM/' + elevation + settlements_fc[0:3] +'_Proj.tif','BAND':1,'DISTANCE':10,'ITERATIONS':0,'NO_MASK':False,'MASK_LAYER':None,'OUTPUT':assistingFolder2 +r'/' + elevation + ".tif"})
+
+# GHI
+# 1. Clip the ghi map with the extent layer.
+# 2. Reprojects the ghi map to the coordinates specified above
+# 3. Interpolates the ghi map in order to avoid null values
+processing.run("gdal:cliprasterbyextent", {'INPUT':workspace + r'/Solar/' + ghi + '.tif','PROJWIN':coords,'NODATA':None,'OPTIONS':'','DATA_TYPE':5,'OUTPUT':workspace + r'/Solar/' + ghi + settlements_fc[0:3] +'.tif'})
+processing.run("gdal:warpreproject", {'INPUT':workspace + r'/Solar/' + ghi + settlements_fc[0:3] +'.tif','SOURCE_CRS':None,'TARGET_CRS':projCord,'NODATA':0,'TARGET_RESOLUTION':0,'OPTIONS':'','RESAMPLING':0,'DATA_TYPE':5,'TARGET_EXTENT':None,'TARGET_EXTENT_CRS':None,'MULTITHREADING':False,'OUTPUT':workspace + r'/Solar/' + ghi + settlements_fc[0:3] +'_Proj.tif'})
+processing.run("gdal:fillnodata", {'INPUT':workspace + r'/Solar/' + ghi + settlements_fc[0:3] +'_Proj.tif','BAND':1,'DISTANCE':10,'ITERATIONS':0,'NO_MASK':False,'MASK_LAYER':None,'OUTPUT':assistingFolder2 +r'/' + ghi + ".tif"})
+
+# Traveltime
+# 1. Clip the traveltime map with the extent layer.
+# 2. Reprojects the traveltime map to the coordinates specified above
+# 3. Interpolates the traveltime map in order to avoid null values
+processing.run("gdal:cliprasterbyextent", {'INPUT':workspace + r'/Travel_time/' + travel + '.tif','PROJWIN':coords,'NODATA':None,'OPTIONS':'','DATA_TYPE':5,'OUTPUT':workspace + r'/Travel_time/' + travel + settlements_fc[0:3] +'.tif'})
+processing.run("gdal:warpreproject", {'INPUT':workspace + r'/Travel_time/' + travel + settlements_fc[0:3] +'.tif','SOURCE_CRS':None,'TARGET_CRS':projCord,'NODATA':0,'TARGET_RESOLUTION':0,'OPTIONS':'','RESAMPLING':0,'DATA_TYPE':5,'TARGET_EXTENT':None,'TARGET_EXTENT_CRS':None,'MULTITHREADING':False,'OUTPUT':workspace + r'/Travel_time/' + travel + settlements_fc[0:3] +'_Proj.tif'})
+processing.run("gdal:fillnodata", {'INPUT':workspace + r'/Travel_time/' + travel + settlements_fc[0:3] +'_Proj.tif','BAND':1,'DISTANCE':10,'ITERATIONS':0,'NO_MASK':False,'MASK_LAYER':None,'OUTPUT':assistingFolder2 +r'/' + travel + ".tif"})
+
+# Wind
+# 1. Clip the wind velocity map with the extent layer.
+# 2. Reprojects the wind velocity map to the coordinates specified above
+# 3. Interpolates the wind velocity map in order to avoid null values
+processing.run("gdal:cliprasterbyextent", {'INPUT':workspace + r'/Wind/' + windvel + '.tif','PROJWIN':coords,'NODATA':None,'OPTIONS':'','DATA_TYPE':5,'OUTPUT':workspace + r'/Wind/' + windvel + settlements_fc[0:3] +'.tif'})
+processing.run("gdal:warpreproject", {'INPUT':workspace + r'/Wind/' + windvel + settlements_fc[0:3] +'.tif','SOURCE_CRS':None,'TARGET_CRS':projCord,'NODATA':0,'TARGET_RESOLUTION':0,'OPTIONS':'','RESAMPLING':0,'DATA_TYPE':5,'TARGET_EXTENT':None,'TARGET_EXTENT_CRS':None,'MULTITHREADING':False,'OUTPUT':workspace + r'/Wind/' + windvel + settlements_fc[0:3] +'_Proj.tif'})
+processing.run("gdal:fillnodata", {'INPUT':workspace + r'/Wind/' + windvel + settlements_fc[0:3] +'_Proj.tif','BAND':1,'DISTANCE':10,'ITERATIONS':0,'NO_MASK':False,'MASK_LAYER':None,'OUTPUT':assistingFolder2 + r'/' + windvel + ".tif"})
+
+# Solar restriction
+# 1. Clip the solar restriction map with the extent layer.
+# 2. Reprojects the solar restriction map to the coordinates specified above
+# This dataset is not interpolated as it is  discrete
+processing.run("gdal:cliprasterbyextent", {'INPUT':workspace + r'/Solar_Restrictions/' + solar_restriction + '.tif','PROJWIN':coords,'NODATA':None,'OPTIONS':'','DATA_TYPE':5,'OUTPUT':workspace + r'/Solar_restrictions/' + solar_restriction + settlements_fc[0:3] +'.tif'})
+processing.run("gdal:warpreproject", {'INPUT':workspace + r'/Solar_restrictions/' + solar_restriction + settlements_fc[0:3] +'.tif','SOURCE_CRS':None,'TARGET_CRS':projCord,'NODATA':0,'TARGET_RESOLUTION':0,'OPTIONS':'','RESAMPLING':0,'DATA_TYPE':5,'TARGET_EXTENT':None,'TARGET_EXTENT_CRS':None,'MULTITHREADING':False,'OUTPUT':assistingFolder2 + r'/' + solar_restriction + '_Proj.tif'})
+
+# Landcover
+# 1. Clip the landcover map with the extent layer.
+# 2. Reprojects the landcover map to the coordinates specified above
+# This dataset is not interpolated as it is discrete
+processing.run("gdal:cliprasterbyextent", {'INPUT':workspace + r'/Land_Cover/' + land_cover + '.tif','PROJWIN':coords,'NODATA':None,'OPTIONS':'','DATA_TYPE':5,'OUTPUT':workspace + r'/Land_Cover/' + land_cover + settlements_fc[0:3] +'.tif'})
+processing.run("gdal:warpreproject", {'INPUT':workspace + r'/Land_Cover/' + land_cover + settlements_fc[0:3] +'.tif','SOURCE_CRS':None,'TARGET_CRS':projCord,'NODATA':0,'TARGET_RESOLUTION':0,'OPTIONS':'','RESAMPLING':0,'DATA_TYPE':5,'TARGET_EXTENT':None,'TARGET_EXTENT_CRS':None,'MULTITHREADING':False,'OUTPUT':assistingFolder2 +r'/'+ land_cover + settlements_fc[0:3] +'_Proj.tif'})
+
+# Nighttimelights
+# 1. Clip the landcover map with the extent layer.
+# 2. Reprojects the landcover map to the coordinates specified above
+# This dataset is not interpolated as it is discrete
+processing.run("gdal:cliprasterbyextent", {'INPUT':workspace + r'/Night_Time_Lights/' + nightlight + '.tif','PROJWIN':coords,'NODATA':None,'OPTIONS':'','DATA_TYPE':5,'OUTPUT':workspace + r'/Night_Time_Lights/' + nightlight + settlements_fc[0:3] +'.tif'})
+processing.run("gdal:warpreproject", {'INPUT':workspace + r'/Night_Time_Lights/' + nightlight + settlements_fc[0:3] +'.tif','SOURCE_CRS':None,'TARGET_CRS':projCord,'NODATA':0,'TARGET_RESOLUTION':0,'OPTIONS':'','RESAMPLING':0,'DATA_TYPE':5,'TARGET_EXTENT':None,'TARGET_EXTENT_CRS':None,'MULTITHREADING':False,'OUTPUT':assistingFolder2 +r'/'+ nightlight + settlements_fc[0:3] +'_Proj.tif'})
+
+# Define all the rastermaps that have been generated this far
+elevation = QgsRasterLayer(assistingFolder2 + r'/' + elevation + ".tif",'elevation')
+slope = QgsRasterLayer(assistingFolder2 +r'/'+ slope + ".tif",'slope')
+solar = QgsRasterLayer(assistingFolder2 +r'/'+ ghi + ".tif",'solar')
+traveltime = QgsRasterLayer(assistingFolder2 +r'/'+ travel + ".tif", 'traveltime')
+windvel = QgsRasterLayer(assistingFolder2 +r'/'+ windvel + ".tif",'windvel')
+solar_restrictions = QgsRasterLayer(assistingFolder2 +r'/'+ solar_restriction + '_Proj.tif','solar_restrictions')
+landcover = QgsRasterLayer(assistingFolder2 + r'/'+ land_cover + settlements_fc[0:3] +'_Proj.tif','landcover')
+nightlights = QgsRasterLayer(assistingFolder2 +r'/'+ nightlight + settlements_fc[0:3] +'_Proj.tif','nightlights')
+
+# Add the rastervalues to points adds all the raster values to the population point layer based on coordinates
+processing.run("saga:addrastervaluestopoints", {'SHAPES':Pop,'GRIDS':[elevation, landcover, nightlights, slope, solar,solar_restrictions, traveltime, windvel],'RESAMPLING':0,'RESULT':assistingFolder2 + r"/SettlementsPlaceholder_withoutID.shp"})
+processing.run("qgis:fieldcalculator", {'INPUT':assistingFolder2 + r"/SettlementsPlaceholder_withoutID.shp",'FIELD_NAME':'AUTO','FIELD_TYPE':0,'FIELD_LENGTH':10,'FIELD_PRECISION':3,'NEW_FIELD':True,'FORMULA':' @row_number ','OUTPUT':assistingFolder + r"/SettlementsPlaceholder.shp"})
+
+# Define layer created above
+settlement = QgsVectorLayer(assistingFolder + r"/SettlementsPlaceholder.shp","","ogr")
+
+# Vector datasets
+# substations
+# 1. Create a column with the name AUTO this is needed in order for all vector files to have at least one column in common
+# 2. Clips and removes all vectors outside the admin raster
+# 3. Reprojects the vector layer
+# 4. Calculates the distance to nearest vector element for all the cells in the population layer (we need the name of a column and we use the ENUM_ID
+processing.run("qgis:fieldcalculator", {'INPUT':workspace + r'/Substations/' + substations + '.shp','FIELD_NAME':'AUTO','FIELD_TYPE':0,'FIELD_LENGTH':10,'FIELD_PRECISION':3,'NEW_FIELD':True,'FORMULA':' @row_number ','OUTPUT':workspace + r'/Substations/' + substations + '_with_ID.shp'})
+processing.run("native:clip", {'INPUT':workspace + r'/Substations/' + substations + '_with_ID.shp','OVERLAY':admin,'OUTPUT':workspace + r'/Substations/' + substations + settlements_fc[0:3] +'.shp'})
+processing.run("native:reprojectlayer", {'INPUT':workspace + r'/Substations/' + substations + settlements_fc[0:3] +'.shp','TARGET_CRS':projCord,'OUTPUT':workspace + r'/Substations/' + substations + settlements_fc[0:3] +'_Proj.shp'})
+processing.run("qgis:distancetonearesthubpoints", {'INPUT':Pop,'HUBS':workspace + r'/Substations/' + substations + settlements_fc[0:3] +'_Proj.shp','FIELD':'AUTO','UNIT':0,'OUTPUT':assistingFolder2 + r"\Substationsdist_NO_ID.shp"})
+processing.run("qgis:fieldcalculator", {'INPUT':assistingFolder2 + r"\Substationsdist_NO_ID.shp",'FIELD_NAME':'AUTO','FIELD_TYPE':0,'FIELD_LENGTH':10,'FIELD_PRECISION':3,'NEW_FIELD':True,'FORMULA':' @row_number ','OUTPUT':workspace + r"\Substations\Substationsdist.shp"})
+substationsdist = QgsVectorLayer(workspace + r"\Substations\Substationsdist.shp","","ogr")
+
+# Identify the field showing the substationdist
+field_ids = []
+fieldnames = set(['HubDist', 'AUTO'])
+for field in substationsdist.fields():
+    if field.name() not in fieldnames:
+      field_ids.append(substationsdist.fields().indexFromName(field.name()))
+
+# Remove all the columns that are not substationdist
+substationsdist.dataProvider().deleteAttributes(field_ids)
+substationsdist.updateFields()
+
+# rename the hubdist field to SubstationDist
+for field in substationsdist.fields():
+    if field.name() == 'HubDist':
+        with edit(substationsdist):
+            idx = substationsdist.fields().indexFromName(field.name())
+            substationsdist.renameAttribute(idx, 'SubstationDist')
+
+#Hydropower
+# 1. Create a column with the name AUTO this is needed in order for all vector files to have at least one column in common
+# 2. Clips and removes all vectors outside the admin raster
+# 3. Reprojects the vector layer
+# 4. Calculates the distance to nearest vector element for all the cells in the population layer (we need the name of a column and we use the ENUM_ID
+processing.run("qgis:fieldcalculator", {'INPUT':workspace + r'/Hydropower/' + hydro_points + '.shp','FIELD_NAME':'AUTO','FIELD_TYPE':0,'FIELD_LENGTH':10,'FIELD_PRECISION':3,'NEW_FIELD':True,'FORMULA':' @row_number ','OUTPUT':workspace + r'/Hydropower/' + hydro_points + '_with_ID.shp'})
+processing.run("native:clip", {'INPUT':workspace + r'/Hydropower/' + hydro_points + '_with_ID.shp','OVERLAY':admin,'OUTPUT':workspace + r'/Hydropower/' + hydro_points + settlements_fc[0:3] +'.shp'})
+processing.run("native:reprojectlayer", {'INPUT':workspace + r'/Hydropower/' + hydro_points + settlements_fc[0:3] +'.shp','TARGET_CRS':projCord,'OUTPUT':workspace + r'/Hydropower/' + hydro_points + settlements_fc[0:3] +'_Proj.shp'})
+processing.run("qgis:distancetonearesthubpoints", {'INPUT':Pop,'HUBS':workspace + r'/Hydropower/' + hydro_points + settlements_fc[0:3] +'_Proj.shp','FIELD':'AUTO','UNIT':0,'OUTPUT':assistingFolder2 + r"\HydroFID_NO_ID.shp"})
+processing.run("qgis:distancetonearesthubpoints", {'INPUT':Pop,'HUBS':workspace + r'/Hydropower/' + hydro_points + settlements_fc[0:3] +'_Proj.shp','FIELD':hydropowerField,'UNIT':0,'OUTPUT': assistingFolder2 + r"\Hydropower_NO_ID.shp"})
+processing.run("qgis:fieldcalculator", {'INPUT':assistingFolder2 + r"\HydroFID_NO_ID.shp",'FIELD_NAME':'AUTO','FIELD_TYPE':0,'FIELD_LENGTH':10,'FIELD_PRECISION':3,'NEW_FIELD':True,'FORMULA':' @row_number ','OUTPUT':workspace + r"\Hydropower\hydrofid.shp"})
+processing.run("qgis:fieldcalculator", {'INPUT':assistingFolder2 + r"\Hydropower_NO_ID.shp",'FIELD_NAME':'AUTO','FIELD_TYPE':0,'FIELD_LENGTH':10,'FIELD_PRECISION':3,'NEW_FIELD':True,'FORMULA':' @row_number ','OUTPUT':workspace +r"\Hydropower\power.shp"})
+power = QgsVectorLayer(workspace +r"\Hydropower\power.shp","","ogr")
+hydrofid = QgsVectorLayer(workspace + r"\Hydropower\hydrofid.shp","","ogr")
+
+#Identify the field showing the hydropower
+field_ids = []
+fieldnames = set(['HubName', 'AUTO'])
+for field in power.fields():
+    if field.name() not in fieldnames:
+      field_ids.append(power.fields().indexFromName(field.name()))
+
+power.dataProvider().deleteAttributes(field_ids)
+power.updateFields()
+
+#Change fieldname to Hydropower
+for field in power.fields():
+    if field.name() == 'HubName':
+        with edit(power):
+            idx =power.fields().indexFromName(field.name())
+            power.renameAttribute(idx, 'Hydropower')
+
+#remove unecassary columns for hydrodist and hydrofid
+field_ids = []
+fieldnames = set(['HubName', 'HubDist', 'AUTO'])
+for field in hydrofid.fields():
+    if field.name() not in fieldnames:
+      field_ids.append(hydrofid.fields().indexFromName(field.name()))
+
+hydrofid.dataProvider().deleteAttributes(field_ids)
+hydrofid.updateFields()
+
+#Change fieldname to something appropriate for hydrodist and hydrofid
+for field in hydrofid.fields():
+    if field.name() == 'HubName':
+        with edit(hydrofid):
+            idx = hydrofid.fields().indexFromName(field.name())
+            hydrofid.renameAttribute(idx, 'HydropowerFID')
+    elif field.name() == 'HubDist':
+        with edit(hydrofid):
+            idx =hydrofid.fields().indexFromName(field.name())
+            hydrofid.renameAttribute(idx, 'HydropowerDist')
+
+# Existing transmission lines
+# 1. Clips and removes all vectors outside the admin raster
+# 2. Creates a point layer from the lines. Each point has a distance of 100 meters to the closes point
+# 3. Create a column with the name AUTO this is needed in order for all vector files to have at least one column in common
+# 4. Reprojects the vector layer
+# 5. Calculates the distance to nearest vector element for all the cells in the population layer (we need the name of a column and we use the AUTO
+processing.run("native:clip", {'INPUT':workspace + r'/Transmission_Network/' + grid_existing + '.shp','OVERLAY':admin,'OUTPUT':workspace + r'/Transmission_Network/' + grid_existing + settlements_fc[0:3] +'.shp'})
+processing.run("saga:convertlinestopoints", {'LINES':workspace + r'/Transmission_Network/' + grid_existing + settlements_fc[0:3] +'.shp','ADD         ':True,'DIST':0.000833333333,'POINTS':workspace + r'/Transmission_Network/' + grid_existing + settlements_fc[0:3] +'Point.shp'})
+processing.run("qgis:fieldcalculator", {'INPUT':workspace + r'/Transmission_Network/' + grid_existing + settlements_fc[0:3] +'Point.shp','FIELD_NAME':'AUTO','FIELD_TYPE':0,'FIELD_LENGTH':10,'FIELD_PRECISION':3,'NEW_FIELD':True,'FORMULA':' @row_number ','OUTPUT':workspace + r'/Transmission_Network/' + grid_existing + 'Point_ID.shp'})
+processing.run("native:reprojectlayer", {'INPUT':workspace + r'/Transmission_Network/' + grid_existing + 'Point_ID.shp','TARGET_CRS':projCord,'OUTPUT':workspace + r'/Transmission_Network/' + grid_existing + 'Point_ID_Proj.shp'})
+processing.run("qgis:distancetonearesthubpoints", {'INPUT':Pop,'HUBS':workspace + r'/Transmission_Network/' + grid_existing + 'Point_ID_Proj.shp','FIELD':'AUTO','UNIT':0,'OUTPUT': assistingFolder2 +r"/griddistcurrent_NO_ID.shp"})
+processing.run("qgis:fieldcalculator", {'INPUT':assistingFolder2 +r"/griddistcurrent_NO_ID.shp",'FIELD_NAME':'AUTO','FIELD_TYPE':0,'FIELD_LENGTH':10,'FIELD_PRECISION':3,'NEW_FIELD':True,'FORMULA':' @row_number ','OUTPUT':workspace + r"\Transmission_Network\griddistcurrent.shp"})
+griddistcurrent = QgsVectorLayer(workspace + r"\Transmission_Network\griddistcurrent.shp","","ogr")
+
+# Identify the field showing the griddist
+field_ids = []
+fieldnames = set(['HubDist', 'AUTO'])
+for field in griddistcurrent.fields():
+    if field.name() not in fieldnames:
+      field_ids.append(griddistcurrent.fields().indexFromName(field.name()))
+
+griddistcurrent.dataProvider().deleteAttributes(field_ids)
+griddistcurrent.updateFields()
+
+#Change fieldname to griddistcurrent
+for field in griddistcurrent.fields():
+    if field.name() == 'HubDist':
+        with edit(griddistcurrent):
+            idx = griddistcurrent.fields().indexFromName(field.name())
+            griddistcurrent.renameAttribute(idx, 'GridDistCurrent')
+
+#Planned Grid
+# 1. Merge current and planned grid
+# 2. Clips and removes all vectors outside the admin raster
+# 3. Creates a point layer from the lines. Each point has a distance of 100 meters to the closes point
+# 4. Create a column with the name AUTO this is needed in order for all vector files to have at least one column in common
+# 5. Reprojects the vector layer
+# 6. Calculates the distance to nearest vector element for all the cells in the population layer (we need the name of a column and we use the AUTO
+processing.run("native:mergevectorlayers", {'LAYERS':[workspace + r'/Transmission_Network/' + grid_planned + '.shp',workspace + r'/Transmission_Network/' + grid_existing + settlements_fc[0:3] +'.shp'],'CRS':None,'OUTPUT':workspace + r'/Transmission_Network/' + grid_planned + '_Merged.shp'})
+processing.run("native:clip", {'INPUT':workspace + r'/Transmission_Network/' + grid_planned + '_Merged.shp','OVERLAY':admin,'OUTPUT':workspace + r'/Transmission_Network/' + grid_planned + settlements_fc[0:3] +'.shp'})
+processing.run("saga:convertlinestopoints", {'LINES':workspace + r'/Transmission_Network/' + grid_planned + settlements_fc[0:3] +'.shp','ADD         ':True,'DIST':0.000833333333,'POINTS':workspace + r'/Transmission_Network/' + grid_planned + settlements_fc[0:3] +'Point.shp'})
+processing.run("qgis:fieldcalculator", {'INPUT':workspace + r'/Transmission_Network/' + grid_planned + settlements_fc[0:3] +'Point.shp','FIELD_NAME':'AUTO','FIELD_TYPE':0,'FIELD_LENGTH':10,'FIELD_PRECISION':3,'NEW_FIELD':True,'FORMULA':' @row_number ','OUTPUT':workspace + r'/Transmission_Network/' + grid_planned + 'Point_ID.shp'})
+processing.run("native:reprojectlayer", {'INPUT':workspace + r'/Transmission_Network/' + grid_planned + 'Point_ID.shp','TARGET_CRS':projCord,'OUTPUT':workspace + r'/Transmission_Network/' + grid_planned + 'Point_ID_Proj.shp'})
+processing.run("qgis:distancetonearesthubpoints", {'INPUT':Pop,'HUBS':workspace + r'/Transmission_Network/' + grid_planned + 'Point_ID_Proj.shp','FIELD':'AUTO','UNIT':0,'OUTPUT':assistingFolder2 + r"\griddistplanned_NO_ID.shp"})
+processing.run("qgis:fieldcalculator", {'INPUT':assistingFolder2 + r"\griddistplanned_NO_ID.shp",'FIELD_NAME':'AUTO','FIELD_TYPE':0,'FIELD_LENGTH':10,'FIELD_PRECISION':3,'NEW_FIELD':True,'FORMULA':' @row_number ','OUTPUT':workspace + r"\Transmission_Network\griddistplanned.shp"})
+griddistplanned = QgsVectorLayer(workspace + r"\Transmission_Network\griddistplanned.shp","", "ogr")
+
+# Identify the field showing the griddist
+field_ids = []
+fieldnames = set(['HubDist','AUTO'])
+for field in griddistplanned.fields():
+    if field.name() not in fieldnames:
+      field_ids.append(griddistplanned.fields().indexFromName(field.name()))
+
+griddistplanned.dataProvider().deleteAttributes(field_ids)
+griddistplanned.updateFields()
+
+#Change fieldname to griddistplanned
+for field in griddistplanned.fields():
+    if field.name() == 'HubDist':
+        with edit(griddistplanned):
+            idx = griddistplanned.fields().indexFromName(field.name())
+            griddistplanned.renameAttribute(idx, 'GridDistPlanned')
+
+
+# Roads
+# 1. Clips and removes all vectors outside the admin raster
+# 2. Creates a point layer from the lines. Each point has a distance of 100 meters to the closes point
+# 3. Create a column with the name AUTO this is needed in order for all vector files to have at least one column in common
+# 4. Reprojects the vector layer
+# 5. Calculates the distance to nearest vector element for all the cells in the population layer (we need the name of a column and we use the AUTO
+processing.run("native:clip", {'INPUT':workspace + r'/Roads/' + roads + '.shp','OVERLAY':admin,'OUTPUT':workspace + r'/Roads/' + roads + settlements_fc[0:3] +'.shp'})
+processing.run("saga:convertlinestopoints", {'LINES':workspace + r'/Roads/' + roads + settlements_fc[0:3] +'.shp','ADD         ':True,'DIST':0.000833333333,'POINTS':workspace + r'/Roads/' + roads + settlements_fc[0:3] +'Point.shp'})
+processing.run("qgis:fieldcalculator", {'INPUT':workspace + r'/Roads/' + roads + settlements_fc[0:3] +'Point.shp','FIELD_NAME':'AUTO','FIELD_TYPE':0,'FIELD_LENGTH':10,'FIELD_PRECISION':3,'NEW_FIELD':True,'FORMULA':' @row_number ','OUTPUT':workspace + r'/Roads/' + roads + '_with_ID.shp'})
+processing.run("native:reprojectlayer", {'INPUT':workspace + r'/Roads/' + roads + '_with_ID.shp','TARGET_CRS':projCord,'OUTPUT':workspace + r'/Roads/' + roads + 'Point_ID_Proj.shp'})
+processing.run("qgis:distancetonearesthubpoints", {'INPUT':Pop,'HUBS':workspace + r'/Roads/' + roads + 'Point_ID_Proj.shp','FIELD':'AUTO','UNIT':0,'OUTPUT':assistingFolder2 + r"\roaddist_NO_ID.shp"})
+processing.run("qgis:fieldcalculator", {'INPUT':assistingFolder2 + r"\roaddist_NO_ID.shp",'FIELD_NAME':'AUTO','FIELD_TYPE':0,'FIELD_LENGTH':10,'FIELD_PRECISION':3,'NEW_FIELD':True,'FORMULA':' @row_number ','OUTPUT':workspace + r"\Roads\roaddist.shp"})
+roaddist = QgsVectorLayer(workspace + r"\Roads\roaddist.shp", "", "ogr")
+
+# Identify the field showing the roaddist
+field_ids = []
+fieldnames = set(['HubDist', 'AUTO'])
+for field in roaddist.fields():
+    if field.name() not in fieldnames:
+      field_ids.append(roaddist.fields().indexFromName(field.name()))
+
+roaddist.dataProvider().deleteAttributes(field_ids)
+roaddist.updateFields()
+
+#Change fieldname to something RoadDist
+for field in roaddist.fields():
+    if field.name() == 'HubDist':
+        with edit(roaddist):
+            idx = roaddist.fields().indexFromName(field.name())
+            roaddist.renameAttribute(idx, 'RoadDist')
+
+# We add every vector to the settlemnt file created above one vector at a time using the coordinates as identifier
+iter1=processing.run("native:joinattributestable", {'INPUT': settlement,'FIELD':'AUTO','INPUT_2':substationsdist,'FIELD_2':'AUTO','FIELDS_TO_COPY':[],'METHOD':1,'DISCARD_NONMATCHING':False,'PREFIX':'','OUTPUT':assistingFolder + r"\iter1.shp"})
+iter2=processing.run("native:joinattributestable", {'INPUT': assistingFolder + r"\iter1.shp",'FIELD':'AUTO','INPUT_2':roaddist,'FIELD_2':'AUTO','FIELDS_TO_COPY':[],'METHOD':1,'DISCARD_NONMATCHING':False,'PREFIX':'','OUTPUT':assistingFolder + r"\iter2.shp"})
+iter3=processing.run("native:joinattributestable", {'INPUT': assistingFolder + r"\iter2.shp",'FIELD':'AUTO','INPUT_2':griddistcurrent,'FIELD_2':'AUTO','FIELDS_TO_COPY':[],'METHOD':1,'DISCARD_NONMATCHING':False,'PREFIX':'','OUTPUT':assistingFolder + r"\iter3.shp"})
+iter4=processing.run("native:joinattributestable", {'INPUT': assistingFolder + r"\iter3.shp",'FIELD':'AUTO','INPUT_2':griddistplanned,'FIELD_2':'AUTO','FIELDS_TO_COPY':[],'METHOD':1,'DISCARD_NONMATCHING':False,'PREFIX':'','OUTPUT':assistingFolder + r"\iter4.shp"})
+iter5=processing.run("native:joinattributestable", {'INPUT': assistingFolder + r"\iter4.shp",'FIELD':'AUTO','INPUT_2':power,'FIELD_2':'AUTO','FIELDS_TO_COPY':[],'METHOD':1,'DISCARD_NONMATCHING':False,'PREFIX':'','OUTPUT':assistingFolder + r"\iter5.shp"})
+iter6=processing.run("native:joinattributestable", {'INPUT': assistingFolder + r"\iter5.shp",'FIELD':'AUTO','INPUT_2':hydrofid,'FIELD_2':'AUTO','FIELDS_TO_COPY':[],'METHOD':1,'DISCARD_NONMATCHING':False,'PREFIX':'','OUTPUT':assistingFolder + r"\iter6.shp"})
+
+# Add coordinates to the settlementfile
+processing.run("saga:addcoordinatestopoints", {'INPUT':assistingFolder + r"\iter6.shp",'OUTPUT':assistingFolder +r'/' + settlements_fc + '.shp'})
+settlements = QgsVectorLayer(assistingFolder + r'/' + settlements_fc + '.shp',"","ogr")
+
+# Identify all the fileds that we are interested in
+field_ids = []
+fieldnames = set(['X','Y','pop2015' + settlements_fc[0:3],'elevation','landcover','nightlight','slope','solar','solarrestr','traveltime','windvel','Substation','RoadDist','GridDistCu','GridDistPl','Hydropower','Hydropow_1','Hydropow_2'])
+for field in settlements.fields():
+     if field.name() not in fieldnames:
+       field_ids.append(settlements.fields().indexFromName(field.name()))
+
+# Remove all others
+settlements.dataProvider().deleteAttributes(field_ids)
+settlements.updateFields()
+
+# Save as a csv file
+settlements.setName(settlements_fc)
+QgsVectorFileWriter.writeAsVectorFormat(settlements, workspace + r"/" + settlements_fc + "_Unconditioned.csv", "utf-8", settlements.crs(), "CSV")
+
+

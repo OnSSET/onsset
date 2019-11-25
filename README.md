@@ -7,7 +7,7 @@ Documentation: https://gep-onsset.readthedocs.io/en/latest/index.html#
 
 # Scope
 
-This repository contains the source code of the Open Source Spatial Electrification Tool ([OnSSET](http://www.onsset.org/)). The repository also includes sample test files available in ```.\test_data``` and sample output files available in ```.\sample_output```. 
+This repository contains the source code of the Open Source Spatial Electrification Tool ([OnSSET](http://www.onsset.org/)). The repository also includes sample test files available in ```.\test_data``` and sample output files available in ```.\sample_output```.
 
 ## Installation
 
@@ -41,7 +41,7 @@ cd gep-onsset
 pip install -r requirements.txt
 ```
 
-The use of GEP generator requires also installation of 
+The use of GEP generator requires also installation of
 - IPython
 - jupyter
 - matplotlib
@@ -49,4 +49,3 @@ The use of GEP generator requires also installation of
 
 ## Contact
 For more information regarding the tool, its functionality and implementation please visit https://www.onsset.org or contact the development team at seap@desa.kth.se.
-

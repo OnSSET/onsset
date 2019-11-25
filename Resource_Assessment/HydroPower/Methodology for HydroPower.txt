@@ -1,0 +1,104 @@
+The following method describe the necessary steps in order to perform the proposed MiniHydro Assessment for a region.
+The following layers are necessary before the analysis starts.
+
+1) Country boundary layer
+2) River Layer
+3) Elevation Layer (prefered a Fill version of it)
+4) Discharge layer
+5) The sample points layer (from RivEX)
+6) The "link sites within a layer" layer deriving from RivEX
+7) The "source to sample points" layer from RivEX
+
+(Just to mention that all the layers are already projected because that is the only way RivEX can actually work)
+
+Step 1:
+Use extract values to points function in order to get the elevation to sample points. So use the layers (3) & (5).
+Do this two times so that you have two layers with the same vlues, namely hereafter (8) and (9).
+
+Step 2:
+Use extract values to points function in order to get the discharge to sample points. So use the layers (4) & (5).
+This layer is called hereafter as (10).
+
+Step 3:
+Join the layers (6) and (8) using the To_site column on (6) and the Sample_ID column on (8). The elevation values will be
+assigned to the To_site points.
+
+Step 4:
+Join the layers (6) and (9) using the From_site column on (6) and the Sample_ID column on (9). The elevation values will be
+assigned to the From_site points.
+
+Step 5:
+Open the table of layer (6) and select to add a new column. Name it Head and define it as Long integer. Click ok. Right 
+click on the column and select field calculator. Find the correstonding elevation column for To_site and extract the 
+elevation column for From_site. The available head will be calculated at all the From_site points.
+
+Step 6:
+Join the layers (6) and (10) using the From_site column on (6) and the Sample_ID column on (10). The discharge values will be
+assigned to the From_site points.
+
+Step 7:
+Open the table of layer (6) and select to add a new column. Name it PowerP and define it as Float. Click ok. Right 
+click on the column and select field calculator. Find the correstonding discharge column from step 6 and multiple with the 
+Head column calculated before and the number 4.9725 which is explained.....
+The available power will be calculated in kW at all the From_site points.
+
+Step 8:
+Join the layer (5) with the layer (6) using Sample_id column on (5) and From_site column on (6). From all the sample points, these
+that will be assigned a value would have a previous point. Select them and create a new layer. The power potential for these points 
+is calculated according to their discharge value and the head deriving from the elevation difference between them and their previous
+point.
+
+Step 9:
+Use extract values to points function in order to get the elevation to the source points. So use the layers (3) & (7).
+The new layer in recognised hereafter as (11).
+
+Step 10:
+Join the layers (7) and (11) using the Source_id column on (7) and the Source_id column on (11). The source elevation values will be
+assigned.
+
+Step 11:
+Join the layers (7) and (8) using the site_id column on (7) and the Sample_ID column on (8). The elevation values will be
+assigned to the site_id points.
+
+Step 12:
+Open the table of layer (7) and select to add a new column. Name it Head and define it as Long integer. Click ok. Right 
+click on the column and select field calculator. Find the correstonding elevation column for the sources and extract the 
+elevation column for the sites. The available head will be calculated at all the site_id points.
+
+Step 13:
+Join the layers (7) and (10) using the Site_id column on (7) and the Sample_ID column on (10). The discharge values will be
+assigned to the site_id points.
+
+Step 14:
+Open the table of layer (7) and select to add a new column. Name it PowerP and define it as Float. Click ok. Right 
+click on the column and select field calculator. Find the correstonding discharge column from step 13 and multiple with the 
+Head column calculated before and the number 4.9725 which is explained.....
+The available power will be calculated in kW at all the site_id points.
+
+Step 15:
+The layer 5 with the sample points has assigned power potential values only for the points that do have a previous points,
+which normally should be the half or 1/3 of the total points. Select all the rest points that have no assigned power value.
+Create a new layer from the selected and same this layer in a file, using export data.. This layer is named hereafer as (12).
+
+Step 16:
+Insert layer (12) on the map.Join the layer (12) with the source layer (7) using Sample_id column on (12) and Site_id column on (7).
+All these points do not have previous point. So the power potential is selected according to the elevation difference between them
+and their corresponding source points.
+
+After step 8 and step 16 there are two sets of points. The points that have a previous point and all the others that do not and rely 
+on their source. These two layers should be combined.
+
+In order to reduce the complexity, it is up to the user to select by attributes and keep the points of interest. In this case mini 
+hydro points would mean to keep the points with potential estimated power between 100 kW and 1000kW, while small hydro would allow 
+values between 1000kW and 10000kW.
+
+These selections could be saved as new layers upon interest. 
+
+
+
+
+
+
+
+
+
