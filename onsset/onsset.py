@@ -2986,36 +2986,6 @@ class SettlementProcessor:
         # logging.info('Calculating average infrastructure cost for grid connection')
         # self.df['InfrastructureCapitaCost' + "{}".format(year)] = self.df.apply(infrastructure_cost, axis=1)
 
-    def delete_redundant_columns(self, year):
-        self.df.fillna(0)
-        self.df['ResultsNoTimestep'] = self.df[SET_ELEC_FINAL_CODE + "{}".format(year)]
-        del self.df[SET_ELEC_FINAL_CODE + "{}".format(year)]
-        del self.df[SET_LCOE_MG_HYDRO + "{}".format(year)]
-        del self.df[SET_LCOE_MG_PV + "{}".format(year)]
-        del self.df[SET_LCOE_MG_WIND + "{}".format(year)]
-        # del self.df[SET_LCOE_MG_DIESEL + "{}".format(year)]
-        # del self.df[SET_LCOE_SA_DIESEL + "{}".format(year)]
-        del self.df[SET_LCOE_SA_PV + "{}".format(year)]
-        del self.df[SET_MIN_OFFGRID + "{}".format(year)]
-        del self.df[SET_MIN_OFFGRID_LCOE + "{}".format(year)]
-        del self.df[SET_MIN_OFFGRID_CODE + "{}".format(year)]
-        del self.df[SET_ELEC_FUTURE_GRID + "{}".format(year)]
-        del self.df[SET_ELEC_FUTURE_OFFGRID + "{}".format(year)]
-        del self.df[SET_ELEC_FUTURE_ACTUAL + "{}".format(year)]
-        del self.df[SET_LCOE_GRID + "{}".format(year)]
-        del self.df[SET_MIN_GRID_DIST + "{}".format(year)]
-        del self.df[SET_ELEC_ORDER + "{}".format(year)]
-        del self.df[SET_MIN_OVERALL + "{}".format(year)]
-        del self.df[SET_MIN_OVERALL_LCOE + "{}".format(year)]
-        del self.df[SET_MIN_OVERALL_CODE + "{}".format(year)]
-        del self.df[SET_LIMIT + "{}".format(year)]
-        del self.df[SET_ELEC_FINAL_GRID + "{}".format(year)]
-        del self.df[SET_ELEC_FINAL_OFFGRID + "{}".format(year)]
-        del self.df[SET_NEW_CAPACITY + "{}".format(year)]
-        del self.df[SET_INVESTMENT_COST + "{}".format(year)]
-        del self.df[SET_NEW_CONNECTIONS + "{}".format(year)]
-        del self.df[SET_ENERGY_PER_CELL + "{}".format(year)]
-
     def calc_summaries(self, df_summary, sumtechs, year):
 
         """The next section calculates the summaries for technology split,
