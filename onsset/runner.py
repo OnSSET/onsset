@@ -26,24 +26,9 @@ countries = ['Country']
 # countries = specs.index.tolist() if 'all' in countries else countries
 
 choice = int(input(
-    'Enter 1 to split (if multiple country run is needed), 2 to prepare/calibrate the GIS input file, 3 to run scenario(s): '))
+    'Enter 1 to prepare/calibrate the GIS input file, 2 to run scenario(s): '))
 
-# TODO Do we actually need option 1 anymore? I suggest removing it and readjust the options
 if choice == 1:
-    messagebox.showinfo('OnSSET', 'Open the csv file with GIS data')
-    settlements_csv = filedialog.askopenfilename()
-    messagebox.showinfo('OnSSET', 'Select the folder to save split countries')
-    base_dir = filedialog.asksaveasfilename()
-
-    print('\n --- Splitting --- \n')
-
-    df = pd.read_csv(settlements_csv)
-
-    for country in countries:
-        print(country)
-        df.loc[df[SET_COUNTRY] == country].to_csv(base_dir + '.csv', index=False)
-
-elif choice == 2:
     SpecsData = pd.read_excel(specs_path, sheet_name='SpecsData')
     messagebox.showinfo('OnSSET', 'Open the file containing separated countries')
     base_dir = filedialog.askopenfilename()
@@ -115,7 +100,7 @@ elif choice == 2:
         logging.info('Calibration finished. Results are transferred to the csv file')
         onsseter.df.to_csv(settlements_out_csv, index=False)
 
-elif choice == 3:
+else:
 
     diesel_high = True
     diesel_tag = 'high' if diesel_high else 'low'
