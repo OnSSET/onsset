@@ -1517,7 +1517,7 @@ class SettlementProcessor:
 
         cell_path_adjusted = list(np.zeros(len(status)).tolist())
         self.df[SET_ELEC_FUTURE]=0
-        electrified= self.df.loc[(self.df[SET_ELEC_FUTURE)]
+        electrified = sum(self.df.loc[(self.df[SET_ELEC_FUTURE)])
         
 
         if (prio == 2) or (prio == 4):
