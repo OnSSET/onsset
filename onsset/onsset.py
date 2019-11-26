@@ -1172,6 +1172,7 @@ class SettlementProcessor:
 
         logging.info('Calibrate current electrification')
         self.df[SET_ELEC_CURRENT] = 0
+        
 
         # This if function here skims through T&D columns to identify if any non 0 values exist; Then it defines priority accordingly.
         if max(self.df[SET_DIST_TO_TRANS]) > 0:
@@ -1515,7 +1516,9 @@ class SettlementProcessor:
         grid_connect_limit -= densification_connections
 
         cell_path_adjusted = list(np.zeros(len(status)).tolist())
-        electrified, unelectrified = self.df.loc[SET_ELEC_FUTURE]
+        self.df[SET_ELEC_FUTURE]=0
+        electrified= self.df.loc[(self.df[SET_ELEC_FUTURE)]
+        
 
         if (prio == 2) or (prio == 4):
             changes = []
