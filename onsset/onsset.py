@@ -1365,7 +1365,7 @@ class SettlementProcessor:
 
         return elec_modelled, rural_elec_ratio, urban_elec_ratio
     
-        self.df.loc[SET_ELEC_FUTURE]=electrified
+        electrified=self.df.loc[SET_ELEC_FUTURE]
     
 
     @staticmethod
