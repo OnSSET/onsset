@@ -1364,8 +1364,8 @@ class SettlementProcessor:
             self.df.apply(lambda row: 1 if row[SET_ELEC_CURRENT] == 1 else 99, axis=1)
 
         return elec_modelled, rural_elec_ratio, urban_elec_ratio
-
-    electrified=self.df.loc[elec_status]
+    
+        self.df.loc[SET_ELEC_FUTURE]=electrified
     
 
     @staticmethod
@@ -1515,7 +1515,7 @@ class SettlementProcessor:
         grid_connect_limit -= densification_connections
 
         cell_path_adjusted = list(np.zeros(len(status)).tolist())
-        electrified, unelectrified = self.df.loc[elec_status]
+        electrified, unelectrified = self.df.loc[SET_ELEC_FUTURE]
 
         if (prio == 2) or (prio == 4):
             changes = []
@@ -1913,21 +1913,7 @@ class SettlementProcessor:
         self.df.loc[self.df[SET_URBAN] == 2, SET_TOTAL_ENERGY_PER_CELL] = \
             self.df[SET_CAPITA_DEMAND] * self.df[SET_POP + "{}".format(year)]
 
-    def grid_reach_estimate(self, start_year, gridspeed):
-        """ Estimates the year of grid arrival based on geospatial characteristics
-        and grid expansion speed in km/year"""
 
-        # logging.info('Estimate year of grid reach')
-        # self.df[SET_GRID_REACH_YEAR] = 0
-        # self.df.loc[self.df[SET_ELEC_FUTURE_GRID + "{}".format(start_year)] == 0, SET_GRID_REACH_YEAR] = \
-        #     self.df[SET_HV_DIST_PLANNED] * self.df[SET_GRID_PENALTY] / gridspeed
-
-        self.df[SET_GRID_REACH_YEAR] = \
-            self.df.apply(lambda row: int(start_year +
-                                          row[SET_HV_DIST_PLANNED] * row[SET_COMBINED_CLASSIFICATION] / gridspeed)
-            if row[SET_ELEC_FUTURE_GRID + "{}".format(start_year)] == 0
-            else start_year,
-                          axis=1)
 
     def calculate_off_grid_lcoes(self, mg_hydro_calc, mg_wind_calc, mg_pv_calc,
                                  sa_pv_calc, mg_diesel_calc, sa_diesel_calc, hybrid_1, hybrid_2, hybrid_3, hybrid_4,
