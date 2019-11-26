@@ -120,3 +120,16 @@ dmypy.json
 # Pyre type checker
 .pyre/
 .idea/*
+
+# Datafiles
+*.xlsx
+*.csv
+
+
+
+# VSCode
+.vscode
+
+# System
+.DS_Store
+
