@@ -1,52 +1,8 @@
 # Defines the modules
 
-import os
 from onsset import *
 import pandas as pd
-import tkinter as tk
-from tkinter import filedialog, messagebox
 from openpyxl import load_workbook
-
-
-
-# root = tk.Tk()
-# root.withdraw()
-# root.attributes("-topmost", True)
-#
-# messagebox.showinfo('OnSSET', 'Open the specs file')
-# specs_path = filedialog.askopenfilename()
-#
-# # specs = pd.read_excel(specs_path, index_col=0)
-#
-# # RUN_PARAM: Insert the name of the country you are working on. More countries should be separated using comma e.g. ["Malawi", "Ghana"]
-# countries = ['Country']
-# # countries = str(input('countries: ')).split()
-# # countries = specs.index.tolist() if 'all' in countries else countries
-#
-# choice = int(input(
-#     'Enter 1 to split (if multiple country run is needed), 2 to prepare/calibrate the GIS input file, 3 to run scenario(s): '))
-
-# # TODO Do we actually need option 1 anymore? I suggest removing it and readjust the options
-# if choice == 1:
-#     messagebox.showinfo('OnSSET', 'Open the csv file with GIS data')
-#     settlements_csv = filedialog.askopenfilename()
-#     messagebox.showinfo('OnSSET', 'Select the folder to save split countries')
-#     base_dir = filedialog.asksaveasfilename()
-#
-#     print('\n --- Splitting --- \n')
-#
-#     df = pd.read_csv(settlements_csv)
-#
-#     for country in countries:
-#         print(country)
-#         df.loc[df[SET_COUNTRY] == country].to_csv(base_dir + '.csv', index=False)
-
-# elif choice == 2:
-#     SpecsData = pd.read_excel(specs_path, sheet_name='SpecsData')
-#     messagebox.showinfo('OnSSET', 'Open the file containing separated countries')
-#     base_dir = filedialog.askopenfilename()
-#     messagebox.showinfo('OnSSET', 'Browse to result folder and name the calibrated file')
-#     output_dir = filedialog.asksaveasfilename()
 
 def calibration(specs_path, csv_path, calibrated_csv_path):
 
