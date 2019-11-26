@@ -1,6 +1,6 @@
 language: python
 python:
-  - "3.5"
+  - "3.6"
 
 # easiest way of getting rtree
 before_install:
@@ -12,7 +12,8 @@ install:
   - pip install wheel
   - pip install Rtree
   - pip install -r requirements.txt
+  - python setup.py develop
 
 # command to run tests
 script:
-  - make test
+  - pytest
