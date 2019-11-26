@@ -1365,21 +1365,8 @@ class SettlementProcessor:
 
         return elec_modelled, rural_elec_ratio, urban_elec_ratio
 
-    @staticmethod
-    def separate_elec_status(elec_status):
-        """
-        Separate out the electrified and unelectrified states from list.
-        """
-
-        electrified = []
-        unelectrified = []
-
-        for i, status in enumerate(elec_status):
-            if status:
-                electrified.append(i)
-            else:
-                unelectrified.append(i)
-        return electrified, unelectrified
+    electrified=self.df.loc[elec_status]
+    
 
     @staticmethod
     def get_2d_hash_table(x, y, unelectrified, distance_limit):
@@ -1528,7 +1515,7 @@ class SettlementProcessor:
         grid_connect_limit -= densification_connections
 
         cell_path_adjusted = list(np.zeros(len(status)).tolist())
-        electrified, unelectrified = self.separate_elec_status(status)
+        electrified, unelectrified = self.df.loc[elec_status]
 
         if (prio == 2) or (prio == 4):
             changes = []
