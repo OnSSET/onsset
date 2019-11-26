@@ -83,7 +83,6 @@ SET_CONFLICT = "Conflict"
 SET_ELEC_ORDER = "ElectrificationOrder"
 SET_DYNAMIC_ORDER = "Electrification_Wave"
 SET_LIMIT = "ElecStatusIn"
-SET_GRID_REACH_YEAR = "GridReachYear"
 SET_MIN_OFFGRID_CODE = "Off_Grid_Code"
 SET_ELEC_FINAL_CODE = "FinalElecCode"
 SET_DIST_TO_TRANS = "TransformerDist"
@@ -1491,7 +1490,6 @@ class SettlementProcessor:
         status = self.df[SET_ELEC_FUTURE_GRID + "{}".format(year)].tolist()
         min_code_lcoes = self.df[SET_MIN_OFFGRID_LCOE + "{}".format(year)].tolist()
         new_lcoes = self.df[SET_LCOE_GRID + "{}".format(year)].tolist()
-        grid_reach = self.df[SET_GRID_REACH_YEAR].tolist()
         cell_path_real = self.df[SET_MV_CONNECT_DIST].tolist()
         planned_hv_dist = self.df[SET_HV_DIST_PLANNED].tolist()  # If connecting from anywhere on the HV line
         planned_mv_dist = self.df[SET_MV_DIST_PLANNED].tolist()  # If connecting from anywhere on the HV line
@@ -1598,14 +1596,13 @@ class SettlementProcessor:
 
         # First round of extension from MV network
         for unelec in unelectrified:
-            if year >= grid_reach[unelec]:
-                consumption = enerperhh[unelec]  # kWh/year
-                average_load = consumption / (1 - grid_calc.distribution_losses) / HOURS_PER_YEAR  # kW
-                peak_load = average_load / grid_calc.base_to_peak_load_ratio  # kW
-                dist = planned_mv_dist[unelec]
-                dist_adjusted = grid_penalty_ratio[unelec] * dist
-                if dist_adjusted <= max_dist:
-                    grid_lcoe = grid_calc.get_lcoe(energy_per_cell=enerperhh[unelec],
+            consumption = enerperhh[unelec]  # kWh/year
+            average_load = consumption / (1 - grid_calc.distribution_losses) / HOURS_PER_YEAR  # kW
+            peak_load = average_load / grid_calc.base_to_peak_load_ratio  # kW
+            dist = planned_mv_dist[unelec]
+            dist_adjusted = grid_penalty_ratio[unelec] * dist
+            if dist_adjusted <= max_dist:
+                grid_lcoe = grid_calc.get_lcoe(energy_per_cell=enerperhh[unelec],
                                                    start_year=year - timestep,
                                                    end_year=end_year,
                                                    people=pop[unelec],
@@ -1619,17 +1616,17 @@ class SettlementProcessor:
                                                    additional_mv_line_length=dist_adjusted,
                                                    elec_loop=0)
 
-                    if grid_lcoe < min_code_lcoes[unelec]:
-                        if (grid_lcoe < new_lcoes[unelec]) and (new_grid_capacity + peak_load < grid_capacity_limit) \
+                if grid_lcoe < min_code_lcoes[unelec]:
+                    if (grid_lcoe < new_lcoes[unelec]) and (new_grid_capacity + peak_load < grid_capacity_limit) \
                                 and (new_connections[unelec] / nupppphh[unelec] < grid_connect_limit):
-                            new_lcoes[unelec] = grid_lcoe
-                            cell_path_real[unelec] = dist
-                            cell_path_adjusted[unelec] = dist_adjusted
-                            new_grid_capacity += peak_load
-                            grid_connect_limit -= new_connections[unelec] / nupppphh[unelec]
-                            elecorder[unelec] = 1
-                            if unelec not in changes:
-                                changes.append(unelec)
+                        new_lcoes[unelec] = grid_lcoe
+                        cell_path_real[unelec] = dist
+                        cell_path_adjusted[unelec] = dist_adjusted
+                        new_grid_capacity += peak_load
+                        grid_connect_limit -= new_connections[unelec] / nupppphh[unelec]
+                        elecorder[unelec] = 1
+                        if unelec not in changes:
+                            changes.append(unelec)
                         else:
                             close.append(unelec)
                     else:
@@ -1641,15 +1638,14 @@ class SettlementProcessor:
 
         #  Extension from HV lines
         for unelec in unelectrified:
-            if year >= grid_reach[unelec]:
-                consumption = enerperhh[unelec]  # kWh/year
-                average_load = consumption / (1 - grid_calc.distribution_losses) / HOURS_PER_YEAR  # kW
-                peak_load = average_load / grid_calc.base_to_peak_load_ratio  # kW
-                dist = planned_hv_dist[unelec]
-                dist_adjusted = grid_penalty_ratio[unelec] * dist
-                if dist <= max_dist:
-                    elec_loop_value = 0
-                    grid_lcoe = grid_calc.get_lcoe(energy_per_cell=enerperhh[unelec],
+            consumption = enerperhh[unelec]  # kWh/year
+            average_load = consumption / (1 - grid_calc.distribution_losses) / HOURS_PER_YEAR  # kW
+            peak_load = average_load / grid_calc.base_to_peak_load_ratio  # kW
+            dist = planned_hv_dist[unelec]
+            dist_adjusted = grid_penalty_ratio[unelec] * dist
+            if dist <= max_dist:
+                elec_loop_value = 0
+                grid_lcoe = grid_calc.get_lcoe(energy_per_cell=enerperhh[unelec],
                                                    start_year=year - timestep,
                                                    end_year=end_year,
                                                    people=pop[unelec],
@@ -1663,8 +1659,8 @@ class SettlementProcessor:
                                                    additional_mv_line_length=dist_adjusted,
                                                    elec_loop=elec_loop_value,
                                                    additional_transformer=1)
-                    if (grid_lcoe < min_code_lcoes[unelec]) and (new_grid_capacity + peak_load < grid_capacity_limit) \
-                            and (new_connections[unelec] / nupppphh[unelec] < grid_connect_limit):
+                if (grid_lcoe < min_code_lcoes[unelec]) and (new_grid_capacity + peak_load < grid_capacity_limit) \
+                         and (new_connections[unelec] / nupppphh[unelec] < grid_connect_limit):
                         new_lcoes[unelec] = grid_lcoe
                         status[unelec] = 1
                         cell_path_real[unelec] = dist
@@ -1672,7 +1668,7 @@ class SettlementProcessor:
                         new_grid_capacity += peak_load
                         grid_connect_limit -= new_connections[unelec] / nupppphh[unelec]
                         elecorder[unelec] = 1
-                        if unelec not in changes:
+                if unelec not in changes:
                             changes.append(unelec)
         electrified = changes[:]
         unelectrified = set(unelectrified).difference(electrified)
@@ -1689,19 +1685,18 @@ class SettlementProcessor:
             changes = []
             if len(elec_nodes2) > 0:
                 for unelec in unelectrified:
-                    if year >= grid_reach[unelec]:
-                        consumption = enerperhh[unelec]  # kWh/year
-                        average_load = consumption / (1 - grid_calc.distribution_losses) / HOURS_PER_YEAR  # kW
-                        peak_load = average_load / grid_calc.base_to_peak_load_ratio  # kW
+                    consumption = enerperhh[unelec]  # kWh/year
+                    average_load = consumption / (1 - grid_calc.distribution_losses) / HOURS_PER_YEAR  # kW
+                    peak_load = average_load / grid_calc.base_to_peak_load_ratio  # kW
 
-                        node = (x[unelec], y[unelec])
-                        closest_elec_node = closest_elec(node, elec_nodes2)
-                        dist = haversine(x[electrified[closest_elec_node]], y[electrified[closest_elec_node]],
+                    node = (x[unelec], y[unelec])
+                    closest_elec_node = closest_elec(node, elec_nodes2)
+                    dist = haversine(x[electrified[closest_elec_node]], y[electrified[closest_elec_node]],
                                          x[unelec], y[unelec])
-                        dist_adjusted = grid_penalty_ratio[unelec] * dist
-                        prev_dist = cell_path_real[electrified[closest_elec_node]]
-                        if dist + prev_dist < max_dist:
-                            grid_lcoe = grid_calc.get_lcoe(energy_per_cell=enerperhh[unelec],
+                    dist_adjusted = grid_penalty_ratio[unelec] * dist
+                    prev_dist = cell_path_real[electrified[closest_elec_node]]
+                    if dist + prev_dist < max_dist:
+                        grid_lcoe = grid_calc.get_lcoe(energy_per_cell=enerperhh[unelec],
                                                            start_year=year - timestep,
                                                            end_year=end_year,
                                                            people=pop[unelec],
@@ -1714,10 +1709,10 @@ class SettlementProcessor:
                                                            travel_hours=travl[unelec],
                                                            additional_mv_line_length=dist_adjusted,
                                                            elec_loop=elecorder[electrified[closest_elec_node]] + 1)
-                            if grid_lcoe < min_code_lcoes[unelec]:
-                                if (grid_lcoe < new_lcoes[unelec]) and \
-                                        (new_grid_capacity + peak_load < grid_capacity_limit) \
-                                        and (new_connections[unelec] / nupppphh[unelec] < grid_connect_limit):
+                        if grid_lcoe < min_code_lcoes[unelec]:
+                            if (grid_lcoe < new_lcoes[unelec]) and \
+                                    (new_grid_capacity + peak_load < grid_capacity_limit) \
+                                    and (new_connections[unelec] / nupppphh[unelec] < grid_connect_limit):
                                     new_lcoes[unelec] = grid_lcoe
                                     cell_path_real[unelec] = dist + cell_path_real[electrified[closest_elec_node]]
                                     cell_path_adjusted[unelec] = dist_adjusted
@@ -2654,8 +2649,7 @@ class SettlementProcessor:
         self.df.loc[
             (self.df[SET_ELEC_FUTURE_GRID + "{}".format(year)] == 1), SET_ELEC_FINAL_GRID + "{}".format(year)] = 1
         self.df.loc[
-            (self.df[SET_LIMIT + "{}".format(year)] == 1) & (self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 1) & (
-                    self.df[SET_GRID_REACH_YEAR] <= year), SET_ELEC_FINAL_GRID + "{}".format(year)] = 1
+            (self.df[SET_LIMIT + "{}".format(year)] == 1) & (self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 1), SET_ELEC_FINAL_GRID + "{}".format(year)] = 1
         # Define what is electrified in a given year by off-grid after prioritization process has finished
         self.df[SET_ELEC_FINAL_OFFGRID + "{}".format(year)] = 0
         self.df.loc[(self.df[SET_ELEC_FUTURE_OFFGRID + "{}".format(year)] == 1) & (
@@ -2665,8 +2659,7 @@ class SettlementProcessor:
                 self.df[SET_ELEC_FINAL_GRID + "{}".format(year)] == 0), SET_ELEC_FINAL_OFFGRID + "{}".format(
             year)] = 1
         self.df.loc[
-            (self.df[SET_LIMIT + "{}".format(year)] == 1) & (self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 0) & (
-                    self.df[SET_GRID_REACH_YEAR] > year), SET_ELEC_FINAL_OFFGRID + "{}".format(year)] = 1
+            (self.df[SET_LIMIT + "{}".format(year)] == 1) & (self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 0), SET_ELEC_FINAL_OFFGRID + "{}".format(year)] = 1
 
         #
         self.df.loc[
