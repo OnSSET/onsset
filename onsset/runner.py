@@ -96,7 +96,7 @@ def calibration(specs_path, csv_path, calibrated_csv_path):
 
     # In case there are limitations in the way grid expansion is moving in a country, this can be reflected through gridspeed.
     # In this case the parameter is set to a very high value therefore is not taken into account.
-    onsseter.grid_reach_estimate(start_year, gridspeed=9999)
+   
 
     SpecsData.loc[0, SPE_URBAN_MODELLED] = urban_modelled
     SpecsData.loc[0, SPE_ELEC_MODELLED] = elec_modelled
