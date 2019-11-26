@@ -331,6 +331,18 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
             onsseter.pre_electrification(grid_calc, grid_price, year, time_step, start_year)
 
+            onsseter.df[SET_LCOE_GRID + "{}".format(year)], onsseter.df[SET_MIN_GRID_DIST + "{}".format(year)], onsseter.df[
+                SET_ELEC_ORDER + "{}".format(year)], onsseter.df[SET_MV_CONNECT_DIST] = onsseter.elec_extension(grid_calc,
+                                                                                                        max_grid_extension_dist,
+                                                                                                        year,
+                                                                                                        start_year,
+                                                                                                        end_year,
+                                                                                                        time_step,
+                                                                                                        grid_cap_gen_limit,
+                                                                                                        grid_connect_limit,
+                                                                                                        auto_intensification=auto_intensification,
+                                                                                                        prioritization=prioritization)
+
             onsseter.elec_extension(grid_calc, max_grid_extension_dist, year, start_year, end_year, time_step,
                               grid_cap_gen_limit, grid_connect_limit, auto_intensification, prioritization)
 
