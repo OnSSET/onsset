@@ -120,3 +120,6 @@ dmypy.json
 # Pyre type checker
 .pyre/
 .idea/*
+test_data/dj-specs-test.xlsx
+test_results/dj-1-1_1_1_1_0_0.csv
+test_results/dj-1-1_1_1_1_0_0_summary.csv
