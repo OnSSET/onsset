@@ -1,7 +1,7 @@
 The OnSSET Model
 ================
 
-OnSSET is a bottom-up medium to long term optimization model. Its principle is simple. It tries to estimate electricity demand and the most cost effective supply option for each location. 
+OnSSET is a bottom-up medium to long term optimization model. Its principle is simple. It tries to estimate electricity demand and the most cost effective supply option for each location.
 
 First, the study area is divided into a mesh of square grid cells, each one of which is accompanied with a number of characteristics (e.g. population density, land type, distance from existing power infrastructure etc.) defined by its location. Then, these characteristics are aggregated and used to informe formulas estimating the Levelized Cost of Electricity generation (LCoE) for seven technology configurations. Finally, the model identifies the configuration that offers the lowest cost of generating electricity per location and calculates the capacity and investment requirements that its deployment entails.
 
@@ -12,13 +12,13 @@ The optimal technology mix and investment required to fully electrify a country 
 2)  The current status and plans of the national electricity grid along with its associated costs.
 
 3)  Local energy resources availability and off-grid power systems costs.
- 
-The following paragraphs describe in brief how an electrification anaysis with OnSSET works. 
+
+The following paragraphs describe in brief how an electrification anaysis with OnSSET works.
 
 
 Electricity demand
 *******************
-The goal of OnSSET is clear, to identify the mix of technologies that will help to fully electrify the population of a country within a certain timeframe. That is, OnSSET only accounts for residential electricity demand. 
+The goal of OnSSET is clear, to identify the mix of technologies that will help to fully electrify the population of a country within a certain timeframe. That is, OnSSET only accounts for residential electricity demand.
 
 Geo-location of population and current electrification status
 -------------------------------------------------------------
@@ -36,8 +36,8 @@ electricity access; OnSSET adopts the consumption levels suggested by the Global
     .. image::  img/TierFramework.png
         :scale: 80 %
         :align: center
-        
-Consumption levels start from 8 kWh/person/year, enough to support minor daily activities (few hours of lighting, phone charging, radio etc.) and reach up to 598 kWh/person/year, supporting the use of heavier or continuous appliances in a household like refrigerator, washing machine, oven etc. These values can easily be changed in the OnSSET model in order to better fit the study area of your choice. The combination of projected population and targeted consumption level, indicates the electricity demand for residential purposes per location. Note, that OnSSET provides the option of selecting different access tiers for rural and urban areas. 
+
+Consumption levels start from 8 kWh/person/year, enough to support minor daily activities (few hours of lighting, phone charging, radio etc.) and reach up to 598 kWh/person/year, supporting the use of heavier or continuous appliances in a household like refrigerator, washing machine, oven etc. These values can easily be changed in the OnSSET model in order to better fit the study area of your choice. The combination of projected population and targeted consumption level, indicates the electricity demand for residential purposes per location. Note, that OnSSET provides the option of selecting different access tiers for rural and urban areas.
 
                         **Electricity Demand = Population in 2030 X Selected Access Tier**
 
@@ -58,10 +58,10 @@ Wind speed data extracted into a GIS environment are used to calculate wind turb
 .. image::  img/AfghanCF.png
     :scale: 80 %
     :align: center
-        
+
 **Solar energy potential**
 
-GIS data for Global Horizontal Irradiation (GHI - kWh/m^2/time) are used to indicate the available solar energy that Photovoltaic (PV) systems can utilize per location. This layer is combined with additional datasets that are used to define restriction zones for mini-grid PV installations such as protected areas, reserved forests etc. Documentation on solar power assessment is available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/Solar>`_. 
+GIS data for Global Horizontal Irradiation (GHI - kWh/m^2/time) are used to indicate the available solar energy that Photovoltaic (PV) systems can utilize per location. This layer is combined with additional datasets that are used to define restriction zones for mini-grid PV installations such as protected areas, reserved forests etc. Documentation on solar power assessment is available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/Solar>`_.
 
 .. image::  img/AfghanSolar.png
     :scale: 80 %
@@ -69,7 +69,7 @@ GIS data for Global Horizontal Irradiation (GHI - kWh/m^2/time) are used to indi
 
 **Hydropower potential**
 
-A number of GIS datasets (runoff, accumulation, elevation, river network) have been utilized in a novel methodology developed by KTH dESA in order to spatially identify potential site for small scale hydropower deployment. Documentation on hydropower assessment together with a GIS based assessment tool is available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/HydroPower>`_. 
+A number of GIS datasets (runoff, accumulation, elevation, river network) have been utilized in a novel methodology developed by KTH dESA in order to spatially identify potential site for small scale hydropower deployment. Documentation on hydropower assessment together with a GIS based assessment tool is available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/HydroPower>`_.
 
 .. image::  img/AfghanHydro.png
     :scale: 80 %
@@ -77,7 +77,7 @@ A number of GIS datasets (runoff, accumulation, elevation, river network) have b
 
 **Transportation Cost for Diesel**
 
-Diesel is an important energy carrier, especially in remote areas of many developing countries and is therefore included in the OnSSET analysis. Transportation of diesel incurs costs, which may lead to high costs of electricity for isolated and low populated communities. OnSSET uses GIS datasets that indicate travel time and distance from main urban hubs, in order to calculate and assign transportation costs for diesel in each location. These costs are then included as fuel costs in the calculation of LCoE for diesel gensets. Documentation on diesel cost assessment is available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/DieselCost>`_. 
+Diesel is an important energy carrier, especially in remote areas of many developing countries and is therefore included in the OnSSET analysis. Transportation of diesel incurs costs, which may lead to high costs of electricity for isolated and low populated communities. OnSSET uses GIS datasets that indicate travel time and distance from main urban hubs, in order to calculate and assign transportation costs for diesel in each location. These costs are then included as fuel costs in the calculation of LCoE for diesel gensets. Documentation on diesel cost assessment is available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/DieselCost>`_.
 
 .. image::  img/AfghanDiesel.png
     :scale: 80 %
@@ -98,7 +98,7 @@ feasible if the purpose is to meet a relatively small electricity demand or for 
 
 .. image::  img/GridExtension.png
     :align: center
-    
+
 **Mini-grids** - Wind Turbines, Solar PVs, Mini/Small Hydro, Diesel generators
 -------------------------------------------------------------------------------
 
@@ -115,7 +115,7 @@ As mini-grids, these systems are usually based on local energy resources but the
 only few kWh per day, suitable to cover the electricity demand of a single household or a small business, but no more.
 Stand-alone systems do not require a T&D network nor construction investments. The capital cost of these systems is
 not high and depends mainly on size. Batteries, allowing for electricity when dark, may increase the upfront cost for PV systems.
-    
+
     .. image::  img/StandAlone.png
         :scale: 85 %
         :align: center
@@ -151,7 +151,7 @@ Once the LCoEs for all the off-grid technology configurations have been calculat
 executed. For each cell electrified by the national grid the algorithm iterates through all
 non-electrified cells to test if the conditions for their connection to the electrified cell are fulfilled.
 These conditions include: a) lower cost of generating, transmitting and distributing electricity as compared to the off-grid
-technologies and b) not causing the total additional MV grid length to exceed 50 km if it is connected. 
+technologies and b) not causing the total additional MV grid length to exceed 50 km if it is connected.
 
 If these conditions are verified, the settlement status is set to electrified (by the national grid). At the same time, the algorithm
 stores the length of the additional MV lines that have been built thus far by the model to connect this new settlement.
@@ -162,7 +162,7 @@ electrified, and thus until all settlements to which the grid can be economicall
 are not connected to the grid will get access to electricity through mini grid or stand-alone systems. This decision is
 based on a cost comparison process where the off-grid technology which can meet the electricity demand at the lowest LCoE
 selected for each cell.
-    
+
 **Penalty cost assignment to electricity grid expansion processess**
 
 The expansion of the transmission network to areas lacking access is a capital intensive process. The investment costs
