@@ -1,8 +1,4 @@
-# Pulls all the other functions together to make magic!
-#
-# Author: KTH dESA Last modified by Andreas Sahlberg
-# Date: 05 June 2019
-# Python version: 3.5
+# Defines the modules
 
 import os
 from onsset import *
@@ -11,131 +7,122 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 from openpyxl import load_workbook
 
-root = tk.Tk()
-root.withdraw()
-root.attributes("-topmost", True)
 
-messagebox.showinfo('OnSSET', 'Open the specs file')
-specs_path = filedialog.askopenfilename()
 
-# specs = pd.read_excel(specs_path, index_col=0)
+# root = tk.Tk()
+# root.withdraw()
+# root.attributes("-topmost", True)
+#
+# messagebox.showinfo('OnSSET', 'Open the specs file')
+# specs_path = filedialog.askopenfilename()
+#
+# # specs = pd.read_excel(specs_path, index_col=0)
+#
+# # RUN_PARAM: Insert the name of the country you are working on. More countries should be separated using comma e.g. ["Malawi", "Ghana"]
+# countries = ['Country']
+# # countries = str(input('countries: ')).split()
+# # countries = specs.index.tolist() if 'all' in countries else countries
+#
+# choice = int(input(
+#     'Enter 1 to split (if multiple country run is needed), 2 to prepare/calibrate the GIS input file, 3 to run scenario(s): '))
 
-# RUN_PARAM: Insert the name of the country you are working on. More countries should be separated using comma e.g. ["Malawi", "Ghana"]
-countries = ['Country']
-# countries = str(input('countries: ')).split()
-# countries = specs.index.tolist() if 'all' in countries else countries
+# # TODO Do we actually need option 1 anymore? I suggest removing it and readjust the options
+# if choice == 1:
+#     messagebox.showinfo('OnSSET', 'Open the csv file with GIS data')
+#     settlements_csv = filedialog.askopenfilename()
+#     messagebox.showinfo('OnSSET', 'Select the folder to save split countries')
+#     base_dir = filedialog.asksaveasfilename()
+#
+#     print('\n --- Splitting --- \n')
+#
+#     df = pd.read_csv(settlements_csv)
+#
+#     for country in countries:
+#         print(country)
+#         df.loc[df[SET_COUNTRY] == country].to_csv(base_dir + '.csv', index=False)
 
-choice = int(input(
-    'Enter 1 to split (if multiple country run is needed), 2 to prepare/calibrate the GIS input file, 3 to run scenario(s): '))
+# elif choice == 2:
+#     SpecsData = pd.read_excel(specs_path, sheet_name='SpecsData')
+#     messagebox.showinfo('OnSSET', 'Open the file containing separated countries')
+#     base_dir = filedialog.askopenfilename()
+#     messagebox.showinfo('OnSSET', 'Browse to result folder and name the calibrated file')
+#     output_dir = filedialog.asksaveasfilename()
 
-# TODO Do we actually need option 1 anymore? I suggest removing it and readjust the options
-if choice == 1:
-    messagebox.showinfo('OnSSET', 'Open the csv file with GIS data')
-    settlements_csv = filedialog.askopenfilename()
-    messagebox.showinfo('OnSSET', 'Select the folder to save split countries')
-    base_dir = filedialog.asksaveasfilename()
+def calibration(specs_path, csv_path, calibrated_csv_path):
 
-    print('\n --- Splitting --- \n')
 
-    df = pd.read_csv(settlements_csv)
-
-    for country in countries:
-        print(country)
-        df.loc[df[SET_COUNTRY] == country].to_csv(base_dir + '.csv', index=False)
-
-elif choice == 2:
+    specs = pd.read_excel(specs_path, index_col=0)
     SpecsData = pd.read_excel(specs_path, sheet_name='SpecsData')
-    messagebox.showinfo('OnSSET', 'Open the file containing separated countries')
-    base_dir = filedialog.askopenfilename()
-    messagebox.showinfo('OnSSET', 'Browse to result folder and name the calibrated file')
-    output_dir = filedialog.asksaveasfilename()
+    settlements_in_csv = csv_path
+    settlements_out_csv = calibrated_csv_path
 
-    print('\n --- Prepping --- \n')
+    onsseter = SettlementProcessor(settlements_in_csv)
 
-    for country in countries:
-        print(SpecsData.loc[0, SPE_COUNTRY])
-        settlements_in_csv = base_dir
-        settlements_out_csv = output_dir + '.csv'
+    num_people_per_hh_rural = float(SpecsData.iloc[0][SPE_NUM_PEOPLE_PER_HH_RURAL])
+    num_people_per_hh_urban = float(SpecsData.iloc[0][SPE_NUM_PEOPLE_PER_HH_URBAN])
 
-        onsseter = SettlementProcessor(settlements_in_csv)
+    # RUN_PARAM: these are the annual household electricity targets
+    tier_1 = 38.7  # 38.7 refers to kWh/household/year. It is the mean value between Tier 1 and Tier 2
+    tier_2 = 219
+    tier_3 = 803
+    tier_4 = 2117
+    tier_5 = 2993
 
-        num_people_per_hh_rural = float(SpecsData.iloc[0][SPE_NUM_PEOPLE_PER_HH_RURAL])
-        num_people_per_hh_urban = float(SpecsData.iloc[0][SPE_NUM_PEOPLE_PER_HH_URBAN])
+    onsseter.prepare_wtf_tier_columns(num_people_per_hh_rural, num_people_per_hh_urban,
+                                      tier_1, tier_2, tier_3, tier_4, tier_5)
+    onsseter.condition_df()
+    onsseter.grid_penalties()
+    onsseter.calc_wind_cfs()
 
-        # RUN_PARAM: these are the annual household electricity targets
-        tier_1 = 38.7  # 38.7 refers to kWh/household/year. It is the mean value between Tier 1 and Tier 2
-        tier_2 = 219
-        tier_3 = 803
-        tier_4 = 2117
-        tier_5 = 2993
+    pop_actual = SpecsData.loc[0, SPE_POP]
+    pop_future_high = SpecsData.loc[0, SPE_POP_FUTURE + 'High']
+    pop_future_low = SpecsData.loc[0, SPE_POP_FUTURE + 'Low']
+    urban_current = SpecsData.loc[0, SPE_URBAN]
+    urban_future = SpecsData.loc[0, SPE_URBAN_FUTURE]
+    start_year = int(SpecsData.loc[0, SPE_START_YEAR])
+    end_year = int(SpecsData.loc[0, SPE_END_YEAR])
 
-        onsseter.prepare_wtf_tier_columns(num_people_per_hh_rural, num_people_per_hh_urban,
-                                          tier_1, tier_2, tier_3, tier_4, tier_5)
-        onsseter.condition_df()
-        onsseter.grid_penalties()
-        onsseter.calc_wind_cfs()
+    intermediate_year = 2025
+    elec_actual = SpecsData.loc[0, SPE_ELEC]
+    elec_actual_urban = SpecsData.loc[0, SPE_ELEC_URBAN]
+    elec_actual_rural = SpecsData.loc[0, SPE_ELEC_RURAL]
+    pop_tot = SpecsData.loc[0, SPE_POP]
 
-        pop_actual = SpecsData.loc[0, SPE_POP]
-        pop_future_high = SpecsData.loc[0, SPE_POP_FUTURE + 'High']
-        pop_future_low = SpecsData.loc[0, SPE_POP_FUTURE + 'Low']
-        urban_current = SpecsData.loc[0, SPE_URBAN]
-        urban_future = SpecsData.loc[0, SPE_URBAN_FUTURE]
-        start_year = int(SpecsData.loc[0, SPE_START_YEAR])
-        end_year = int(SpecsData.loc[0, SPE_END_YEAR])
+    urban_modelled = onsseter.calibrate_pop_and_urban(pop_actual, pop_future_high, pop_future_low, urban_current,
+                                                      urban_future, start_year, end_year, intermediate_year)
 
-        intermediate_year = 2025
-        elec_actual = SpecsData.loc[0, SPE_ELEC]
-        elec_actual_urban = SpecsData.loc[0, SPE_ELEC_URBAN]
-        elec_actual_rural = SpecsData.loc[0, SPE_ELEC_RURAL]
-        pop_tot = SpecsData.loc[0, SPE_POP]
+    elec_modelled, rural_elec_ratio, urban_elec_ratio = \
+        onsseter.elec_current_and_future(elec_actual, elec_actual_urban, elec_actual_rural, pop_tot, start_year)
 
-        urban_modelled = onsseter.calibrate_pop_and_urban(pop_actual, pop_future_high, pop_future_low, urban_current,
-                                                          urban_future, start_year, end_year, intermediate_year)
+    # In case there are limitations in the way grid expansion is moving in a country, this can be reflected through gridspeed.
+    # In this case the parameter is set to a very high value therefore is not taken into account.
+    onsseter.grid_reach_estimate(start_year, gridspeed=9999)
 
-        elec_modelled, rural_elec_ratio, urban_elec_ratio = \
-            onsseter.elec_current_and_future(elec_actual, elec_actual_urban, elec_actual_rural, pop_tot, start_year)
+    SpecsData.loc[0, SPE_URBAN_MODELLED] = urban_modelled
+    SpecsData.loc[0, SPE_ELEC_MODELLED] = elec_modelled
+    SpecsData.loc[0, 'rural_elec_ratio_modelled'] = rural_elec_ratio
+    SpecsData.loc[0, 'urban_elec_ratio_modelled'] = urban_elec_ratio
 
-        # In case there are limitations in the way grid expansion is moving in a country, this can be reflected through gridspeed.
-        # In this case the parameter is set to a very high value therefore is not taken into account.
-        onsseter.grid_reach_estimate(start_year, gridspeed=9999)
+    book = load_workbook(specs_path)
+    writer = pd.ExcelWriter(specs_path, engine='openpyxl')
+    writer.book = book
+    # RUN_PARAM: Here the calibrated "specs" data are copied to a new tab called "SpecsDataCalib". This is what will later on be used to feed the model
+    SpecsData.to_excel(writer, sheet_name='SpecsDataCalib', index=False)
+    writer.save()
+    writer.close()
 
-        SpecsData.loc[0, SPE_URBAN_MODELLED] = urban_modelled
-        SpecsData.loc[0, SPE_ELEC_MODELLED] = elec_modelled
-        SpecsData.loc[0, 'rural_elec_ratio_modelled'] = rural_elec_ratio
-        SpecsData.loc[0, 'urban_elec_ratio_modelled'] = urban_elec_ratio
+    logging.info('Calibration finished. Results are transferred to the csv file')
+    onsseter.df.to_csv(settlements_out_csv, index=False)
 
-        book = load_workbook(specs_path)
-        writer = pd.ExcelWriter(specs_path, engine='openpyxl')
-        writer.book = book
-        # RUN_PARAM: Here the calibrated "specs" data are copied to a new tab called "SpecsDataCalib". This is what will later on be used to feed the model
-        SpecsData.to_excel(writer, sheet_name='SpecsDataCalib', index=False)
-        writer.save()
-        writer.close()
+def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
-        logging.info('Calibration finished. Results are transferred to the csv file')
-        onsseter.df.to_csv(settlements_out_csv, index=False)
-
-elif choice == 3:
-
-    diesel_high = True
-    diesel_tag = 'high' if diesel_high else 'low'
-
-    messagebox.showinfo('OnSSET', 'Open the csv file with calibrated GIS data')
-    base_dir = filedialog.askopenfilename()
-    messagebox.showinfo('OnSSET', 'Browse to RESULTS folder to save outputs')
-    # output_dir = filedialog.asksaveasfilename()
-    output_dir = filedialog.askdirectory()
-    messagebox.showinfo('OnSSET', 'Browse to SUMMARIES folder and name the scenario to save outputs')
-    # output_dir_summaries = filedialog.asksaveasfilename()
-    output_dir_summaries = filedialog.askdirectory()
-
-    print('\n --- Running scenario --- \n')
 
     ScenarioInfo = pd.read_excel(specs_path, sheet_name='ScenarioInfo')
     Scenarios = ScenarioInfo['Scenario']
     ScenarioParameters = pd.read_excel(specs_path, sheet_name='ScenarioParameters')
     SpecsData = pd.read_excel(specs_path, sheet_name='SpecsDataCalib')
     print(SpecsData.loc[0, SPE_COUNTRY])
+
     for scenario in Scenarios:
         print('Scenario: ' + str(scenario + 1))
         countryID = SpecsData.iloc[0]['CountryCode']
@@ -162,12 +149,12 @@ elif choice == 3:
         prioritization = ScenarioParameters.iloc[prioIndex]['PrioritizationAlgorithm']
         auto_intensification = ScenarioParameters.iloc[prioIndex]['AutoIntensificationKM']
 
-        settlements_in_csv = base_dir
-        settlements_out_csv = os.path.join(output_dir,
+        settlements_in_csv = calibrated_csv_path
+        settlements_out_csv = os.path.join(results_folder,
                                            '{}-1-{}_{}_{}_{}_{}_{}.csv'.format(countryID, popIndex, tierIndex,
                                                                                      fiveyearIndex, gridIndex, pvIndex,
                                                                                      prioIndex))
-        summary_csv = os.path.join(output_dir_summaries,
+        summary_csv = os.path.join(summary_folder,
                                    '{}-1-{}_{}_{}_{}_{}_{}_summary.csv'.format(countryID, popIndex, tierIndex,
                                                                                      fiveyearIndex, gridIndex, pvIndex,
                                                                                      prioIndex))
@@ -272,69 +259,6 @@ elif choice == 3:
                                    diesel_truck_consumption=33.7,
                                    diesel_truck_volume=15000)
 
-        # RUN_PARAM: Activating (un-commenting) lines 254-294 will run the analysis without time step and help identify differences in the two modelling approaches
-        ### RUN - NO TIMESTEP
-
-        # # RUN_PARAM: Fill in the next 3 parameters accordingly. Remember this specifies a run with no intermediate step
-        # time_step = end_year - start_year  # Years between final and start year
-        # year = end_year  # Final year
-        # eleclimits = {end_year: 1}  # Access goal in the final year
-        #
-        # grid_cap_gen_limit = time_step * annual_grid_cap_gen_limit
-        # grid_connect_limit = time_step * annual_new_grid_connections_limit
-        #
-        # eleclimit = eleclimits[year]
-        #
-        # hybrid_1 = pv_diesel_hyb.pv_diesel_hybrid(1, max(onsseter.df[SET_GHI]),
-        #                                           max(onsseter.df[SET_TRAVEL_HOURS]), 1, start_year, end_year,
-        #                                           pv_no=pv_no, diesel_no=diesel_no)
-        # hybrid_2 = pv_diesel_hyb.pv_diesel_hybrid(1, max(onsseter.df[SET_GHI]),
-        #                                           max(onsseter.df[SET_TRAVEL_HOURS]), 2, start_year, end_year,
-        #                                           pv_no=pv_no, diesel_no=diesel_no)
-        # hybrid_3 = pv_diesel_hyb.pv_diesel_hybrid(1, max(onsseter.df[SET_GHI]),
-        #                                           max(onsseter.df[SET_TRAVEL_HOURS]), 3, start_year, end_year,
-        #                                           pv_no=pv_no, diesel_no=diesel_no)
-        # hybrid_4 = pv_diesel_hyb.pv_diesel_hybrid(1, max(onsseter.df[SET_GHI]),
-        #                                           max(onsseter.df[SET_TRAVEL_HOURS]), 4, start_year, end_year,
-        #                                           pv_no=pv_no, diesel_no=diesel_no)
-        # hybrid_5 = pv_diesel_hyb.pv_diesel_hybrid(1, max(onsseter.df[SET_GHI]),
-        #                                           max(onsseter.df[SET_TRAVEL_HOURS]), 5, start_year, end_year,
-        #                                           pv_no=pv_no, diesel_no=diesel_no)
-        #
-        # onsseter.set_scenario_variables(year, num_people_per_hh_rural, num_people_per_hh_urban, time_step, start_year,
-        #                                 urban_elec_ratio, rural_elec_ratio, urban_tier, rural_tier, end_year_pop,
-        #                                 productive_demand)
-        #
-        # onsseter.calculate_off_grid_lcoes(mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc,
-        #                                   sa_diesel_calc, hybrid_1, hybrid_2, hybrid_3, hybrid_4,
-        #                                   hybrid_5, year, start_year, end_year, time_step)
-        #
-        # if year - time_step == start_year:
-        #     onsseter.current_mv_line_dist()
-        #
-        # onsseter.pre_electrification(grid_calc, grid_price, year, time_step, start_year)
-        #
-        # onsseter.run_elec(grid_calc, max_grid_extension_dist, year, start_year, end_year, time_step, grid_cap_gen_limit,
-        #                   grid_connect_limit, auto_intensification, prioritization)
-        #
-        # onsseter.results_columns(mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc, sa_diesel_calc,
-        #                          hybrid_1, hybrid_2, hybrid_3, hybrid_4, hybrid_5, grid_calc, year)
-        #
-        # onsseter.calculate_investments(mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc,
-        #                                sa_diesel_calc, grid_calc, hybrid_1, hybrid_2, hybrid_3, hybrid_4,
-        #                                hybrid_5, year, end_year, time_step)
-        #
-        # onsseter.apply_limitations(eleclimit, year, time_step, prioritization, auto_intensification)
-        #
-        # onsseter.final_decision(mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc, sa_diesel_calc,
-        #                         grid_calc, hybrid_1, hybrid_2, hybrid_3, hybrid_4, hybrid_5, year,
-        #                         end_year, time_step)
-        #
-        # onsseter.delete_redundant_columns(year)
-
-        ### END OF FIRST RUN
-
-        ### HERE STARTS THE ACTUAL ANALYSIS WITH THE INCLUSION OF TIME STEPS
 
         # RUN_PARAM: One shall define here the years of analysis (excluding start year) together with access targets per interval and timestep duration
         yearsofanalysis = [2025, 2030]

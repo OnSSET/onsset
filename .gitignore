@@ -121,8 +121,15 @@ dmypy.json
 .pyre/
 .idea/*
 
+# Datafiles
+*.xlsx
+*.csv
+
+
+
 # VSCode
 .vscode
 
 # System
 .DS_Store
+
