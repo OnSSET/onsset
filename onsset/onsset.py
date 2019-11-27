@@ -763,19 +763,29 @@ class SettlementProcessor:
         for num in tier_num:
             self.df[SET_WTFtier + "{}".format(num)] = wb_tiers_all[num]
 
-    def calibrate_pop_and_urban(self, pop_actual, pop_future_high, pop_future_low, urban_current, urban_future,
-                                start_year, end_year, intermediate_year):
+    def calibrate_current_pop_and_urban(self, pop_actual, urban_current):
         """
-        Calibrate the actual current population, the urban split and forecast the future population
+        The function calibrates population values and urban/rural split (as estimated from GIS layers) based
+        on actual values provided by the user for the start year.
         """
 
-        logging.info('Calibrate current population')
-        project_life = end_year - start_year
-        # Calculate the ratio between the actual population and the total population from the GIS layer
+        logging.info('Population calibration process')
+
+        # First, calculate ratio between GIS retrieved and user provided population
         pop_ratio = pop_actual / self.df[SET_POP].sum()
-        # And use this ratio to calibrate the population in a new column
+
+        # Use above ratio to calibrate the population in a new column
         self.df[SET_POP_CALIB] = self.df.apply(lambda row: row[SET_POP] * pop_ratio, axis=1)
+        pop_modelled = self.df[SET_POP_CALIB].sum()
+        pop_diff = abs(pop_modelled - pop_actual)
+        print('The calibrated population differs by {:.2f}. '
+              'In case this is not acceptable please revise this part of the code'.format(pop_diff))
+
+        # TODO Why do we apply the ratio to elec_pop? Shouldn't the calibration take place before defining elec_pop?
         self.df[SET_ELEC_POP_CALIB] = self.df[SET_ELEC_POP] * pop_ratio
+
+        logging.info('Urban/rural calibration process')
+        # TODO As indicated below, HRSL classifies in 0, 1 and 2; I don't get why if statement uses 3 here.
         if max(self.df[SET_URBAN]) == 3:  # THIS OPTION IS CURRENTLY DISABLED
             calibrate = True if 'n' in input(
                 'Use urban definition from GIS layer <y/n> (n=model calibration):') else False
@@ -808,30 +818,44 @@ class SettlementProcessor:
             print('The modelled urban ratio is {:.2f}. '
                   'In case this is not acceptable please revise this part of the code'.format(urban_modelled))
 
+        print (pop_actual, pop_modelled)
+
+        return pop_modelled, urban_modelled
+
+    def project_pop_and_urban(self, pop_modelled, pop_future_high, pop_future_low, urban_modelled,
+                              urban_future, start_year, end_year, intermediate_year):
+        """
+        This function projects population and urban/rural ratio for the different years of the analysis
+        """
+        project_life = end_year - start_year
+
         # Project future population, with separate growth rates for urban and rural
-        logging.info('Project future population')
+        logging.info('Population projection process')
+
+        # TODO this is a residual of the previous process; shall we delete? Is there any scenario where we don't apply projections?
+        calibrate = True
 
         if calibrate:
-            urban_growth_high = (urban_future * pop_future_high) / (urban_modelled * pop_actual)
-            rural_growth_high = ((1 - urban_future) * pop_future_high) / ((1 - urban_modelled) * pop_actual)
+            urban_growth_high = (urban_future * pop_future_high) / (urban_modelled * pop_modelled)
+            rural_growth_high = ((1 - urban_future) * pop_future_high) / ((1 - urban_modelled) * pop_modelled)
 
             yearly_urban_growth_rate_high = urban_growth_high ** (1 / project_life)
             yearly_rural_growth_rate_high = rural_growth_high ** (1 / project_life)
 
-            urban_growth_low = (urban_future * pop_future_low) / (urban_modelled * pop_actual)
-            rural_growth_low = ((1 - urban_future) * pop_future_low) / ((1 - urban_modelled) * pop_actual)
+            urban_growth_low = (urban_future * pop_future_low) / (urban_modelled * pop_modelled)
+            rural_growth_low = ((1 - urban_future) * pop_future_low) / ((1 - urban_modelled) * pop_modelled)
 
             yearly_urban_growth_rate_low = urban_growth_low ** (1 / project_life)
             yearly_rural_growth_rate_low = rural_growth_low ** (1 / project_life)
         else:
-            urban_growth_high = pop_future_high / pop_actual
-            rural_growth_high = pop_future_high / pop_actual
+            urban_growth_high = pop_future_high / pop_modelled
+            rural_growth_high = pop_future_high / pop_modelled
 
             yearly_urban_growth_rate_high = urban_growth_high ** (1 / project_life)
             yearly_rural_growth_rate_high = rural_growth_high ** (1 / project_life)
 
-            urban_growth_low = pop_future_low / pop_actual
-            rural_growth_low = pop_future_low / pop_actual
+            urban_growth_low = pop_future_low / pop_modelled
+            rural_growth_low = pop_future_low / pop_modelled
 
             yearly_urban_growth_rate_low = urban_growth_low ** (1 / project_life)
             yearly_rural_growth_rate_low = rural_growth_low ** (1 / project_life)
@@ -855,8 +879,6 @@ class SettlementProcessor:
                  (yearly_rural_growth_rate_low ** (year - start_year)), axis=1)
 
         self.df[SET_POP + "{}".format(start_year)] = self.df.apply(lambda row: row[SET_POP_CALIB], axis=1)
-
-        return urban_modelled
 
     def elec_current_and_future(self, elec_actual, elec_actual_urban, elec_actual_rural, pop_tot, start_year,
                                 min_night_lights=0, min_pop=50, max_transformer_dist=2, max_mv_dist=2, max_hv_dist=5):
