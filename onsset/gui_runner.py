@@ -21,11 +21,16 @@ specs = pd.read_excel(specs_path, index_col=0)
 if choice == 1:
     messagebox.showinfo('OnSSET', 'Open the file containing separated countries')
     csv_path = filedialog.askopenfilename()
+
     messagebox.showinfo('OnSSET', 'Browse to result folder and name the calibrated file')
     calibrated_csv_path = filedialog.asksaveasfilename()
     calibrated_csv_path = calibrated_csv_path + '.csv'
 
-    calibration(specs_path, csv_path, calibrated_csv_path)
+    messagebox.showinfo('OnSSET', 'Browse to result folder and name the calibrated specs file')
+    specs_path_calib = filedialog.asksaveasfilename()
+    specs_path_calib = specs_path_calib + '.xlsx'
+
+    calibration(specs_path, csv_path, specs_path_calib, calibrated_csv_path)
 
 elif choice == 2:
     messagebox.showinfo('OnSSET', 'Open the csv file with calibrated GIS data')

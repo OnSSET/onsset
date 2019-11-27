@@ -291,9 +291,10 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
             onsseter.apply_limitations(eleclimit, year, time_step, prioritization, auto_intensification)
 
-            onsseter.final_decision(mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc, sa_diesel_calc,
-                                    grid_calc, year,
-                                    end_year, time_step)
+            onsseter.final_decision(year)
+
+            onsseter.calculate_new_capacity(mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc,
+                                            sa_diesel_calc, grid_calc, year)
 
             onsseter.calc_summaries(df_summary, sumtechs, year)
 
