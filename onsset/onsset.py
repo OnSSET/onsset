@@ -20,8 +20,6 @@ HOURS_PER_YEAR = 8760
 
 # Columns in settlements file must match these exactly
 SET_COUNTRY = 'Country'  # This cannot be changed, lots of code will break
-SET_X = 'X'  # Coordinate in kilometres
-SET_Y = 'Y'  # Coordinate in kilometres
 SET_X_DEG = 'X_deg'  # Coordinates in degrees
 SET_Y_DEG = 'Y_deg'
 SET_POP = 'Pop'  # Population in people per point (equally, people per km2)
@@ -549,21 +547,39 @@ class SettlementProcessor:
         """
 
         logging.info('Ensure that columns that are supposed to be numeric are numeric')
+        self.df[SET_NIGHT_LIGHTS] = pd.to_numeric(self.df[SET_NIGHT_LIGHTS], errors='coerce')
+        self.df[SET_POP] = pd.to_numeric(self.df[SET_POP], errors='coerce')
+        self.df[SET_GRID_CELL_AREA] = pd.to_numeric(self.df[SET_GRID_CELL_AREA], errors='coerce')
+        self.df[SET_ELEC_POP] = pd.to_numeric(self.df[SET_ELEC_POP], errors='coerce')
         self.df[SET_GHI] = pd.to_numeric(self.df[SET_GHI], errors='coerce')
         self.df[SET_WINDVEL] = pd.to_numeric(self.df[SET_WINDVEL], errors='coerce')
-        self.df[SET_NIGHT_LIGHTS] = pd.to_numeric(self.df[SET_NIGHT_LIGHTS], errors='coerce')
+        self.df[SET_TRAVEL_HOURS] = pd.to_numeric(self.df[SET_TRAVEL_HOURS], errors='coerce')
         self.df[SET_ELEVATION] = pd.to_numeric(self.df[SET_ELEVATION], errors='coerce')
         self.df[SET_SLOPE] = pd.to_numeric(self.df[SET_SLOPE], errors='coerce')
         self.df[SET_LAND_COVER] = pd.to_numeric(self.df[SET_LAND_COVER], errors='coerce')
         self.df[SET_SUBSTATION_DIST] = pd.to_numeric(self.df[SET_SUBSTATION_DIST], errors='coerce')
+        self.df[SET_HV_DIST_CURRENT] = pd.to_numeric(self.df[SET_HV_DIST_CURRENT], errors='coerce')
+        self.df[SET_HV_DIST_PLANNED] = pd.to_numeric(self.df[SET_HV_DIST_PLANNED], errors='coerce')
+        self.df[SET_MV_DIST_CURRENT] = pd.to_numeric(self.df[SET_MV_DIST_CURRENT], errors='coerce')
+        self.df[SET_MV_DIST_PLANNED] = pd.to_numeric(self.df[SET_MV_DIST_PLANNED], errors='coerce')
         self.df[SET_ROAD_DIST] = pd.to_numeric(self.df[SET_ROAD_DIST], errors='coerce')
+        self.df[SET_X_DEG] = pd.to_numeric(self.df[SET_X_DEG], errors='coerce')
+        self.df[SET_Y_DEG] = pd.to_numeric(self.df[SET_Y_DEG], errors='coerce')
+        self.df[SET_DIST_TO_TRANS] = pd.to_numeric(self.df[SET_DIST_TO_TRANS], errors='coerce')
         self.df[SET_HYDRO_DIST] = pd.to_numeric(self.df[SET_HYDRO_DIST], errors='coerce')
         self.df[SET_HYDRO] = pd.to_numeric(self.df[SET_HYDRO], errors='coerce')
-        self.df[SET_ELEC_POP] = pd.to_numeric(self.df[SET_ELEC_POP], errors='coerce')
+        self.df[SET_HYDRO_FID] = pd.to_numeric(self.df[SET_HYDRO_FID], errors='coerce')
+        self.df[SET_URBAN] = pd.to_numeric(self.df[SET_URBAN], errors='coerce')
+        self.df[SET_CAPITA_DEMAND] = pd.to_numeric(self.df[SET_CAPITA_DEMAND], errors='coerce')
+        self.df[SET_AGRI_DEMAND] = pd.to_numeric(self.df[SET_AGRI_DEMAND], errors='coerce')
+        self.df[SET_HEALTH_DEMAND] = pd.to_numeric(self.df[SET_HEALTH_DEMAND], errors='coerce')
+        self.df[SET_EDU_DEMAND] = pd.to_numeric(self.df[SET_EDU_DEMAND], errors='coerce')
+        self.df[SET_COMMERCIAL_DEMAND] = pd.to_numeric(self.df[SET_COMMERCIAL_DEMAND], errors='coerce')
+        self.df[SET_ELEC_ORDER] = pd.to_numeric(self.df[SET_ELEC_ORDER], errors='coerce')
+        self.df[SET_CONFLICT] = pd.to_numeric(self.df[SET_CONFLICT], errors = 'coerce')
+
         self.df.loc[self.df[SET_ELEC_POP] > self.df[SET_POP], SET_ELEC_POP] = self.df[SET_POP]
 
-        logging.info('Adding column "ElectrificationOrder"')
-        self.df[SET_ELEC_ORDER] = 0
 
         logging.info('Replace null values with zero')
         self.df.fillna(0, inplace=True)
@@ -1472,23 +1488,7 @@ class SettlementProcessor:
 
         return new_lcoes, cell_path_adjusted, elecorder, cell_path_real
 
-    def run_elec(self, grid_calc, max_dist, year, start_year, end_year, timestep, grid_cap_gen_limit,
-                 grid_connect_limit, auto_intensification, prioritization):
-        """
-        Runs the grid extension algorithm
-        """
-        logging.info('Electrification algorithm starts running')
-
-        self.df[SET_LCOE_GRID + "{}".format(year)], self.df[SET_MIN_GRID_DIST + "{}".format(year)], self.df[
-            SET_ELEC_ORDER + "{}".format(year)], self.df[SET_MV_CONNECT_DIST] = self.elec_extension(grid_calc, max_dist,
-                                                                                                    year, start_year,
-                                                                                                    end_year,
-                                                                                                    timestep,
-                                                                                                    grid_cap_gen_limit,
-                                                                                                    grid_connect_limit,
-                                                                                                    auto_intensification=auto_intensification,
-                                                                                                    prioritization=prioritization)
-
+    #Runs the grid extension algorithm
     def set_scenario_variables(self, year, num_people_per_hh_rural, num_people_per_hh_urban, time_step, start_year,
                                urban_elec_ratio, rural_elec_ratio, urban_tier, rural_tier, end_year_pop,
                                productive_demand):
