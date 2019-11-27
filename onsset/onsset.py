@@ -105,6 +105,8 @@ SET_CAPITA_DEMAND = 'PerCapitaDemand'
 SET_RESIDENTIAL_TIER = 'ResidentialDemandTier'
 SET_NTL_BIN = 'NTLBin'
 SET_MIN_TD_DIST = 'minTDdist'
+SET_SA_DIESEL_FUEL = 'SADieselFuelCost'
+SET_MG_DIESEL_FUEL = 'MGDieselFuelCost'
 
 # Columns in the specs file must match these exactly
 SPE_COUNTRY = 'Country'
@@ -151,8 +153,8 @@ class Technology:
     """
 
     def __init__(self,
-                 tech_life,  # in years
-                 base_to_peak_load_ratio,
+                 tech_life=0,  # in years
+                 base_to_peak_load_ratio=0,
                  distribution_losses=0,  # percentage
                  connection_cost_per_hh=0,  # USD/hh
                  om_costs=0.0,  # OM costs as percentage of capital costs
@@ -221,9 +223,10 @@ class Technology:
         cls.power_factor = power_factor
         cls.load_moment = load_moment  # for 50mm aluminum conductor under 5% voltage drop (kW m)
 
+
     def get_lcoe(self, energy_per_cell, people, num_people_per_hh, start_year, end_year, new_connections,
                  total_energy_per_cell, prev_code, grid_cell_area, conf_status=0, additional_mv_line_length=0,
-                 capacity_factor=0, grid_penalty_ratio=1, travel_hours=0, elec_loop=0, productive_nodes=0,
+                 capacity_factor=0, grid_penalty_ratio=1, fuel_cost=0, elec_loop=0, productive_nodes=0,
                  additional_transformer=0, get_investment_cost=False,
                  get_investment_cost_lv=False, get_investment_cost_mv=False, get_investment_cost_hv=False,
                  get_investment_cost_transformer=False, get_investment_cost_connection=False,
@@ -417,7 +420,7 @@ class Technology:
             td_om_cost = td_investment_cost * self.om_of_td_lines * conflict_sa_pen[conf_status] if self.standalone \
                 else td_investment_cost * self.om_of_td_lines * conflict_mg_pen[conf_status]
 
-            if self.standalone and self.diesel_price == 0:
+            if self.standalone and fuel_cost == 0:
                 if installed_capacity / (people / num_people_per_hh) < 0.020:
                     capital_investment = installed_capacity * self.capital_cost[0.020] * conflict_sa_pen[conf_status]
                     total_om_cost = td_om_cost + (self.capital_cost[0.020] * self.om_costs * conflict_sa_pen[
@@ -447,19 +450,6 @@ class Technology:
                     else td_om_cost + (
                         self.capital_cost * conflict_mg_pen[conf_status] * self.om_costs * installed_capacity)
             total_investment_cost = td_investment_cost + capital_investment
-
-            # If a diesel price has been passed, the technology is diesel
-            # And we apply the Szabo formula to calculate the transport cost for the diesel
-            # p = (p_d + 2*p_d*consumption*time/volume)*(1/mu)*(1/LHVd)
-            # Otherwise it's hydro/wind etc with no fuel cost
-            conf_diesel_pen = {0: 1, 1: 2, 2: 3, 3: 4, 4: 5}
-
-            if self.diesel_price > 0:
-                fuel_cost = (self.diesel_price + 2 * self.diesel_price * self.diesel_truck_consumption * (
-                        travel_hours * conf_diesel_pen[conf_status]) /
-                             self.diesel_truck_volume) / LHV_DIESEL / self.efficiency
-            else:
-                fuel_cost = 0
 
         # Perform the time-value LCOE calculation
         project_life = end_year - self.base_year + 1
@@ -539,6 +529,35 @@ class SettlementProcessor:
             except ValueError:
                 print('Column "GHI" not found, check column names in calibrated csv-file')
                 raise
+
+    def diesel_cost_columns(self, sa_diesel_cost, mg_diesel_cost, year):
+
+
+
+        def diesel_fuel_cost_calculator(diesel_price, diesel_truck_consumption, diesel_truck_volume,
+                                        traveltime, efficiency):
+            # We apply the Szabo formula to calculate the transport cost for the diesel
+            # p = (p_d + 2*p_d*consumption*time/volume)*(1/mu)*(1/LHVd)
+
+            return (diesel_price + 2 * diesel_price * diesel_truck_consumption *
+                        traveltime) / diesel_truck_volume / LHV_DIESEL / efficiency
+
+        self.df[SET_SA_DIESEL_FUEL + "{}".format(year)] = self.df.apply(
+            lambda row: diesel_fuel_cost_calculator(diesel_price=sa_diesel_cost['diesel_price'],
+                                                    diesel_truck_volume=sa_diesel_cost['diesel_truck_volume'],
+                                                    diesel_truck_consumption=sa_diesel_cost['diesel_truck_consumption'],
+                                                    efficiency=sa_diesel_cost['efficiency'],
+                                                    traveltime=row[SET_TRAVEL_HOURS]
+                                                    ), axis=1)
+
+        self.df[SET_MG_DIESEL_FUEL + "{}".format(year)] = self.df.apply(
+            lambda row: diesel_fuel_cost_calculator(diesel_price=mg_diesel_cost['diesel_price'],
+                                                    diesel_truck_volume=mg_diesel_cost['diesel_truck_volume'],
+                                                    diesel_truck_consumption=mg_diesel_cost['diesel_truck_consumption'],
+                                                    efficiency=mg_diesel_cost['efficiency'],
+                                                    traveltime=row[SET_TRAVEL_HOURS]
+                                                    ), axis=1)
+
 
     def condition_df(self):
         """
@@ -1268,7 +1287,6 @@ class SettlementProcessor:
                                                num_people_per_hh=nupppphh[unelec],
                                                grid_cell_area=grid_cell_area[unelec],
                                                conf_status=confl[unelec],
-                                               travel_hours=travl[unelec],
                                                additional_mv_line_length=0,
                                                elec_loop=0)
                 if grid_lcoe < min_code_lcoes[unelec]:
@@ -1317,19 +1335,17 @@ class SettlementProcessor:
             dist_adjusted = grid_penalty_ratio[unelec] * dist
             if dist_adjusted <= max_dist:
                 grid_lcoe = grid_calc.get_lcoe(energy_per_cell=enerperhh[unelec],
-                                                   start_year=year - timestep,
-                                                   end_year=end_year,
-                                                   people=pop[unelec],
-                                                   new_connections=new_connections[unelec],
-                                                   total_energy_per_cell=total_energy_per_cell[unelec],
-                                                   prev_code=prev_code[unelec],
-                                                   num_people_per_hh=nupppphh[unelec],
-                                                   grid_cell_area=grid_cell_area[unelec],
-                                                   conf_status=confl[unelec],
-                                                   travel_hours=travl[unelec],
-                                                   additional_mv_line_length=dist_adjusted,
-                                                   elec_loop=0)
-
+                                               start_year=year - timestep,
+                                               end_year=end_year,
+                                               people=pop[unelec],
+                                               new_connections=new_connections[unelec],
+                                               total_energy_per_cell=total_energy_per_cell[unelec],
+                                               prev_code=prev_code[unelec],
+                                               num_people_per_hh=nupppphh[unelec],
+                                               grid_cell_area=grid_cell_area[unelec],
+                                               conf_status=confl[unelec],
+                                               additional_mv_line_length=dist_adjusted,
+                                               elec_loop=0)
                 if grid_lcoe < min_code_lcoes[unelec]:
                     if (grid_lcoe < new_lcoes[unelec]) and (new_grid_capacity + peak_load < grid_capacity_limit) \
                                 and (new_connections[unelec] / nupppphh[unelec] < grid_connect_limit):
@@ -1371,7 +1387,6 @@ class SettlementProcessor:
                                                    num_people_per_hh=nupppphh[unelec],
                                                    grid_cell_area=grid_cell_area[unelec],
                                                    conf_status=confl[unelec],
-                                                   travel_hours=travl[unelec],
                                                    additional_mv_line_length=dist_adjusted,
                                                    elec_loop=elec_loop_value,
                                                    additional_transformer=1)
@@ -1422,7 +1437,6 @@ class SettlementProcessor:
                                                            num_people_per_hh=nupppphh[unelec],
                                                            grid_cell_area=grid_cell_area[unelec],
                                                            conf_status=confl[unelec],
-                                                           travel_hours=travl[unelec],
                                                            additional_mv_line_length=dist_adjusted,
                                                            elec_loop=elecorder[electrified[closest_elec_node]] + 1)
                         if grid_lcoe < min_code_lcoes[unelec]:
@@ -1456,7 +1470,6 @@ class SettlementProcessor:
                                                                    num_people_per_hh=nupppphh[unelec],
                                                                    grid_cell_area=grid_cell_area[unelec],
                                                                    conf_status=confl[unelec],
-                                                                   travel_hours=travl[unelec],
                                                                    additional_mv_line_length=dist_adjusted,
                                                                    elec_loop=elecorder[elec] + 1)
                                     if grid_lcoe < min_code_lcoes[unelec] and \
@@ -1710,7 +1723,8 @@ class SettlementProcessor:
                                                     num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
                                                     grid_cell_area=row[SET_GRID_CELL_AREA],
                                                     conf_status=row[SET_CONFLICT],
-                                                    travel_hours=row[SET_TRAVEL_HOURS]), axis=1)
+                                                    fuel_cost=row[SET_MG_DIESEL_FUEL + "{}".format(year)],
+                                                    ), axis=1)
 
             logging.info('Calculate standalone diesel LCOE')
             self.df[SET_LCOE_SA_DIESEL + "{}".format(year)] = self.df.apply(
@@ -1724,7 +1738,8 @@ class SettlementProcessor:
                                                     num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
                                                     grid_cell_area=row[SET_GRID_CELL_AREA],
                                                     conf_status=row[SET_CONFLICT],
-                                                    travel_hours=row[SET_TRAVEL_HOURS]), axis=1)
+                                                    fuel_cost=row[SET_SA_DIESEL_FUEL + "{}".format(year)],
+                                                    ), axis=1)
 
         logging.info('Calculate standalone PV LCOE')
         self.df[SET_LCOE_SA_PV + "{}".format(year)] = self.df.apply(
@@ -1844,8 +1859,8 @@ class SettlementProcessor:
                                                prev_code=row[SET_ELEC_FINAL_CODE + "{}".format(year - timestep)],
                                                num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
                                                grid_cell_area=row[SET_GRID_CELL_AREA],
-                                               travel_hours=row[SET_TRAVEL_HOURS],
                                                conf_status=row[SET_CONFLICT],
+                                               fuel_cost=row[SET_SA_DIESEL_FUEL + "{}".format(year)],
                                                get_investment_cost=True)
 
             elif min_code == 3:
@@ -1886,8 +1901,8 @@ class SettlementProcessor:
                                                prev_code=row[SET_ELEC_FINAL_CODE + "{}".format(year - timestep)],
                                                num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
                                                grid_cell_area=row[SET_GRID_CELL_AREA],
-                                               travel_hours=row[SET_TRAVEL_HOURS],
                                                conf_status=row[SET_CONFLICT],
+                                               fuel_cost=row[SET_MG_DIESEL_FUEL + "{}".format(year)],
                                                get_investment_cost=True)
 
             elif min_code == 5:
@@ -2353,8 +2368,8 @@ class SettlementProcessor:
                                                prev_code=row[SET_ELEC_FINAL_CODE + "{}".format(year - timestep)],
                                                num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
                                                grid_cell_area=row[SET_GRID_CELL_AREA],
-                                               travel_hours=row[SET_TRAVEL_HOURS],
                                                conf_status=row[SET_CONFLICT],
+                                               fuel_cost=row[SET_SA_DIESEL_FUEL + "{}".format(year)],
                                                get_investment_cost=True)
 
             elif min_code == 3:
@@ -2395,8 +2410,8 @@ class SettlementProcessor:
                                                prev_code=row[SET_ELEC_FINAL_CODE + "{}".format(year - timestep)],
                                                num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
                                                grid_cell_area=row[SET_GRID_CELL_AREA],
-                                               travel_hours=row[SET_TRAVEL_HOURS],
                                                conf_status=row[SET_CONFLICT],
+                                               fuel_cost=row[SET_MG_DIESEL_FUEL + "{}".format(year)],
                                                get_investment_cost=True)
 
             elif min_code == 5:

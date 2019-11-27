@@ -189,31 +189,26 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                                     capacity_factor=0.7,
                                     tech_life=15,
                                     om_costs=0.1,
-                                    efficiency=0.33,
-                                    capital_cost=721,
-                                    diesel_price=diesel_price,
-                                    diesel_truck_consumption=33.7,
-                                    diesel_truck_volume=15000)
+                                    capital_cost=721)
 
         sa_diesel_calc = Technology(base_to_peak_load_ratio=0.9,
                                     capacity_factor=0.5,
                                     tech_life=10,
                                     om_costs=0.1,
                                     capital_cost=938,
-                                    diesel_price=diesel_price,
-                                    standalone=True,
-                                    efficiency=0.28,
-                                    diesel_truck_consumption=14,
-                                    diesel_truck_volume=300)
+                                    standalone=True)
 
-        pv_diesel_hyb = Technology(om_of_td_lines=0.03,
-                                   distribution_losses=0.05,
-                                   connection_cost_per_hh=100,
-                                   base_to_peak_load_ratio=0.5,
-                                   tech_life=15,
-                                   diesel_price=diesel_price,
-                                   diesel_truck_consumption=33.7,
-                                   diesel_truck_volume=15000)
+
+        sa_diesel_cost = {'diesel_price': diesel_price,
+                          'efficiency': 0.28,
+                          'diesel_truck_consumption': 14,
+                          'diesel_truck_volume': 300}
+
+
+        mg_diesel_cost = {'diesel_price':diesel_price,
+                          'efficiency': 0.33,
+                          'diesel_truck_consumption': 33.7,
+                          'diesel_truck_volume': 15000}
 
 
         # RUN_PARAM: One shall define here the years of analysis (excluding start year) together with access targets per interval and timestep duration
@@ -264,6 +259,9 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
             onsseter.set_scenario_variables(year, num_people_per_hh_rural, num_people_per_hh_urban, time_step,
                                             start_year, urban_elec_ratio, rural_elec_ratio, urban_tier, rural_tier,
                                             end_year_pop, productive_demand)
+
+            onsseter.diesel_cost_columns(sa_diesel_cost, mg_diesel_cost, year)
+
 
             onsseter.calculate_off_grid_lcoes(mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc,
                                               sa_diesel_calc, year, start_year, end_year, time_step)
