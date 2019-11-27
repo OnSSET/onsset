@@ -222,9 +222,20 @@ class Technology:
         cls.power_factor = power_factor
         cls.load_moment = load_moment  # for 50mm aluminum conductor under 5% voltage drop (kW m)
 
+    def diesel_fuel_cost_calculator(self, diesel_price, diesel_truck_consumption, diesel_truck_volume,
+                                    traveltime, efficiency):
+        # We apply the Szabo formula to calculate the transport cost for the diesel
+        # p = (p_d + 2*p_d*consumption*time/volume)*(1/mu)*(1/LHVd)
+
+        fuel_cost = (diesel_price + 2 * diesel_price * diesel_truck_consumption *
+                    traveltime * diesel_truck_volume) / LHV_DIESEL / efficiency
+
+    def diesel_cost_columns(self):
+
+
     def get_lcoe(self, energy_per_cell, people, num_people_per_hh, start_year, end_year, new_connections,
                  total_energy_per_cell, prev_code, grid_cell_area, conf_status=0, additional_mv_line_length=0,
-                 capacity_factor=0, grid_penalty_ratio=1, travel_hours=0, elec_loop=0, productive_nodes=0,
+                 capacity_factor=0, grid_penalty_ratio=1, fuel_cost=0, elec_loop=0, productive_nodes=0,
                  additional_transformer=0, get_investment_cost=False,
                  get_investment_cost_lv=False, get_investment_cost_mv=False, get_investment_cost_hv=False,
                  get_investment_cost_transformer=False, get_investment_cost_connection=False,
@@ -418,7 +429,7 @@ class Technology:
             td_om_cost = td_investment_cost * self.om_of_td_lines * conflict_sa_pen[conf_status] if self.standalone \
                 else td_investment_cost * self.om_of_td_lines * conflict_mg_pen[conf_status]
 
-            if self.standalone and self.diesel_price == 0:
+            if self.standalone and fuel_cost == 0:
                 if installed_capacity / (people / num_people_per_hh) < 0.020:
                     capital_investment = installed_capacity * self.capital_cost[0.020] * conflict_sa_pen[conf_status]
                     total_om_cost = td_om_cost + (self.capital_cost[0.020] * self.om_costs * conflict_sa_pen[
@@ -448,19 +459,6 @@ class Technology:
                     else td_om_cost + (
                         self.capital_cost * conflict_mg_pen[conf_status] * self.om_costs * installed_capacity)
             total_investment_cost = td_investment_cost + capital_investment
-
-            # If a diesel price has been passed, the technology is diesel
-            # And we apply the Szabo formula to calculate the transport cost for the diesel
-            # p = (p_d + 2*p_d*consumption*time/volume)*(1/mu)*(1/LHVd)
-            # Otherwise it's hydro/wind etc with no fuel cost
-            conf_diesel_pen = {0: 1, 1: 2, 2: 3, 3: 4, 4: 5}
-
-            if self.diesel_price > 0:
-                fuel_cost = (self.diesel_price + 2 * self.diesel_price * self.diesel_truck_consumption * (
-                        travel_hours * conf_diesel_pen[conf_status]) /
-                             self.diesel_truck_volume) / LHV_DIESEL / self.efficiency
-            else:
-                fuel_cost = 0
 
         # Perform the time-value LCOE calculation
         project_life = end_year - self.base_year + 1
