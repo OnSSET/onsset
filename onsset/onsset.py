@@ -2,7 +2,6 @@
 # Date: 05 June 2019
 # Python version: 3.5
 
-import os
 import logging
 import pandas as pd
 from math import ceil, pi, exp, log, sqrt, radians, cos, sin, asin
@@ -175,7 +174,14 @@ class Technology:
         self.base_to_peak_load_ratio = base_to_peak_load_ratio
         self.tech_life = tech_life
         self.om_costs = om_costs
-        self.capital_cost = capital_cost
+        if isinstance(capital_cost, dict):
+            self.capital_cost = capital_cost
+        else:
+            self.capital_cost = {0.020: capital_cost,
+                                 0.050: capital_cost,
+                                 0.100: capital_cost,
+                                 1: capital_cost,
+                                 5: capital_cost}
         self.capacity_factor = capacity_factor
         self.grid_penalty_ratio = grid_penalty_ratio
         self.efficiency = efficiency
@@ -187,6 +193,10 @@ class Technology:
         self.diesel_truck_consumption = diesel_truck_consumption
         self.diesel_truck_volume = diesel_truck_volume
         self.om_of_td_lines = om_of_td_lines
+
+    @property
+    def hv_mv_ratio(self):
+        return self.HV_line_cost / self.MV_line_cost
 
     @classmethod
     def set_default_values(cls, base_year, start_year, end_year, discount_rate, HV_line_type=69, HV_line_cost=53000,
@@ -311,7 +321,6 @@ class Technology:
             except ValueError:
                 no_of_service_transf = 1
             transformer_radius = ((grid_cell_area / no_of_service_transf) / pi) ** 0.5
-            transformer_nodes = total_nodes / no_of_service_transf
             transformer_load = peak_load / no_of_service_transf
             cluster_radius = (grid_cell_area / pi) ** 0.5
 
@@ -420,23 +429,23 @@ class Technology:
 
             if self.standalone and self.diesel_price == 0:
                 if installed_capacity / (people / num_people_per_hh) < 0.020:
-                    capital_investment = installed_capacity * self.capital_cost[0.020] * conflict_sa_pen[conf_status]
+                    capital_investment = self.calcuate_capital_investment(installed_capacity, conflict_sa_pen, conf_status, 0.020)
                     total_om_cost = td_om_cost + (self.capital_cost[0.020] * self.om_costs * conflict_sa_pen[
                         conf_status] * installed_capacity)
                 elif installed_capacity / (people / num_people_per_hh) < 0.050:
-                    capital_investment = installed_capacity * self.capital_cost[0.050] * conflict_sa_pen[conf_status]
+                    capital_investment = self.calcuate_capital_investment(installed_capacity, conflict_sa_pen, conf_status, 0.050)
                     total_om_cost = td_om_cost + (self.capital_cost[0.050] * self.om_costs * conflict_sa_pen[
                         conf_status] * installed_capacity)
                 elif installed_capacity / (people / num_people_per_hh) < 0.100:
-                    capital_investment = installed_capacity * self.capital_cost[0.100] * conflict_sa_pen[conf_status]
+                    capital_investment = self.calcuate_capital_investment(installed_capacity, conflict_sa_pen, conf_status, 0.1)
                     total_om_cost = td_om_cost + (self.capital_cost[0.100] * self.om_costs * conflict_sa_pen[
                         conf_status] * installed_capacity)
                 elif installed_capacity / (people / num_people_per_hh) < 1:
-                    capital_investment = installed_capacity * self.capital_cost[1] * conflict_sa_pen[conf_status]
+                    capital_investment = self.calcuate_capital_investment(installed_capacity, conflict_sa_pen, conf_status, 1)
                     total_om_cost = td_om_cost + (self.capital_cost[1] * self.om_costs * conflict_sa_pen[
                         conf_status] * installed_capacity)
                 else:
-                    capital_investment = installed_capacity * self.capital_cost[5] * conflict_sa_pen[conf_status]
+                    capital_investment = self.calcuate_capital_investment(installed_capacity, conflict_sa_pen, conf_status, 5)
                     total_om_cost = td_om_cost + (self.capital_cost[5] * self.om_costs * conflict_sa_pen[
                         conf_status] * installed_capacity)
             else:
@@ -518,6 +527,29 @@ class Technology:
             discounted_costs = (investments + operation_and_maintenance + fuel - salvage) / discount_factor
             discounted_generation = el_gen / discount_factor
             return np.sum(discounted_costs) / np.sum(discounted_generation)
+
+    def calcuate_capital_investment(self, installed_capacity, conflict_sa_pen, conf_status, system_size):
+        """Calculate the capital investment of install capacity including a conflict penalty
+
+        Arguments
+        ---------
+        installed_capacity : float
+            How much capacity needs to be installed in kW
+        conflict_sa_pen : dict
+            Conflict penalty cost multiplier
+        conf_status : int
+            The conlict zone
+        system_size : float
+            Select the system size to read the cost
+
+        Returns
+        -------
+        float
+        """
+        cost = self.capital_cost[system_size]
+        penalty = conflict_sa_pen[conf_status]
+
+        return installed_capacity * cost * penalty
 
 
 class SettlementProcessor:
