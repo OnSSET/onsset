@@ -1611,44 +1611,44 @@ class SettlementProcessor:
 
         # First round of extension from MV network
         for unelec in unelectrified:
-            if year >= grid_reach[unelec]:
-                consumption = enerperhh[unelec]  # kWh/year
-                average_load = consumption / (1 - grid_calc.distribution_losses) / HOURS_PER_YEAR  # kW
-                peak_load = average_load / grid_calc.base_to_peak_load_ratio  # kW
-                dist = planned_mv_dist[unelec]
-                dist_adjusted = grid_penalty_ratio[unelec] * dist
-                if dist_adjusted <= max_dist:
-                    grid_lcoe = grid_calc.get_lcoe(energy_per_cell=enerperhh[unelec],
-                                                   start_year=year - timestep,
-                                                   end_year=end_year,
-                                                   people=pop[unelec],
-                                                   new_connections=new_connections[unelec],
-                                                   total_energy_per_cell=total_energy_per_cell[unelec],
-                                                   prev_code=prev_code[unelec],
-                                                   num_people_per_hh=nupppphh[unelec],
-                                                   grid_cell_area=grid_cell_area[unelec],
-                                                   conf_status=confl[unelec],
-                                                   travel_hours=travl[unelec],
-                                                   additional_mv_line_length=dist_adjusted,
-                                                   elec_loop=0)
 
-                    if grid_lcoe < min_code_lcoes[unelec]:
-                        if (grid_lcoe < new_lcoes[unelec]) and (new_grid_capacity + peak_load < grid_capacity_limit) \
-                                and (new_connections[unelec] / nupppphh[unelec] < grid_connect_limit):
-                            new_lcoes[unelec] = grid_lcoe
-                            cell_path_real[unelec] = dist
-                            cell_path_adjusted[unelec] = dist_adjusted
-                            new_grid_capacity += peak_load
-                            grid_connect_limit -= new_connections[unelec] / nupppphh[unelec]
-                            elecorder[unelec] = 1
-                            if unelec not in changes:
-                                changes.append(unelec)
-                        else:
-                            close.append(unelec)
+            consumption = enerperhh[unelec]  # kWh/year
+            average_load = consumption / (1 - grid_calc.distribution_losses) / HOURS_PER_YEAR  # kW
+            peak_load = average_load / grid_calc.base_to_peak_load_ratio  # kW
+            dist = planned_mv_dist[unelec]
+            dist_adjusted = grid_penalty_ratio[unelec] * dist
+            if dist_adjusted <= max_dist:
+                grid_lcoe = grid_calc.get_lcoe(energy_per_cell=enerperhh[unelec],
+                                               start_year=year - timestep,
+                                               end_year=end_year,
+                                               people=pop[unelec],
+                                               new_connections=new_connections[unelec],
+                                               total_energy_per_cell=total_energy_per_cell[unelec],
+                                               prev_code=prev_code[unelec],
+                                               num_people_per_hh=nupppphh[unelec],
+                                               grid_cell_area=grid_cell_area[unelec],
+                                               conf_status=confl[unelec],
+                                               travel_hours=travl[unelec],
+                                               additional_mv_line_length=dist_adjusted,
+                                               elec_loop=0)
+
+                if grid_lcoe < min_code_lcoes[unelec]:
+                    if (grid_lcoe < new_lcoes[unelec]) and (new_grid_capacity + peak_load < grid_capacity_limit) \
+                            and (new_connections[unelec] / nupppphh[unelec] < grid_connect_limit):
+                        new_lcoes[unelec] = grid_lcoe
+                        cell_path_real[unelec] = dist
+                        cell_path_adjusted[unelec] = dist_adjusted
+                        new_grid_capacity += peak_load
+                        grid_connect_limit -= new_connections[unelec] / nupppphh[unelec]
+                        elecorder[unelec] = 1
+                        if unelec not in changes:
+                            changes.append(unelec)
                     else:
                         close.append(unelec)
                 else:
                     close.append(unelec)
+            else:
+                close.append(unelec)
         electrified = changes[:]
         unelectrified = close
 
