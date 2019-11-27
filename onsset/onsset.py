@@ -880,6 +880,7 @@ class SettlementProcessor:
 
         logging.info('Calibrate current electrification')
         self.df[SET_ELEC_CURRENT] = 0
+        
 
         # This if function here skims through T&D columns to identify if any non 0 values exist; Then it defines priority accordingly.
         if max(self.df[SET_DIST_TO_TRANS]) > 0:
@@ -1072,22 +1073,9 @@ class SettlementProcessor:
             self.df.apply(lambda row: 1 if row[SET_ELEC_CURRENT] == 1 else 99, axis=1)
 
         return elec_modelled, rural_elec_ratio, urban_elec_ratio
+    
 
-    @staticmethod
-    def separate_elec_status(elec_status):
-        """
-        Separate out the electrified and unelectrified states from list.
-        """
-
-        electrified = []
-        unelectrified = []
-
-        for i, status in enumerate(elec_status):
-            if status:
-                electrified.append(i)
-            else:
-                unelectrified.append(i)
-        return electrified, unelectrified
+    
 
     @staticmethod
     def get_2d_hash_table(x, y, unelectrified, distance_limit):
@@ -1236,7 +1224,12 @@ class SettlementProcessor:
         grid_connect_limit -= densification_connections
 
         cell_path_adjusted = list(np.zeros(len(status)).tolist())
-        electrified, unelectrified = self.separate_elec_status(status)
+        
+    
+        electrified = self.df[SET_ELEC_FUTURE_GRID + "{}".format(year)].loc[self.df[SET_ELEC_FUTURE_GRID + "{}".format(year)]==1].index.values.tolist()
+
+        unelectrified=self.df[SET_ELEC_FUTURE_GRID + "{}".format(year)].loc[self.df[SET_ELEC_FUTURE_GRID + "{}".format(year)]==0].index.values.tolist()
+        
 
         if (prio == 2) or (prio == 4):
             changes = []
