@@ -1472,23 +1472,7 @@ class SettlementProcessor:
 
         return new_lcoes, cell_path_adjusted, elecorder, cell_path_real
 
-    def run_elec(self, grid_calc, max_dist, year, start_year, end_year, timestep, grid_cap_gen_limit,
-                 grid_connect_limit, auto_intensification, prioritization):
-        """
-        Runs the grid extension algorithm
-        """
-        logging.info('Electrification algorithm starts running')
-
-        self.df[SET_LCOE_GRID + "{}".format(year)], self.df[SET_MIN_GRID_DIST + "{}".format(year)], self.df[
-            SET_ELEC_ORDER + "{}".format(year)], self.df[SET_MV_CONNECT_DIST] = self.elec_extension(grid_calc, max_dist,
-                                                                                                    year, start_year,
-                                                                                                    end_year,
-                                                                                                    timestep,
-                                                                                                    grid_cap_gen_limit,
-                                                                                                    grid_connect_limit,
-                                                                                                    auto_intensification=auto_intensification,
-                                                                                                    prioritization=prioritization)
-
+    #Runs the grid extension algorithm
     def set_scenario_variables(self, year, num_people_per_hh_rural, num_people_per_hh_urban, time_step, start_year,
                                urban_elec_ratio, rural_elec_ratio, urban_tier, rural_tier, end_year_pop,
                                productive_demand):
