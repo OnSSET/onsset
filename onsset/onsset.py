@@ -106,6 +106,8 @@ SET_CAPITA_DEMAND = 'PerCapitaDemand'
 SET_RESIDENTIAL_TIER = 'ResidentialDemandTier'
 SET_NTL_BIN = 'NTLBin'
 SET_MIN_TD_DIST = 'minTDdist'
+SET_SA_DIESEL_FUEL = 'SADieselFuelCost'
+SET_MG_DIESEL_FUEL = 'MGDieselFuelCost'
 
 # Columns in the specs file must match these exactly
 SPE_COUNTRY = 'Country'
@@ -152,8 +154,8 @@ class Technology:
     """
 
     def __init__(self,
-                 tech_life,  # in years
-                 base_to_peak_load_ratio,
+                 tech_life=0,  # in years
+                 base_to_peak_load_ratio=0,
                  distribution_losses=0,  # percentage
                  connection_cost_per_hh=0,  # USD/hh
                  om_costs=0.0,  # OM costs as percentage of capital costs
@@ -221,16 +223,6 @@ class Technology:
         cls.HV_MV_sub_station_cost = HV_MV_sub_station_cost  # $/unit
         cls.power_factor = power_factor
         cls.load_moment = load_moment  # for 50mm aluminum conductor under 5% voltage drop (kW m)
-
-    def diesel_fuel_cost_calculator(self, diesel_price, diesel_truck_consumption, diesel_truck_volume,
-                                    traveltime, efficiency):
-        # We apply the Szabo formula to calculate the transport cost for the diesel
-        # p = (p_d + 2*p_d*consumption*time/volume)*(1/mu)*(1/LHVd)
-
-        fuel_cost = (diesel_price + 2 * diesel_price * diesel_truck_consumption *
-                    traveltime * diesel_truck_volume) / LHV_DIESEL / efficiency
-
-    def diesel_cost_columns(self):
 
 
     def get_lcoe(self, energy_per_cell, people, num_people_per_hh, start_year, end_year, new_connections,
@@ -538,6 +530,35 @@ class SettlementProcessor:
             except ValueError:
                 print('Column "GHI" not found, check column names in calibrated csv-file')
                 raise
+
+    def diesel_cost_columns(self, sa_diesel_cost, mg_diesel_cost, year):
+
+
+
+        def diesel_fuel_cost_calculator(diesel_price, diesel_truck_consumption, diesel_truck_volume,
+                                        traveltime, efficiency):
+            # We apply the Szabo formula to calculate the transport cost for the diesel
+            # p = (p_d + 2*p_d*consumption*time/volume)*(1/mu)*(1/LHVd)
+
+            return (diesel_price + 2 * diesel_price * diesel_truck_consumption *
+                        traveltime) / diesel_truck_volume / LHV_DIESEL / efficiency
+
+        self.df[SET_SA_DIESEL_FUEL + "{}".format(year)] = self.df.apply(
+            lambda row: diesel_fuel_cost_calculator(diesel_price=sa_diesel_cost['diesel_price'],
+                                                    diesel_truck_volume=sa_diesel_cost['diesel_truck_volume'],
+                                                    diesel_truck_consumption=sa_diesel_cost['diesel_truck_consumption'],
+                                                    efficiency=sa_diesel_cost['efficiency'],
+                                                    traveltime=row[SET_TRAVEL_HOURS]
+                                                    ), axis=1)
+
+        self.df[SET_MG_DIESEL_FUEL + "{}".format(year)] = self.df.apply(
+            lambda row: diesel_fuel_cost_calculator(diesel_price=mg_diesel_cost['diesel_price'],
+                                                    diesel_truck_volume=mg_diesel_cost['diesel_truck_volume'],
+                                                    diesel_truck_consumption=mg_diesel_cost['diesel_truck_consumption'],
+                                                    efficiency=mg_diesel_cost['efficiency'],
+                                                    traveltime=row[SET_TRAVEL_HOURS]
+                                                    ), axis=1)
+
 
     def condition_df(self):
         """
@@ -1275,7 +1296,6 @@ class SettlementProcessor:
                                                num_people_per_hh=nupppphh[unelec],
                                                grid_cell_area=grid_cell_area[unelec],
                                                conf_status=confl[unelec],
-                                               travel_hours=travl[unelec],
                                                additional_mv_line_length=0,
                                                elec_loop=0)
                 if grid_lcoe < min_code_lcoes[unelec]:
@@ -1334,7 +1354,6 @@ class SettlementProcessor:
                                                num_people_per_hh=nupppphh[unelec],
                                                grid_cell_area=grid_cell_area[unelec],
                                                conf_status=confl[unelec],
-                                               travel_hours=travl[unelec],
                                                additional_mv_line_length=dist_adjusted,
                                                elec_loop=0)
 
@@ -1378,7 +1397,6 @@ class SettlementProcessor:
                                                    num_people_per_hh=nupppphh[unelec],
                                                    grid_cell_area=grid_cell_area[unelec],
                                                    conf_status=confl[unelec],
-                                                   travel_hours=travl[unelec],
                                                    additional_mv_line_length=dist_adjusted,
                                                    elec_loop=elec_loop_value,
                                                    additional_transformer=1)
@@ -1430,7 +1448,6 @@ class SettlementProcessor:
                                                            num_people_per_hh=nupppphh[unelec],
                                                            grid_cell_area=grid_cell_area[unelec],
                                                            conf_status=confl[unelec],
-                                                           travel_hours=travl[unelec],
                                                            additional_mv_line_length=dist_adjusted,
                                                            elec_loop=elecorder[electrified[closest_elec_node]] + 1)
                             if grid_lcoe < min_code_lcoes[unelec]:
@@ -1464,7 +1481,6 @@ class SettlementProcessor:
                                                                    num_people_per_hh=nupppphh[unelec],
                                                                    grid_cell_area=grid_cell_area[unelec],
                                                                    conf_status=confl[unelec],
-                                                                   travel_hours=travl[unelec],
                                                                    additional_mv_line_length=dist_adjusted,
                                                                    elec_loop=elecorder[elec] + 1)
                                     if grid_lcoe < min_code_lcoes[unelec] and \
@@ -1732,7 +1748,8 @@ class SettlementProcessor:
                                                     num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
                                                     grid_cell_area=row[SET_GRID_CELL_AREA],
                                                     conf_status=row[SET_CONFLICT],
-                                                    travel_hours=row[SET_TRAVEL_HOURS]), axis=1)
+                                                    fuel_cost=row[SET_MG_DIESEL_FUEL + "{}".format(year)],
+                                                    ), axis=1)
 
             logging.info('Calculate standalone diesel LCOE')
             self.df[SET_LCOE_SA_DIESEL + "{}".format(year)] = self.df.apply(
@@ -1746,7 +1763,8 @@ class SettlementProcessor:
                                                     num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
                                                     grid_cell_area=row[SET_GRID_CELL_AREA],
                                                     conf_status=row[SET_CONFLICT],
-                                                    travel_hours=row[SET_TRAVEL_HOURS]), axis=1)
+                                                    fuel_cost=row[SET_SA_DIESEL_FUEL + "{}".format(year)],
+                                                    ), axis=1)
 
         logging.info('Calculate standalone PV LCOE')
         self.df[SET_LCOE_SA_PV + "{}".format(year)] = self.df.apply(
@@ -1866,8 +1884,8 @@ class SettlementProcessor:
                                                prev_code=row[SET_ELEC_FINAL_CODE + "{}".format(year - timestep)],
                                                num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
                                                grid_cell_area=row[SET_GRID_CELL_AREA],
-                                               travel_hours=row[SET_TRAVEL_HOURS],
                                                conf_status=row[SET_CONFLICT],
+                                               fuel_cost=row[SET_SA_DIESEL_FUEL + "{}".format(year)],
                                                get_investment_cost=True)
 
             elif min_code == 3:
@@ -1908,8 +1926,8 @@ class SettlementProcessor:
                                                prev_code=row[SET_ELEC_FINAL_CODE + "{}".format(year - timestep)],
                                                num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
                                                grid_cell_area=row[SET_GRID_CELL_AREA],
-                                               travel_hours=row[SET_TRAVEL_HOURS],
                                                conf_status=row[SET_CONFLICT],
+                                               fuel_cost=row[SET_MG_DIESEL_FUEL + "{}".format(year)],
                                                get_investment_cost=True)
 
             elif min_code == 5:
@@ -2377,8 +2395,8 @@ class SettlementProcessor:
                                                prev_code=row[SET_ELEC_FINAL_CODE + "{}".format(year - timestep)],
                                                num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
                                                grid_cell_area=row[SET_GRID_CELL_AREA],
-                                               travel_hours=row[SET_TRAVEL_HOURS],
                                                conf_status=row[SET_CONFLICT],
+                                               fuel_cost=row[SET_SA_DIESEL_FUEL + "{}".format(year)],
                                                get_investment_cost=True)
 
             elif min_code == 3:
@@ -2419,8 +2437,8 @@ class SettlementProcessor:
                                                prev_code=row[SET_ELEC_FINAL_CODE + "{}".format(year - timestep)],
                                                num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
                                                grid_cell_area=row[SET_GRID_CELL_AREA],
-                                               travel_hours=row[SET_TRAVEL_HOURS],
                                                conf_status=row[SET_CONFLICT],
+                                               fuel_cost=row[SET_MG_DIESEL_FUEL + "{}".format(year)],
                                                get_investment_cost=True)
 
             elif min_code == 5:
