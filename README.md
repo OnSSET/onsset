@@ -1,7 +1,9 @@
 onsset
 =================================
 
-[![PyPI version](https://badge.fury.io/py/gridfinder.svg)](https://test.pypi.org/project/gep-onsset/)  [![Build Status](https://travis-ci.org/onsset/onsset.svg?branch=master)](https://travis-ci.org/onsset/onsset) [![Documentation Status](https://readthedocs.org/projects/onsset/badge/?version=latest)](https://onsset.readthedocs.io/en/latest/?badge=latest)
+[![PyPI version](https://badge.fury.io/py/gridfinder.svg)](https://test.pypi.org/project/gep-onsset/)
+[![Build Status](https://travis-ci.com/OnSSET/onsset.svg?branch=master)](https://travis-ci.com/OnSSET/onsset)
+[![Documentation Status](https://readthedocs.org/projects/onsset/badge/?version=latest)](https://onsset.readthedocs.io/en/latest/?badge=latest)
 
 Documentation: https://onsset.readthedocs.io/en/latest/index.html#
 
@@ -13,16 +15,16 @@ This repository contains the source code of the Open Source Spatial Electrificat
 
 **Requirements**
 
-OnSSET requires Python >= 3.5 with the following packages installed:
-- et-xmlfile>=1.0
-- jdcal>=1.4
-- numpy>=1.16
-- openpyxl>=2.6
-- pandas>=0.24
-- python-dateutil>=2.8
-- pytz==2019.1
-- six>=1.12
-- xlrd>=1.2
+OnSSET requires Python > 3.5 with the following packages installed:
+- et-xmlfile
+- jdcal
+- numpy
+- openpyxl
+- pandas
+- python-dateutil
+- pytz
+- six
+- xlrd
 
 
 **Install with pip**

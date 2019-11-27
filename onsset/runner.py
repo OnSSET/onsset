@@ -1,54 +1,10 @@
 # Defines the modules
 
-import os
 from onsset import *
 import pandas as pd
-import tkinter as tk
-from tkinter import filedialog, messagebox
 from openpyxl import load_workbook
 
-
-
-# root = tk.Tk()
-# root.withdraw()
-# root.attributes("-topmost", True)
-#
-# messagebox.showinfo('OnSSET', 'Open the specs file')
-# specs_path = filedialog.askopenfilename()
-#
-# # specs = pd.read_excel(specs_path, index_col=0)
-#
-# # RUN_PARAM: Insert the name of the country you are working on. More countries should be separated using comma e.g. ["Malawi", "Ghana"]
-# countries = ['Country']
-# # countries = str(input('countries: ')).split()
-# # countries = specs.index.tolist() if 'all' in countries else countries
-#
-# choice = int(input(
-#     'Enter 1 to split (if multiple country run is needed), 2 to prepare/calibrate the GIS input file, 3 to run scenario(s): '))
-
-# # TODO Do we actually need option 1 anymore? I suggest removing it and readjust the options
-# if choice == 1:
-#     messagebox.showinfo('OnSSET', 'Open the csv file with GIS data')
-#     settlements_csv = filedialog.askopenfilename()
-#     messagebox.showinfo('OnSSET', 'Select the folder to save split countries')
-#     base_dir = filedialog.asksaveasfilename()
-#
-#     print('\n --- Splitting --- \n')
-#
-#     df = pd.read_csv(settlements_csv)
-#
-#     for country in countries:
-#         print(country)
-#         df.loc[df[SET_COUNTRY] == country].to_csv(base_dir + '.csv', index=False)
-
-# elif choice == 2:
-#     SpecsData = pd.read_excel(specs_path, sheet_name='SpecsData')
-#     messagebox.showinfo('OnSSET', 'Open the file containing separated countries')
-#     base_dir = filedialog.askopenfilename()
-#     messagebox.showinfo('OnSSET', 'Browse to result folder and name the calibrated file')
-#     output_dir = filedialog.asksaveasfilename()
-
-def calibration(specs_path, csv_path, calibrated_csv_path):
+def calibration(specs_path, csv_path, specs_path_calib, calibrated_csv_path):
 
 
     specs = pd.read_excel(specs_path, index_col=0)
@@ -104,7 +60,7 @@ def calibration(specs_path, csv_path, calibrated_csv_path):
     SpecsData.loc[0, 'urban_elec_ratio_modelled'] = urban_elec_ratio
 
     book = load_workbook(specs_path)
-    writer = pd.ExcelWriter(specs_path, engine='openpyxl')
+    writer = pd.ExcelWriter(specs_path_calib, engine='openpyxl')
     writer.book = book
     # RUN_PARAM: Here the calibrated "specs" data are copied to a new tab called "SpecsDataCalib". This is what will later on be used to feed the model
     SpecsData.to_excel(writer, sheet_name='SpecsDataCalib', index=False)
@@ -305,47 +261,40 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                 grid_cap_gen_limit = 9999999999
                 grid_connect_limit = 9999999999
 
-            hybrid_1 = pv_diesel_hyb.pv_diesel_hybrid(1, max(onsseter.df[SET_GHI]),
-                                                      max(onsseter.df[SET_TRAVEL_HOURS]), 1, year - time_step, end_year,
-                                                      pv_no=pv_no, diesel_no=diesel_no)
-            hybrid_2 = pv_diesel_hyb.pv_diesel_hybrid(1, max(onsseter.df[SET_GHI]),
-                                                      max(onsseter.df[SET_TRAVEL_HOURS]), 2, year - time_step, end_year,
-                                                      pv_no=pv_no, diesel_no=diesel_no)
-            hybrid_3 = pv_diesel_hyb.pv_diesel_hybrid(1, max(onsseter.df[SET_GHI]),
-                                                      max(onsseter.df[SET_TRAVEL_HOURS]), 3, year - time_step, end_year,
-                                                      pv_no=pv_no, diesel_no=diesel_no)
-            hybrid_4 = pv_diesel_hyb.pv_diesel_hybrid(1, max(onsseter.df[SET_GHI]),
-                                                      max(onsseter.df[SET_TRAVEL_HOURS]), 4, year - time_step, end_year,
-                                                      pv_no=pv_no, diesel_no=diesel_no)
-            hybrid_5 = pv_diesel_hyb.pv_diesel_hybrid(1, max(onsseter.df[SET_GHI]),
-                                                      max(onsseter.df[SET_TRAVEL_HOURS]), 5, year - time_step, end_year,
-                                                      pv_no=pv_no, diesel_no=diesel_no)
-
             onsseter.set_scenario_variables(year, num_people_per_hh_rural, num_people_per_hh_urban, time_step,
                                             start_year, urban_elec_ratio, rural_elec_ratio, urban_tier, rural_tier,
                                             end_year_pop, productive_demand)
 
             onsseter.calculate_off_grid_lcoes(mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc,
-                                              sa_diesel_calc, hybrid_1, hybrid_2, hybrid_3, hybrid_4,
-                                              hybrid_5, year, start_year, end_year, time_step)
+                                              sa_diesel_calc, year, start_year, end_year, time_step)
 
             onsseter.pre_electrification(grid_calc, grid_price, year, time_step, start_year)
 
-            onsseter.run_elec(grid_calc, max_grid_extension_dist, year, start_year, end_year, time_step,
+            onsseter.df[SET_LCOE_GRID + "{}".format(year)], onsseter.df[SET_MIN_GRID_DIST + "{}".format(year)], onsseter.df[
+                SET_ELEC_ORDER + "{}".format(year)], onsseter.df[SET_MV_CONNECT_DIST] = onsseter.elec_extension(grid_calc,
+                                                                                                        max_grid_extension_dist,
+                                                                                                        year,
+                                                                                                        start_year,
+                                                                                                        end_year,
+                                                                                                        time_step,
+                                                                                                        grid_cap_gen_limit,
+                                                                                                        grid_connect_limit,
+                                                                                                        auto_intensification=auto_intensification,
+                                                                                                        prioritization=prioritization)
+
+            onsseter.elec_extension(grid_calc, max_grid_extension_dist, year, start_year, end_year, time_step,
                               grid_cap_gen_limit, grid_connect_limit, auto_intensification, prioritization)
 
             onsseter.results_columns(mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc,
-                                     sa_diesel_calc, grid_calc, hybrid_1, hybrid_2, hybrid_3, hybrid_4,
-                                     hybrid_5, year)
+                                     sa_diesel_calc, grid_calc, year)
 
             onsseter.calculate_investments(mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc,
-                                           sa_diesel_calc, grid_calc, hybrid_1, hybrid_2, hybrid_3,
-                                           hybrid_4, hybrid_5, year, end_year, time_step)
+                                           sa_diesel_calc, grid_calc, year, end_year, time_step)
 
             onsseter.apply_limitations(eleclimit, year, time_step, prioritization, auto_intensification)
 
             onsseter.final_decision(mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc, sa_diesel_calc,
-                                    grid_calc, hybrid_1, hybrid_2, hybrid_3, hybrid_4, hybrid_5, year,
+                                    grid_calc, year,
                                     end_year, time_step)
 
             onsseter.calc_summaries(df_summary, sumtechs, year)

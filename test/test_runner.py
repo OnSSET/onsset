@@ -8,12 +8,13 @@ def test_regression():
     specs_path = os.path.join('test_data','dj-specs-test.xlsx')
     csv_path = os.path.join('test_data','dj-test.csv')
     calibrated_csv_path = os.path.join('test_data', 'dj-calibrated.csv')
+    specs_path_calib = os.path.join('test_results', 'dj-specs-test-calib.xlsx')
     results_folder = 'test_results'
     summary_folder = 'test_results'
 
-    calibration(specs_path, csv_path, calibrated_csv_path)
+    calibration(specs_path, csv_path, specs_path_calib, calibrated_csv_path)
 
-    scenario(specs_path, calibrated_csv_path, results_folder, summary_folder)
+    scenario(specs_path_calib, calibrated_csv_path, results_folder, summary_folder)
 
     assert compare_csv()
 
