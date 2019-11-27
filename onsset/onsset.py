@@ -52,11 +52,11 @@ SET_ENERGY_PER_CELL = 'EnergyPerSettlement'
 SET_NUM_PEOPLE_PER_HH = 'NumPeoplePerHH'
 SET_ELEC_CURRENT = 'ElecStart'  # If the site is currently electrified (0 or 1)
 SET_ELEC_FUTURE = 'Elec_Status'  # If the site has the potential to be 'easily' electrified in future
-SET_ELEC_FUTURE_GRID = "Elec_Initial_Status_Grid"
-SET_ELEC_FUTURE_OFFGRID = "Elec_Init_Status_Offgrid"
+SET_ELEC_FINAL_CODE = "Elec_Initial_Status_Grid"
+SET_ELEC_FINAL_CODE = "Elec_Init_Status_Offgrid"
 SET_ELEC_FUTURE_ACTUAL = "Actual_Elec_Status_"
-SET_ELEC_FINAL_GRID = "GridElecIn"
-SET_ELEC_FINAL_OFFGRID = "OffGridElecIn"
+SET_ELEC_FINAL_CODE = "GridElecIn"
+SET_ELEC_FINAL_CODE = "OffGridElecIn"
 SET_NEW_CONNECTIONS = 'NewConnections'  # Number of new people with electricity connections
 SET_MIN_GRID_DIST = 'MinGridDist'
 SET_LCOE_GRID = 'Grid'  # All lcoes in USD/kWh
@@ -1081,12 +1081,12 @@ class SettlementProcessor:
                                                                                               rural_elec_ratio-elec_actual_rural))
             condition = 1
 
-        self.df[SET_ELEC_FUTURE_GRID + "{}".format(start_year)] = \
+        self.df[SET_ELEC_FINAL_CODE + "{}".format(start_year)] = \
             self.df.apply(lambda row: 1 if row[SET_ELEC_CURRENT] == 1 else 0, axis=1)
-        self.df[SET_ELEC_FUTURE_OFFGRID + "{}".format(start_year)] = self.df.apply(lambda row: 0, axis=1)
+        self.df[SET_ELEC_FINAL_CODE + "{}".format(start_year)] = self.df.apply(lambda row: 0, axis=1)
         self.df[SET_ELEC_FUTURE_ACTUAL + "{}".format(start_year)] = \
-            self.df.apply(lambda row: 1 if row[SET_ELEC_FUTURE_GRID + "{}".format(start_year)] == 1 or
-                                           row[SET_ELEC_FUTURE_OFFGRID + "{}".format(start_year)] == 1 else 0, axis=1)
+            self.df.apply(lambda row: 1 if row[SET_ELEC_FINAL_CODE + "{}".format(start_year)] == 1 or
+                                           row[SET_ELEC_FINAL_CODE + "{}".format(start_year)] == 1 else 0, axis=1)
         self.df[SET_ELEC_FINAL_CODE + "{}".format(start_year)] = \
             self.df.apply(lambda row: 1 if row[SET_ELEC_CURRENT] == 1 else 99, axis=1)
 
@@ -1100,30 +1100,30 @@ class SettlementProcessor:
 
         # Update electrification status based on already existing
         if (year - time_step) == start_year:
-            self.df[SET_ELEC_FUTURE_GRID + "{}".format(year)] = 0
+            self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] = 0
             self.df.loc[
-                self.df[SET_ELEC_FUTURE_GRID + "{}".format(year - time_step)] == 1, SET_ELEC_FUTURE_GRID + "{}".format(
+                self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] == 1, SET_ELEC_FINAL_CODE + "{}".format(
                     year)] = 1
         else:
-            self.df[SET_ELEC_FUTURE_GRID + "{}".format(year)] = 0
+            self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] = 0
             self.df.loc[
-                self.df[SET_ELEC_FUTURE_GRID + "{}".format(year - time_step)] == 1, SET_ELEC_FUTURE_GRID + "{}".format(
+                self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] == 1, SET_ELEC_FINAL_CODE + "{}".format(
                     year)] = 1
             self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] == 1) & (
-                    self.df[SET_LIMIT + "{}".format(year - time_step)] == 1), SET_ELEC_FUTURE_GRID + "{}".format(
+                    self.df[SET_LIMIT + "{}".format(year - time_step)] == 1), SET_ELEC_FINAL_CODE + "{}".format(
                 year)] = 1
 
         if (year - time_step) == start_year:
-            self.df[SET_ELEC_FUTURE_OFFGRID + "{}".format(year)] = 0
-            self.df.loc[self.df[SET_ELEC_FUTURE_OFFGRID + "{}".format(
-                year - time_step)] == 1, SET_ELEC_FUTURE_OFFGRID + "{}".format(year)] = 1
+            self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] = 0
+            self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(
+                year - time_step)] == 1, SET_ELEC_FINAL_CODE + "{}".format(year)] = 1
         else:
-            self.df[SET_ELEC_FUTURE_OFFGRID + "{}".format(year)] = 0
-            self.df.loc[(self.df[SET_ELEC_FUTURE_OFFGRID + "{}".format(year - time_step)] == 1) &
-                        (self.df[SET_ELEC_FUTURE_GRID + "{}".format(year - time_step)] != 1),
-                        SET_ELEC_FUTURE_OFFGRID + "{}".format(year)] = 1
+            self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] = 0
+            self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] == 1) &
+                        (self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] != 1),
+                        SET_ELEC_FINAL_CODE + "{}".format(year)] = 1
             self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] != 1) & (
-                    self.df[SET_LIMIT + "{}".format(year - time_step)] == 1), SET_ELEC_FUTURE_OFFGRID + "{}".format(
+                    self.df[SET_LIMIT + "{}".format(year - time_step)] == 1), SET_ELEC_FINAL_CODE + "{}".format(
                 year)] = 1
 
         if (year - time_step) == start_year:
@@ -1134,14 +1134,14 @@ class SettlementProcessor:
             self.df[SET_ELEC_FUTURE_ACTUAL + "{}".format(year)] = 0
             self.df.loc[self.df[SET_ELEC_FUTURE_ACTUAL + "{}".format(
                 year - time_step)] == 1, SET_ELEC_FUTURE_ACTUAL + "{}".format(year)] = 1
-            self.df.loc[self.df[SET_ELEC_FUTURE_GRID + "{}".format(
+            self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(
                 year - time_step)] == 1, SET_ELEC_FUTURE_ACTUAL + "{}".format(year)] = 1
-            self.df.loc[self.df[SET_ELEC_FUTURE_OFFGRID + "{}".format(
+            self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(
                 year - time_step)] == 1, SET_ELEC_FUTURE_ACTUAL + "{}".format(year)] = 1
 
         self.df[SET_LCOE_GRID + "{}".format(year)] = 99
         self.df.loc[
-            self.df[SET_ELEC_FUTURE_GRID + "{}".format(year)] == 1, SET_LCOE_GRID + "{}".format(year)] = grid_price
+            self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 1, SET_LCOE_GRID + "{}".format(year)] = grid_price
 
     def current_mv_line_dist(self):
         logging.info('Determine current MV line length')
@@ -1173,7 +1173,7 @@ class SettlementProcessor:
         else:
             elecorder = self.df[SET_ELEC_ORDER + "{}".format(year - timestep)].tolist()
         grid_penalty_ratio = self.df[SET_GRID_PENALTY].tolist()
-        status = self.df[SET_ELEC_FUTURE_GRID + "{}".format(year)].tolist()
+        status = self.df[SET_ELEC_FINAL_CODE + "{}".format(year)].tolist()
         min_code_lcoes = self.df[SET_MIN_OFFGRID_LCOE + "{}".format(year)].tolist()
         new_lcoes = self.df[SET_LCOE_GRID + "{}".format(year)].tolist()
         cell_path_real = self.df[SET_MV_CONNECT_DIST].tolist()
@@ -1183,15 +1183,15 @@ class SettlementProcessor:
             SET_NUM_PEOPLE_PER_HH]
 
         urban_initially_electrified = sum(self.df.loc[
-                                              (self.df[SET_ELEC_FUTURE_GRID + "{}".format(year - timestep)] == 1) & (
+                                              (self.df[SET_ELEC_FINAL_CODE + "{}".format(year - timestep)] == 1) & (
                                                       self.df[SET_URBAN] == 2)][
                                               SET_ENERGY_PER_CELL + "{}".format(year)])
         rural_initially_electrified = sum(self.df.loc[
-                                              (self.df[SET_ELEC_FUTURE_GRID + "{}".format(year - timestep)] == 1) & (
+                                              (self.df[SET_ELEC_FINAL_CODE + "{}".format(year - timestep)] == 1) & (
                                                       self.df[SET_URBAN] < 2)][
                                               SET_ENERGY_PER_CELL + "{}".format(year)])
         densification_connections = sum(
-            self.df.loc[self.df[SET_ELEC_FUTURE_GRID + "{}".format(year - timestep)] == 1]['new_connections_household'])
+            self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year - timestep)] == 1]['new_connections_household'])
         consumption = rural_initially_electrified + urban_initially_electrified
         average_load = consumption / (1 - grid_calc.distribution_losses) / HOURS_PER_YEAR  # kW
         peak_load = average_load / grid_calc.base_to_peak_load_ratio  # kW
@@ -1200,8 +1200,8 @@ class SettlementProcessor:
 
         cell_path_adjusted = list(np.zeros(len(status)).tolist())
 
-        electrified = self.df[SET_ELEC_FUTURE_GRID + "{}".format(year)].loc[self.df[SET_ELEC_FUTURE_GRID + "{}".format(year)]==1].index.values.tolist()
-        unelectrified=self.df[SET_ELEC_FUTURE_GRID + "{}".format(year)].loc[self.df[SET_ELEC_FUTURE_GRID + "{}".format(year)]==0].index.values.tolist()
+        electrified = self.df[SET_ELEC_FINAL_CODE + "{}".format(year)].loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year)]==1].index.values.tolist()
+        unelectrified=self.df[SET_ELEC_FINAL_CODE + "{}".format(year)].loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year)]==0].index.values.tolist()
 
         if (prio == 2) or (prio == 4):
             changes = []
@@ -1897,16 +1897,16 @@ class SettlementProcessor:
                 self.df[SET_INVEST_PER_CAPITA + "{}".format(year)] = self.df[SET_INVESTMENT_COST + "{}".format(year)] / \
                                                                      self.df[SET_NEW_CONNECTIONS + "{}".format(year)]
                 step_size = self.df[SET_INVEST_PER_CAPITA + "{}".format(year)].quantile(q=0.95) / 100
-                if sum(self.df[self.df[SET_ELEC_FUTURE_GRID + "{}".format(year - timestep)] == 1][
+                if sum(self.df[self.df[SET_ELEC_FINAL_CODE + "{}".format(year - timestep)] == 1][
                            SET_POP + "{}".format(year)]) / \
                         self.df[SET_POP + "{}".format(year)].sum() < eleclimit:
-                    eleclimit -= sum(self.df[self.df[SET_ELEC_FUTURE_GRID + "{}".format(year - timestep)] == 1][
+                    eleclimit -= sum(self.df[self.df[SET_ELEC_FINAL_CODE + "{}".format(year - timestep)] == 1][
                                          SET_POP + "{}".format(year)]) / \
                                  self.df[SET_POP + "{}".format(year)].sum()
 
                     while abs(elecrate - eleclimit) > 0.01:
                         elecrate = sum(self.df[(self.df[SET_INVEST_PER_CAPITA + "{}".format(year)] < min_investment) &
-                                               (self.df[SET_ELEC_FUTURE_GRID + "{}".format(year - timestep)] == 0) &
+                                               (self.df[SET_ELEC_FINAL_CODE + "{}".format(year - timestep)] == 0) &
                                                (self.df[SET_TRAVEL_HOURS] < min_dist_to_cities)][
                                            SET_POP + "{}".format(year)]) / \
                                    self.df[SET_POP + "{}".format(year)].sum()
@@ -1921,19 +1921,19 @@ class SettlementProcessor:
 
                     # Updating (using the SET_LIMIT function) what is electrified in the year and what is not
                     self.df.loc[
-                        (self.df[SET_ELEC_FUTURE_GRID + "{}".format(year - timestep)] == 1), SET_LIMIT + "{}".format(
+                        (self.df[SET_ELEC_FINAL_CODE + "{}".format(year - timestep)] == 1), SET_LIMIT + "{}".format(
                             year)] = 1
 
                     self.df.loc[(self.df[SET_INVEST_PER_CAPITA + "{}".format(year)] <= min_investment) &
-                                (self.df[SET_ELEC_FUTURE_GRID + "{}".format(year - timestep)] == 0) &
+                                (self.df[SET_ELEC_FINAL_CODE + "{}".format(year - timestep)] == 0) &
                                 (self.df[SET_TRAVEL_HOURS] <= min_dist_to_cities), SET_LIMIT + "{}".format(year)] = 1
 
                     self.df.loc[(self.df[SET_INVEST_PER_CAPITA + "{}".format(year)] <= min_investment) &
-                                (self.df[SET_ELEC_FUTURE_GRID + "{}".format(year - timestep)] == 0) &
+                                (self.df[SET_ELEC_FINAL_CODE + "{}".format(year - timestep)] == 0) &
                                 (self.df[SET_TRAVEL_HOURS] > min_dist_to_cities), SET_LIMIT + "{}".format(year)] = 0
 
                     self.df.loc[(self.df[SET_INVEST_PER_CAPITA + "{}".format(year)] > min_investment) &
-                                (self.df[SET_ELEC_FUTURE_GRID + "{}".format(
+                                (self.df[SET_ELEC_FINAL_CODE + "{}".format(
                                     year - timestep)] == 0), SET_LIMIT + "{}".format(year)] = 0
 
                     elecrate = self.df.loc[
@@ -1943,10 +1943,10 @@ class SettlementProcessor:
                     print(
                         "The electrification target set is quite low and has been reached by grid densification in already electrified areas")
                     self.df.loc[
-                        (self.df[SET_ELEC_FUTURE_GRID + "{}".format(year - timestep)] == 1), SET_LIMIT + "{}".format(
+                        (self.df[SET_ELEC_FINAL_CODE + "{}".format(year - timestep)] == 1), SET_LIMIT + "{}".format(
                             year)] = 1
                     self.df.loc[
-                        (self.df[SET_ELEC_FUTURE_GRID + "{}".format(year - timestep)] == 0), SET_LIMIT + "{}".format(
+                        (self.df[SET_ELEC_FINAL_CODE + "{}".format(year - timestep)] == 0), SET_LIMIT + "{}".format(
                             year)] = 0
 
                     elecrate = self.df.loc[
@@ -1964,9 +1964,9 @@ class SettlementProcessor:
                 self.df[SET_INVEST_PER_CAPITA + "{}".format(year)] = self.df[SET_INVESTMENT_COST + "{}".format(year)] / \
                                                                      self.df[SET_NEW_CONNECTIONS + "{}".format(year)]
                 step_size = self.df[SET_INVEST_PER_CAPITA + "{}".format(year)].quantile(q=0.95) / 100
-                densification_pop = sum(self.df[self.df[SET_ELEC_FUTURE_GRID + "{}".format(year - timestep)] == 1][
+                densification_pop = sum(self.df[self.df[SET_ELEC_FINAL_CODE + "{}".format(year - timestep)] == 1][
                                             SET_POP + "{}".format(year)])
-                intensification_pop = sum(self.df[(self.df[SET_ELEC_FUTURE_GRID + "{}".format(year - timestep)] == 0) &
+                intensification_pop = sum(self.df[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year - timestep)] == 0) &
                                                   (self.df[SET_MV_DIST_PLANNED] < auto_densification)][
                                               SET_POP + "{}".format(year)])
 
@@ -1979,7 +1979,7 @@ class SettlementProcessor:
 
                         elecrate = sum(
                             self.df[(self.df[SET_INVEST_PER_CAPITA + "{}".format(year)] < min_investment) &
-                                    (self.df[SET_ELEC_FUTURE_GRID + "{}".format(year - timestep)] == 0) &
+                                    (self.df[SET_ELEC_FINAL_CODE + "{}".format(year - timestep)] == 0) &
                                     (self.df[SET_MV_DIST_PLANNED] >= auto_densification)][
                                 SET_POP + "{}".format(year)]) / \
                                    self.df[SET_POP + "{}".format(year)].sum()
@@ -1994,7 +1994,7 @@ class SettlementProcessor:
                             break
 
                     # Updating (using the SET_LIMIT function) what is electrified in the year and what is not
-                    self.df.loc[(self.df[SET_ELEC_FUTURE_GRID + "{}".format(year - timestep)] == 1),
+                    self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year - timestep)] == 1),
                                 SET_LIMIT + "{}".format(year)] = 1
 
                     self.df.loc[self.df[SET_MV_DIST_PLANNED] < auto_densification, SET_LIMIT + "{}".format(year)] = 1
@@ -2006,7 +2006,7 @@ class SettlementProcessor:
                 else:
                     print("The electrification target set is quite low,"
                           " and has been reached by grid densification/intensification")
-                    self.df.loc[(self.df[SET_ELEC_FUTURE_GRID + "{}".format(year - timestep)] == 1),
+                    self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year - timestep)] == 1),
                                 SET_LIMIT + "{}".format(year)] = 1
                     self.df.loc[(self.df[SET_MV_DIST_PLANNED] < auto_densification), SET_LIMIT + "{}".format(year)] = 1
 
@@ -2025,16 +2025,16 @@ class SettlementProcessor:
                 self.df[SET_INVEST_PER_CAPITA + "{}".format(year)] = \
                     self.df[SET_INVESTMENT_COST + "{}".format(year)] / self.df[SET_NEW_CONNECTIONS + "{}".format(year)]
                 step_size = self.df[SET_INVEST_PER_CAPITA + "{}".format(year)].quantile(q=0.95) / 100
-                if sum(self.df[self.df[SET_ELEC_FUTURE_GRID + "{}".format(year - timestep)] == 1][
+                if sum(self.df[self.df[SET_ELEC_FINAL_CODE + "{}".format(year - timestep)] == 1][
                            SET_POP + "{}".format(year)]) / \
                         self.df[SET_POP + "{}".format(year)].sum() < eleclimit:
-                    eleclimit -= sum(self.df[self.df[SET_ELEC_FUTURE_GRID + "{}".format(year - timestep)] == 1][
+                    eleclimit -= sum(self.df[self.df[SET_ELEC_FINAL_CODE + "{}".format(year - timestep)] == 1][
                                          SET_POP + "{}".format(year)]) / \
                                  self.df[SET_POP + "{}".format(year)].sum()
 
                     while abs(elecrate - eleclimit) > 0.01:
                         elecrate = sum(self.df[(self.df[SET_INVEST_PER_CAPITA + "{}".format(year)] < min_investment) &
-                                               (self.df[SET_ELEC_FUTURE_GRID + "{}".format(year - timestep)] == 0) &
+                                               (self.df[SET_ELEC_FINAL_CODE + "{}".format(year - timestep)] == 0) &
                                                (self.df[SET_TRAVEL_HOURS] < min_dist_to_cities)][
                                            SET_POP + "{}".format(year)]) / \
                                    self.df[SET_POP + "{}".format(year)].sum()
@@ -2054,27 +2054,27 @@ class SettlementProcessor:
 
                     # Updating (using the SET_LIMIT function) what is electrified in the year and what is not
                     self.df.loc[
-                        (self.df[SET_ELEC_FUTURE_GRID + "{}".format(year - timestep)] == 1), SET_LIMIT + "{}".format(
+                        (self.df[SET_ELEC_FINAL_CODE + "{}".format(year - timestep)] == 1), SET_LIMIT + "{}".format(
                             year)] = 1
 
                     self.df.loc[(self.df[SET_INVEST_PER_CAPITA + "{}".format(year)] <= min_investment) &
-                                (self.df[SET_ELEC_FUTURE_GRID + "{}".format(year - timestep)] == 0) &
+                                (self.df[SET_ELEC_FINAL_CODE + "{}".format(year - timestep)] == 0) &
                                 (self.df[SET_TRAVEL_HOURS] <= min_dist_to_cities), SET_LIMIT + "{}".format(year)] = 1
 
                     self.df.loc[(self.df[SET_INVEST_PER_CAPITA + "{}".format(year)] <= min_investment) &
-                                (self.df[SET_ELEC_FUTURE_GRID + "{}".format(year - timestep)] == 0) &
+                                (self.df[SET_ELEC_FINAL_CODE + "{}".format(year - timestep)] == 0) &
                                 (self.df[SET_TRAVEL_HOURS] > min_dist_to_cities), SET_LIMIT + "{}".format(year)] = 0
 
                     self.df.loc[(self.df[SET_INVEST_PER_CAPITA + "{}".format(year)] > min_investment) &
-                                (self.df[SET_ELEC_FUTURE_GRID + "{}".format(
+                                (self.df[SET_ELEC_FINAL_CODE + "{}".format(
                                     year - timestep)] == 0), SET_LIMIT + "{}".format(year)] = 0
 
                 else:
                     print("The electrification target set is quite low,"
                           " and has been reached by grid densification in already electrified areas")
-                    self.df.loc[(self.df[SET_ELEC_FUTURE_GRID + "{}".format(year - timestep)] == 1),
+                    self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year - timestep)] == 1),
                                 SET_LIMIT + "{}".format(year)] = 1
-                    self.df.loc[(self.df[SET_ELEC_FUTURE_GRID + "{}".format(year - timestep)] == 0),
+                    self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year - timestep)] == 0),
                                 SET_LIMIT + "{}".format(year)] = 0
 
                 elecrate = self.df.loc[self.df[SET_LIMIT + "{}".format(year)] == 1,
@@ -2083,7 +2083,7 @@ class SettlementProcessor:
             elif choice == 4:
                 self.df[SET_LIMIT + "{}".format(year)] = 0
 
-                self.df.loc[(self.df[SET_ELEC_FUTURE_GRID + "{}".format(year - timestep)] == 1),SET_LIMIT + "{}".format(year)] = 1
+                self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year - timestep)] == 1),SET_LIMIT + "{}".format(year)] = 1
                 self.df.loc[self.df[SET_MV_DIST_PLANNED] < auto_densification, SET_LIMIT + "{}".format(year)] = 1
                 elecrate = self.df.loc[self.df[SET_LIMIT + "{}".format(year)] == 1,
                                        SET_POP + "{}".format(year)].sum() / self.df[SET_POP + "{}".format(year)].sum()
@@ -2100,16 +2100,16 @@ class SettlementProcessor:
                                                                      self.df[SET_NEW_CONNECTIONS + "{}".format(year)]
                 step_size = self.df[SET_INVEST_PER_CAPITA + "{}".format(year)].quantile(q=0.95) / 20
                 travel_time_step = self.df[SET_TRAVEL_HOURS].quantile(q=1) / 100
-                if sum(self.df[self.df[SET_ELEC_FUTURE_GRID + "{}".format(year - timestep)] == 1][
+                if sum(self.df[self.df[SET_ELEC_FINAL_CODE + "{}".format(year - timestep)] == 1][
                            SET_POP + "{}".format(year)]) / \
                         self.df[SET_POP + "{}".format(year)].sum() < eleclimit:
-                    eleclimit -= sum(self.df[self.df[SET_ELEC_FUTURE_GRID + "{}".format(year - timestep)] == 1][
+                    eleclimit -= sum(self.df[self.df[SET_ELEC_FINAL_CODE + "{}".format(year - timestep)] == 1][
                                          SET_POP + "{}".format(year)]) / \
                                  self.df[SET_POP + "{}".format(year)].sum()
 
                     while abs(elecrate - eleclimit) > 0.01:
                         elecrate = sum(self.df[(self.df[SET_INVEST_PER_CAPITA + "{}".format(year)] < min_investment) &
-                                               (self.df[SET_ELEC_FUTURE_GRID + "{}".format(year - timestep)] == 0) &
+                                               (self.df[SET_ELEC_FINAL_CODE + "{}".format(year - timestep)] == 0) &
                                                (self.df[SET_TRAVEL_HOURS] < min_dist_to_cities)][
                                            SET_POP + "{}".format(year)]) / \
                                    self.df[SET_POP + "{}".format(year)].sum()
@@ -2124,19 +2124,19 @@ class SettlementProcessor:
 
                     # Updating (using the SET_LIMIT function) what is electrified in the year and what is not
                     self.df.loc[
-                        (self.df[SET_ELEC_FUTURE_GRID + "{}".format(year - timestep)] == 1), SET_LIMIT + "{}".format(
+                        (self.df[SET_ELEC_FINAL_CODE + "{}".format(year - timestep)] == 1), SET_LIMIT + "{}".format(
                             year)] = 1
 
                     self.df.loc[(self.df[SET_INVEST_PER_CAPITA + "{}".format(year)] <= min_investment) &
-                                (self.df[SET_ELEC_FUTURE_GRID + "{}".format(year - timestep)] == 0) &
+                                (self.df[SET_ELEC_FINAL_CODE + "{}".format(year - timestep)] == 0) &
                                 (self.df[SET_TRAVEL_HOURS] <= min_dist_to_cities), SET_LIMIT + "{}".format(year)] = 1
 
                     self.df.loc[(self.df[SET_INVEST_PER_CAPITA + "{}".format(year)] <= min_investment) &
-                                (self.df[SET_ELEC_FUTURE_GRID + "{}".format(year - timestep)] == 0) &
+                                (self.df[SET_ELEC_FINAL_CODE + "{}".format(year - timestep)] == 0) &
                                 (self.df[SET_TRAVEL_HOURS] > min_dist_to_cities), SET_LIMIT + "{}".format(year)] = 0
 
                     self.df.loc[(self.df[SET_INVEST_PER_CAPITA + "{}".format(year)] > min_investment) &
-                                (self.df[SET_ELEC_FUTURE_GRID + "{}".format(
+                                (self.df[SET_ELEC_FINAL_CODE + "{}".format(
                                     year - timestep)] == 0), SET_LIMIT + "{}".format(year)] = 0
 
                     elecrate = self.df.loc[
@@ -2146,10 +2146,10 @@ class SettlementProcessor:
                     print(
                         "The electrification target set is quite low and has been reached by grid densification in already electrified areas")
                     self.df.loc[
-                        (self.df[SET_ELEC_FUTURE_GRID + "{}".format(year - timestep)] == 1), SET_LIMIT + "{}".format(
+                        (self.df[SET_ELEC_FINAL_CODE + "{}".format(year - timestep)] == 1), SET_LIMIT + "{}".format(
                             year)] = 1
                     self.df.loc[
-                        (self.df[SET_ELEC_FUTURE_GRID + "{}".format(year - timestep)] == 0), SET_LIMIT + "{}".format(
+                        (self.df[SET_ELEC_FINAL_CODE + "{}".format(year - timestep)] == 0), SET_LIMIT + "{}".format(
                             year)] = 0
 
                     elecrate = self.df.loc[
@@ -2205,29 +2205,29 @@ class SettlementProcessor:
         logging.info('Determine final electrification decision')
 
         # Defining what is electrified in a given year by the grid after prioritization process has finished
-        self.df[SET_ELEC_FINAL_GRID + "{}".format(year)] = 0
+        self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] = 0
         self.df.loc[
-            (self.df[SET_ELEC_FUTURE_GRID + "{}".format(year)] == 1), SET_ELEC_FINAL_GRID + "{}".format(year)] = 1
+            (self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 1), SET_ELEC_FINAL_CODE + "{}".format(year)] = 1
         self.df.loc[
-            (self.df[SET_LIMIT + "{}".format(year)] == 1) & (self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 1), SET_ELEC_FINAL_GRID + "{}".format(year)] = 1
+            (self.df[SET_LIMIT + "{}".format(year)] == 1) & (self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 1), SET_ELEC_FINAL_CODE + "{}".format(year)] = 1
         # Define what is electrified in a given year by off-grid after prioritization process has finished
-        self.df[SET_ELEC_FINAL_OFFGRID + "{}".format(year)] = 0
-        self.df.loc[(self.df[SET_ELEC_FUTURE_OFFGRID + "{}".format(year)] == 1) & (
-                self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] != 1), SET_ELEC_FINAL_OFFGRID + "{}".format(
+        self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] = 0
+        self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 1) & (
+                self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] != 1), SET_ELEC_FINAL_CODE + "{}".format(
             year)] = 1
         self.df.loc[(self.df[SET_LIMIT + "{}".format(year)] == 1) & (
-                self.df[SET_ELEC_FINAL_GRID + "{}".format(year)] == 0), SET_ELEC_FINAL_OFFGRID + "{}".format(
+                self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 0), SET_ELEC_FINAL_CODE + "{}".format(
             year)] = 1
         self.df.loc[
-            (self.df[SET_LIMIT + "{}".format(year)] == 1) & (self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 0), SET_ELEC_FINAL_OFFGRID + "{}".format(year)] = 1
+            (self.df[SET_LIMIT + "{}".format(year)] == 1) & (self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 0), SET_ELEC_FINAL_CODE + "{}".format(year)] = 1
 
         #
         self.df.loc[
-            (self.df[SET_LIMIT + "{}".format(year)] == 1) & (self.df[SET_ELEC_FINAL_GRID + "{}".format(year)] == 1),
+            (self.df[SET_LIMIT + "{}".format(year)] == 1) & (self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 1),
             SET_ELEC_FINAL_CODE + "{}".format(year)] = 1
 
         self.df.loc[
-            (self.df[SET_LIMIT + "{}".format(year)] == 1) & (self.df[SET_ELEC_FINAL_OFFGRID + "{}".format(year)] == 1),
+            (self.df[SET_LIMIT + "{}".format(year)] == 1) & (self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 1),
             SET_ELEC_FINAL_CODE + "{}".format(year)] = self.df[SET_MIN_OFFGRID_CODE + "{}".format(year)]
 
         self.df.loc[(self.df[SET_LIMIT + "{}".format(year)] == 0),
