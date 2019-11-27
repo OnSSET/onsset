@@ -1669,7 +1669,7 @@ class SettlementProcessor:
                         new_grid_capacity += peak_load
                         grid_connect_limit -= new_connections[unelec] / nupppphh[unelec]
                         elecorder[unelec] = 1
-                if unelec not in changes:
+                        if unelec not in changes:
                             changes.append(unelec)
         electrified = changes[:]
         unelectrified = set(unelectrified).difference(electrified)
