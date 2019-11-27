@@ -4,7 +4,7 @@ from onsset import *
 import pandas as pd
 from openpyxl import load_workbook
 
-def calibration(specs_path, csv_path, calibrated_csv_path):
+def calibration(specs_path, csv_path, specs_path_calib, calibrated_csv_path):
 
 
     specs = pd.read_excel(specs_path, index_col=0)
@@ -60,7 +60,7 @@ def calibration(specs_path, csv_path, calibrated_csv_path):
     SpecsData.loc[0, 'urban_elec_ratio_modelled'] = urban_elec_ratio
 
     book = load_workbook(specs_path)
-    writer = pd.ExcelWriter(specs_path, engine='openpyxl')
+    writer = pd.ExcelWriter(specs_path_calib, engine='openpyxl')
     writer.book = book
     # RUN_PARAM: Here the calibrated "specs" data are copied to a new tab called "SpecsDataCalib". This is what will later on be used to feed the model
     SpecsData.to_excel(writer, sheet_name='SpecsDataCalib', index=False)
