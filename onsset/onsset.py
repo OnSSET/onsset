@@ -1226,8 +1226,9 @@ class SettlementProcessor:
         cell_path_adjusted = list(np.zeros(len(status)).tolist())
         
     
-        electrified = self.df[SET_ELEC_FUTURE_GRID + "{}".format(year)].loc[self.df[SET_ELEC_FUTURE_GRID + "{}".format(year)]==1].tolist()
-        unelectrified=self.df[SET_ELEC_FUTURE_GRID + "{}".format(year)].loc[self.df[SET_ELEC_FUTURE_GRID + "{}".format(year)]==0].tolist()
+        electrified = self.df[SET_ELEC_FUTURE_GRID + "{}".format(year)].loc[self.df[SET_ELEC_FUTURE_GRID + "{}".format(year)]==1].index.values.tolist()
+
+        unelectrified=self.df[SET_ELEC_FUTURE_GRID + "{}".format(year)].loc[self.df[SET_ELEC_FUTURE_GRID + "{}".format(year)]==0].index.values.tolist()
         
 
         if (prio == 2) or (prio == 4):
