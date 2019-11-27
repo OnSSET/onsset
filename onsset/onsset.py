@@ -1364,7 +1364,7 @@ class SettlementProcessor:
 
         return elec_modelled, rural_elec_ratio, urban_elec_ratio
     
-        electrified=self.df.loc[SET_ELEC_FUTURE]
+        
     
 
     @staticmethod
@@ -1513,7 +1513,8 @@ class SettlementProcessor:
         grid_connect_limit -= densification_connections
 
         cell_path_adjusted = list(np.zeros(len(status)).tolist())
-        electrified, unelectrified = self.df.loc[SET_ELEC_FUTURE]
+        electrified = self.df[SET_ELEC_FUTURE_GRID + "{}".format(year)].loc[self.df[SET_ELEC_FUTURE_GRID + "{}".format(year)]==1].index.values.tolist()
+        unelectrified=self.df[SET_ELEC_FUTURE_GRID + "{}".format(year)].loc[self.df[SET_ELEC_FUTURE_GRID + "{}".format(year)]==0].index.values.tolist()
 
         if (prio == 2) or (prio == 4):
             changes = []
