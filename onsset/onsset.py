@@ -1091,51 +1091,8 @@ class SettlementProcessor:
             self.df.apply(lambda row: 1 if row[SET_ELEC_CURRENT] == 1 else 99, axis=1)
 
         return elec_modelled, rural_elec_ratio, urban_elec_ratio
-    
 
-
-
-    
-
-    @staticmethod
-    def get_2d_hash_table(x, y, unelectrified, distance_limit):
-        """
-        Generates the 2D Hash Table with the unelectrified locations hashed into the table for easy O(1) access.
-        """
-
-        hash_table = defaultdict(lambda: defaultdict(list))
-        for unelec_row in unelectrified:
-            hash_x = int(x[unelec_row] / distance_limit)
-            hash_y = int(y[unelec_row] / distance_limit)
-            hash_table[hash_x][hash_y].append(unelec_row)
-        return hash_table
-
-    @staticmethod
-    def get_unelectrified_rows(hash_table, elec_row, x, y, distance_limit):
-        """
-        Returns all the unelectrified locations close to the electrified location
-        based on the distance boundary limit specified by asking the 2D hash table.
-        """
-
-        unelec_list = []
-        hash_x = int(x[elec_row] / distance_limit)
-        hash_y = int(y[elec_row] / distance_limit)
-
-        unelec_list.extend(hash_table.get(hash_x, {}).get(hash_y, []))
-        unelec_list.extend(hash_table.get(hash_x, {}).get(hash_y - 1, []))
-        unelec_list.extend(hash_table.get(hash_x, {}).get(hash_y + 1, []))
-
-        unelec_list.extend(hash_table.get(hash_x + 1, {}).get(hash_y, []))
-        unelec_list.extend(hash_table.get(hash_x + 1, {}).get(hash_y - 1, []))
-        unelec_list.extend(hash_table.get(hash_x + 1, {}).get(hash_y + 1, []))
-
-        unelec_list.extend(hash_table.get(hash_x - 1, {}).get(hash_y, []))
-        unelec_list.extend(hash_table.get(hash_x - 1, {}).get(hash_y - 1, []))
-        unelec_list.extend(hash_table.get(hash_x - 1, {}).get(hash_y + 1, []))
-
-        return unelec_list
-
-    def pre_electrification(self, grid_calc, grid_price, year, time_step, start_year):
+    def pre_electrification(self, grid_price, year, time_step, start_year):
 
         """" ... """
 
@@ -1205,7 +1162,6 @@ class SettlementProcessor:
         y = (self.df[SET_Y_DEG]).tolist()
         pop = self.df[SET_POP + "{}".format(year)].tolist()
         confl = self.df[SET_CONFLICT].tolist()
-        travl = self.df[SET_TRAVEL_HOURS].tolist()
         enerperhh = self.df[SET_ENERGY_PER_CELL + "{}".format(year)]
         nupppphh = self.df[SET_NUM_PEOPLE_PER_HH]
         grid_cell_area = self.df[SET_GRID_CELL_AREA]
@@ -1247,7 +1203,6 @@ class SettlementProcessor:
         electrified = self.df[SET_ELEC_FUTURE_GRID + "{}".format(year)].loc[self.df[SET_ELEC_FUTURE_GRID + "{}".format(year)]==1].index.values.tolist()
         unelectrified=self.df[SET_ELEC_FUTURE_GRID + "{}".format(year)].loc[self.df[SET_ELEC_FUTURE_GRID + "{}".format(year)]==0].index.values.tolist()
 
-
         if (prio == 2) or (prio == 4):
             changes = []
             for unelec in unelectrified:
@@ -1258,9 +1213,7 @@ class SettlementProcessor:
                         peak_load = average_load / grid_calc.base_to_peak_load_ratio  # kW
                         dist = planned_mv_dist[unelec]
                         dist_adjusted = grid_penalty_ratio[unelec] * dist
-
                         grid_lcoe = 0.001
-
                         new_lcoes[unelec] = grid_lcoe
                         cell_path_real[unelec] = dist
                         cell_path_adjusted[unelec] = dist_adjusted
@@ -1408,7 +1361,6 @@ class SettlementProcessor:
         while len(electrified) > 0:
             logging.info('Electrification loop {} with {} electrified'.format(loops, len(electrified)))
             loops += 1
-            hash_table = self.get_2d_hash_table(x, y, electrified, max_dist)
             elec_nodes2 = []
             for elec in electrified:
                 elec_nodes2.append((x[elec], y[elec]))
@@ -1451,41 +1403,6 @@ class SettlementProcessor:
                                     grid_connect_limit -= new_connections[unelec] / nupppphh[unelec]
                                     if unelec not in changes:
                                         changes.append(unelec)
-                        elif new_grid_capacity + peak_load < grid_capacity_limit and 1 > 2:
-                            electrified_hashed = self.get_unelectrified_rows(hash_table, unelec, x, y, max_dist)
-                            grid_capacity_addition_loop = 0
-                            for elec in electrified_hashed:
-                                prev_dist = cell_path_real[elec]
-                                dist = haversine(x[elec], y[elec], x[unelec], y[unelec])
-                                dist_adjusted = grid_penalty_ratio[unelec] * dist
-                                if prev_dist + dist < max_dist:
-                                    grid_lcoe = grid_calc.get_lcoe(energy_per_cell=enerperhh[unelec],
-                                                                   start_year=year - timestep,
-                                                                   end_year=end_year,
-                                                                   people=pop[unelec],
-                                                                   new_connections=new_connections[unelec],
-                                                                   total_energy_per_cell=total_energy_per_cell[
-                                                                       unelec],
-                                                                   prev_code=prev_code[unelec],
-                                                                   num_people_per_hh=nupppphh[unelec],
-                                                                   grid_cell_area=grid_cell_area[unelec],
-                                                                   conf_status=confl[unelec],
-                                                                   additional_mv_line_length=dist_adjusted,
-                                                                   elec_loop=elecorder[elec] + 1)
-                                    if grid_lcoe < min_code_lcoes[unelec] and \
-                                            (new_grid_capacity + peak_load < grid_capacity_limit) \
-                                            and (new_connections[unelec] / nupppphh[unelec] < grid_connect_limit):
-                                        if grid_lcoe < new_lcoes[unelec]:
-                                            new_lcoes[unelec] = grid_lcoe
-                                            cell_path_real[unelec] = dist + cell_path_real[elec]
-                                            cell_path_adjusted[unelec] = dist_adjusted
-                                            elecorder[unelec] = elecorder[elec] + 1
-                                            if grid_capacity_addition_loop == 0:
-                                                new_grid_capacity += peak_load
-                                                grid_connect_limit -= new_connections[unelec] / nupppphh[unelec]
-                                                grid_capacity_addition_loop += 1
-                                            if unelec not in changes:
-                                                changes.append(unelec)
             electrified = changes[:]
             unelectrified = set(unelectrified).difference(electrified)
 
