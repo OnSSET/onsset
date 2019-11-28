@@ -55,7 +55,7 @@ SET_ELEC_FUTURE = 'Elec_Status'  # If the site has the potential to be 'easily' 
 SET_ELEC_FINAL_CODE = "Elec_Initial_Status_Grid"
 SET_ELEC_FUTURE_OFFGRID = "Elec_Init_Status_Offgrid"
 SET_ELEC_FUTURE_ACTUAL = "Actual_Elec_Status_"
-SET_ELEC_FINAL_GRID = "GridElecIn"
+SET_ELEC_FINAL_CODE = "GridElecIn"
 SET_ELEC_FINAL_OFFGRID = "OffGridElecIn"
 SET_NEW_CONNECTIONS = 'NewConnections'  # Number of new people with electricity connections
 SET_MIN_GRID_DIST = 'MinGridDist'
@@ -2176,25 +2176,25 @@ class SettlementProcessor:
         logging.info('Determine final electrification decision')
 
         # Defining what is electrified in a given year by the grid after prioritization process has finished
-        self.df[SET_ELEC_FINAL_GRID + "{}".format(year)] = 0
+        self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] = 0
         self.df.loc[
-            (self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 1), SET_ELEC_FINAL_GRID + "{}".format(year)] = 1
+            (self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 1), SET_ELEC_FINAL_CODE + "{}".format(year)] = 1
         self.df.loc[
-            (self.df[SET_LIMIT + "{}".format(year)] == 1) & (self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 1), SET_ELEC_FINAL_GRID + "{}".format(year)] = 1
+            (self.df[SET_LIMIT + "{}".format(year)] == 1) & (self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 1), SET_ELEC_FINAL_CODE + "{}".format(year)] = 1
         # Define what is electrified in a given year by off-grid after prioritization process has finished
         self.df[SET_ELEC_FINAL_OFFGRID + "{}".format(year)] = 0
         self.df.loc[(self.df[SET_ELEC_FUTURE_OFFGRID + "{}".format(year)] == 1) & (
                 self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] != 1), SET_ELEC_FINAL_OFFGRID + "{}".format(
             year)] = 1
         self.df.loc[(self.df[SET_LIMIT + "{}".format(year)] == 1) & (
-                self.df[SET_ELEC_FINAL_GRID + "{}".format(year)] == 0), SET_ELEC_FINAL_OFFGRID + "{}".format(
+                self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 0), SET_ELEC_FINAL_OFFGRID + "{}".format(
             year)] = 1
         self.df.loc[
             (self.df[SET_LIMIT + "{}".format(year)] == 1) & (self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 0), SET_ELEC_FINAL_OFFGRID + "{}".format(year)] = 1
 
         #
         self.df.loc[
-            (self.df[SET_LIMIT + "{}".format(year)] == 1) & (self.df[SET_ELEC_FINAL_GRID + "{}".format(year)] == 1),
+            (self.df[SET_LIMIT + "{}".format(year)] == 1) & (self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 1),
             SET_ELEC_FINAL_CODE + "{}".format(year)] = 1
 
         self.df.loc[
