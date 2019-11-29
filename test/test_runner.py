@@ -50,6 +50,7 @@ def run_analysis(tmpdir):
 
     return summary, actual
 
+
 def test_regression_summary():
     """A regression test to track changes to the summary results of OnSSET
 
@@ -78,6 +79,7 @@ def update_test_file():
     expected = os.path.join('test', 'test_results', 'expected_full.csv')
     if not actual:
         copyfile(actual, expected)
+
 
 if __name__ == '__main__':
 
