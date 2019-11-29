@@ -19,9 +19,15 @@ from openpyxl import load_workbook
 
 
 def calibration(specs_path, csv_path, specs_path_calib, calibrated_csv_path):
+    """
 
-
-    specs = pd.read_excel(specs_path, index_col=0)
+    Arguments
+    ---------
+    specs_path
+    csv_path
+    specs_path_calib
+    calibrated_csv_path
+    """
     SpecsData = pd.read_excel(specs_path, sheet_name='SpecsData')
     settlements_in_csv = csv_path
     settlements_out_csv = calibrated_csv_path
@@ -87,6 +93,16 @@ def calibration(specs_path, csv_path, specs_path_calib, calibrated_csv_path):
     onsseter.df.to_csv(settlements_out_csv, index=False)
 
 def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
+    """
+
+    Arguments
+    ---------
+    specs_path : str
+    calibrated_csv_path : str
+    results_folder : str
+    summary_folder : str
+
+    """
 
 
     ScenarioInfo = pd.read_excel(specs_path, sheet_name='ScenarioInfo')

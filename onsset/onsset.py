@@ -151,6 +151,8 @@ class Technology:
                            max_nodes_per_serv_trans=300, MV_LV_sub_station_type=400, MV_LV_sub_station_cost=10000,
                            MV_MV_sub_station_cost=10000, HV_LV_sub_station_type=1000, HV_LV_sub_station_cost=25000,
                            HV_MV_sub_station_cost=25000, power_factor=0.9, load_moment=9643):
+        """Initialises the class with parameter values common to all Technologies
+        """
         cls.base_year = base_year
         cls.start_year = start_year
         cls.end_year = end_year
@@ -655,10 +657,6 @@ class SettlementProcessor:
             else:
                 return 1
 
-        def set_penalty(row):
-            classification = row[SET_COMBINED_CLASSIFICATION]
-            return 1 + (exp(0.85 * abs(1 - classification)) - 1) / 100
-
         logging.info('Classify road dist')
         self.df[SET_ROAD_DIST_CLASSIFIED] = self.df.apply(classify_road_dist, axis=1)
 
@@ -681,8 +679,22 @@ class SettlementProcessor:
                                                 0.15 * self.df[SET_ELEVATION_CLASSIFIED] +
                                                 0.30 * self.df[SET_SLOPE_CLASSIFIED])
 
+        def set_penalty(classification):
+            """Return penalty value based on classification
+
+            Arguments
+            ---------
+            classification : float
+
+            Returns
+            -------
+            float
+
+            """
+            return 1 + (exp(0.85 * abs(1 - classification)) - 1) / 100
+
         logging.info('Grid penalty')
-        self.df[SET_GRID_PENALTY] = self.df.apply(set_penalty, axis=1)
+        self.df[SET_GRID_PENALTY] = self.df[SET_COMBINED_CLASSIFICATION].apply(set_penalty)
 
     def calc_wind_cfs(self):
         """
