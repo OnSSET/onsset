@@ -1431,6 +1431,9 @@ class SettlementProcessor:
         return new_lcoes, cell_path_adjusted, elecorder, cell_path_real
 
     #Runs the grid extension algorithm
+
+    # def new_connections(self,year,):
+
     def set_scenario_variables(self, year, num_people_per_hh_rural, num_people_per_hh_urban, time_step, start_year,
                                urban_elec_ratio, rural_elec_ratio, urban_tier, rural_tier, end_year_pop,
                                productive_demand):
