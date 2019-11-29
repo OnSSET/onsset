@@ -1,11 +1,10 @@
 onsset
 =================================
 
-[![PyPI version](https://badge.fury.io/py/gridfinder.svg)](https://test.pypi.org/project/gep-onsset/)
+[![PyPI version](https://badge.fury.io/py/gridfinder.svg)](https://pypi.org/project/onsset/)
 [![Build Status](https://travis-ci.com/OnSSET/onsset.svg?branch=master)](https://travis-ci.com/OnSSET/onsset)
+[![Coverage Status](https://coveralls.io/repos/github/OnSSET/onsset/badge.svg?branch=will/ci)](https://coveralls.io/github/OnSSET/onsset?branch=will/ci)
 [![Documentation Status](https://readthedocs.org/projects/onsset/badge/?version=latest)](https://onsset.readthedocs.io/en/latest/?badge=latest)
-
-Documentation: https://onsset.readthedocs.io/en/latest/index.html#
 
 # Scope
 
