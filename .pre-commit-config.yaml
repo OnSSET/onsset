@@ -9,3 +9,7 @@ repos:
     -   id: check-yaml
     -   id: check-added-large-files
     -   id: flake8
+    -   id: requirements-txt-fixer
+    -   id: check-merge-conflict
+    -   id: name-tests-test
+        args: ['--django']
