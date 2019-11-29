@@ -1,7 +1,7 @@
 # Runs the modules
 
 import os
-from onsset.runner import *
+from onsset.runner import calibration, scenario
 import filecmp
 
 def test_regression():
