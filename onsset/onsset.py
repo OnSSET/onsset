@@ -1,16 +1,8 @@
-# Author: KTH dESA Last modified by Andreas Sahlberg
-# Date: 05 June 2019
-# Python version: 3.5
-
-import os
 import logging
 import pandas as pd
 from math import ceil, pi, exp, log, sqrt, radians, cos, sin, asin
 # from pyproj import Proj
 import numpy as np
-from collections import defaultdict
-
-# from IPython.display import Markdown
 
 logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.DEBUG)
 
@@ -920,7 +912,7 @@ class SettlementProcessor:
 
         logging.info('Calibrate current electrification')
         self.df[SET_ELEC_CURRENT] = 0
-        
+
 
         # This if function here skims through T&D columns to identify if any non 0 values exist; Then it defines priority accordingly.
         if max(self.df[SET_DIST_TO_TRANS]) > 0:

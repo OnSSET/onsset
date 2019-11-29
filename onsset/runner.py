@@ -1,5 +1,6 @@
 # Defines the modules
 
+import os
 from onsset import *
 import pandas as pd
 from openpyxl import load_workbook
@@ -54,7 +55,7 @@ def calibration(specs_path, csv_path, specs_path_calib, calibrated_csv_path):
 
     # In case there are limitations in the way grid expansion is moving in a country, this can be reflected through gridspeed.
     # In this case the parameter is set to a very high value therefore is not taken into account.
-   
+
 
     SpecsData.loc[0, SPE_URBAN_MODELLED] = urban_modelled
     SpecsData.loc[0, SPE_ELEC_MODELLED] = elec_modelled
