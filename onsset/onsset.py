@@ -508,6 +508,57 @@ class Technology:
             discounted_generation = el_gen / discount_factor
             return np.sum(discounted_costs) / np.sum(discounted_generation)
 
+class GridPenalty:
+    """class for handling grid penalties"""
+    
+    def classify_road_dist(self,data_frame,column,target_column):
+        """classify road distances and create new columns with the classification"""
+        data_frame.loc[data_frame[column]<= 5, target_column] = 5
+        data_frame.loc[(data_frame[column]> 5) & (data_frame[column] <=10), target_column] = 4
+        data_frame.loc[(data_frame[column]> 10)& (data_frame[column] <=25), target_column] = 3
+        data_frame.loc[(data_frame[column]> 25) & (data_frame[column] <=50), target_column] = 2
+        data_frame.loc[data_frame[column]> 50, target_column] = 1
+
+    
+    def classify_substation_dist(self,data_frame,column,target_column):
+        """classify substation distances and create new columns with the classification"""
+        data_frame.loc[data_frame[column]<= 0.5, target_column] = 5
+        data_frame.loc[(data_frame[column]> 0.5) & (data_frame[column] <=1), target_column] = 4
+        data_frame.loc[(data_frame[column]> 1) & (data_frame[column] <=5), target_column] = 3
+        data_frame.loc[(data_frame[column]> 5) & (data_frame[column] <=10), target_column] = 2
+        data_frame.loc[data_frame[column]> 10, target_column] = 1
+
+    def classify_land_cover(self,data_frame,column,target_column):
+        """classify land cover and create new columns with the classification"""
+        data_frame.loc[(data_frame[column]==7) | (data_frame[column]==9 ) | (data_frame[column]==10 ) |
+                        (data_frame[column]==14 ) | (data_frame[column]==16 ) ,target_column] = 5
+        data_frame.loc[(data_frame[column]==2) | (data_frame[column]==4 ),target_column] = 4
+        data_frame.loc[(data_frame[column]==1 )| (data_frame[column]==3 ) | (data_frame[column]==5 ) |
+                        (data_frame[column]==12 ) | (data_frame[column]==13 ) | (data_frame[column]==15 ) ,target_column] = 3
+        data_frame.loc[(data_frame[column]==6) | (data_frame[column]==8 ) ,target_column] = 2
+        data_frame.loc[(data_frame[column]==0) | (data_frame[column]==11 ) ,target_column] = 1
+
+        
+    def classify_elevation(self,data_frame,column,target_column):
+        """classify elevation and create new columns with the classification"""
+        data_frame.loc[(data_frame[column]<= 500), target_column] = 5
+        data_frame.loc[(data_frame[column]> 500) & (data_frame[column] <=1000), target_column] = 4
+        data_frame.loc[(data_frame[column]> 1000) & (data_frame[column] <=2000), target_column] = 3
+        data_frame.loc[(data_frame[column]> 2000) & (data_frame[column] <=3000), target_column] = 2
+        data_frame.loc[data_frame[column]> 3000, target_column] = 1
+
+    def classify_slope(self,data_frame,column,target_column):
+        """classify slope and create new columns with the classification"""
+        data_frame.loc[(data_frame[column]<= 10), target_column] = 5
+        data_frame.loc[(data_frame[column]> 10) & (data_frame[column] <=20), target_column] = 4
+        data_frame.loc[(data_frame[column]> 20) & (data_frame[column] <=30), target_column] = 3
+        data_frame.loc[(data_frame[column]> 30) & (data_frame[column] <=40), target_column] = 2
+        data_frame.loc[data_frame[column]> 40, target_column] = 1
+
+    def set_penalty(self,data_frame,column,target_column):
+        """calculate the penalty from the results obtained from the combined classifications"""
+        classification=data_frame[column].astype(float)
+        data_frame[target_column]= 1+ (np.exp(.85*np.abs(1-classification))-1)/100 
 
 class SettlementProcessor:
     """
@@ -610,73 +661,22 @@ class SettlementProcessor:
         Add a grid penalty factor to increase the grid cost in areas that higher road distance, higher substation
         distance, unsuitable land cover, high slope angle or high elevation
         """
-        def classify_road_dist(data_frame,column,target_column):
-            """classify road distances and create new columns with the classification"""
-
-            data_frame.loc[data_frame[column]<= 5, target_column] = 5
-            data_frame.loc[(data_frame[column]> 5) & (data_frame[column] <=10), target_column] = 4
-            data_frame.loc[(data_frame[column]> 10)& (data_frame[column] <=25), target_column] = 3
-            data_frame.loc[(data_frame[column]> 25) & (data_frame[column] <=50), target_column] = 2
-            data_frame.loc[data_frame[column]> 50, target_column] = 1
-
-        
-        def classify_substation_dist(data_frame,column,target_column):
-            """classify substation distances and create new columns with the classification"""
-            data_frame.loc[data_frame[column]<= 0.5, target_column] = 5
-            data_frame.loc[(data_frame[column]> 0.5) & (data_frame[column] <=1), target_column] = 4
-            data_frame.loc[(data_frame[column]> 1) & (data_frame[column] <=5), target_column] = 3
-            data_frame.loc[(data_frame[column]> 5) & (data_frame[column] <=10), target_column] = 2
-            data_frame.loc[data_frame[column]> 10, target_column] = 1
-
-        def classify_land_cover(data_frame,column,target_column):
-
-            """classify land cover and create new columns with the classification"""
-
-            data_frame.loc[(data_frame[column]==7) | (data_frame[column]==9 ) | (data_frame[column]==10 ) |
-                            (data_frame[column]==14 ) | (data_frame[column]==16 ) ,target_column] = 5
-            data_frame.loc[(data_frame[column]==2) | (data_frame[column]==4 ),target_column] = 4
-            data_frame.loc[(data_frame[column]==1 )| (data_frame[column]==3 ) | (data_frame[column]==5 ) |
-                            (data_frame[column]==12 ) | (data_frame[column]==13 ) | (data_frame[column]==15 ) ,target_column] = 3
-            data_frame.loc[(data_frame[column]==6) | (data_frame[column]==8 ) ,target_column] = 2
-            data_frame.loc[(data_frame[column]==0) | (data_frame[column]==11 ) ,target_column] = 1
-
-           
-        def classify_elevation(data_frame,column,target_column):
-            data_frame.loc[(data_frame[column]<= 500), target_column] = 5
-            data_frame.loc[(data_frame[column]> 500) & (data_frame[column] <=1000), target_column] = 4
-            data_frame.loc[(data_frame[column]> 1000) & (data_frame[column] <=2000), target_column] = 3
-            data_frame.loc[(data_frame[column]> 2000) & (data_frame[column] <=3000), target_column] = 2
-            data_frame.loc[data_frame[column]> 3000, target_column] = 1
-    
-        def classify_slope(data_frame,column,target_column):
-            data_frame.loc[(data_frame[column]<= 10), target_column] = 5
-            data_frame.loc[(data_frame[column]> 10) & (data_frame[column] <=20), target_column] = 4
-            data_frame.loc[(data_frame[column]> 20) & (data_frame[column] <=30), target_column] = 3
-            data_frame.loc[(data_frame[column]> 30) & (data_frame[column] <=40), target_column] = 2
-            data_frame.loc[data_frame[column]> 40, target_column] = 1
-    
-
-        # def set_penalty(row):
-        #     classification = row[SET_COMBINED_CLASSIFICATION]
-        #     return 1 + (exp(0.85 * abs(1 - classification)) - 1) / 100
-        def set_penalty(data_frame,column,target_column):
-            classification=data_frame[column].astype(float)
-            data_frame[target_column]= 1+ (np.exp(.85*np.abs(1-classification))-1)/100 
+        penalty=GridPenalty()
 
         logging.info('Classify road dist')
-        classify_road_dist(self.df,SET_ROAD_DIST,SET_ROAD_DIST_CLASSIFIED)
+        penalty.classify_road_dist(self.df,SET_ROAD_DIST,SET_ROAD_DIST_CLASSIFIED)
 
         logging.info('Classify substation dist')
-        classify_substation_dist(self.df,SET_SUBSTATION_DIST,SET_SUBSTATION_DIST_CLASSIFIED)
+        penalty.classify_substation_dist(self.df,SET_SUBSTATION_DIST,SET_SUBSTATION_DIST_CLASSIFIED)
 
         logging.info('Classify land cover')
-        classify_land_cover(self.df,SET_LAND_COVER,SET_LAND_COVER_CLASSIFIED)
+        penalty.classify_land_cover(self.df,SET_LAND_COVER,SET_LAND_COVER_CLASSIFIED)
 
         logging.info('Classify elevation')
-        classify_elevation(self.df,SET_ELEVATION,SET_ELEVATION_CLASSIFIED)
+        penalty.classify_elevation(self.df,SET_ELEVATION,SET_ELEVATION_CLASSIFIED)
 
         logging.info('Classify slope')
-        classify_slope(self.df,SET_SLOPE,SET_SLOPE_CLASSIFIED)
+        penalty.classify_slope(self.df,SET_SLOPE,SET_SLOPE_CLASSIFIED)
 
 
         logging.info('Combined classification')
@@ -688,7 +688,7 @@ class SettlementProcessor:
 
         logging.info('Grid penalty')
         # self.df[SET_GRID_PENALTY] = self.df.apply(set_penalty, axis=1)
-        set_penalty(self.df,SET_COMBINED_CLASSIFICATION,SET_GRID_PENALTY)
+        penalty.set_penalty(self.df,SET_COMBINED_CLASSIFICATION,SET_GRID_PENALTY)
 
     def calc_wind_cfs(self):
         """
