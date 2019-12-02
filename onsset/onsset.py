@@ -1434,7 +1434,15 @@ class SettlementProcessor:
 
     
     def calculate_new_connections(self,year,time_step,start_year):
-        """defining new connections for grid related purposes"""
+        """defining new connections for grid related purposes
+
+        Arguments
+        ---------
+        year : int
+        time_step : int
+        start_year : int
+        
+        """
 
         logging.info('Calculate new connections')
         # Calculate new connections for grid related purposes
@@ -1474,7 +1482,17 @@ class SettlementProcessor:
 
     #RESIDENTIAL DEMAND STARTS    
     def set_residential_demand(self,rural_tier,urban_tier,num_people_per_hh_rural,num_people_per_hh_urban,productive_demand):
-        """defining residential demand per tier level for each target year"""
+        """defining residential demand per tier level for each target year
+        
+        Arguments
+        ---------
+        rural_tier : int
+        urban_tier : int
+        num_people_per_hh_rural : int
+        num_people_per_hh_urban : int
+        productive_demand : int
+        
+        """
 
         logging.info('Setting electrification demand as per target per year')
 
@@ -1544,7 +1562,9 @@ class SettlementProcessor:
         ### RESIDENTIAL DEMAND ENDS
 
     def calculate_total_demand_per_settlement(self,year):    
-        """ calculate total demand for each settlement per year"""
+        """calculate total demand for each settlement per year
+        
+        """
 
         self.df.loc[self.df[SET_URBAN] == 0, SET_ENERGY_PER_CELL + "{}".format(year)] = \
             self.df[SET_CAPITA_DEMAND] * self.df[SET_NEW_CONNECTIONS + "{}".format(year)]
@@ -1565,9 +1585,8 @@ class SettlementProcessor:
     def set_scenario_variables(self, year, num_people_per_hh_rural, num_people_per_hh_urban, time_step, start_year,
                                urban_elec_ratio, rural_elec_ratio, urban_tier, rural_tier, end_year_pop,
                                productive_demand):
-        """
-        Set the basic scenario parameters that differ based on urban/rural
-        So that they are in the table and can be read directly to calculate LCOEs
+        """Set the basic scenario parameters that differ based on urban/rural so that they are in the table and can be read directly to calculate LCOEs
+        
         """
 
         if end_year_pop == 0:
