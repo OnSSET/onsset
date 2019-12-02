@@ -33,9 +33,17 @@ Here follows a few important key aspects:
 **Step 3. Inform the Settlements' layer**
 ---------------------------------------------------
 
-Once the previous steps are finished, we can combine all layers together into a single table. The principle is simple. We will use the population layer in order to create a base table. Every row in this table represents a grid cell. Then, we will adhere one by one all the layers into this table so that every row (grid cell) acquires its specific characteristics based on its location. One can perform the process manually by identifying the tools in the GIS environment of his/her preference.
+Once the previous steps are finished, we can combine all layers together into a single table.
+The principle is simple. We will use the population layer in order to create a base table.
+Every row in this table represents a grid cell. Then, we will adhere one by one all the layers
+into this table so that every row (grid cell) acquires its specific characteristics based on its location.
+One can perform the process manually by identifying the tools in the GIS environment of his/her preference.
 
-In order to facilitate the process KTH dESA has prepared a batch of python commands that can be ran directly in the QGIS script runner. Here follows an example of these commands. **Note!** These commands have been developed for python version 3 and work properly in the QGIS environment as long as it is QGIS version 3.0 or newer. In case the user chooses a different GIS environment (e.g. Grass, ArcGIS etc.) these commands might need modifications.
+In order to facilitate the process KTH dESA has prepared a batch of python commands that can be ran directly
+in the QGIS script runner. Here follows an example of these commands.
+**Note!** These commands have been developed for python version 3 and work properly in the QGIS environment
+as long as it is QGIS version 3.0 or newer. In case the user chooses a different GIS environment (e.g. Grass, ArcGIS etc.)
+these commands might need modifications.
 
 
     **Example:**
@@ -416,7 +424,7 @@ In order to facilitate the process KTH dESA has prepared a batch of python comma
 
 .. note::
 
-   A fully updated version of this code is available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/Python_Commands_For_Processing_GIS_Data>`_.
+   A fully updated version of this code is available `here <https://github.com/OnSSET/OnSSET/tree/master/Resource_Assessment/Python_Commands_For_Processing_GIS_Data>`_.
 
 
 .. note::
@@ -514,8 +522,12 @@ In order to facilitate the process KTH dESA has prepared a batch of python comma
 
 **Step 4. Conditioning**
 ---------------------------------------------------
-If you after the previous step open the CSV file you will see that some of the columns have names that do not make sense. Additionally three of the columns; nighttime lights, solar restrictions and landcover; all have empty rows. These empty rows are supposed to have the value zero. This problems can be dealt manually, but to facilitate the process KTH-dESA has developed a python code named **Conditioning** that automates the process.
-This code is avaiable `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/Conditioning>`_.
+If you after the previous step open the CSV file you will see that some of the columns have names that do not make sense.
+Additionally three of the columns; nighttime lights, solar restrictions and landcover; all have empty rows.
+These empty rows are supposed to have the value zero.
+This problems can be dealt manually, but to facilitate the process KTH-dESA has developed
+a python code named **Conditioning** that automates the process.
+This code is avaiable `here <https://github.com/OnSSET/OnSSET/tree/master/Resource_Assessment/Conditioning>`_.
 
 .. note::
     Depending on the name of the datasets that you use the renaming part might have to be altered. Also make sure that the code is tailored towards your study i.e. make sure that the settlement layer has the right name and that the workspace variable is pointing to the right directory etc.

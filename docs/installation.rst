@@ -47,7 +47,7 @@ Jupyter notebook is a console-based, interactive computing approach providing a 
 
 **GitHub**
 
-GitHub is a web-based Git repository hosting service. It provides access control and several collaboration features such as bug tracking, feature requests, task management, and wikis for every project. OnSSET is an open source tool therefore the code behind it is open and freely accessible to any user. The code behind the OnSSET tool is called “PyOnsset” and is available in KTH dESA’s Github space. A GitHub account will allow you to propose changes, modifications and upgrades to the existing code. Access KTH dESA’s repository on `Github <https://github.com/KTH-dESA>`_.
+GitHub is a web-based Git repository hosting service. It provides access control and several collaboration features such as bug tracking, feature requests, task management, and wikis for every project. OnSSET is an open source tool therefore the code behind it is open and freely accessible to any user. The code behind the OnSSET tool is called “PyOnsset” and is available in KTH dESA’s Github space. A GitHub account will allow you to propose changes, modifications and upgrades to the existing code. Access the repository on `Github <https://github.com/OnSSET>`_.
 
 Software installation and setup
 *******************************

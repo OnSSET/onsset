@@ -6,7 +6,7 @@ Running the analysis
 Setting up PyCharm - Afghanistan Demo
 ***************************************
 
-1.	Download the code from **GitHub** `here <https://github.com/KTH-dESA/PyOnSSET>`_.
+1.	Download the code from **GitHub** `here <https://github.com/OnSSET/OnSSET>`_.
 
 Select “Download ZIP” from the "Clone or Download" tab and save the zipped folder on your Desktop. Unzip it and open the “Afghanistan_PyOnSSET” folder. If not already there, create a folder and name it “run”. This folder will contain the final output with the results.
 

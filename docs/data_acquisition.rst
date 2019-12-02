@@ -4,7 +4,7 @@ GIS data acquisition
 Geographic Information Systems
 ******************************
 
-A Geographic Information System (GIS) is an integrated set of hardware and software tools,  designed to capture, store, manipulate, analyse, manage, and digitally present spatial (or geographic) data and related attribute information. GIS can relate information from different sources, using two key index variables space (or location) and time. Common GIS data types (models) include: 
+A Geographic Information System (GIS) is an integrated set of hardware and software tools,  designed to capture, store, manipulate, analyse, manage, and digitally present spatial (or geographic) data and related attribute information. GIS can relate information from different sources, using two key index variables space (or location) and time. Common GIS data types (models) include:
 
 **Spatial Data:** Describe the absolute and relative location of geographic features.
 
@@ -29,19 +29,27 @@ A Geographic Information System (GIS) is an integrated set of hardware and soft
             :height: 120px
             :align: center
 
-**Attribute data:** Describe characteristics of the spatial features. These characteristics can be quantitative and/or qualitative in nature. Attribute data is often referred to as tabular data.
+**Attribute data:** Describe characteristics of the spatial features. These characteristics can be quantitative and/or qualitative in nature.
+Attribute data is often referred to as tabular data.
 
-The selection of a particular data model, vector or raster, is dependent on the source and type of data, as well as the intended use of the data. Certain analytical procedures require raster data while others are better suited to vector data.
+The selection of a particular data model, vector or raster, is dependent on the source and type of data, as well as the intended use of the data.
+Certain analytical procedures require raster data while others are better suited to vector data.
 
 GIS data sources
 *****************
 
-EnergyData.info 
+EnergyData.info
 ++++++++++++++++
 
-Every day governments, private sector and development aid organizations collect data to inform, prepare and implement policies and investments. Yet, while elaborate reports are made public, the data underpinning the analysis remain locked in a computer out of reach. Because of this, the tremendous value they could bring to public and private actors in data-poor environments is too often lost. 
+Every day governments, private sector and development aid organizations collect data to inform, prepare and implement policies and investments.
+Yet, while elaborate reports are made public, the data underpinning the analysis remain locked in a computer out of reach.
+Because of this, the tremendous value they could bring to public and private actors in data-poor environments is too often lost.
 
-`Energydata.info <https://energydata.info>`_ is an open data platform launched recently by The World Bank Group and several partners, trying to change energy data paucity. It has been developed as a public good available to governments, development organizations, non-governmental organizations, academia, civil society and individuals to share data and analytics that can help achieving universal access to modern energy services. The database considers a variety of open, geospatial datasets of various context and granularity. **KTH Division of Energy Systems Analysis** contributes on a contnuous basis by providing relevant datasets for electrification planning.
+`Energydata.info <https://energydata.info>`_ is an open data platform launched recently by The World Bank Group and several partners, trying to change energy data paucity.
+It has been developed as a public good available to governments, development organizations, non-governmental organizations, academia,
+civil society and individuals to share data and analytics that can help achieving universal access to modern energy services.
+The database considers a variety of open, geospatial datasets of various context and granularity.
+**KTH Division of Energy Systems Analysis** contributes on a contnuous basis by providing relevant datasets for electrification planning.
 
 .. figure::  img/energydata.png
    :scale: 70 %
@@ -51,7 +59,8 @@ Every day governments, private sector and development aid organizations collect 
 Indicative open libraries of GIS data
 ++++++++++++++++++++++++++++++++++++++
 
-Over the past few years, KTH dESA has been actively involved in the field of geospatial analysis. The following table presents a list of libraries and directories that provide access to open GIS data.
+Over the past few years, KTH dESA has been actively involved in the field of geospatial analysis.
+The following table presents a list of libraries and directories that provide access to open GIS data.
 
 +----------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
 | Source                     | Type                | Link                                                                                                                                      |
@@ -88,7 +97,8 @@ Over the past few years, KTH dESA has been actively involved in the field of geo
 Country specific databases
 +++++++++++++++++++++++++++
 
-With geospatial analysis gaining momentun in many research areas, many countries have set up their own geo-databases in an effort to facilitate interdisciplinary research activities under a geospatial context. Here are few examples:
+With geospatial analysis gaining momentun in many research areas, many countries have set up their own geo-databases
+in an effort to facilitate interdisciplinary research activities under a geospatial context. Here are few examples:
 
 +----------------------+------------------------------------------------------------------------------------+
 | Country              | Source                                                                             |
@@ -111,7 +121,10 @@ With geospatial analysis gaining momentun in many research areas, many countries
 GIS data in OnSSET
 *******************
 
-OnSSET is a GIS-based tool and therefore requires data in a geographical format. In the context of the power sector, necessary data includes those on current and planned infrastructure (electric grid networks, road networks, power plants, industry, public facilities), population characteristics (distribution, location), economic and industrial activity, and local renewable energy flows. The table below lists all layers required for an OnSSET analysis. 
+OnSSET is a GIS-based tool and therefore requires data in a geographical format.
+In the context of the power sector, necessary data includes those on current and planned infrastructure
+(electric grid networks, road networks, power plants, industry, public facilities), population characteristics (distribution, location),
+economic and industrial activity, and local renewable energy flows. The table below lists all layers required for an OnSSET analysis.
 
 +----+---------------------------+-----------------+---------------------------------------------------------------------------------+
 | #  | Dataset                   | Type            | Description                                                                     |
@@ -199,10 +212,16 @@ OnSSET is a GIS-based tool and therefore requires data in a geographical format.
 +----+---------------------------+-----------------+---------------------------------------------------------------------------------+
 
 .. note::
- 
-   * Before a model can be built, one must acquire the layers of data outlined above. More often than not, each layer must be acquired on its own. The final outcome is a multilayer map conveying all the information necessary to initiate an OnSSET electrification analysis.
 
-   * The spatial resolution of the final map depends on the availability of input data and on the targeted level of accuracy. OnSSET can handle various levels of input data, with typical resolutions ranging from 1x1 kilometers (km) to 10x10 km. The selection of inputs usually involves a trade-off between the time needed for computation and the desired level of detail. The modeler has to decide which resolution best fits the purpose of the analysis. 
+   * Before a model can be built, one must acquire the layers of data outlined above.
+   More often than not, each layer must be acquired on its own.
+   The final outcome is a multilayer map conveying all the information necessary
+   to initiate an OnSSET electrification analysis.
+
+   * The spatial resolution of the final map depends on the availability of input data and on the targeted level of accuracy.
+   OnSSET can handle various levels of input data, with typical resolutions ranging from 1x1 kilometers (km) to 10x10 km.
+   The selection of inputs usually involves a trade-off between the time needed for computation and the desired level of detail.
+   The modeler has to decide which resolution best fits the purpose of the analysis.
 
 
 GIS basic datasets
@@ -214,7 +233,7 @@ Administrative boundaries
 +-----------------------+-----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------+------+-------------+------------------------------------------------------------------------------------------------------+
 |        Coverage       |          Type         |                                                                            Resolution                                                                            | Year |    Source   |                                                 Link                                                 |
 +=======================+=======================+==================================================================================================================================================================+======+=============+======================================================================================================+
-|         World         |       shapefile       |       Counties,,provinces, departments, bibhag, bundeslander, daerah istimewa, fivondronana,,krong, landsvæðun, opština, sous-préfectures, counties & thana      | 2011 |     GADM    |                                      https://gadm.org/                                       |
+|         World         |       shapefile       |       Counties,provinces, departments, bibhag, bundeslander, daerah istimewa, fivondronana,,krong, landsvæðun, opština, sous-préfectures, counties & thana       | 2011 |     GADM    |                                      https://gadm.org/                                       |
 +-----------------------+-----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------+------+-------------+------------------------------------------------------------------------------------------------------+
 | World,(& per country) |       shapefile       |                                                                             Countries                                                                            | 2011 |   DIVA-GIS  |                                     http://www.diva-gis.org/Data                                     |
 +-----------------------+-----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------+------+-------------+------------------------------------------------------------------------------------------------------+
@@ -430,10 +449,10 @@ Methodology for Open Street Map data and Osmosis
 
     * It should be mentioned at this point that an interesting tool is the Overpass API. More specifically, using quarry and convert forms and redirecting to Overpass Turbo it is possible to utilize the wizard function and obtain required data for a defined area. The area is delineated by the map shown in the screen while data types include nodes, ways and relations. The data can be exported in various formats with .kml (amongst others) being compatible with the latest versions of QGIS. (As an example use the word: power in the wizard function and you will get the power related information depicted on the map). A disadvantage of this method is that the restrictions in the area size, which is limited to 100 square km.
 
-    * Coming back to the other sources (Geofabrik, BBBike), data can be downloaded per region in .pbf format. In the latest version of QGIS it is possible to insert this data directly by simply dragging the file onto the QGIS window. However, since the files are usually very large it is recommended to transform the .pbf into a spatialite database. 
-   
+    * Coming back to the other sources (Geofabrik, BBBike), data can be downloaded per region in .pbf format. In the latest version of QGIS it is possible to insert this data directly by simply dragging the file onto the QGIS window. However, since the files are usually very large it is recommended to transform the .pbf into a spatialite database.
+
     * To do this transformation open up the OSGeo shell follwoing with your installation, navigate to the folder in which you have your .pbf file (by typing cd [folder path]) and enter the following line: **ogr2ogr -f SQLite X.sqlite Y.pbf** (note change **X** to the name you want to use for your spatialite database and **Y** to the name of your downloaded .pbf file)
-    
+
     * Once This transformation is finished (it may take some time) drag this new file into QGIS and work with it instead of the .pbf file.
 
     * OSM data provide access to a tremendous amount of information of various types. Feel free to explore the potential and share the results with an enthusiastic community.
@@ -469,7 +488,7 @@ Raster Preparation Methodology using NASA datasets
 
 .. note::
 
-Documentation on solar power assessment is available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/Solar>`_. 
+Documentation on solar power assessment is available `here <https://github.com/OnSSET/OnSSET/tree/master/Resource_Assessment/Solar>`_.
 
 
 Wind
@@ -494,7 +513,7 @@ Raster Preparation Methodology using NASA datsets
 
 .. note::
 
-Additional documentation on wind power assessment is available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/Wind>`_.
+Additional documentation on wind power assessment is available `here <https://github.com/OnSSET/OnSSET/tree/master/Resource_Assessment/Wind>`_.
 
 Hydro
 ---------
@@ -558,4 +577,4 @@ Raster Preparation Methodology
 ------------------------------
 .. note::
 
-Documentation on hydropower assessment together with a GIS based assessment tool are available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/HydroPower>`_. 
+Documentation on hydropower assessment together with a GIS based assessment tool are available `here <https://github.com/OnSSET/OnSSET/tree/master/Resource_Assessment/HydroPower>`_.
