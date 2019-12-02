@@ -1,22 +1,11 @@
-# Author: KTH dESA Last modified by Andreas Sahlberg
-# Date: 05 June 2019
-# Python version: 3.5
-
-import os
 import logging
-import pandas as pd
-from math import ceil, pi, exp, log, sqrt, radians, cos, sin, asin
+from math import asin, ceil, cos, exp, log, pi, radians, sin, sqrt
+
 # from pyproj import Proj
 import numpy as np
-from collections import defaultdict
-
-# from IPython.display import Markdown
+import pandas as pd
 
 logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.DEBUG)
-
-# General
-LHV_DIESEL = 9.9445485  # (kWh/l) lower heating value
-HOURS_PER_YEAR = 8760
 
 # Columns in settlements file must match these exactly
 SET_COUNTRY = 'Country'  # This cannot be changed, lots of code will break
@@ -108,43 +97,9 @@ SET_MIN_TD_DIST = 'minTDdist'
 SET_SA_DIESEL_FUEL = 'SADieselFuelCost'
 SET_MG_DIESEL_FUEL = 'MGDieselFuelCost'
 
-# Columns in the specs file must match these exactly
-SPE_COUNTRY = 'Country'
-SPE_POP = 'PopStartYear'  # The actual population in the base year
-SPE_URBAN = 'UrbanRatioStartYear'  # The ratio of urban population (range 0 - 1) in base year
-SPE_POP_FUTURE = 'PopEndYear'
-SPE_URBAN_FUTURE = 'UrbanRatioEndYear'
-SPE_URBAN_MODELLED = 'UrbanRatioModelled'  # The urban ratio in the model after calibration (for comparison)
-SPE_URBAN_CUTOFF = 'UrbanCutOff'  # The urban cutoff population calirated by the model, in people per km2
-SPE_URBAN_GROWTH = 'UrbanGrowth'  # The urban growth rate as a simple multplier (urban pop future / urban pop present)
-SPE_RURAL_GROWTH = 'RuralGrowth'  # Same as for urban
-SPE_NUM_PEOPLE_PER_HH_RURAL = 'NumPeoplePerHHRural'
-SPE_NUM_PEOPLE_PER_HH_URBAN = 'NumPeoplePerHHUrban'
-SPE_DIESEL_PRICE_LOW = 'DieselPriceLow'  # Diesel price in USD/litre
-SPE_DIESEL_PRICE_HIGH = 'DieselPriceHigh'  # Same, with a high forecast var
-SPE_GRID_PRICE = 'GridPrice'  # Grid price of electricity in USD/kWh
-SPE_GRID_CAPACITY_INVESTMENT = 'GridCapacityInvestmentCost'  # grid capacity investments costs from TEMBA USD/kW
-SPE_GRID_LOSSES = 'GridLosses'  # As a ratio (0 - 1)
-SPE_BASE_TO_PEAK = 'BaseToPeak'  # As a ratio (0 - 1)
-SPE_EXISTING_GRID_COST_RATIO = 'ExistingGridCostRatio'
-SPE_MAX_GRID_DIST = 'MaxGridDist'
-SPE_ELEC = 'ElecActual'  # Actual current percentage electrified population (0 - 1)
-SPE_ELEC_MODELLED = 'ElecModelled'  # The modelled version after calibration (for comparison)
-SPE_ELEC_URBAN = 'Urban_elec_ratio'  # Actual electrification for urban areas
-SPE_ELEC_RURAL = 'Rural_elec_ratio'  # Actual electrification for rural areas
-SPE_MIN_NIGHT_LIGHTS = 'MinNightLights'
-SPE_MAX_GRID_EXTENSION_DIST = 'MaxGridExtensionDist'
-SPE_MAX_ROAD_DIST = 'MaxRoadDist'
-SPE_POP_CUTOFF1 = 'PopCutOffRoundOne'
-SPE_POP_CUTOFF2 = 'PopCutOffRoundTwo'
-SPE_ELEC_LIMIT = "ElecLimit"
-SPE_INVEST_LIMIT = "InvestmentLimit"
-SPE_DIST_TO_TRANS = "DistToTrans"
-
-SPE_START_YEAR = "StartYear"
-SPE_END_YEAR = "EndYEar"
-SPE_TIMESTEP = "TimeStep"
-
+# General
+LHV_DIESEL = 9.9445485  # (kWh/l) lower heating value
+HOURS_PER_YEAR = 8760
 
 class Technology:
     """
@@ -196,6 +151,8 @@ class Technology:
                            max_nodes_per_serv_trans=300, MV_LV_sub_station_type=400, MV_LV_sub_station_cost=10000,
                            MV_MV_sub_station_cost=10000, HV_LV_sub_station_type=1000, HV_LV_sub_station_cost=25000,
                            HV_MV_sub_station_cost=25000, power_factor=0.9, load_moment=9643):
+        """Initialises the class with parameter values common to all Technologies
+        """
         cls.base_year = base_year
         cls.start_year = start_year
         cls.end_year = end_year
@@ -700,10 +657,6 @@ class SettlementProcessor:
             else:
                 return 1
 
-        def set_penalty(row):
-            classification = row[SET_COMBINED_CLASSIFICATION]
-            return 1 + (exp(0.85 * abs(1 - classification)) - 1) / 100
-
         logging.info('Classify road dist')
         self.df[SET_ROAD_DIST_CLASSIFIED] = self.df.apply(classify_road_dist, axis=1)
 
@@ -726,8 +679,22 @@ class SettlementProcessor:
                                                 0.15 * self.df[SET_ELEVATION_CLASSIFIED] +
                                                 0.30 * self.df[SET_SLOPE_CLASSIFIED])
 
+        def set_penalty(classification):
+            """Return penalty value based on classification
+
+            Arguments
+            ---------
+            classification : float
+
+            Returns
+            -------
+            float
+
+            """
+            return 1 + (exp(0.85 * abs(1 - classification)) - 1) / 100
+
         logging.info('Grid penalty')
-        self.df[SET_GRID_PENALTY] = self.df.apply(set_penalty, axis=1)
+        self.df[SET_GRID_PENALTY] = self.df[SET_COMBINED_CLASSIFICATION].apply(set_penalty)
 
     def calc_wind_cfs(self):
         """
@@ -920,7 +887,7 @@ class SettlementProcessor:
 
         logging.info('Calibrate current electrification')
         self.df[SET_ELEC_CURRENT] = 0
-        
+
 
         # This if function here skims through T&D columns to identify if any non 0 values exist; Then it defines priority accordingly.
         if max(self.df[SET_DIST_TO_TRANS]) > 0:

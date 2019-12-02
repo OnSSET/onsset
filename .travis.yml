@@ -1,19 +1,20 @@
+sudo: false
 language: python
 python:
-  - "3.6"
+- "3.6"
 
 # easiest way of getting rtree
 before_install:
-  - sudo apt update
-  - sudo apt install libspatialindex-dev
+- sudo apt update
+- sudo apt install libspatialindex-dev
 
 # command to install dependencies
 install:
-  - pip install wheel
-  - pip install Rtree
-  - pip install -r requirements.txt
-  - python setup.py develop
-
-# command to run tests
+- pip install wheel Rtree
+- pip install -r requirements.txt
+- pip install -U pytest pytest-cov coverage coveralls
+- python setup.py develop
 script:
-  - pytest
+- pytest --cov onsset --cov-report html --verbose
+after_success:
+- coveralls

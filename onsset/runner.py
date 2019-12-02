@@ -1,13 +1,33 @@
 # Defines the modules
 
-from onsset import *
+import logging
+import os
+
 import pandas as pd
+from onsset import (SET_ELEC_ORDER, SET_LCOE_GRID, SET_MIN_GRID_DIST,
+                    SET_MV_CONNECT_DIST, SettlementProcessor, Technology)
+from onsset.specs import (SPE_COUNTRY, SPE_ELEC, SPE_ELEC_MODELLED,
+                          SPE_ELEC_RURAL, SPE_ELEC_URBAN, SPE_END_YEAR,
+                          SPE_EXISTING_GRID_COST_RATIO,
+                          SPE_GRID_CAPACITY_INVESTMENT, SPE_GRID_LOSSES,
+                          SPE_MAX_GRID_EXTENSION_DIST,
+                          SPE_NUM_PEOPLE_PER_HH_RURAL,
+                          SPE_NUM_PEOPLE_PER_HH_URBAN, SPE_POP, SPE_POP_FUTURE,
+                          SPE_START_YEAR, SPE_URBAN, SPE_URBAN_FUTURE,
+                          SPE_URBAN_MODELLED)
 from openpyxl import load_workbook
 
+
 def calibration(specs_path, csv_path, specs_path_calib, calibrated_csv_path):
+    """
 
-
-    specs = pd.read_excel(specs_path, index_col=0)
+    Arguments
+    ---------
+    specs_path
+    csv_path
+    specs_path_calib
+    calibrated_csv_path
+    """
     SpecsData = pd.read_excel(specs_path, sheet_name='SpecsData')
     settlements_in_csv = csv_path
     settlements_out_csv = calibrated_csv_path
@@ -54,7 +74,7 @@ def calibration(specs_path, csv_path, specs_path_calib, calibrated_csv_path):
 
     # In case there are limitations in the way grid expansion is moving in a country, this can be reflected through gridspeed.
     # In this case the parameter is set to a very high value therefore is not taken into account.
-   
+
 
     SpecsData.loc[0, SPE_URBAN_MODELLED] = urban_modelled
     SpecsData.loc[0, SPE_ELEC_MODELLED] = elec_modelled
@@ -73,6 +93,16 @@ def calibration(specs_path, csv_path, specs_path_calib, calibrated_csv_path):
     onsseter.df.to_csv(settlements_out_csv, index=False)
 
 def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
+    """
+
+    Arguments
+    ---------
+    specs_path : str
+    calibrated_csv_path : str
+    results_folder : str
+    summary_folder : str
+
+    """
 
 
     ScenarioInfo = pd.read_excel(specs_path, sheet_name='ScenarioInfo')
