@@ -610,32 +610,44 @@ class SettlementProcessor:
         Add a grid penalty factor to increase the grid cost in areas that higher road distance, higher substation
         distance, unsuitable land cover, high slope angle or high elevation
         """
+        def classify_road_dist(data_frame,column,target_column):
+            data_frame.loc[data_frame[column]<= 5, target_column] = 5
+            data_frame.loc[(data_frame[column]> 5) & (data_frame[column] <=10), target_column] = 4
+            data_frame.loc[(data_frame[column]> 10)& (data_frame[column] <=25), target_column] = 3
+            data_frame.loc[(data_frame[column]> 25) & (data_frame[column] <=50), target_column] = 2
+            data_frame.loc[data_frame[column]> 50, target_column] = 1
 
-        def classify_road_dist(row):
-            road_dist = row[SET_ROAD_DIST]
-            if road_dist <= 5:
-                return 5
-            elif road_dist <= 10:
-                return 4
-            elif road_dist <= 25:
-                return 3
-            elif road_dist <= 50:
-                return 2
-            else:
-                return 1
+        # def classify_road_dist(row):
+        #     road_dist = row[SET_ROAD_DIST]
+        #     if road_dist <= 5:
+        #         return 5
+        #     elif road_dist <= 10:
+        #         return 4
+        #     elif road_dist <= 25:
+        #         return 3
+        #     elif road_dist <= 50:
+        #         return 2
+        #     else:
+        #         return 1
+        def classify_substation_dist(data_frame,column,target_column):
+            data_frame.loc[data_frame[column]<= 0.5, target_column] = 5
+            data_frame.loc[(data_frame[column]> 0.5) & (data_frame[column] <1), target_column] = 4
+            data_frame.loc[(data_frame[column]> 1) & (data_frame[column] <=5), target_column] = 3
+            data_frame.loc[(data_frame[column]> 5) & (data_frame[column] <=10), target_column] = 2
+            data_frame.loc[data_frame[column]> 10, target_column] = 1
 
-        def classify_substation_dist(row):
-            substation_dist = row[SET_SUBSTATION_DIST]
-            if substation_dist <= 0.5:
-                return 5
-            elif substation_dist <= 1:
-                return 4
-            elif substation_dist <= 5:
-                return 3
-            elif substation_dist <= 10:
-                return 2
-            else:
-                return 1
+        # def classify_substation_dist(row):
+        #     substation_dist = row[SET_SUBSTATION_DIST]
+        #     if substation_dist <= 0.5:
+        #         return 5
+        #     elif substation_dist <= 1:
+        #         return 4
+        #     elif substation_dist <= 5:
+        #         return 3
+        #     elif substation_dist <= 10:
+        #         return 2
+        #     else:
+        #         return 1
 
         def classify_land_cover(row):
             land_cover = row[SET_LAND_COVER]
@@ -705,10 +717,12 @@ class SettlementProcessor:
             return 1 + (exp(0.85 * abs(1 - classification)) - 1) / 100
 
         logging.info('Classify road dist')
-        self.df[SET_ROAD_DIST_CLASSIFIED] = self.df.apply(classify_road_dist, axis=1)
+        #self.df[SET_ROAD_DIST_CLASSIFIED] = self.df.apply(classify_road_dist, axis=1)
+        classify_road_dist(self.df,SET_ROAD_DIST,SET_ROAD_DIST_CLASSIFIED)
 
         logging.info('Classify substation dist')
-        self.df[SET_SUBSTATION_DIST_CLASSIFIED] = self.df.apply(classify_substation_dist, axis=1)
+        #self.df[SET_SUBSTATION_DIST_CLASSIFIED] = self.df.apply(classify_substation_dist, axis=1)
+        classify_substation_dist(self.df,SET_SUBSTATION_DIST,SET_SUBSTATION_DIST_CLASSIFIED)
 
         logging.info('Classify land cover')
         self.df[SET_LAND_COVER_CLASSIFIED] = self.df.apply(classify_land_cover, axis=1)
