@@ -19,7 +19,7 @@ Historically OnSSET has relied on ArcGIS, but recently the process has been move
 to open source GIS environments. OnSSET in it's current form relies on QGIS
 (together with in QGIS included tools from SAGA, GDAL and GRASS)
 
-Download QGIS for free from the official `website <http://www.qgis.org/en/site/>`_.
+Download QGIS for free from the official `QGIS website <http://www.qgis.org/en/site/>`_.
 
 **Python - Anaconda package**
 
@@ -32,7 +32,7 @@ The easiest way to do so is by installing Anaconda, a package that contains a wi
 Python packages in one bundle.
 Anaconda includes all the Python packages required to run OnSSET successfully.
 Python itself can be downloaded and installed for free from the official
-`website <https://www.python.org/downloads/>`_.
+`Python website <https://www.python.org/downloads/>`_.
 
 
 **Python Interfaces - Integrated Development Environment (IDEs)**
@@ -52,7 +52,7 @@ GitHub is a web-based Git repository hosting service. It provides access co
 Software installation and setup
 *******************************
 
-1. Download **Anaconda** `here <https://www.continuum.io/downloads>`_ and install.
+1. Download `**Anaconda** here <https://www.continuum.io/downloads>`_ and install.
 
 * Please make sure that you download the version that is compatible with your operating system
   (Windows/MacOS/Linux - In case you run Windows open the *Windows Control Panel*,
@@ -70,17 +70,16 @@ Software installation and setup
 
 2. Download **PyCharm** `here <https://www.jetbrains.com/pycharm/>`_ and install.
 
-* Please make sure that you download the version that is compatible with your operating system.
+  Please make sure that you download the version that is compatible with your operating system.
   Select the “Community”, open-source version.
 
-3. Download the code from **GitHub** `here <https://github.com/KTH-dESA/PyOnSSET>`_.
+3. Download the code from `**GitHub** here <https://github.com/onsset/OnSSET>`_.
 
 
 Additional Info
 ***************
 
-* Basic navigating commands for DOS (cmd) can be found
-  `here <https://community.sophos.com/kb/en-us/13195>`_.
+* Basic `navigating commands for DOS (cmd) <https://community.sophos.com/kb/en-us/13195>`_.
 * `Modules <https://docs.python.org/3/installing/index.html>`_
   and `packages <https://packaging.python.org/tutorials/installing-packages/>`_
   installation documentation from python.org.
