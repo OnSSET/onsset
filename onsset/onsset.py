@@ -1695,7 +1695,11 @@ class SettlementProcessor:
                                             capacity_factor=row[SET_GHI] / HOURS_PER_YEAR) if row[SET_GHI] > 1000
             else 99,
             axis=1)
+        self.choose_minimum_off_grid_tech(year)
+        
 
+    def choose_minimum_off_grid_tech(self,year):
+        """Choose minimum LCOE off-grid technology """
 
         logging.info('Determine minimum technology (off-grid)')
         self.df[SET_MIN_OFFGRID + "{}".format(year)] = self.df[[SET_LCOE_SA_PV + "{}".format(year),
