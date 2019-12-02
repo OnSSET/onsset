@@ -1602,9 +1602,9 @@ class SettlementProcessor:
     def calculate_off_grid_lcoes(self, mg_hydro_calc, mg_wind_calc, mg_pv_calc,
                                  sa_pv_calc, mg_diesel_calc, sa_diesel_calc,
                                  year, start_year, end_year, timestep, diesel_techs=0):
-        """
-        Calcuate the LCOEs for all off-grid technologies, and calculate the minimum, so that the electrification
+        """Calcuate the LCOEs for all off-grid technologies, and calculate the minimum, so that the electrification
         algorithm knows where the bar is before it becomes economical to electrify
+        
         """
 
         # A df with all hydropower sites, to ensure that they aren't assigned more capacity than is available
