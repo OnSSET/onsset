@@ -509,19 +509,13 @@ class Technology:
             return np.sum(discounted_costs) / np.sum(discounted_generation)
 
 class GridPenalty:
-    """class for handling grid penalties"""
+    """class for handling grid penalties
     
-    def classify_road_dist(self,data_frame,column,target_column):
-        """classify road distances and create new columns with the classification"""
-        data_frame.loc[data_frame[column]<= 5, target_column] = 5
-        data_frame.loc[(data_frame[column]> 5) & (data_frame[column] <=10), target_column] = 4
-        data_frame.loc[(data_frame[column]> 10)& (data_frame[column] <=25), target_column] = 3
-        data_frame.loc[(data_frame[column]> 25) & (data_frame[column] <=50), target_column] = 2
-        data_frame.loc[data_frame[column]> 50, target_column] = 1
-
-    
+    """   
     def classify_substation_dist(self,data_frame,column,target_column):
-        """classify substation distances and create new columns with the classification"""
+        """classify substation distances and create new columns with the classification
+        
+        """
         data_frame.loc[data_frame[column]<= 0.5, target_column] = 5
         data_frame.loc[(data_frame[column]> 0.5) & (data_frame[column] <=1), target_column] = 4
         data_frame.loc[(data_frame[column]> 1) & (data_frame[column] <=5), target_column] = 3
@@ -529,7 +523,9 @@ class GridPenalty:
         data_frame.loc[data_frame[column]> 10, target_column] = 1
 
     def classify_land_cover(self,data_frame,column,target_column):
-        """classify land cover and create new columns with the classification"""
+        """classify land cover and create new columns with the classification
+        
+        """
         data_frame.loc[(data_frame[column]==7) | (data_frame[column]==9 ) | (data_frame[column]==10 ) |
                         (data_frame[column]==14 ) | (data_frame[column]==16 ) ,target_column] = 5
         data_frame.loc[(data_frame[column]==2) | (data_frame[column]==4 ),target_column] = 4
@@ -540,7 +536,9 @@ class GridPenalty:
 
         
     def classify_elevation(self,data_frame,column,target_column):
-        """classify elevation and create new columns with the classification"""
+        """classify elevation and create new columns with the classification
+        
+        """
         data_frame.loc[(data_frame[column]<= 500), target_column] = 5
         data_frame.loc[(data_frame[column]> 500) & (data_frame[column] <=1000), target_column] = 4
         data_frame.loc[(data_frame[column]> 1000) & (data_frame[column] <=2000), target_column] = 3
@@ -548,7 +546,9 @@ class GridPenalty:
         data_frame.loc[data_frame[column]> 3000, target_column] = 1
 
     def classify_slope(self,data_frame,column,target_column):
-        """classify slope and create new columns with the classification"""
+        """classify slope and create new columns with the classification
+        
+        """
         data_frame.loc[(data_frame[column]<= 10), target_column] = 5
         data_frame.loc[(data_frame[column]> 10) & (data_frame[column] <=20), target_column] = 4
         data_frame.loc[(data_frame[column]> 20) & (data_frame[column] <=30), target_column] = 3
@@ -556,13 +556,15 @@ class GridPenalty:
         data_frame.loc[data_frame[column]> 40, target_column] = 1
 
     def set_penalty(self,data_frame,column,target_column):
-        """calculate the penalty from the results obtained from the combined classifications"""
+        """calculate the penalty from the results obtained from the combined classifications
+        
+        """
         classification=data_frame[column].astype(float)
         data_frame[target_column]= 1+ (np.exp(.85*np.abs(1-classification))-1)/100 
 
 class SettlementProcessor:
-    """
-    Processes the dataframe and adds all the columns to determine the cheapest option and the final costs and summaries
+    """Processes the dataframe and adds all the columns to determine the cheapest option and the final costs and summaries
+    
     """
     def __init__(self, path):
         try:
@@ -664,7 +666,14 @@ class SettlementProcessor:
         penalty=GridPenalty()
 
         logging.info('Classify road dist')
-        penalty.classify_road_dist(self.df,SET_ROAD_DIST,SET_ROAD_DIST_CLASSIFIED)
+        
+        #define bins as -inf to 5, 5 to 10, 10 to 25, 25 to 50, 50 to inf
+        bins = [float("-inf"),5,10,25,50,float("inf")]
+        
+        #define classifiers
+        classifiers = [5,4,3,2,1]
+
+        self.df[SET_ROAD_DIST_CLASSIFIED] = pd.cut(self.df[SET_ROAD_DIST], bins, labels=classifiers).astype(float)
 
         logging.info('Classify substation dist')
         penalty.classify_substation_dist(self.df,SET_SUBSTATION_DIST,SET_SUBSTATION_DIST_CLASSIFIED)
@@ -678,13 +687,13 @@ class SettlementProcessor:
         logging.info('Classify slope')
         penalty.classify_slope(self.df,SET_SLOPE,SET_SLOPE_CLASSIFIED)
 
-
         logging.info('Combined classification')
         self.df[SET_COMBINED_CLASSIFICATION] = (0.15 * self.df[SET_ROAD_DIST_CLASSIFIED] +
                                                 0.20 * self.df[SET_SUBSTATION_DIST_CLASSIFIED] +
                                                 0.20 * self.df[SET_LAND_COVER_CLASSIFIED] +
                                                 0.15 * self.df[SET_ELEVATION_CLASSIFIED] +
                                                 0.30 * self.df[SET_SLOPE_CLASSIFIED])
+
 
         logging.info('Grid penalty')
         # self.df[SET_GRID_PENALTY] = self.df.apply(set_penalty, axis=1)
