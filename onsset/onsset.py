@@ -534,18 +534,7 @@ class GridPenalty:
         data_frame.loc[(data_frame[column]==6) | (data_frame[column]==8 ) ,target_column] = 2
         data_frame.loc[(data_frame[column]==0) | (data_frame[column]==11 ) ,target_column] = 1
 
-        
-    def classify_elevation(self,data_frame,column,target_column):
-        """classify elevation and create new columns with the classification
-        
-        """
-        data_frame.loc[(data_frame[column]<= 500), target_column] = 5
-        data_frame.loc[(data_frame[column]> 500) & (data_frame[column] <=1000), target_column] = 4
-        data_frame.loc[(data_frame[column]> 1000) & (data_frame[column] <=2000), target_column] = 3
-        data_frame.loc[(data_frame[column]> 2000) & (data_frame[column] <=3000), target_column] = 2
-        data_frame.loc[data_frame[column]> 3000, target_column] = 1
-
-
+    
     def set_penalty(self,data_frame,column,target_column):
         """calculate the penalty from the results obtained from the combined classifications
         
@@ -650,9 +639,13 @@ class SettlementProcessor:
         self.df.sort_values(by=[SET_Y_DEG, SET_X_DEG], inplace=True)
 
     def grid_penalties(self):
-        """Add a grid penalty factor to increase the grid cost in areas that higher road distance, higher substation
+        """this method calculates the grid penalties in each settlement
+
+        First step classifies the parameters and creates new columns with classification
+
+        Second step adds the grid penalty to increase grid cost in areas that higher road distance, higher substation
         distance, unsuitable land cover, high slope angle or high elevation
-        
+
         """
         penalty=GridPenalty()
 
@@ -671,7 +664,12 @@ class SettlementProcessor:
         penalty.classify_land_cover(self.df,SET_LAND_COVER,SET_LAND_COVER_CLASSIFIED)
 
         logging.info('Classify elevation')
-        penalty.classify_elevation(self.df,SET_ELEVATION,SET_ELEVATION_CLASSIFIED)
+        #define bins as -inf to 500, 500 to 1000, 1000 to 2000, 2000 to 3000, 3000 to inf
+        elevation_bins = [float("-inf"),500,1000,2000,3000,float("inf")]
+        #define classifiers
+        elevation_labels = [5,4,3,2,1]
+        
+        self.df[SET_ELEVATION_CLASSIFIED] = pd.cut(self.df[SET_ELEVATION], elevation_bins, labels=elevation_labels).astype(float)
 
         logging.info('Classify slope')
         #define bins as -inf to 10, 10 to 20, 20 to 30, 30 to 40, 40 to inf
