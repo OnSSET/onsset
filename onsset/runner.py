@@ -292,8 +292,8 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                                             start_year, urban_elec_ratio, rural_elec_ratio, urban_tier, rural_tier,
                                             end_year_pop, productive_demand)
 
-            onsseter.diesel_cost_columns(sa_diesel_cost, mg_diesel_cost, year)
-
+            diesel_cost = onsseter.diesel_cost_columns(sa_diesel_cost, mg_diesel_cost, year)
+            onsseter.df = pd.merge(onsseter.df, diesel_cost, left_on=['X_deg', 'Y_deg'], right_index=True)
 
             onsseter.calculate_off_grid_lcoes(mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc,
                                               sa_diesel_calc, year, start_year, end_year, time_step)

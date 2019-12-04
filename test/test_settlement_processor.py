@@ -17,13 +17,38 @@ class TestSettlementProcessor:
         return settlementprocessor
 
     def test_diesel_cost_columns(self, setup_settlementprocessor: SettlementProcessor):
+        """
+
+        The ``diesel_cost_columns`` method receives a pandas.Series of
+        travel hours, indexed by Lat,Lon coordinates
+
+        It returns a DataFrame indexed by Lat,Lon coordinates with
+        one column for each diesel gen type
+
+        Diesel cost is calculated using the following formulae:
+
+        (diesel_price + 2 * diesel_price * diesel_truck_consumption *
+                        traveltime) / diesel_truck_volume / LHV_DIESEL / efficiency
+
+        For travel hours 0, result should be:
+
+        (0.1 + 2*0.1 * 14 * 0) / 300 / 9.9445485 / 0.28 = 0.00011971143692206745
+
+        10 hours:
+
+        (0.1 + 2*0.1 * 14 * 10) / 300 / 9.9445485 / 0.28 = 0.03363891377510096
+
+        20 hours:
+
+        (0.1 + 2*0.1 * 14 * 20) / 300 / 9.9445485 / 0.28 = 0.06715811611327985
+        """
 
         sp = setup_settlementprocessor
 
         sp.df = DataFrame(
-            {'X_DEG': [42.00045, 41.9767, 42.0131],
-             'Y_DEG': [10.9668, 10.97138, 10.97166],
-             'TravelHours': [4.03333, 4.08333, 3.61667]
+            {'X_deg': [42.00045, 41.9767, 42.0131],
+             'Y_deg': [10.9668, 10.97138, 10.97166],
+             'TravelHours': [0, 10, 20]
              })
 
         sa_diesel_cost = {'diesel_price': 0.10,
@@ -37,12 +62,16 @@ class TestSettlementProcessor:
                           'diesel_truck_volume': 15000}
         year = 2015
 
-        # Run the method
         actual = sp.diesel_cost_columns(sa_diesel_cost, mg_diesel_cost, year)
         expected = DataFrame(
-            {'X_DEG': [42.00045, 41.9767, 42.0131],
-             'Y_DEG': [10.9668, 10.97138, 10.97166],
-             'SADieselFuelCost': [0, 0, 0],
-             'MGDieselFuelCost': [0, 0, 0]
-             })
+            {'X_deg': [42.00045, 41.9767, 42.0131],
+             'Y_deg': [10.9668, 10.97138, 10.97166],
+             'SADieselFuelCost2015': [0.00011971143692206745,
+                                      0.03363891377510096,
+                                      0.06715811611327985],
+             'MGDieselFuelCost2015': [2.031466808374478e-06,
+                                      0.0013712400956527725,
+                                      0.002740448724497171]
+             }).set_index(['X_deg', 'Y_deg'])
+
         assert_frame_equal(actual, expected)

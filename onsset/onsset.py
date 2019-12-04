@@ -1,11 +1,13 @@
 import logging
 from math import asin, ceil, cos, exp, log, pi, radians, sin, sqrt
+from typing import Dict
 
 # from pyproj import Proj
 import numpy as np
 import pandas as pd
 
 logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 # Columns in settlements file must match these exactly
 SET_COUNTRY = 'Country'  # This cannot be changed, lots of code will break
@@ -487,8 +489,20 @@ class SettlementProcessor:
                 print('Column "GHI" not found, check column names in calibrated csv-file')
                 raise
 
-    def diesel_cost_columns(self, sa_diesel_cost, mg_diesel_cost, year):
+    def diesel_cost_columns(self, sa_diesel_cost: Dict,
+                            mg_diesel_cost: Dict, year: int) -> pd.DataFrame:
+        """Calculate diesel fuel cost
 
+        Arguments
+        ---------
+        sa_diesel_cost: Dict
+        mg_diesel_cost: Dict
+        year: int
+
+        Returns
+        -------
+        pandas.DataFrame
+        """
 
 
         def diesel_fuel_cost_calculator(diesel_price, diesel_truck_consumption, diesel_truck_volume,
@@ -499,22 +513,26 @@ class SettlementProcessor:
             return (diesel_price + 2 * diesel_price * diesel_truck_consumption *
                         traveltime) / diesel_truck_volume / LHV_DIESEL / efficiency
 
-        self.df[SET_SA_DIESEL_FUEL + "{}".format(year)] = self.df.apply(
-            lambda row: diesel_fuel_cost_calculator(diesel_price=sa_diesel_cost['diesel_price'],
-                                                    diesel_truck_volume=sa_diesel_cost['diesel_truck_volume'],
-                                                    diesel_truck_consumption=sa_diesel_cost['diesel_truck_consumption'],
-                                                    efficiency=sa_diesel_cost['efficiency'],
-                                                    traveltime=row[SET_TRAVEL_HOURS]
-                                                    ), axis=1)
+        logger.debug(self.df.columns)
 
-        self.df[SET_MG_DIESEL_FUEL + "{}".format(year)] = self.df.apply(
-            lambda row: diesel_fuel_cost_calculator(diesel_price=mg_diesel_cost['diesel_price'],
-                                                    diesel_truck_volume=mg_diesel_cost['diesel_truck_volume'],
-                                                    diesel_truck_consumption=mg_diesel_cost['diesel_truck_consumption'],
-                                                    efficiency=mg_diesel_cost['efficiency'],
-                                                    traveltime=row[SET_TRAVEL_HOURS]
-                                                    ), axis=1)
+        df = self.df[['X_deg', 'Y_deg', SET_TRAVEL_HOURS]].copy(deep=True).set_index(['X_deg', 'Y_deg'])
 
+        travel_time = self.df[SET_TRAVEL_HOURS].values
+        df[SET_SA_DIESEL_FUEL + "{}".format(year)] = diesel_fuel_cost_calculator(
+            diesel_price=sa_diesel_cost['diesel_price'],
+            diesel_truck_volume=sa_diesel_cost['diesel_truck_volume'],
+            diesel_truck_consumption=sa_diesel_cost['diesel_truck_consumption'],
+            efficiency=sa_diesel_cost['efficiency'],
+            traveltime=travel_time)
+
+        df[SET_MG_DIESEL_FUEL + "{}".format(year)] = diesel_fuel_cost_calculator(
+            diesel_price=mg_diesel_cost['diesel_price'],
+            diesel_truck_volume=mg_diesel_cost['diesel_truck_volume'],
+            diesel_truck_consumption=mg_diesel_cost['diesel_truck_consumption'],
+            efficiency=mg_diesel_cost['efficiency'],
+            traveltime=travel_time)
+
+        return df.drop(columns=SET_TRAVEL_HOURS)
 
     def condition_df(self):
         """
