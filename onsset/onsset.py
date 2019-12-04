@@ -512,16 +512,7 @@ class GridPenalty:
     """class for handling grid penalties
     
     """   
-    def classify_substation_dist(self,data_frame,column,target_column):
-        """classify substation distances and create new columns with the classification
-        
-        """
-        data_frame.loc[data_frame[column]<= 0.5, target_column] = 5
-        data_frame.loc[(data_frame[column]> 0.5) & (data_frame[column] <=1), target_column] = 4
-        data_frame.loc[(data_frame[column]> 1) & (data_frame[column] <=5), target_column] = 3
-        data_frame.loc[(data_frame[column]> 5) & (data_frame[column] <=10), target_column] = 2
-        data_frame.loc[data_frame[column]> 10, target_column] = 1
-
+    
     def classify_land_cover(self,data_frame,column,target_column):
         """classify land cover and create new columns with the classification
         
@@ -534,13 +525,6 @@ class GridPenalty:
         data_frame.loc[(data_frame[column]==6) | (data_frame[column]==8 ) ,target_column] = 2
         data_frame.loc[(data_frame[column]==0) | (data_frame[column]==11 ) ,target_column] = 1
 
-    
-    def set_penalty(self,data_frame,column,target_column):
-        """calculate the penalty from the results obtained from the combined classifications
-        
-        """
-        classification=data_frame[column].astype(float)
-        data_frame[target_column]= 1+ (np.exp(.85*np.abs(1-classification))-1)/100 
 
 class SettlementProcessor:
     """Processes the dataframe and adds all the columns to determine the cheapest option and the final costs and summaries
@@ -639,6 +623,17 @@ class SettlementProcessor:
         self.df.sort_values(by=[SET_Y_DEG, SET_X_DEG], inplace=True)
 
     def grid_penalties(self):
+
+        # def classify_land_cover(self,data_frame,column,target_column):
+        # """classify land cover and create new columns with the classification"""
+        # data_frame.loc[(data_frame[column]==7) | (data_frame[column]==9 ) | (data_frame[column]==10 ) |
+        #                 (data_frame[column]==14 ) | (data_frame[column]==16 ) ,target_column] = 5
+        # data_frame.loc[(data_frame[column]==2) | (data_frame[column]==4 ),target_column] = 4
+        # data_frame.loc[(data_frame[column]==1 )| (data_frame[column]==3 ) | (data_frame[column]==5 ) |
+        #                 (data_frame[column]==12 ) | (data_frame[column]==13 ) | (data_frame[column]==15 ) ,target_column] = 3
+        # data_frame.loc[(data_frame[column]==6) | (data_frame[column]==8 ) ,target_column] = 2
+        # data_frame.loc[(data_frame[column]==0) | (data_frame[column]==11 ) ,target_column] = 1
+
         """this method calculates the grid penalties in each settlement
 
         First step classifies the parameters and creates new columns with classification
@@ -658,7 +653,12 @@ class SettlementProcessor:
         self.df[SET_ROAD_DIST_CLASSIFIED] = pd.cut(self.df[SET_ROAD_DIST], road_distance_bins, labels=road_distance_labels).astype(float)
 
         logging.info('Classify substation dist')
-        penalty.classify_substation_dist(self.df,SET_SUBSTATION_DIST,SET_SUBSTATION_DIST_CLASSIFIED)
+        #define bins as -inf to 0.5, 0.5 to 1, 1 to 5, 5 to 10, 10 to inf
+        substation_distance_bins = [float("-inf"),0.5,1,5,10,float("inf")]
+        #define classifiers
+        substation_distance_labels = [5,4,3,2,1]
+        
+        self.df[SET_SUBSTATION_DIST_CLASSIFIED] = pd.cut(self.df[SET_SUBSTATION_DIST], substation_distance_bins, labels=substation_distance_labels).astype(float)
 
         logging.info('Classify land cover')
         penalty.classify_land_cover(self.df,SET_LAND_COVER,SET_LAND_COVER_CLASSIFIED)
@@ -678,7 +678,7 @@ class SettlementProcessor:
         slope_labels = [5,4,3,2,1]
 
         self.df[SET_SLOPE_CLASSIFIED] = pd.cut(self.df[SET_SLOPE], slope_bins, labels=slope_labels).astype(float)
-
+        
         logging.info('Combined classification')
         self.df[SET_COMBINED_CLASSIFICATION] = (0.15 * self.df[SET_ROAD_DIST_CLASSIFIED] +
                                                 0.20 * self.df[SET_SUBSTATION_DIST_CLASSIFIED] +
@@ -688,8 +688,12 @@ class SettlementProcessor:
 
 
         logging.info('Grid penalty')
-        # self.df[SET_GRID_PENALTY] = self.df.apply(set_penalty, axis=1)
-        penalty.set_penalty(self.df,SET_COMBINED_CLASSIFICATION,SET_GRID_PENALTY)
+        """this calculates the penalty from the results obtained from the combined classifications
+          
+        """
+        classification=self.df[SET_COMBINED_CLASSIFICATION].astype(float)
+        self.df[SET_GRID_PENALTY]= 1+ (np.exp(.85*np.abs(1-classification))-1)/100 
+       
 
     def calc_wind_cfs(self):
         """
