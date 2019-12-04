@@ -489,6 +489,43 @@ class SettlementProcessor:
                 print('Column "GHI" not found, check column names in calibrated csv-file')
                 raise
 
+    def _diesel_fuel_cost_calculator(self, diesel_price, diesel_truck_consumption, diesel_truck_volume,
+                                     traveltime, efficiency):
+            """We apply the Szabo formula to calculate the transport cost for the diesel
+
+            Formulae is::
+
+                p = (p_d + 2*p_d*consumption*time/volume)*(1/mu)*(1/LHVd)
+            """
+            return (diesel_price + 2 * diesel_price * diesel_truck_consumption *
+                        traveltime) / diesel_truck_volume / LHV_DIESEL / efficiency
+
+
+    def compute_diesel_cost(self,
+                            df: pd.DataFrame,
+                            sa_diesel_cost: dict,
+                            mg_diesel_cost: dict,
+                            year: int):
+        """
+        """
+        travel_time = df[SET_TRAVEL_HOURS].values
+
+        df[SET_SA_DIESEL_FUEL + "{}".format(year)] = self._diesel_fuel_cost_calculator(
+            diesel_price=sa_diesel_cost['diesel_price'],
+            diesel_truck_volume=sa_diesel_cost['diesel_truck_volume'],
+            diesel_truck_consumption=sa_diesel_cost['diesel_truck_consumption'],
+            efficiency=sa_diesel_cost['efficiency'],
+            traveltime=travel_time)
+
+        df[SET_MG_DIESEL_FUEL + "{}".format(year)] = self._diesel_fuel_cost_calculator(
+            diesel_price=mg_diesel_cost['diesel_price'],
+            diesel_truck_volume=mg_diesel_cost['diesel_truck_volume'],
+            diesel_truck_consumption=mg_diesel_cost['diesel_truck_consumption'],
+            efficiency=mg_diesel_cost['efficiency'],
+            traveltime=travel_time)
+
+        return df.drop(columns=SET_TRAVEL_HOURS)
+
     def diesel_cost_columns(self, sa_diesel_cost: Dict,
                             mg_diesel_cost: Dict, year: int) -> pd.DataFrame:
         """Calculate diesel fuel cost
@@ -503,36 +540,11 @@ class SettlementProcessor:
         -------
         pandas.DataFrame
         """
-
-
-        def diesel_fuel_cost_calculator(diesel_price, diesel_truck_consumption, diesel_truck_volume,
-                                        traveltime, efficiency):
-            # We apply the Szabo formula to calculate the transport cost for the diesel
-            # p = (p_d + 2*p_d*consumption*time/volume)*(1/mu)*(1/LHVd)
-
-            return (diesel_price + 2 * diesel_price * diesel_truck_consumption *
-                        traveltime) / diesel_truck_volume / LHV_DIESEL / efficiency
-
-        logger.debug(self.df.columns)
-
         df = self.df[['X_deg', 'Y_deg', SET_TRAVEL_HOURS]].copy(deep=True).set_index(['X_deg', 'Y_deg'])
 
-        travel_time = self.df[SET_TRAVEL_HOURS].values
-        df[SET_SA_DIESEL_FUEL + "{}".format(year)] = diesel_fuel_cost_calculator(
-            diesel_price=sa_diesel_cost['diesel_price'],
-            diesel_truck_volume=sa_diesel_cost['diesel_truck_volume'],
-            diesel_truck_consumption=sa_diesel_cost['diesel_truck_consumption'],
-            efficiency=sa_diesel_cost['efficiency'],
-            traveltime=travel_time)
+        diesel_cost = self.compute_diesel_cost(df, sa_diesel_cost, mg_diesel_cost, year)
 
-        df[SET_MG_DIESEL_FUEL + "{}".format(year)] = diesel_fuel_cost_calculator(
-            diesel_price=mg_diesel_cost['diesel_price'],
-            diesel_truck_volume=mg_diesel_cost['diesel_truck_volume'],
-            diesel_truck_consumption=mg_diesel_cost['diesel_truck_consumption'],
-            efficiency=mg_diesel_cost['efficiency'],
-            traveltime=travel_time)
-
-        return df.drop(columns=SET_TRAVEL_HOURS)
+        self.df = pd.merge(self.df, diesel_cost, left_on=['X_deg', 'Y_deg'], right_index=True)
 
     def condition_df(self):
         """

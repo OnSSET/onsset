@@ -16,7 +16,17 @@ class TestSettlementProcessor:
 
         return settlementprocessor
 
-    def test_diesel_cost_columns(self, setup_settlementprocessor: SettlementProcessor):
+    @fixture
+    def setup_dataframe(self) -> DataFrame:
+        df = DataFrame(
+            {'X_deg': [42.00045, 41.9767, 42.0131],
+             'Y_deg': [10.9668, 10.97138, 10.97166],
+             'TravelHours': [0, 10, 20]
+            }).set_index(['X_deg', 'Y_deg'])
+        return df
+
+    def test_diesel_cost_columns(self, setup_settlementprocessor: SettlementProcessor,
+                                 setup_dataframe: DataFrame):
         """
 
         The ``diesel_cost_columns`` method receives a pandas.Series of
@@ -45,11 +55,7 @@ class TestSettlementProcessor:
 
         sp = setup_settlementprocessor
 
-        sp.df = DataFrame(
-            {'X_deg': [42.00045, 41.9767, 42.0131],
-             'Y_deg': [10.9668, 10.97138, 10.97166],
-             'TravelHours': [0, 10, 20]
-             })
+        df = setup_dataframe
 
         sa_diesel_cost = {'diesel_price': 0.10,
                           'efficiency': 0.28,
@@ -62,7 +68,7 @@ class TestSettlementProcessor:
                           'diesel_truck_volume': 15000}
         year = 2015
 
-        actual = sp.diesel_cost_columns(sa_diesel_cost, mg_diesel_cost, year)
+        actual = sp.compute_diesel_cost(df, sa_diesel_cost, mg_diesel_cost, year)
         expected = DataFrame(
             {'X_deg': [42.00045, 41.9767, 42.0131],
              'Y_deg': [10.9668, 10.97138, 10.97166],
