@@ -545,15 +545,6 @@ class GridPenalty:
         data_frame.loc[(data_frame[column]> 2000) & (data_frame[column] <=3000), target_column] = 2
         data_frame.loc[data_frame[column]> 3000, target_column] = 1
 
-    def classify_slope(self,data_frame,column,target_column):
-        """classify slope and create new columns with the classification
-        
-        """
-        data_frame.loc[(data_frame[column]<= 10), target_column] = 5
-        data_frame.loc[(data_frame[column]> 10) & (data_frame[column] <=20), target_column] = 4
-        data_frame.loc[(data_frame[column]> 20) & (data_frame[column] <=30), target_column] = 3
-        data_frame.loc[(data_frame[column]> 30) & (data_frame[column] <=40), target_column] = 2
-        data_frame.loc[data_frame[column]> 40, target_column] = 1
 
     def set_penalty(self,data_frame,column,target_column):
         """calculate the penalty from the results obtained from the combined classifications
@@ -659,21 +650,19 @@ class SettlementProcessor:
         self.df.sort_values(by=[SET_Y_DEG, SET_X_DEG], inplace=True)
 
     def grid_penalties(self):
-        """
-        Add a grid penalty factor to increase the grid cost in areas that higher road distance, higher substation
+        """Add a grid penalty factor to increase the grid cost in areas that higher road distance, higher substation
         distance, unsuitable land cover, high slope angle or high elevation
+        
         """
         penalty=GridPenalty()
 
         logging.info('Classify road dist')
-        
         #define bins as -inf to 5, 5 to 10, 10 to 25, 25 to 50, 50 to inf
-        bins = [float("-inf"),5,10,25,50,float("inf")]
-        
+        road_distance_bins = [float("-inf"),5,10,25,50,float("inf")]
         #define classifiers
-        classifiers = [5,4,3,2,1]
+        road_distance_labels = [5,4,3,2,1]
 
-        self.df[SET_ROAD_DIST_CLASSIFIED] = pd.cut(self.df[SET_ROAD_DIST], bins, labels=classifiers).astype(float)
+        self.df[SET_ROAD_DIST_CLASSIFIED] = pd.cut(self.df[SET_ROAD_DIST], road_distance_bins, labels=road_distance_labels).astype(float)
 
         logging.info('Classify substation dist')
         penalty.classify_substation_dist(self.df,SET_SUBSTATION_DIST,SET_SUBSTATION_DIST_CLASSIFIED)
@@ -685,7 +674,12 @@ class SettlementProcessor:
         penalty.classify_elevation(self.df,SET_ELEVATION,SET_ELEVATION_CLASSIFIED)
 
         logging.info('Classify slope')
-        penalty.classify_slope(self.df,SET_SLOPE,SET_SLOPE_CLASSIFIED)
+        #define bins as -inf to 10, 10 to 20, 20 to 30, 30 to 40, 40 to inf
+        slope_bins = [float("-inf"),10,20,30,40,float("inf")]
+        #define classifiers
+        slope_labels = [5,4,3,2,1]
+
+        self.df[SET_SLOPE_CLASSIFIED] = pd.cut(self.df[SET_SLOPE], slope_bins, labels=slope_labels).astype(float)
 
         logging.info('Combined classification')
         self.df[SET_COMBINED_CLASSIFICATION] = (0.15 * self.df[SET_ROAD_DIST_CLASSIFIED] +
