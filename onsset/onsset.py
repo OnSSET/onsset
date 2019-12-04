@@ -508,24 +508,6 @@ class Technology:
             discounted_generation = el_gen / discount_factor
             return np.sum(discounted_costs) / np.sum(discounted_generation)
 
-class GridPenalty:
-    """class for handling grid penalties
-    
-    """   
-    
-    def classify_land_cover(self,data_frame,column,target_column):
-        """classify land cover and create new columns with the classification
-        
-        """
-        data_frame.loc[(data_frame[column]==7) | (data_frame[column]==9 ) | (data_frame[column]==10 ) |
-                        (data_frame[column]==14 ) | (data_frame[column]==16 ) ,target_column] = 5
-        data_frame.loc[(data_frame[column]==2) | (data_frame[column]==4 ),target_column] = 4
-        data_frame.loc[(data_frame[column]==1 )| (data_frame[column]==3 ) | (data_frame[column]==5 ) |
-                        (data_frame[column]==12 ) | (data_frame[column]==13 ) | (data_frame[column]==15 ) ,target_column] = 3
-        data_frame.loc[(data_frame[column]==6) | (data_frame[column]==8 ) ,target_column] = 2
-        data_frame.loc[(data_frame[column]==0) | (data_frame[column]==11 ) ,target_column] = 1
-
-
 class SettlementProcessor:
     """Processes the dataframe and adds all the columns to determine the cheapest option and the final costs and summaries
     
@@ -624,16 +606,6 @@ class SettlementProcessor:
 
     def grid_penalties(self):
 
-        # def classify_land_cover(self,data_frame,column,target_column):
-        # """classify land cover and create new columns with the classification"""
-        # data_frame.loc[(data_frame[column]==7) | (data_frame[column]==9 ) | (data_frame[column]==10 ) |
-        #                 (data_frame[column]==14 ) | (data_frame[column]==16 ) ,target_column] = 5
-        # data_frame.loc[(data_frame[column]==2) | (data_frame[column]==4 ),target_column] = 4
-        # data_frame.loc[(data_frame[column]==1 )| (data_frame[column]==3 ) | (data_frame[column]==5 ) |
-        #                 (data_frame[column]==12 ) | (data_frame[column]==13 ) | (data_frame[column]==15 ) ,target_column] = 3
-        # data_frame.loc[(data_frame[column]==6) | (data_frame[column]==8 ) ,target_column] = 2
-        # data_frame.loc[(data_frame[column]==0) | (data_frame[column]==11 ) ,target_column] = 1
-
         """this method calculates the grid penalties in each settlement
 
         First step classifies the parameters and creates new columns with classification
@@ -642,7 +614,6 @@ class SettlementProcessor:
         distance, unsuitable land cover, high slope angle or high elevation
 
         """
-        penalty=GridPenalty()
 
         logging.info('Classify road dist')
         #define bins as -inf to 5, 5 to 10, 10 to 25, 25 to 50, 50 to inf
@@ -650,7 +621,8 @@ class SettlementProcessor:
         #define classifiers
         road_distance_labels = [5,4,3,2,1]
 
-        self.df[SET_ROAD_DIST_CLASSIFIED] = pd.cut(self.df[SET_ROAD_DIST], road_distance_bins, labels=road_distance_labels).astype(float)
+        self.df[SET_ROAD_DIST_CLASSIFIED] = pd.cut(self.df[SET_ROAD_DIST], road_distance_bins,
+                                            labels=road_distance_labels).astype(float)
 
         logging.info('Classify substation dist')
         #define bins as -inf to 0.5, 0.5 to 1, 1 to 5, 5 to 10, 10 to inf
@@ -658,10 +630,30 @@ class SettlementProcessor:
         #define classifiers
         substation_distance_labels = [5,4,3,2,1]
         
-        self.df[SET_SUBSTATION_DIST_CLASSIFIED] = pd.cut(self.df[SET_SUBSTATION_DIST], substation_distance_bins, labels=substation_distance_labels).astype(float)
+        self.df[SET_SUBSTATION_DIST_CLASSIFIED] = pd.cut(self.df[SET_SUBSTATION_DIST], substation_distance_bins,
+                                                  labels=substation_distance_labels).astype(float)
 
         logging.info('Classify land cover')
-        penalty.classify_land_cover(self.df,SET_LAND_COVER,SET_LAND_COVER_CLASSIFIED)
+
+        def classify_land_cover(data_frame,column,target_column):
+            """this is a different method employed to classify land cover and create new columns with the classification
+
+            Arguments
+            ---------
+            data_frame : input file
+            column : list
+            target_colum : list
+        
+            """
+            data_frame.loc[(data_frame[column]==7) | (data_frame[column]==9 ) | (data_frame[column]==10 ) |
+                            (data_frame[column]==14 ) | (data_frame[column]==16 ) ,target_column] = 5
+            data_frame.loc[(data_frame[column]==2) | (data_frame[column]==4 ),target_column] = 4
+            data_frame.loc[(data_frame[column]==1 )| (data_frame[column]==3 ) | (data_frame[column]==5 ) |
+                            (data_frame[column]==12 ) | (data_frame[column]==13 ) | (data_frame[column]==15 ) ,target_column] = 3
+            data_frame.loc[(data_frame[column]==6) | (data_frame[column]==8 ) ,target_column] = 2
+            data_frame.loc[(data_frame[column]==0) | (data_frame[column]==11 ) ,target_column] = 1
+
+        classify_land_cover(self.df,SET_LAND_COVER,SET_LAND_COVER_CLASSIFIED)
 
         logging.info('Classify elevation')
         #define bins as -inf to 500, 500 to 1000, 1000 to 2000, 2000 to 3000, 3000 to inf
@@ -669,7 +661,8 @@ class SettlementProcessor:
         #define classifiers
         elevation_labels = [5,4,3,2,1]
         
-        self.df[SET_ELEVATION_CLASSIFIED] = pd.cut(self.df[SET_ELEVATION], elevation_bins, labels=elevation_labels).astype(float)
+        self.df[SET_ELEVATION_CLASSIFIED] = pd.cut(self.df[SET_ELEVATION], elevation_bins,
+                                            labels=elevation_labels).astype(float)
 
         logging.info('Classify slope')
         #define bins as -inf to 10, 10 to 20, 20 to 30, 30 to 40, 40 to inf
@@ -696,8 +689,8 @@ class SettlementProcessor:
        
 
     def calc_wind_cfs(self):
-        """
-        Calculate the wind capacity factor based on the average wind velocity.
+        """Calculate the wind capacity factor based on the average wind velocity.
+        
         """
 
         mu = 0.97  # availability factor
