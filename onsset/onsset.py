@@ -489,25 +489,51 @@ class SettlementProcessor:
                 print('Column "GHI" not found, check column names in calibrated csv-file')
                 raise
 
-    def _diesel_fuel_cost_calculator(self, diesel_price, diesel_truck_consumption, diesel_truck_volume,
-                                     traveltime, efficiency):
-            """We apply the Szabo formula to calculate the transport cost for the diesel
+    def _diesel_fuel_cost_calculator(self, diesel_price: float,
+                                     diesel_truck_consumption: float,
+                                     diesel_truck_volume: float,
+                                     traveltime: np.ndarray,
+                                     efficiency: float):
+        """We apply the Szabo formula to calculate the transport cost for the diesel
 
-            Formulae is::
+        Formulae is::
 
-                p = (p_d + 2*p_d*consumption*time/volume)*(1/mu)*(1/LHVd)
-            """
-            return (diesel_price + 2 * diesel_price * diesel_truck_consumption *
-                        traveltime) / diesel_truck_volume / LHV_DIESEL / efficiency
+            p = (p_d + 2*p_d*consumption*time/volume)*(1/mu)*(1/LHVd)
 
+        Arguments
+        ---------
+        diesel_price: float
+        diesel_truck_consumption: float
+        diesel_truck_volume: float
+        traveltime: numpy.ndarray
+        efficiency: float
+
+        Returns
+        -------
+        numpy.ndarray
+        """
+        return (diesel_price + 2 * diesel_price * diesel_truck_consumption *
+                traveltime) / diesel_truck_volume / LHV_DIESEL / efficiency
 
     def compute_diesel_cost(self,
-                            df: pd.DataFrame,
-                            sa_diesel_cost: dict,
-                            mg_diesel_cost: dict,
+                            dataframe: pd.DataFrame,
+                            sa_diesel_cost: Dict,
+                            mg_diesel_cost: Dict,
                             year: int):
+        """Calculate diesel fuel cost
+
+        Arguments
+        ---------
+        dataframe: pandas.DataFrame
+        sa_diesel_cost: Dict
+        mg_diesel_cost: Dict
+        year: int
+
+        Returns
+        -------
+        pandas.DataFrame
         """
-        """
+        df = dataframe.copy(deep=True).set_index(['X_deg', 'Y_deg'])
         travel_time = df[SET_TRAVEL_HOURS].values
 
         df[SET_SA_DIESEL_FUEL + "{}".format(year)] = self._diesel_fuel_cost_calculator(
@@ -526,9 +552,9 @@ class SettlementProcessor:
 
         return df.drop(columns=SET_TRAVEL_HOURS)
 
-    def diesel_cost_columns(self, sa_diesel_cost: Dict,
-                            mg_diesel_cost: Dict, year: int) -> pd.DataFrame:
-        """Calculate diesel fuel cost
+    def diesel_cost_columns(self, sa_diesel_cost: Dict[str, float],
+                            mg_diesel_cost: Dict[str, float], year: int) -> pd.DataFrame:
+        """Calculate diesel fuel cost based on TravelHours column
 
         Arguments
         ---------
@@ -540,9 +566,8 @@ class SettlementProcessor:
         -------
         pandas.DataFrame
         """
-        df = self.df[['X_deg', 'Y_deg', SET_TRAVEL_HOURS]].copy(deep=True).set_index(['X_deg', 'Y_deg'])
-
-        diesel_cost = self.compute_diesel_cost(df, sa_diesel_cost, mg_diesel_cost, year)
+        diesel_cost = self.compute_diesel_cost(self.df[['X_deg', 'Y_deg', SET_TRAVEL_HOURS]],
+                                               sa_diesel_cost, mg_diesel_cost, year)
 
         self.df = pd.merge(self.df, diesel_cost, left_on=['X_deg', 'Y_deg'], right_index=True)
 

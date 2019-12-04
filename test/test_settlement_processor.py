@@ -22,7 +22,7 @@ class TestSettlementProcessor:
             {'X_deg': [42.00045, 41.9767, 42.0131],
              'Y_deg': [10.9668, 10.97138, 10.97166],
              'TravelHours': [0, 10, 20]
-            }).set_index(['X_deg', 'Y_deg'])
+            })
         return df
 
     def test_diesel_cost_columns(self, setup_settlementprocessor: SettlementProcessor,
