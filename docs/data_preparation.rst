@@ -3,12 +3,12 @@ GIS data preparation
 
 Once all necessary layers have been succesfully acquired, the user would need to prepare the datasets for their input into the OnSSET model. This requires the creation of a .csv file. There are four steps that need to be undertaken to process the GIS data so that it can be used for an OnSSET analysis.
 
-**Step 1. Proper data types and coordinate system** 
+**Step 1. Proper data types and coordinate system**
 ---------------------------------------------------
 
-In this first step the user would need to secure all the datasets. Before starting the analysis make sure that all datasets have the same coordiante system (preferably **World Geodetic Datum 1984 (WGS84)**) You can check the coordinate system of your layers by importing them into QGIS and then right-clicking on them and open the **Properties** window. In the Properties window go to the **Information** tab, here the coordinate system used is listed under *CRS* for both rasters and vectors. 
+In this first step the user would need to secure all the datasets. Before starting the analysis make sure that all datasets have the same coordiante system (preferably **World Geodetic Datum 1984 (WGS84)**) You can check the coordinate system of your layers by importing them into QGIS and then right-clicking on them and open the **Properties** window. In the Properties window go to the **Information** tab, here the coordinate system used is listed under *CRS* for both rasters and vectors.
 
-**Step 2. Layer projection** 
+**Step 2. Layer projection**
 ---------------------------------------------------
 
 In this step the user would need to determine the projection system he/she wish to use. Projection systems always distort the datasets and the system chosen should be one that minimizes this distortion. There is no need to manually project the datasets yourself (the extraction code presented furhter down does this for you) it is however good to have an idea of which system to use before starting to work with the datasets.
@@ -28,14 +28,22 @@ Here follows a few important key aspects:
 .. image:: img/crs2.png
     :width: 300
     :height: 150
-    :align: 
+    :align: center
 
-**Step 3. Inform the Settlements' layer** 
+**Step 3. Inform the Settlements' layer**
 ---------------------------------------------------
 
-Once the previous steps are finished, we can combine all layers together into a single table. The principle is simple. We will use the population layer in order to create a base table. Every row in this table represents a grid cell. Then, we will adhere one by one all the layers into this table so that every row (grid cell) acquires its specific characteristics based on its location. One can perform the process manually by identifying the tools in the GIS environment of his/her preference. 
+Once the previous steps are finished, we can combine all layers together into a single table.
+The principle is simple. We will use the population layer in order to create a base table.
+Every row in this table represents a grid cell. Then, we will adhere one by one all the layers
+into this table so that every row (grid cell) acquires its specific characteristics based on its location.
+One can perform the process manually by identifying the tools in the GIS environment of his/her preference.
 
-In order to facilitate the process KTH dESA has prepared a batch of python commands that can be ran directly in the QGIS script runner. Here follows an example of these commands. **Note!** These commands have been developed for python version 3 and work properly in the QGIS environment as long as it is QGIS version 3.0 or newer. In case the user chooses a different GIS environment (e.g. Grass, ArcGIS etc.) these commands might need modifications.
+In order to facilitate the process KTH dESA has prepared a batch of python commands that can be ran directly
+in the QGIS script runner. Here follows an example of these commands.
+**Note!** These commands have been developed for python version 3 and work properly in the QGIS environment
+as long as it is QGIS version 3.0 or newer. In case the user chooses a different GIS environment (e.g. Grass, ArcGIS etc.)
+these commands might need modifications.
 
 
     **Example:**
@@ -416,29 +424,29 @@ In order to facilitate the process KTH dESA has prepared a batch of python comma
 
 .. note::
 
-   A fully updated version of this code is available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/Python_Commands_For_Processing_GIS_Data>`_.
-   
+   A fully updated version of this code is available `here <https://github.com/OnSSET/OnSSET/tree/master/Resource_Assessment/Python_Commands_For_Processing_GIS_Data>`_.
+
 
 .. note::
-    In order to run the code in QGIS certain things need to be set up properly. In the following steps these things will be described. **NOTE** it is possible to set things up differently, but if this is done then the code will most likely need changes as well. 
-    
+    In order to run the code in QGIS certain things need to be set up properly. In the following steps these things will be described. **NOTE** it is possible to set things up differently, but if this is done then the code will most likely need changes as well.
+
     **1. Setting up the workspace**
-    When all of the datasets have been generated and projected to a common projection system they need to be saved in appropriate folders before running the code. The image below shows an image of the workspace necessary for the analysis, these folders need to be set up accordingly and filled in with the corresponding datasets. 
-    
+    When all of the datasets have been generated and projected to a common projection system they need to be saved in appropriate folders before running the code. The image below shows an image of the workspace necessary for the analysis, these folders need to be set up accordingly and filled in with the corresponding datasets.
+
     .. image:: img/Workspace.png
         :width: 300
         :height: 200
         :align: center
-    
-    To run a basic OnSSET analysis you will need 14 datasets. These 14 datasets should be saved in their corresponding folder. Two of the datasets (planned and existing transmission lines) should both be saved in the transmission network folder. The slope map will be generated in the code using the elevation map and therefore there is no need to download it. The datasets needed are: 
-   
+
+    To run a basic OnSSET analysis you will need 14 datasets. These 14 datasets should be saved in their corresponding folder. Two of the datasets (planned and existing transmission lines) should both be saved in the transmission network folder. The slope map will be generated in the code using the elevation map and therefore there is no need to download it. The datasets needed are:
+
     .. image:: img/DatasetNames.png
         :width: 600
         :height: 400
         :align: center
-        
+
     **Please make sure that the datasets are named exactly as they are in the column named “Data” and that the folders are named as in the column “Corresponding Folder”**.
-   
+
    **2. Additional concerns**
        *1.*	In line 14 make sure that the link to the workspace is correct (remember: the workspace is where the folders with the                   datasets are located). Make sure the path does not include any special characters or spaces as this could potentially                   cause errors.
                 .. image:: img/Line14.png
@@ -455,70 +463,74 @@ In order to facilitate the process KTH dESA has prepared a batch of python comma
                     :width: 1000
                     :height: 55
                     :align: center
-       
+
        *4.*  In line 24 you might have to change the column name. In order to determine the amount of hydropower in all the                           potential points QGIS needs to know the name of the column in which the hydropower potential is given (open the attribute               table of your dataset and write down the name of the column that contains the potential outputs).
                 .. image:: img/Line24.png
                     :width: 1000
                     :height: 70
                     :align: center
-                    
+
     **3. Running the code**
-    
-    1.	Open QGIS 
-    2.	Open the python console 
+
+    1.	Open QGIS
+    2.	Open the python console
          .. image:: img/step2.png
               :width: 520
               :height: 100
               :align: center
-                    
+
     3.	This will open up the python console in QGIS. In here you can write commands and run different tools included in QGIS.
-    
+
           .. image:: img/step3.png
               :width: 520
               :height: 141
               :align: center
- 
-    4.	By clicking on “Show editor” (marked in red in the image below). You will open up the editor window of the python version           following with your installation of QGIS. 
- 
+
+    4.	By clicking on “Show editor” (marked in red in the image below). You will open up the editor window of the python version           following with your installation of QGIS.
+
          .. image:: img/step4.png
               :width: 520
               :height: 141
               :align: center
     5.	In the editor you can write and run your own python scripts. In order to run the extraction code copy and paste it into this        window.
-            
+
          .. image:: img/step5.png
               :width: 520
               :height: 141
               :align: center
 
     6.	When the code is pasted in you can finally run the code. Do so by clicking on the blue play button at the top of the screen.
-        
+
          .. image:: img/step6.png
               :width: 520
               :height: 141
               :align: center
 
     7.	After running the code you will see that two new folders have been added to your workspace; Assist and Assist2. These folder will inlcude some different datasets that have been generated in the process (usually it is OK to overlook these).
- 
+
          .. image:: img/step7a.png
               :width: 584
               :height: 400
               :align: center
-              
-              
-              
+
+
+
          .. image:: img/step7b.PNG
               :width: 584
               :height: 400
               :align: center
 
-**Step 4. Conditioning** 
+**Step 4. Conditioning**
 ---------------------------------------------------
-If you after the previous step open the CSV file you will see that some of the columns have names that do not make sense. Additionally three of the columns; nighttime lights, solar restrictions and landcover; all have empty rows. These empty rows are supposed to have the value zero. This problems can be dealt manually, but to facilitate the process KTH-dESA has developed a python code named **Conditioning** that automates the process.
-This code is avaiable `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/Conditioning>`_. 
+If you after the previous step open the CSV file you will see that some of the columns have names that do not make sense.
+Additionally three of the columns; nighttime lights, solar restrictions and landcover; all have empty rows.
+These empty rows are supposed to have the value zero.
+This problems can be dealt manually, but to facilitate the process KTH-dESA has developed
+a python code named **Conditioning** that automates the process.
+This code is avaiable `here <https://github.com/OnSSET/OnSSET/tree/master/Resource_Assessment/Conditioning>`_.
 
 .. note::
-    Depending on the name of the datasets that you use the renaming part might have to be altered. Also make sure that the code is tailored towards your study i.e. make sure that the settlement layer has the right name and that the workspace variable is pointing to the right directory etc. 
+    Depending on the name of the datasets that you use the renaming part might have to be altered. Also make sure that the code is tailored towards your study i.e. make sure that the settlement layer has the right name and that the workspace variable is pointing to the right directory etc.
 
 
 GIS country file

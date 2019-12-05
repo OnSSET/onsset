@@ -73,6 +73,7 @@ instance/
 
 # Sphinx documentation
 docs/_build/
+docs/api
 
 # PyBuilder
 target/
@@ -132,4 +133,3 @@ dmypy.json
 
 # System
 .DS_Store
-
