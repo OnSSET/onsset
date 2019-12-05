@@ -1719,7 +1719,19 @@ class SettlementProcessor:
                                             capacity_factor=row[SET_GHI] / HOURS_PER_YEAR) if row[SET_GHI] > 1000
             else 99,
             axis=1)
+        self.choose_minimum_off_grid_tech(year)
+        
 
+    def choose_minimum_off_grid_tech(self,year):
+        """Choose minimum LCOE off-grid technology 
+
+        First step determines the off-grid technology with minimum LCOE
+        Second step determnines the value (number) of the selected minimum off-grid technology
+    
+        Arguments
+        ---------
+        year : int        
+        """
 
         logging.info('Determine minimum technology (off-grid)')
         self.df[SET_MIN_OFFGRID + "{}".format(year)] = self.df[[SET_LCOE_SA_PV + "{}".format(year),
@@ -1759,9 +1771,9 @@ class SettlementProcessor:
 
     def results_columns(self, mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc,
                         sa_diesel_calc, grid_calc, year):
-        """
-        Once the grid extension algorithm has been run, determine the minimum overall option, and calculate the
-        capacity and investment requirements for each settlement
+        """Once the grid extension algorithm has been run, determine the minimum overall option, and calculate the
+            capacity and investment requirements for each settlement
+
         """
 
         logging.info('Determine minimum overall')
