@@ -465,10 +465,9 @@ class Technology:
             discounted_generation = el_gen / discount_factor
             return np.sum(discounted_costs) / np.sum(discounted_generation)
 
-
 class SettlementProcessor:
-    """
-    Processes the dataframe and adds all the columns to determine the cheapest option and the final costs and summaries
+    """Processes the dataframe and adds all the columns to determine the cheapest option and the final costs and summaries
+
     """
     def __init__(self, path):
         try:
@@ -563,114 +562,72 @@ class SettlementProcessor:
         self.df.sort_values(by=[SET_Y_DEG, SET_X_DEG], inplace=True)
 
     def grid_penalties(self):
-        """
-        Add a grid penalty factor to increase the grid cost in areas that higher road distance, higher substation
+
+        """this method calculates the grid penalties in each settlement
+
+        First step classifies the parameters and creates new columns with classification
+
+        Second step adds the grid penalty to increase grid cost in areas that higher road distance, higher substation
         distance, unsuitable land cover, high slope angle or high elevation
+
         """
-
-        def classify_road_dist(row):
-            road_dist = row[SET_ROAD_DIST]
-            if road_dist <= 5:
-                return 5
-            elif road_dist <= 10:
-                return 4
-            elif road_dist <= 25:
-                return 3
-            elif road_dist <= 50:
-                return 2
-            else:
-                return 1
-
-        def classify_substation_dist(row):
-            substation_dist = row[SET_SUBSTATION_DIST]
-            if substation_dist <= 0.5:
-                return 5
-            elif substation_dist <= 1:
-                return 4
-            elif substation_dist <= 5:
-                return 3
-            elif substation_dist <= 10:
-                return 2
-            else:
-                return 1
-
-        def classify_land_cover(row):
-            land_cover = row[SET_LAND_COVER]
-            if land_cover == 0:
-                return 1
-            elif land_cover == 1:
-                return 3
-            elif land_cover == 2:
-                return 4
-            elif land_cover == 3:
-                return 3
-            elif land_cover == 4:
-                return 4
-            elif land_cover == 5:
-                return 3
-            elif land_cover == 6:
-                return 2
-            elif land_cover == 7:
-                return 5
-            elif land_cover == 8:
-                return 2
-            elif land_cover == 9:
-                return 5
-            elif land_cover == 10:
-                return 5
-            elif land_cover == 11:
-                return 1
-            elif land_cover == 12:
-                return 3
-            elif land_cover == 13:
-                return 3
-            elif land_cover == 14:
-                return 5
-            elif land_cover == 15:
-                return 3
-            elif land_cover == 16:
-                return 5
-
-        def classify_elevation(row):
-            elevation = row[SET_ELEVATION]
-            if elevation <= 500:
-                return 5
-            elif elevation <= 1000:
-                return 4
-            elif elevation <= 2000:
-                return 3
-            elif elevation <= 3000:
-                return 2
-            else:
-                return 1
-
-        def classify_slope(row):
-            slope = row[SET_SLOPE]
-            if slope <= 10:
-                return 5
-            elif slope <= 20:
-                return 4
-            elif slope <= 30:
-                return 3
-            elif slope <= 40:
-                return 2
-            else:
-                return 1
 
         logging.info('Classify road dist')
-        self.df[SET_ROAD_DIST_CLASSIFIED] = self.df.apply(classify_road_dist, axis=1)
+        #define bins as -inf to 5, 5 to 10, 10 to 25, 25 to 50, 50 to inf
+        road_distance_bins = [float("-inf"),5,10,25,50,float("inf")]
+        #define classifiers
+        road_distance_labels = [5,4,3,2,1]
+
+        self.df[SET_ROAD_DIST_CLASSIFIED] = pd.cut(self.df[SET_ROAD_DIST], road_distance_bins,
+                                            labels=road_distance_labels).astype(float)
 
         logging.info('Classify substation dist')
-        self.df[SET_SUBSTATION_DIST_CLASSIFIED] = self.df.apply(classify_substation_dist, axis=1)
+        #define bins as -inf to 0.5, 0.5 to 1, 1 to 5, 5 to 10, 10 to inf
+        substation_distance_bins = [float("-inf"),0.5,1,5,10,float("inf")]
+        #define classifiers
+        substation_distance_labels = [5,4,3,2,1]
+
+        self.df[SET_SUBSTATION_DIST_CLASSIFIED] = pd.cut(self.df[SET_SUBSTATION_DIST], substation_distance_bins,
+                                                  labels=substation_distance_labels).astype(float)
 
         logging.info('Classify land cover')
-        self.df[SET_LAND_COVER_CLASSIFIED] = self.df.apply(classify_land_cover, axis=1)
+
+        def classify_land_cover(data_frame,column,target_column):
+            """this is a different method employed to classify land cover and create new columns with the classification
+
+            Arguments
+            ---------
+            data_frame : input file
+            column : list
+            target_colum : list
+
+            """
+            data_frame.loc[(data_frame[column]==7) | (data_frame[column]==9 ) | (data_frame[column]==10 ) |
+                            (data_frame[column]==14 ) | (data_frame[column]==16 ) ,target_column] = 5
+            data_frame.loc[(data_frame[column]==2) | (data_frame[column]==4 ),target_column] = 4
+            data_frame.loc[(data_frame[column]==1 )| (data_frame[column]==3 ) | (data_frame[column]==5 ) |
+                            (data_frame[column]==12 ) | (data_frame[column]==13 ) | (data_frame[column]==15 ) ,target_column] = 3
+            data_frame.loc[(data_frame[column]==6) | (data_frame[column]==8 ) ,target_column] = 2
+            data_frame.loc[(data_frame[column]==0) | (data_frame[column]==11 ) ,target_column] = 1
+
+        classify_land_cover(self.df,SET_LAND_COVER,SET_LAND_COVER_CLASSIFIED)
 
         logging.info('Classify elevation')
-        self.df[SET_ELEVATION_CLASSIFIED] = self.df.apply(classify_elevation, axis=1)
+        #define bins as -inf to 500, 500 to 1000, 1000 to 2000, 2000 to 3000, 3000 to inf
+        elevation_bins = [float("-inf"),500,1000,2000,3000,float("inf")]
+        #define classifiers
+        elevation_labels = [5,4,3,2,1]
+
+        self.df[SET_ELEVATION_CLASSIFIED] = pd.cut(self.df[SET_ELEVATION], elevation_bins,
+                                            labels=elevation_labels).astype(float)
 
         logging.info('Classify slope')
-        self.df[SET_SLOPE_CLASSIFIED] = self.df.apply(classify_slope, axis=1)
+        #define bins as -inf to 10, 10 to 20, 20 to 30, 30 to 40, 40 to inf
+        slope_bins = [float("-inf"),10,20,30,40,float("inf")]
+        #define classifiers
+        slope_labels = [5,4,3,2,1]
+
+        self.df[SET_SLOPE_CLASSIFIED] = pd.cut(self.df[SET_SLOPE], slope_bins, labels=slope_labels).astype(float)
 
         logging.info('Combined classification')
         self.df[SET_COMBINED_CLASSIFICATION] = (0.15 * self.df[SET_ROAD_DIST_CLASSIFIED] +
@@ -679,26 +636,18 @@ class SettlementProcessor:
                                                 0.15 * self.df[SET_ELEVATION_CLASSIFIED] +
                                                 0.30 * self.df[SET_SLOPE_CLASSIFIED])
 
-        def set_penalty(classification):
-            """Return penalty value based on classification
-
-            Arguments
-            ---------
-            classification : float
-
-            Returns
-            -------
-            float
-
-            """
-            return 1 + (exp(0.85 * abs(1 - classification)) - 1) / 100
 
         logging.info('Grid penalty')
-        self.df[SET_GRID_PENALTY] = self.df[SET_COMBINED_CLASSIFICATION].apply(set_penalty)
+        """this calculates the penalty from the results obtained from the combined classifications
+
+        """
+        classification=self.df[SET_COMBINED_CLASSIFICATION].astype(float)
+        self.df[SET_GRID_PENALTY]= 1+ (np.exp(.85*np.abs(1-classification))-1)/100
+
 
     def calc_wind_cfs(self):
-        """
-        Calculate the wind capacity factor based on the average wind velocity.
+        """Calculate the wind capacity factor based on the average wind velocity.
+
         """
 
         mu = 0.97  # availability factor
