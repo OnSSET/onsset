@@ -1398,18 +1398,18 @@ class SettlementProcessor:
         return new_lcoes, cell_path_adjusted, elecorder, cell_path_real
 
     #Runs the grid extension algorithm
-    def set_scenario_variables(self, year, num_people_per_hh_rural, num_people_per_hh_urban, time_step, start_year,
-                               urban_elec_ratio, rural_elec_ratio, urban_tier, rural_tier, end_year_pop,
-                               productive_demand):
-        """
-        Set the basic scenario parameters that differ based on urban/rural
-        So that they are in the table and can be read directly to calculate LCOEs
-        """
 
-        if end_year_pop == 0:
-            self.df[SET_POP + "{}".format(year)] = self.df[SET_POP + "{}".format(year) + 'Low']
-        else:
-            self.df[SET_POP + "{}".format(year)] = self.df[SET_POP + "{}".format(year) + 'High']
+    
+    def calculate_new_connections(self,year,time_step,start_year):
+        """this method defines new connections for grid related purposes
+
+        Arguments
+        ---------
+        year : int
+        time_step : int
+        start_year : int
+
+        """
 
         logging.info('Calculate new connections')
         # Calculate new connections for grid related purposes
@@ -1446,6 +1446,20 @@ class SettlementProcessor:
             # Some conditioning to eliminate negative values if existing by mistake
             self.df.loc[
                 self.df[SET_NEW_CONNECTIONS + "{}".format(year)] < 0, SET_NEW_CONNECTIONS + "{}".format(year)] = 0
+
+    #RESIDENTIAL DEMAND STARTS    
+    def set_residential_demand(self,rural_tier,urban_tier,num_people_per_hh_rural,num_people_per_hh_urban,productive_demand):
+        """this method defines residential demand per tier level for each target year
+        
+        Arguments
+        ---------
+        rural_tier : int
+        urban_tier : int
+        num_people_per_hh_rural : int
+        num_people_per_hh_urban : int
+        productive_demand : int
+
+        """
 
         logging.info('Setting electrification demand as per target per year')
 
@@ -1512,6 +1526,17 @@ class SettlementProcessor:
             if int(productive_demand) == 1:
                 self.df[SET_CAPITA_DEMAND] += self.df[SET_EDU_DEMAND]
 
+        ### RESIDENTIAL DEMAND ENDS
+
+    def calculate_total_demand_per_settlement(self,year):    
+        """this method calculates total demand for each settlement per year
+
+        Arguments
+        ---------
+        year : int
+
+        """
+
         self.df.loc[self.df[SET_URBAN] == 0, SET_ENERGY_PER_CELL + "{}".format(year)] = \
             self.df[SET_CAPITA_DEMAND] * self.df[SET_NEW_CONNECTIONS + "{}".format(year)]
         self.df.loc[self.df[SET_URBAN] == 1, SET_ENERGY_PER_CELL + "{}".format(year)] = \
@@ -1527,14 +1552,46 @@ class SettlementProcessor:
         self.df.loc[self.df[SET_URBAN] == 2, SET_TOTAL_ENERGY_PER_CELL] = \
             self.df[SET_CAPITA_DEMAND] * self.df[SET_POP + "{}".format(year)]
 
+        
+    def set_scenario_variables(self, year, num_people_per_hh_rural, num_people_per_hh_urban, time_step, start_year,
+                               urban_elec_ratio, rural_elec_ratio, urban_tier, rural_tier, end_year_pop,
+                               productive_demand):
+        """this method determines some basic paramters required in LCOE calculation
+        
+        it sets the basic scenario parameters that differ based on urban/rural so that they are in the table and can be read directly to calculate LCOEs
 
+        Arguments
+        ---------
+        year : int
+        num_people_per_hh_rural : int
+        num_people_per_hh_urban : int
+        time_step : int
+        start_year: int
+        urban_elec_ratio : int
+        rural_elec_ratio : int
+        urban_tier : int
+        rural_tier : int
+        end_year_pop : int
+        productive_demand : int
+
+        """
+
+        if end_year_pop == 0:
+            self.df[SET_POP + "{}".format(year)] = self.df[SET_POP + "{}".format(year) + 'Low']
+        else:
+            self.df[SET_POP + "{}".format(year)] = self.df[SET_POP + "{}".format(year) + 'High']
+
+        
+        self.calculate_new_connections(year,time_step,start_year)
+        self.set_residential_demand(rural_tier,urban_tier,num_people_per_hh_rural,num_people_per_hh_urban,productive_demand)
+        self.calculate_total_demand_per_settlement(year)
 
     def calculate_off_grid_lcoes(self, mg_hydro_calc, mg_wind_calc, mg_pv_calc,
                                  sa_pv_calc, mg_diesel_calc, sa_diesel_calc,
                                  year, start_year, end_year, timestep, diesel_techs=0):
-        """
-        Calcuate the LCOEs for all off-grid technologies, and calculate the minimum, so that the electrification
+        """Calcuate the LCOEs for all off-grid technologies, and calculate the minimum, so that the electrification
         algorithm knows where the bar is before it becomes economical to electrify
+        
         """
 
         # A df with all hydropower sites, to ensure that they aren't assigned more capacity than is available
