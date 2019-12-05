@@ -9,11 +9,12 @@ changes the contents of the output files.
 
 """
 
+import filecmp
 import os
 from shutil import copyfile
-from onsset.runner import calibration, scenario
-import filecmp
 from tempfile import TemporaryDirectory
+
+from onsset.runner import calibration, scenario
 
 
 def run_analysis(tmpdir):
@@ -46,9 +47,8 @@ def run_analysis(tmpdir):
 
     actual = os.path.join(tmpdir, 'dj-1-1_1_1_1_0_0.csv')
     expected = os.path.join('test', 'test_results', 'expected_full.csv')
-    actual = filecmp.cmp(actual, expected)
-
-    return summary, actual
+    full = filecmp.cmp(actual, expected)
+    return summary, full
 
 
 def test_regression_summary():
