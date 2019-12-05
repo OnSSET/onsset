@@ -1399,7 +1399,7 @@ class SettlementProcessor:
 
     #Runs the grid extension algorithm
 
-    
+
     def calculate_new_connections(self,year,time_step,start_year):
         """this method defines new connections for grid related purposes
 
@@ -1447,10 +1447,10 @@ class SettlementProcessor:
             self.df.loc[
                 self.df[SET_NEW_CONNECTIONS + "{}".format(year)] < 0, SET_NEW_CONNECTIONS + "{}".format(year)] = 0
 
-    #RESIDENTIAL DEMAND STARTS    
+    #RESIDENTIAL DEMAND STARTS
     def set_residential_demand(self,rural_tier,urban_tier,num_people_per_hh_rural,num_people_per_hh_urban,productive_demand):
         """this method defines residential demand per tier level for each target year
-        
+
         Arguments
         ---------
         rural_tier : int
@@ -1528,7 +1528,7 @@ class SettlementProcessor:
 
         ### RESIDENTIAL DEMAND ENDS
 
-    def calculate_total_demand_per_settlement(self,year):    
+    def calculate_total_demand_per_settlement(self,year):
         """this method calculates total demand for each settlement per year
 
         Arguments
@@ -1552,12 +1552,12 @@ class SettlementProcessor:
         self.df.loc[self.df[SET_URBAN] == 2, SET_TOTAL_ENERGY_PER_CELL] = \
             self.df[SET_CAPITA_DEMAND] * self.df[SET_POP + "{}".format(year)]
 
-        
+
     def set_scenario_variables(self, year, num_people_per_hh_rural, num_people_per_hh_urban, time_step, start_year,
                                urban_elec_ratio, rural_elec_ratio, urban_tier, rural_tier, end_year_pop,
                                productive_demand):
         """this method determines some basic paramters required in LCOE calculation
-        
+
         it sets the basic scenario parameters that differ based on urban/rural so that they are in the table and can be read directly to calculate LCOEs
 
         Arguments
@@ -1581,7 +1581,7 @@ class SettlementProcessor:
         else:
             self.df[SET_POP + "{}".format(year)] = self.df[SET_POP + "{}".format(year) + 'High']
 
-        
+
         self.calculate_new_connections(year,time_step,start_year)
         self.set_residential_demand(rural_tier,urban_tier,num_people_per_hh_rural,num_people_per_hh_urban,productive_demand)
         self.calculate_total_demand_per_settlement(year)
@@ -1591,7 +1591,7 @@ class SettlementProcessor:
                                  year, start_year, end_year, timestep, diesel_techs=0):
         """Calcuate the LCOEs for all off-grid technologies, and calculate the minimum, so that the electrification
         algorithm knows where the bar is before it becomes economical to electrify
-        
+
         """
 
         # A df with all hydropower sites, to ensure that they aren't assigned more capacity than is available
@@ -1720,17 +1720,16 @@ class SettlementProcessor:
             else 99,
             axis=1)
         self.choose_minimum_off_grid_tech(year)
-        
 
-    def choose_minimum_off_grid_tech(self,year):
-        """Choose minimum LCOE off-grid technology 
+    def choose_minimum_off_grid_tech(self, year):
+        """Choose minimum LCOE off-grid technology
 
         First step determines the off-grid technology with minimum LCOE
         Second step determnines the value (number) of the selected minimum off-grid technology
-    
+
         Arguments
         ---------
-        year : int        
+        year : int
         """
 
         logging.info('Determine minimum technology (off-grid)')
@@ -1769,10 +1768,15 @@ class SettlementProcessor:
         self.df.loc[self.df[SET_MIN_OFFGRID + "{}".format(year)] == SET_LCOE_SA_DIESEL + "{}".format(
             year), SET_MIN_OFFGRID_CODE + "{}".format(year)] = codes[SET_LCOE_SA_DIESEL + "{}".format(year)]
 
-    def results_columns(self, mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc,
-                        sa_diesel_calc, grid_calc, year):
-        """Once the grid extension algorithm has been run, determine the minimum overall option, and calculate the
-            capacity and investment requirements for each settlement
+    def results_columns(self, year):
+        """Calculate the capacity and investment requirements for each settlement
+
+        Once the grid extension algorithm has been run, determine the minimum overall option,
+        and calculate the capacity and investment requirements for each settlement
+
+        Arguments
+        ---------
+        year : int
 
         """
 
@@ -1929,7 +1933,6 @@ class SettlementProcessor:
                                                                  self.df[SET_NEW_CONNECTIONS + "{}".format(year)]
             elecrate = 1
         else:
-
             self.df[SET_LIMIT + "{}".format(year)] = 0
 
             # RUN_PARAM: Here one can modify the prioritization algorithm - Currently only the first option is reviewed and ready to be used

@@ -315,8 +315,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
             onsseter.elec_extension(grid_calc, max_grid_extension_dist, year, start_year, end_year, time_step,
                               grid_cap_gen_limit, grid_connect_limit, auto_intensification, prioritization)
 
-            onsseter.results_columns(mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc,
-                                     sa_diesel_calc, grid_calc, year)
+            onsseter.results_columns(year)
 
             onsseter.calculate_investments(mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc,
                                            sa_diesel_calc, grid_calc, year, end_year, time_step)
