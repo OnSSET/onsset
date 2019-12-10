@@ -582,8 +582,8 @@ class SettlementProcessor:
                                             labels=road_distance_labels).astype(float)
 
         logging.info('Classify substation dist')
-        #define bins as -inf to 0.5, 0.5 to 1, 1 to 5, 5 to 10, 10 to inf
-        substation_distance_bins = [float("-inf"),0.5,1,5,10,float("inf")]
+        #define bins as 0 to 0.5, 0.5 to 1, 1 to 5, 5 to 10, 10 to inf
+        substation_distance_bins = [0,0.5,1,5,10,float("inf")]
         #define classifiers
         substation_distance_labels = [5,4,3,2,1]
 
@@ -592,25 +592,27 @@ class SettlementProcessor:
 
         logging.info('Classify land cover')
 
-        def classify_land_cover(data_frame,column,target_column):
+        def classify_land_cover(data_frame,column):
             """this is a different method employed to classify land cover and create new columns with the classification
 
             Arguments
             ---------
             data_frame : input file
             column : list
-            target_colum : list
+           
 
+            0,11 =1, 
+            6, 8 = 2
+            1, 3, 5, 12 ,13,15,=3, 
+            2,4=4, 
+            7,9,10,14,16=5 
             """
-            data_frame.loc[(data_frame[column]==7) | (data_frame[column]==9 ) | (data_frame[column]==10 ) |
-                            (data_frame[column]==14 ) | (data_frame[column]==16 ) ,target_column] = 5
-            data_frame.loc[(data_frame[column]==2) | (data_frame[column]==4 ),target_column] = 4
-            data_frame.loc[(data_frame[column]==1 )| (data_frame[column]==3 ) | (data_frame[column]==5 ) |
-                            (data_frame[column]==12 ) | (data_frame[column]==13 ) | (data_frame[column]==15 ) ,target_column] = 3
-            data_frame.loc[(data_frame[column]==6) | (data_frame[column]==8 ) ,target_column] = 2
-            data_frame.loc[(data_frame[column]==0) | (data_frame[column]==11 ) ,target_column] = 1
 
-        classify_land_cover(self.df,SET_LAND_COVER,SET_LAND_COVER_CLASSIFIED)
+            land_cover_labels = [1,3,4,3,4,3,2,5,2,5,5,1,3,3,5,3,5]
+            bob=data_frame[column].apply(lambda x:land_cover_labels[int(x)])
+            return  bob
+
+        LAND_COVER_CLASSIFIED=classify_land_cover(self.df,SET_LAND_COVER)
 
         logging.info('Classify elevation')
         #define bins as -inf to 500, 500 to 1000, 1000 to 2000, 2000 to 3000, 3000 to inf
@@ -622,8 +624,8 @@ class SettlementProcessor:
                                             labels=elevation_labels).astype(float)
 
         logging.info('Classify slope')
-        #define bins as -inf to 10, 10 to 20, 20 to 30, 30 to 40, 40 to inf
-        slope_bins = [float("-inf"),10,20,30,40,float("inf")]
+        #define bins as 0 to 10, 10 to 20, 20 to 30, 30 to 40, 40 to inf
+        slope_bins = [0,10,20,30,40,float("inf")]
         #define classifiers
         slope_labels = [5,4,3,2,1]
 
@@ -632,7 +634,7 @@ class SettlementProcessor:
         logging.info('Combined classification')
         COMBINED_CLASSIFICATION = (0.15 * ROAD_DIST_CLASSIFIED +
                                                 0.20 * SUBSTATION_DIST_CLASSIFIED +
-                                                0.20 * self.df[SET_LAND_COVER_CLASSIFIED] +
+                                                0.20 * LAND_COVER_CLASSIFIED +
                                                 0.15 * ELEVATION_CLASSIFIED +
                                                 0.30 * SLOPE_CLASSIFIED)
 

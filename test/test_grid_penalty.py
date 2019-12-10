@@ -22,17 +22,18 @@ class TestSettlementProcessor:
         df = DataFrame(
             {'X_deg': [42.00045, 41.9767, 42.0131],
              'Y_deg': [10.9668, 10.97138, 10.97166],
-             'RoadDist':[1.943,1.498,-3],
-             'SubstationDist':[1.943,1.498,-3],
-             'LandCover':[1,1.498,-3],
-             'Elevation':[1.943,1.498,-3],
-             'Slope':[1.943,1.498,-3],
+             'RoadDist':[11.954,14.282,10.472],
+             'SubstationDist':[77.972,80.351,76.497],
+             'LandCover':[2,16,5],
+             'Elevation':[4,5,-3],
+             'Slope':[0.75,1.498,0.73],
 
             })
         return df
 
-    def test_diesel_cost_columns(self, setup_settlementprocessor: SettlementProcessor,
+    def test_grid_penalties(self, setup_settlementprocessor: SettlementProcessor,
                                  setup_dataframe: DataFrame):
+    
     #     """
 
     #     The ``diesel_cost_columns`` method receives a pandas.Series of
@@ -83,12 +84,12 @@ class TestSettlementProcessor:
         expected = DataFrame(
             {'X_deg': [42.00045, 41.9767, 42.0131],
              'Y_deg': [10.9668, 10.97138, 10.97166],
-             'RoadDist':[1.943,1.498,-3],
-             'SubstationDist':[1.943,1.498,-3],
-             'LandCover':[1,1.498,-3],
-             'Elevation':[1.943,1.498,-3],
-             'Slope':[1.943,1.498,-3],
-             'GridPenalty':[1,2,3]
+             'RoadDist':[11.954,14.282,10.472],
+             'SubstationDist':[77.972,80.351,76.497],
+             'LandCover':[2,16,5],
+             'Elevation':[4,5,-3],
+             'Slope':[0.75,1.498,0.73],
+             'GridPenalty':[1.0892443601228534,1.1076348215198037,1.0737289748812726]
             })
 
-        assert_frame_equal(actual, expected)
+        assert_frame_equal(actual, expected, check_less_precise=True)
