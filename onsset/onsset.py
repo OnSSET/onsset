@@ -565,7 +565,7 @@ class SettlementProcessor:
 
         """this method calculates the grid penalties in each settlement
 
-        First step classifies the parameters and creates new columns with classification
+        First tep classifies the parameters and creates new columns with classification
 
         Second step adds the grid penalty to increase grid cost in areas that higher road distance, higher substation
         distance, unsuitable land cover, high slope angle or high elevation
@@ -574,11 +574,11 @@ class SettlementProcessor:
 
         logging.info('Classify road dist')
         #define bins as -inf to 5, 5 to 10, 10 to 25, 25 to 50, 50 to inf
-        road_distance_bins = [float("-inf"),5,10,25,50,float("inf")]
+        road_distance_bins = [0,5,10,25,50,float("inf")]
         #define classifiers
         road_distance_labels = [5,4,3,2,1]
 
-        self.df[SET_ROAD_DIST_CLASSIFIED] = pd.cut(self.df[SET_ROAD_DIST], road_distance_bins,
+        ROAD_DIST_CLASSIFIED = pd.cut(self.df[SET_ROAD_DIST], road_distance_bins,
                                             labels=road_distance_labels).astype(float)
 
         logging.info('Classify substation dist')
@@ -587,7 +587,7 @@ class SettlementProcessor:
         #define classifiers
         substation_distance_labels = [5,4,3,2,1]
 
-        self.df[SET_SUBSTATION_DIST_CLASSIFIED] = pd.cut(self.df[SET_SUBSTATION_DIST], substation_distance_bins,
+        SUBSTATION_DIST_CLASSIFIED = pd.cut(self.df[SET_SUBSTATION_DIST], substation_distance_bins,
                                                   labels=substation_distance_labels).astype(float)
 
         logging.info('Classify land cover')
@@ -618,7 +618,7 @@ class SettlementProcessor:
         #define classifiers
         elevation_labels = [5,4,3,2,1]
 
-        self.df[SET_ELEVATION_CLASSIFIED] = pd.cut(self.df[SET_ELEVATION], elevation_bins,
+        ELEVATION_CLASSIFIED = pd.cut(self.df[SET_ELEVATION], elevation_bins,
                                             labels=elevation_labels).astype(float)
 
         logging.info('Classify slope')
@@ -627,21 +627,21 @@ class SettlementProcessor:
         #define classifiers
         slope_labels = [5,4,3,2,1]
 
-        self.df[SET_SLOPE_CLASSIFIED] = pd.cut(self.df[SET_SLOPE], slope_bins, labels=slope_labels).astype(float)
+        SLOPE_CLASSIFIED = pd.cut(self.df[SET_SLOPE], slope_bins, labels=slope_labels).astype(float)
 
         logging.info('Combined classification')
-        self.df[SET_COMBINED_CLASSIFICATION] = (0.15 * self.df[SET_ROAD_DIST_CLASSIFIED] +
-                                                0.20 * self.df[SET_SUBSTATION_DIST_CLASSIFIED] +
+        COMBINED_CLASSIFICATION = (0.15 * ROAD_DIST_CLASSIFIED +
+                                                0.20 * SUBSTATION_DIST_CLASSIFIED +
                                                 0.20 * self.df[SET_LAND_COVER_CLASSIFIED] +
-                                                0.15 * self.df[SET_ELEVATION_CLASSIFIED] +
-                                                0.30 * self.df[SET_SLOPE_CLASSIFIED])
+                                                0.15 * ELEVATION_CLASSIFIED +
+                                                0.30 * SLOPE_CLASSIFIED)
 
 
         logging.info('Grid penalty')
         """this calculates the penalty from the results obtained from the combined classifications
 
         """
-        classification=self.df[SET_COMBINED_CLASSIFICATION].astype(float)
+        classification=COMBINED_CLASSIFICATION.astype(float)
         self.df[SET_GRID_PENALTY]= 1+ (np.exp(.85*np.abs(1-classification))-1)/100
 
 
