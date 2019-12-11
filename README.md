@@ -30,7 +30,6 @@ OnSSET requires Python > 3.5 with the following packages installed:
 - six
 - xlrd
 
-
 ### Install with pip
 
 Install onsset from the Python Packaging Index (PyPI):
