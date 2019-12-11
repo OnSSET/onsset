@@ -1,7 +1,7 @@
 onsset : Open Source Spatial Electrification Tool
 =================================================
 
-[![PyPI version](https://badge.fury.io/py/gridfinder.svg)](https://pypi.org/project/onsset/)
+[![PyPI version](https://badge.fury.io/py/onsset.svg)](https://badge.fury.io/py/onsset)
 [![Build Status](https://travis-ci.com/OnSSET/onsset.svg?branch=master)](https://travis-ci.com/OnSSET/onsset)
 [![Coverage Status](https://coveralls.io/repos/github/OnSSET/onsset/badge.svg?branch=master)](https://coveralls.io/github/OnSSET/onsset?branch=master)
 [![Documentation Status](https://readthedocs.org/projects/onsset/badge/?version=latest)](https://onsset.readthedocs.io/en/latest/?badge=latest)
