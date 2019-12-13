@@ -561,7 +561,29 @@ class SettlementProcessor:
         logging.info('Sort by country, Y and X')
         self.df.sort_values(by=[SET_Y_DEG, SET_X_DEG], inplace=True)
 
+    def classify_land_cover(self, column):
+            """this is a different method employed to classify land cover and create new columns with the classification
+
+            Arguments
+            ---------
+            
+            column : list
+           
+
+            0,11 =1, 
+            6, 8 = 2
+            1, 3, 5, 12 ,13,15,=3, 
+            2,4=4, 
+            7,9,10,14,16=5 
+            """
+
+            land_cover_labels = [1,3,4,3,4,3,2,5,2,5,5,1,3,3,5,3,5]
+            bob=column.apply(lambda x:land_cover_labels[int(x)])
+            return  bob
     def grid_penalties(self):
+        self.grid_penalties_helper(self.df)
+
+    def grid_penalties_helper(self, data_frame):
 
         """this method calculates the grid penalties in each settlement
 
@@ -578,7 +600,7 @@ class SettlementProcessor:
         #define classifiers
         road_distance_labels = [5,4,3,2,1]
 
-        ROAD_DIST_CLASSIFIED = pd.cut(self.df[SET_ROAD_DIST], road_distance_bins,
+        ROAD_DIST_CLASSIFIED = pd.cut(data_frame[SET_ROAD_DIST], road_distance_bins,
                                             labels=road_distance_labels).astype(float)
 
         logging.info('Classify substation dist')
@@ -587,32 +609,13 @@ class SettlementProcessor:
         #define classifiers
         substation_distance_labels = [5,4,3,2,1]
 
-        SUBSTATION_DIST_CLASSIFIED = pd.cut(self.df[SET_SUBSTATION_DIST], substation_distance_bins,
+        SUBSTATION_DIST_CLASSIFIED = pd.cut(data_frame[SET_SUBSTATION_DIST], substation_distance_bins,
                                                   labels=substation_distance_labels).astype(float)
 
         logging.info('Classify land cover')
 
-        def classify_land_cover(data_frame,column):
-            """this is a different method employed to classify land cover and create new columns with the classification
-
-            Arguments
-            ---------
-            data_frame : input file
-            column : list
-           
-
-            0,11 =1, 
-            6, 8 = 2
-            1, 3, 5, 12 ,13,15,=3, 
-            2,4=4, 
-            7,9,10,14,16=5 
-            """
-
-            land_cover_labels = [1,3,4,3,4,3,2,5,2,5,5,1,3,3,5,3,5]
-            bob=data_frame[column].apply(lambda x:land_cover_labels[int(x)])
-            return  bob
-
-        LAND_COVER_CLASSIFIED=classify_land_cover(self.df,SET_LAND_COVER)
+       
+        LAND_COVER_CLASSIFIED=self.classify_land_cover(data_frame[SET_LAND_COVER])
 
         logging.info('Classify elevation')
         #define bins as -inf to 500, 500 to 1000, 1000 to 2000, 2000 to 3000, 3000 to inf
@@ -620,7 +623,7 @@ class SettlementProcessor:
         #define classifiers
         elevation_labels = [5,4,3,2,1]
 
-        ELEVATION_CLASSIFIED = pd.cut(self.df[SET_ELEVATION], elevation_bins,
+        ELEVATION_CLASSIFIED = pd.cut(data_frame[SET_ELEVATION], elevation_bins,
                                             labels=elevation_labels).astype(float)
 
         logging.info('Classify slope')
@@ -629,7 +632,7 @@ class SettlementProcessor:
         #define classifiers
         slope_labels = [5,4,3,2,1]
 
-        SLOPE_CLASSIFIED = pd.cut(self.df[SET_SLOPE], slope_bins, labels=slope_labels).astype(float)
+        SLOPE_CLASSIFIED = pd.cut(data_frame[SET_SLOPE], slope_bins, labels=slope_labels).astype(float)
 
         logging.info('Combined classification')
         COMBINED_CLASSIFICATION = (0.15 * ROAD_DIST_CLASSIFIED +
@@ -644,9 +647,12 @@ class SettlementProcessor:
 
         """
         classification=COMBINED_CLASSIFICATION.astype(float)
-        self.df[SET_GRID_PENALTY]= 1+ (np.exp(.85*np.abs(1-classification))-1)/100
+        
+        c = 1 + (np.exp(.85*np.abs(1-classification))-1)/100
 
+        data_frame[SET_GRID_PENALTY]= c
 
+        return c
     def calc_wind_cfs(self):
         """Calculate the wind capacity factor based on the average wind velocity.
 

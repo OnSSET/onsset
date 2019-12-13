@@ -2,11 +2,11 @@ import os
 
 from onsset import SettlementProcessor
 
-from pandas import DataFrame
-from pandas.testing import assert_frame_equal
+from pandas import DataFrame , Series
+from pandas.testing import assert_frame_equal , assert_series_equal
 from pytest import fixture
 
-
+"GRIDPENALTY"
 class TestSettlementProcessor:
 
     @fixture
@@ -31,7 +31,7 @@ class TestSettlementProcessor:
             })
         return df
 
-    def test_grid_penalties(self, setup_settlementprocessor: SettlementProcessor,
+    def test_grid_penalties_helper(self, setup_settlementprocessor: SettlementProcessor,
                                  setup_dataframe: DataFrame):
     
     #     """
@@ -63,33 +63,26 @@ class TestSettlementProcessor:
         sp = setup_settlementprocessor
 
         df = setup_dataframe
-        sp.df=df
+       
 
+        
+        actual=sp.grid_penalties_helper(df)
+        print(actual, type(actual))
 
-    #     sa_diesel_cost = {'diesel_price': 0.10,
-    #                       'efficiency': 0.28,
-    #                       'diesel_truck_consumption': 14,
-    #                       'diesel_truck_volume': 300}
-
-    #     mg_diesel_cost = {'diesel_price': 0.1,
-    #                       'efficiency': 0.33,
-    #                       'diesel_truck_consumption': 33.7,
-    #                       'diesel_truck_volume': 15000}
-    #     year = 2015
-
-        sp.grid_penalties()
-        actual = sp.df
-        print(actual) 
-
-        expected = DataFrame(
-            {'X_deg': [42.00045, 41.9767, 42.0131],
-             'Y_deg': [10.9668, 10.97138, 10.97166],
-             'RoadDist':[11.954,14.282,10.472],
-             'SubstationDist':[77.972,80.351,76.497],
-             'LandCover':[2,16,5],
-             'Elevation':[4,5,-3],
-             'Slope':[0.75,1.498,0.73],
-             'GridPenalty':[1.0892443601228534,1.1076348215198037,1.0737289748812726]
-            })
-
-        assert_frame_equal(actual, expected, check_less_precise=True)
+        # expected = Series(
+        #     {'X_deg': [42.00045, 41.9767, 42.0131],
+        #      'Y_deg': [10.9668, 10.97138, 10.97166],
+        #      'RoadDist':[11.954,14.282,10.472],
+        #      'SubstationDist':[77.972,80.351,76.497],
+        #      'LandCover':[2,16,5],
+        #      'Elevation':[4,5,-3],
+        #      'Slope':[0.75,1.498,0.73],
+        #      'GridPenalty':[1.0892443601228534,1.1076348215198037,1.0737289748812726]
+        #     })
+        expected = Series([1.0892443601228534,1.1076348215198037,1.0737289748812726])
+       
+        print(expected)
+            
+        # check_less_precise ensures that it does not consider
+        assert_series_equal(actual, expected, check_less_precise= False)
+       

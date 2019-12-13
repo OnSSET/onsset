@@ -36,6 +36,7 @@ def calibration(specs_path, csv_path, specs_path_calib, calibrated_csv_path):
 
     num_people_per_hh_rural = float(SpecsData.iloc[0][SPE_NUM_PEOPLE_PER_HH_RURAL])
     num_people_per_hh_urban = float(SpecsData.iloc[0][SPE_NUM_PEOPLE_PER_HH_URBAN])
+    
 
     # RUN_PARAM: these are the annual household electricity targets
     tier_1 = 38.7  # 38.7 refers to kWh/household/year. It is the mean value between Tier 1 and Tier 2
@@ -43,6 +44,8 @@ def calibration(specs_path, csv_path, specs_path_calib, calibrated_csv_path):
     tier_3 = 803
     tier_4 = 2117
     tier_5 = 2993
+
+ 
 
     onsseter.prepare_wtf_tier_columns(num_people_per_hh_rural, num_people_per_hh_urban,
                                       tier_1, tier_2, tier_3, tier_4, tier_5)
