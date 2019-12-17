@@ -4,7 +4,7 @@ import logging
 import os
 
 import pandas as pd
-from onsset import (SET_ELEC_ORDER, SET_LCOE_GRID, SET_MIN_GRID_DIST,
+from onsset import (SET_ELEC_ORDER, SET_LCOE_GRID, SET_MIN_GRID_DIST, SET_GRID_PENALTY,
                     SET_MV_CONNECT_DIST, SettlementProcessor, Technology)
 from onsset.specs import (SPE_COUNTRY, SPE_ELEC, SPE_ELEC_MODELLED,
                           SPE_ELEC_RURAL, SPE_ELEC_URBAN, SPE_END_YEAR,
@@ -50,7 +50,7 @@ def calibration(specs_path, csv_path, specs_path_calib, calibrated_csv_path):
     onsseter.prepare_wtf_tier_columns(num_people_per_hh_rural, num_people_per_hh_urban,
                                       tier_1, tier_2, tier_3, tier_4, tier_5)
     onsseter.condition_df()
-    onsseter.grid_penalties()
+    onsseter.df[SET_GRID_PENALTY] = onsseter.grid_penalties(onsseter.df)
     onsseter.calc_wind_cfs()
 
     pop_actual = SpecsData.loc[0, SPE_POP]

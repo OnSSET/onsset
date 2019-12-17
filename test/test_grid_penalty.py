@@ -31,14 +31,14 @@ class TestSettlementProcessor:
             })
         return df
 
-    def test_grid_penalties_helper(self, setup_settlementprocessor: SettlementProcessor,
+    def test_grid_penalties(self, setup_settlementprocessor: SettlementProcessor,
                                  setup_dataframe: DataFrame):
     
         sp = setup_settlementprocessor
 
         df = setup_dataframe
         
-        actual=sp.grid_penalties_helper(df)
+        actual=sp.grid_penalties(df)
         print(actual, type(actual))
 
      

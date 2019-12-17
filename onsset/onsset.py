@@ -580,10 +580,10 @@ class SettlementProcessor:
             land_cover_labels = [1,3,4,3,4,3,2,5,2,5,5,1,3,3,5,3,5]
             bob=column.apply(lambda x:land_cover_labels[int(x)])
             return  bob
-    def grid_penalties(self):
-        self.grid_penalties_helper(self.df)
+    # def grid_penalties(self):
+    #     # self.grid_penalties_helper(self.df)
 
-    def grid_penalties_helper(self, data_frame):
+    def grid_penalties(self, data_frame):
 
         """this method calculates the grid penalties in each settlement
 
@@ -601,7 +601,7 @@ class SettlementProcessor:
         road_distance_labels = [5,4,3,2,1]
 
         ROAD_DIST_CLASSIFIED = pd.cut(data_frame[SET_ROAD_DIST], road_distance_bins,
-                                            labels=road_distance_labels).astype(float)
+                                            labels=road_distance_labels, include_lowest=True).astype(float)
 
         logging.info('Classify substation dist')
         #define bins as 0 to 0.5, 0.5 to 1, 1 to 5, 5 to 10, 10 to inf
@@ -650,9 +650,8 @@ class SettlementProcessor:
         
         c = 1 + (np.exp(.85*np.abs(1-classification))-1)/100
 
-        data_frame[SET_GRID_PENALTY]= c
-
         return c
+
     def calc_wind_cfs(self):
         """Calculate the wind capacity factor based on the average wind velocity.
 
