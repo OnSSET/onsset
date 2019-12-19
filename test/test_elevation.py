@@ -3,7 +3,7 @@ import os
 from onsset import SettlementProcessor
 
 from pandas import DataFrame,Series
-from pandas.testing import  assert_series_equal
+from pandas.testing import assert_series_equal
 from pytest import fixture
 
 
@@ -17,15 +17,15 @@ class TestSettlementProcessor:
 
         return settlementprocessor
    
-    def test_classify_substation_distance(self, setup_settlementprocessor):
+    def test_classify_elevation(self, setup_settlementprocessor):
 
         sp = setup_settlementprocessor
-        df = DataFrame({'Substation':[-1,0,11.954,14.282,10.472]})
+        df = DataFrame({'Elevation':[-1,0,11.954,14.282,10.472]})
 
-        actual = sp.classify_substation_distance(df['Substation'])    
+        actual = sp.classify_elevation(df['Elevation'])    
         print (actual)
         
-        expected =Series(['NaN','NaN',1,1,1], name='Substation').astype(float)
+        expected =Series([5,5,5,5,5], name='Elevation').astype(float)
 
         print (expected)
         assert_series_equal(actual, expected)
