@@ -561,15 +561,75 @@ class SettlementProcessor:
         logging.info('Sort by country, Y and X')
         self.df.sort_values(by=[SET_Y_DEG, SET_X_DEG], inplace=True)
 
+    
+    def classify_road_distance(self, road_distance):
+        """Classify the road distance according to bins and labels
+
+        Arguments
+        ---------
+        road_distance : list
+        """
+        #define bins
+        road_distance_bins = [0,5,10,25,50,float("inf")]
+        #define classifiers
+        road_distance_labels = [5,4,3,2,1]
+
+        return pd.cut(road_distance, road_distance_bins, labels=road_distance_labels, include_lowest=True).astype(float)
+
+    def classify_substation_distance(self, substation_distance):
+        """Classify the substation distance according to bins and labels
+
+        Arguments
+        ---------
+        substation_distance : list
+        """
+        #define bins
+        substation_distance_bins = [0,0.5,1,5,10,float("inf")]
+        #define classifiers
+        substation_distance_labels = [5,4,3,2,1]
+
+        return pd.cut(substation_distance, substation_distance_bins,
+                                            labels=substation_distance_labels).astype(float)
+    
+    def classify_elevation(self, elevation):
+        """Classify the elevation distance according to bins and labels
+
+        Arguments
+        ---------
+        elevation : list
+        """
+
+        #define bins 
+        elevation_bins = [float("-inf"),500,1000,2000,3000,float("inf")]
+        #define classifiers
+        elevation_labels = [5,4,3,2,1]
+
+        return pd.cut(elevation, elevation_bins,labels=elevation_labels).astype(float)
+
+    def classify_slope(self,slope):
+        """Classify the slope according to bins and labels
+
+        Arguments
+        ---------
+        slope : list
+        """
+
+        #define bins
+        slope_bins = [0,10,20,30,40,float("inf")]
+        #define classifiers
+        slope_labels = [5,4,3,2,1]
+
+        return pd.cut(slope, slope_bins, labels=slope_labels, include_lowest=True).astype(float)
+
     def classify_land_cover(self, column):
             """this is a different method employed to classify land cover and create new columns with the classification
 
             Arguments
             ---------
-            
             column : list
-           
 
+            Notes
+            -----
             0,11 =1, 
             6, 8 = 2
             1, 3, 5, 12 ,13,15,=3, 
@@ -578,16 +638,14 @@ class SettlementProcessor:
             """
 
             land_cover_labels = [1,3,4,3,4,3,2,5,2,5,5,1,3,3,5,3,5]
-            bob=column.apply(lambda x:land_cover_labels[int(x)])
-            return  bob
-    # def grid_penalties(self):
-    #     # self.grid_penalties_helper(self.df)
+            return column.apply(lambda x:land_cover_labels[int(x)])
+              
 
     def grid_penalties(self, data_frame):
 
         """this method calculates the grid penalties in each settlement
 
-        First tep classifies the parameters and creates new columns with classification
+        First step classifies the parameters and creates new columns with classification
 
         Second step adds the grid penalty to increase grid cost in areas that higher road distance, higher substation
         distance, unsuitable land cover, high slope angle or high elevation
@@ -595,51 +653,26 @@ class SettlementProcessor:
         """
 
         logging.info('Classify road dist')
-        #define bins as -inf to 5, 5 to 10, 10 to 25, 25 to 50, 50 to inf
-        road_distance_bins = [0,5,10,25,50,float("inf")]
-        #define classifiers
-        road_distance_labels = [5,4,3,2,1]
-
-        ROAD_DIST_CLASSIFIED = pd.cut(data_frame[SET_ROAD_DIST], road_distance_bins,
-                                            labels=road_distance_labels, include_lowest=True).astype(float)
+        ROAD_DIST_CLASSIFIED = self.classify_road_distance(data_frame[SET_ROAD_DIST])                                  
 
         logging.info('Classify substation dist')
-        #define bins as 0 to 0.5, 0.5 to 1, 1 to 5, 5 to 10, 10 to inf
-        substation_distance_bins = [0,0.5,1,5,10,float("inf")]
-        #define classifiers
-        substation_distance_labels = [5,4,3,2,1]
-
-        SUBSTATION_DIST_CLASSIFIED = pd.cut(data_frame[SET_SUBSTATION_DIST], substation_distance_bins,
-                                                  labels=substation_distance_labels).astype(float)
-
-        logging.info('Classify land cover')
-
-       
-        LAND_COVER_CLASSIFIED=self.classify_land_cover(data_frame[SET_LAND_COVER])
+        SUBSTATION_DIST_CLASSIFIED = self.classify_substation_distance(data_frame[SET_SUBSTATION_DIST])
 
         logging.info('Classify elevation')
-        #define bins as -inf to 500, 500 to 1000, 1000 to 2000, 2000 to 3000, 3000 to inf
-        elevation_bins = [float("-inf"),500,1000,2000,3000,float("inf")]
-        #define classifiers
-        elevation_labels = [5,4,3,2,1]
-
-        ELEVATION_CLASSIFIED = pd.cut(data_frame[SET_ELEVATION], elevation_bins,
-                                            labels=elevation_labels).astype(float)
-
+        ELEVATION_CLASSIFIED = self.classify_elevation(data_frame[SET_ELEVATION])
+        
         logging.info('Classify slope')
-        #define bins as 0 to 10, 10 to 20, 20 to 30, 30 to 40, 40 to inf
-        slope_bins = [0,10,20,30,40,float("inf")]
-        #define classifiers
-        slope_labels = [5,4,3,2,1]
+        SLOPE_CLASSIFIED = self.classify_slope(data_frame[SET_SLOPE])
 
-        SLOPE_CLASSIFIED = pd.cut(data_frame[SET_SLOPE], slope_bins, labels=slope_labels).astype(float)
+        logging.info('Classify land cover')
+        LAND_COVER_CLASSIFIED=self.classify_land_cover(data_frame[SET_LAND_COVER])
 
         logging.info('Combined classification')
         COMBINED_CLASSIFICATION = (0.15 * ROAD_DIST_CLASSIFIED +
                                                 0.20 * SUBSTATION_DIST_CLASSIFIED +
-                                                0.20 * LAND_COVER_CLASSIFIED +
                                                 0.15 * ELEVATION_CLASSIFIED +
-                                                0.30 * SLOPE_CLASSIFIED)
+                                                0.30 * SLOPE_CLASSIFIED + 
+                                                0.20 * LAND_COVER_CLASSIFIED)
 
 
         logging.info('Grid penalty')
