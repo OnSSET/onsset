@@ -41,7 +41,6 @@ class TestSettlementProcessor:
         actual=sp.grid_penalties(df)
         print(actual, type(actual))
 
-     
         expected = Series([1.0892443601228534,1.1076348215198037,1.0737289748812726])
        
         print(expected)

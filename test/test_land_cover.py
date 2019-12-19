@@ -16,18 +16,10 @@ class TestSettlementProcessor:
         settlementprocessor = SettlementProcessor(csv_path)
 
         return settlementprocessor
-
-    @fixture
-    def setup_dataframe(self) -> DataFrame:
-        df = DataFrame({
-                        'LandCover':list(range(17))
-                                               
-                         })
-        return df
    
-    def test_classify_land_cover(self,setup_settlementprocessor,setup_dataframe):
+    def test_classify_land_cover(self,setup_settlementprocessor):
         sp = setup_settlementprocessor
-        df = setup_dataframe
+        df = DataFrame({'LandCover':list(range(17))})
 
         actual = sp.classify_land_cover(df['LandCover'])
 
