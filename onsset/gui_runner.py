@@ -42,4 +42,4 @@ elif choice == 2:
     messagebox.showinfo('OnSSET', 'Browse to SUMMARIES folder and name the scenario to save outputs')
     summary_folder = filedialog.askdirectory()
 
-    scenario(specs_path, calibrated_csv_path, results_folder, summary_folder)
+    scenario_run(specs_path, calibrated_csv_path, results_folder, summary_folder)
