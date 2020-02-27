@@ -1540,8 +1540,8 @@ class SettlementProcessor:
         Arguments
         ---------
         year : int
-        num_people_per_hh_rural : int
-        num_people_per_hh_urban : int
+        num_people_per_hh_rural : float
+        num_people_per_hh_urban : float
         time_step : int
         start_year: int
         urban_tier : int

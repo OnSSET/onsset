@@ -7,7 +7,7 @@ and asks the user to browse to the necessary input files
 import tkinter as tk
 from tkinter import filedialog, messagebox
 import pandas as pd
-from runner import calibration, scenario
+from runner import calibration, scenario_run
 
 root = tk.Tk()
 root.withdraw()
