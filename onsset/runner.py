@@ -73,7 +73,7 @@ def calibration(specs_path, csv_path, specs_path_calib, calibrated_csv_path):
                                              urban_future, start_year, end_year, intermediate_year)
 
     elec_modelled, rural_elec_ratio, urban_elec_ratio = \
-        onsseter.elec_current_and_future(elec_actual, elec_actual_urban, elec_actual_rural, pop_tot, start_year)
+        onsseter.elec_current_and_future(elec_actual, elec_actual_urban, elec_actual_rural, start_year)
 
     # In case there are limitations in the way grid expansion is moving in a country, this can be reflected through gridspeed.
     # In this case the parameter is set to a very high value therefore is not taken into account.
@@ -292,14 +292,12 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                 grid_connect_limit = 9999999999
 
             onsseter.set_scenario_variables(year, num_people_per_hh_rural, num_people_per_hh_urban, time_step,
-                                            start_year, urban_elec_ratio, rural_elec_ratio, urban_tier, rural_tier,
-                                            end_year_pop, productive_demand)
+                                            start_year, urban_tier, rural_tier,end_year_pop, productive_demand)
 
             onsseter.diesel_cost_columns(sa_diesel_cost, mg_diesel_cost, year)
 
-
             onsseter.calculate_off_grid_lcoes(mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc,
-                                              sa_diesel_calc, year, start_year, end_year, time_step)
+                                              sa_diesel_calc, year, end_year, time_step)
 
             onsseter.pre_electrification(grid_price, year, time_step, start_year)
 
