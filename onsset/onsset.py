@@ -101,6 +101,7 @@ SET_MG_DIESEL_FUEL = 'MGDieselFuelCost'
 LHV_DIESEL = 9.9445485  # (kWh/l) lower heating value
 HOURS_PER_YEAR = 8760
 
+
 class Technology:
     """
     Used to define the parameters for each electricity access technology, and to calculate the LCOE depending on
@@ -170,7 +171,7 @@ class Technology:
         cls.LV_line_max_length = LV_line_max_length  # km
         cls.service_Transf_type = service_Transf_type  # kVa
         cls.service_Transf_cost = service_Transf_cost  # $/unit
-        cls.max_nodes_per_serv_trans = max_nodes_per_serv_trans  # maximum number of nodes served by each service transformer
+        cls.max_nodes_per_serv_trans = max_nodes_per_serv_trans  # max number of nodes served by a service transformer
         cls.MV_LV_sub_station_type = MV_LV_sub_station_type  # kVa
         cls.MV_LV_sub_station_cost = MV_LV_sub_station_cost  # $/unit
         cls.MV_MV_sub_station_cost = MV_MV_sub_station_cost  # $/unit
@@ -180,11 +181,9 @@ class Technology:
         cls.power_factor = power_factor
         cls.load_moment = load_moment  # for 50mm aluminum conductor under 5% voltage drop (kW m)
 
-
     def get_lcoe(self, energy_per_cell, people, num_people_per_hh, start_year, end_year, new_connections,
-                 total_energy_per_cell, prev_code, grid_cell_area, conf_status=0, additional_mv_line_length=0,
-                 capacity_factor=0, grid_penalty_ratio=1, fuel_cost=0, elec_loop=0, productive_nodes=0,
-                 additional_transformer=0, get_investment_cost=False,
+                 total_energy_per_cell, prev_code, grid_cell_area, conf_status=0,
+                 capacity_factor=0, grid_penalty_ratio=1, fuel_cost=0, elec_loop=0, get_investment_cost=False,
                  get_investment_cost_lv=False, get_investment_cost_mv=False, get_investment_cost_hv=False,
                  get_investment_cost_transformer=False, get_investment_cost_connection=False,
                  get_capacity=False):
@@ -224,102 +223,17 @@ class Technology:
         if capacity_factor == 0:
             capacity_factor = self.capacity_factor
 
-        def distribution_network(people, energy_per_cell):
-            if energy_per_cell <= 0:
-                energy_per_cell = 0.0001
-            try:
-                int(energy_per_cell)
-            except ValueError:
-                energy_per_cell = 0.0001
-
-            if people <= 0:
-                people = 0.0001
-
-            consumption = energy_per_cell  # kWh/year
-            average_load = consumption / (1 - self.distribution_losses) / HOURS_PER_YEAR  # kW
-            peak_load = average_load / self.base_to_peak_load_ratio  # kW
-
-            try:
-                int(peak_load)
-            except ValueError:
-                peak_load = 1
-
-            # Sizing HV/MV
-            HV_to_MV_lines = self.HV_line_cost / self.MV_line_cost
-            max_MV_load = self.MV_line_amperage_limit * self.MV_line_type * HV_to_MV_lines
-
-            MV_km = 0
-            HV_km = 0
-            if peak_load <= max_MV_load and additional_mv_line_length < 50 and self.grid_price > 0:
-                MV_amperage = self.MV_LV_sub_station_type / self.MV_line_type
-                No_of_MV_lines = ceil(peak_load / (MV_amperage * self.MV_line_type))
-                MV_km = additional_mv_line_length * No_of_MV_lines
-            elif self.grid_price > 0:
-                HV_amperage = self.HV_LV_sub_station_type / self.HV_line_type
-                No_of_HV_lines = ceil(peak_load / (HV_amperage * self.HV_line_type))
-                HV_km = additional_mv_line_length * No_of_HV_lines
-
-            Smax = peak_load / self.power_factor
-            max_tranformer_area = pi * self.LV_line_max_length ** 2
-            total_nodes = (people / num_people_per_hh) + productive_nodes
-
-            try:
-                no_of_service_transf = ceil(
-                    max(Smax / self.service_Transf_type, total_nodes / self.max_nodes_per_serv_trans,
-                        grid_cell_area / max_tranformer_area))
-            except ValueError:
-                no_of_service_transf = 1
-            transformer_radius = ((grid_cell_area / no_of_service_transf) / pi) ** 0.5
-            transformer_nodes = total_nodes / no_of_service_transf
-            transformer_load = peak_load / no_of_service_transf
-            cluster_radius = (grid_cell_area / pi) ** 0.5
-
-            # Sizing LV lines in settlement
-            if 2 / 3 * cluster_radius * transformer_load * 1000 < self.load_moment:
-                cluster_lv_lines_length = 2 / 3 * cluster_radius * no_of_service_transf
-                cluster_mv_lines_length = 0
-            else:
-                cluster_lv_lines_length = 0
-                # cluster_mv_lines_length = 2 / 3 * cluster_radius * no_of_service_transf
-                cluster_mv_lines_length = 2 * transformer_radius * no_of_service_transf
-
-            hh_area = grid_cell_area / total_nodes
-            hh_diameter = 2 * ((hh_area / pi) ** 0.5)
-
-            transformer_lv_lines_length = hh_diameter * total_nodes
-            No_of_HV_MV_subs = 0
-            No_of_MV_MV_subs = 0
-            No_of_HV_LV_subs = 0
-            No_of_MV_LV_subs = 0
-            No_of_HV_MV_subs += additional_transformer  # to connect the MV line to the HV grid
-
-            if cluster_mv_lines_length > 0 and HV_km > 0:
-                No_of_HV_MV_subs = ceil(peak_load / self.HV_LV_sub_station_type)  # 1
-            elif cluster_mv_lines_length > 0 and MV_km > 0:
-                No_of_MV_MV_subs = ceil(peak_load / self.MV_LV_sub_station_type)  # 1
-            elif cluster_lv_lines_length > 0 and HV_km > 0:
-                No_of_HV_LV_subs = ceil(peak_load / self.HV_LV_sub_station_type)  # 1
-            else:
-                No_of_MV_LV_subs = ceil(peak_load / self.MV_LV_sub_station_type)  # 1
-
-            LV_km = cluster_lv_lines_length + transformer_lv_lines_length
-            # MV_km += cluster_mv_lines_length  ### REVIEW
-
-            return HV_km, MV_km, cluster_mv_lines_length, LV_km, no_of_service_transf, \
-                   No_of_HV_MV_subs, No_of_MV_MV_subs, No_of_HV_LV_subs, No_of_MV_LV_subs, \
-                   consumption, peak_load, total_nodes
-
         if people != new_connections and (prev_code == 1 or prev_code == 4 or prev_code == 5 or
                                           prev_code == 6 or prev_code == 7 or prev_code == 8):
             HV_km1, MV_km1, cluster_mv_lines_length1, cluster_lv_lines_length1, no_of_service_transf1, \
-            No_of_HV_MV_subs1, No_of_MV_MV_subs1, No_of_HV_LV_subs1, No_of_MV_LV_subs1, \
-            generation_per_year1, peak_load1, total_nodes1 = distribution_network(people, total_energy_per_cell)
+                No_of_HV_MV_subs1, No_of_MV_MV_subs1, No_of_HV_LV_subs1, No_of_MV_LV_subs1, \
+                generation_per_year1, peak_load1, total_nodes1 = \
+                Technology.distribution_network(people, total_energy_per_cell)
 
             HV_km2, MV_km2, cluster_mv_lines_length2, cluster_lv_lines_length2, no_of_service_transf2, \
-            No_of_HV_MV_subs2, No_of_MV_MV_subs2, No_of_HV_LV_subs2, No_of_MV_LV_subs2, \
-            generation_per_year2, peak_load2, total_nodes2 = \
-                distribution_network(people=(people - new_connections),
-                                     energy_per_cell=(total_energy_per_cell - energy_per_cell))
+                No_of_HV_MV_subs2, No_of_MV_MV_subs2, No_of_HV_LV_subs2, No_of_MV_LV_subs2, \
+                generation_per_year2, peak_load2, total_nodes2 = \
+                Technology.distribution_network((people - new_connections), (total_energy_per_cell - energy_per_cell))
             hv_lines_total_length = max(HV_km1 - HV_km2, 0)
             mv_lines_connection_length = max(MV_km1 - MV_km2, 0)
             mv_lines_distribution_length = max(cluster_lv_lines_length1 - cluster_lv_lines_length2, 0)
@@ -335,7 +249,7 @@ class Technology:
         else:
             hv_lines_total_length, mv_lines_connection_length, mv_lines_distribution_length, total_lv_lines_length, num_transformers, \
             No_of_HV_MV_substation, No_of_MV_MV_substation, No_of_HV_LV_substation, No_of_MV_LV_substation, \
-            generation_per_year, peak_load, total_nodes = distribution_network(people, energy_per_cell)
+            generation_per_year, peak_load, total_nodes = Technology.distribution_network(people, energy_per_cell)
 
         try:
             int(conf_status)
@@ -464,6 +378,92 @@ class Technology:
             discounted_costs = (investments + operation_and_maintenance + fuel - salvage) / discount_factor
             discounted_generation = el_gen / discount_factor
             return np.sum(discounted_costs) / np.sum(discounted_generation)
+
+    def distribution_network(self, people, energy_per_cell, num_people_per_hh, grid_cell_area,
+                             additional_mv_line_length=0, productive_nodes=0, additional_transformer=0):
+        if energy_per_cell <= 0:
+            energy_per_cell = 0.0001
+        try:
+            int(energy_per_cell)
+        except ValueError:
+            energy_per_cell = 0.0001
+
+        if people <= 0:
+            people = 0.0001
+
+        consumption = energy_per_cell  # kWh/year
+        average_load = consumption / (1 - self.distribution_losses) / HOURS_PER_YEAR  # kW
+        peak_load = average_load / self.base_to_peak_load_ratio  # kW
+
+        try:
+            int(peak_load)
+        except ValueError:
+            peak_load = 1
+
+        # Sizing HV/MV
+        HV_to_MV_lines = self.HV_line_cost / self.MV_line_cost
+        max_MV_load = self.MV_line_amperage_limit * self.MV_line_type * HV_to_MV_lines
+
+        MV_km = 0
+        HV_km = 0
+        if peak_load <= max_MV_load and additional_mv_line_length < 50 and self.grid_price > 0:
+            MV_amperage = self.MV_LV_sub_station_type / self.MV_line_type
+            No_of_MV_lines = ceil(peak_load / (MV_amperage * self.MV_line_type))
+            MV_km = additional_mv_line_length * No_of_MV_lines
+        elif self.grid_price > 0:
+            HV_amperage = self.HV_LV_sub_station_type / self.HV_line_type
+            No_of_HV_lines = ceil(peak_load / (HV_amperage * self.HV_line_type))
+            HV_km = additional_mv_line_length * No_of_HV_lines
+
+        Smax = peak_load / self.power_factor
+        max_tranformer_area = pi * self.LV_line_max_length ** 2
+        total_nodes = (people / num_people_per_hh) + productive_nodes
+
+        try:
+            no_of_service_transf = ceil(
+                max(Smax / self.service_Transf_type, total_nodes / self.max_nodes_per_serv_trans,
+                    grid_cell_area / max_tranformer_area))
+        except ValueError:
+            no_of_service_transf = 1
+        transformer_radius = ((grid_cell_area / no_of_service_transf) / pi) ** 0.5
+        transformer_nodes = total_nodes / no_of_service_transf
+        transformer_load = peak_load / no_of_service_transf
+        cluster_radius = (grid_cell_area / pi) ** 0.5
+
+        # Sizing LV lines in settlement
+        if 2 / 3 * cluster_radius * transformer_load * 1000 < self.load_moment:
+            cluster_lv_lines_length = 2 / 3 * cluster_radius * no_of_service_transf
+            cluster_mv_lines_length = 0
+        else:
+            cluster_lv_lines_length = 0
+            # cluster_mv_lines_length = 2 / 3 * cluster_radius * no_of_service_transf
+            cluster_mv_lines_length = 2 * transformer_radius * no_of_service_transf
+
+        hh_area = grid_cell_area / total_nodes
+        hh_diameter = 2 * ((hh_area / pi) ** 0.5)
+
+        transformer_lv_lines_length = hh_diameter * total_nodes
+        No_of_HV_MV_subs = 0
+        No_of_MV_MV_subs = 0
+        No_of_HV_LV_subs = 0
+        No_of_MV_LV_subs = 0
+        No_of_HV_MV_subs += additional_transformer  # to connect the MV line to the HV grid
+
+        if cluster_mv_lines_length > 0 and HV_km > 0:
+            No_of_HV_MV_subs = ceil(peak_load / self.HV_LV_sub_station_type)  # 1
+        elif cluster_mv_lines_length > 0 and MV_km > 0:
+            No_of_MV_MV_subs = ceil(peak_load / self.MV_LV_sub_station_type)  # 1
+        elif cluster_lv_lines_length > 0 and HV_km > 0:
+            No_of_HV_LV_subs = ceil(peak_load / self.HV_LV_sub_station_type)  # 1
+        else:
+            No_of_MV_LV_subs = ceil(peak_load / self.MV_LV_sub_station_type)  # 1
+
+        LV_km = cluster_lv_lines_length + transformer_lv_lines_length
+
+        return HV_km, MV_km, cluster_mv_lines_length, LV_km, no_of_service_transf, \
+               No_of_HV_MV_subs, No_of_MV_MV_subs, No_of_HV_LV_subs, No_of_MV_LV_subs, \
+               consumption, peak_load, total_nodes
+
 
 class SettlementProcessor:
     """Processes the dataframe and adds all the columns to determine the cheapest option and the final costs and summaries
@@ -1386,10 +1386,7 @@ class SettlementProcessor:
 
         return new_lcoes, cell_path_adjusted, elecorder, cell_path_real
 
-    #Runs the grid extension algorithm
-
-
-    def calculate_new_connections(self,year,time_step,start_year):
+    def calculate_new_connections(self, year, time_step, start_year):
         """this method defines new connections for grid related purposes
 
         Arguments
@@ -1436,7 +1433,7 @@ class SettlementProcessor:
             self.df.loc[
                 self.df[SET_NEW_CONNECTIONS + "{}".format(year)] < 0, SET_NEW_CONNECTIONS + "{}".format(year)] = 0
 
-    #RESIDENTIAL DEMAND STARTS
+    # RESIDENTIAL DEMAND STARTS
     def set_residential_demand(self,rural_tier,urban_tier,num_people_per_hh_rural,num_people_per_hh_urban,productive_demand):
         """this method defines residential demand per tier level for each target year
 
