@@ -353,14 +353,33 @@ class Technology:
             return np.sum(discounted_costs) / np.sum(discounted_generation)
 
     def transmission_network(self, peak_load, additional_mv_line_length=0, additional_transformer=0,
-                             mv_distribution=0):
+                             mv_distribution=False):
+        """This method calculates the required components for connecting the settlement
+        Settlements can be connected to grid or a hydropower source
+        This includes potentially HV lines, MV lines and substations
+
+        Arguments
+        ---------
+        peak_load : float
+            Peak load in the settlement (kW)
+        additional_mv_line_length
+            Distance to connect the settlement
+        additional_transformer : int
+            If a transformer is needed on other end to connect to HV line
+        mv_distribution : bool
+            True if distribution network in settlement contains MV lines
+
+        Notes
+        -----
+        Based on: https://www.mdpi.com/1996-1073/12/7/1395
+        """
+
         mv_km = 0
         hv_km = 0
         no_of_hv_mv_subs = 0
         no_of_mv_mv_subs = 0
         no_of_hv_lv_subs = 0
         no_of_mv_lv_subs = 0
-        no_of_hv_mv_subs += additional_transformer  # to connect the MV line to the HV grid
 
         # Sizing HV/MV
         hv_to_mv_lines = self.hv_line_cost / self.mv_line_cost
@@ -375,19 +394,41 @@ class Technology:
             no_of_hv_lines = ceil(peak_load / (hv_amperage * self.hv_line_type))
             hv_km = additional_mv_line_length * no_of_hv_lines
 
-        if mv_distribution == 1 and hv_km > 0:
-            no_of_hv_mv_subs = ceil(peak_load / self.hv_lv_sub_station_type)  # 1
-        elif mv_distribution == 1 and mv_km > 0:
-            no_of_mv_mv_subs = ceil(peak_load / self.mv_lv_sub_station_type)  # 1
+        if mv_distribution and hv_km > 0:
+            no_of_hv_mv_subs = ceil(peak_load / self.hv_lv_sub_station_type)
+        elif mv_distribution and mv_km > 0:
+            no_of_mv_mv_subs = ceil(peak_load / self.mv_lv_sub_station_type)
         elif hv_km > 0:
-            no_of_hv_lv_subs = ceil(peak_load / self.hv_lv_sub_station_type)  # 1
+            no_of_hv_lv_subs = ceil(peak_load / self.hv_lv_sub_station_type)
         else:
-            no_of_mv_lv_subs = ceil(peak_load / self.mv_lv_sub_station_type)  # 1
+            no_of_mv_lv_subs = ceil(peak_load / self.mv_lv_sub_station_type)
+
+        no_of_hv_mv_subs += additional_transformer  # to connect the MV line to the HV grid
 
         return hv_km, mv_km, no_of_hv_mv_subs, no_of_mv_mv_subs, no_of_hv_lv_subs, no_of_mv_lv_subs
 
     def distribution_network(self, people, energy_per_cell, num_people_per_hh, grid_cell_area,
                              productive_nodes=0):
+        """This method calculates the required components for the distribution network
+        This includes potentially MV lines, LV lines and service transformers
+
+        Arguments
+        ---------
+        people : float
+            Number of people in settlement
+        energy_per_cell : float
+            Annual energy demand in settlement (kWh)
+        num_people_per_hh : float
+            Number of people per household in settlement
+        grid_cell_area : float
+            Area of settlement (km2)
+        productive_nodes : int
+            Additional connections (schools, health facilities, shops)
+
+        Notes
+        -----
+        Based on: https://www.mdpi.com/1996-1073/12/7/1395
+        """
 
         consumption = energy_per_cell  # kWh/year
         average_load = consumption / (1 - self.distribution_losses) / HOURS_PER_YEAR  # kW
@@ -425,22 +466,52 @@ class Technology:
         return cluster_mv_lines_length, lv_km, no_of_service_transf, consumption, peak_load, total_nodes
 
     def td_network_cost(self, people, new_connections, prev_code, total_energy_per_cell, energy_per_cell,
-                        num_people_per_hh, grid_cell_area, additional_mv_line_length=0, additional_transformer=0):
+                        num_people_per_hh, grid_cell_area, additional_mv_line_length=0, additional_transformer=0,
+                        productive_nodes=0):
+        """Calculates all the transmission and distribution network components
 
-        if people != new_connections and (prev_code == 1 or prev_code == 4 or prev_code == 5 or
-                                          prev_code == 6 or prev_code == 7 or prev_code == 8):
+        Parameters
+        ----------
+        people : float
+            Number of people in settlement
+        new_connections : float
+            Number of new people in settlement to connect
+        prev_code : int
+            Code representation of previous supply technology in settlement
+        total_energy_per_cell : float
+            Total annual energy demand in cell, including already met demand
+        energy_per_cell : float
+            Annual energy demand in cell, excluding already met demand
+        num_people_per_hh : float
+            Number of people per household in settlement
+        grid_cell_area : float
+            Area of settlement (km2)
+        additional_mv_line_length
+            Distance to connect the settlement
+        additional_transformer : int
+            If a transformer is needed on other end to connect to HV line
+        productive_nodes : int
+            Additional connections (schools, health facilities, shops)
+        """
 
-            # Start by calculating the distribution network required
+        if people != new_connections and (prev_code < 2 or prev_code > 3):
+            # If there is already a distribution network in the settlement, all calculations are mad twice.
+            # First the network required to meet the full demand is calculated, then the existing network is calc.
+            # The additional network components required is the difference between the two
+
+            # Start by calculating the distribution network required to meet all of the demand
             cluster_mv_lines_length1, cluster_lv_lines_length1, no_of_service_transf1, \
                 generation_per_year1, peak_load1, total_nodes1 = \
-                self.distribution_network(people, total_energy_per_cell, num_people_per_hh, grid_cell_area)
+                self.distribution_network(people, total_energy_per_cell, num_people_per_hh, grid_cell_area,
+                                          productive_nodes)
 
+            # Next calculate the network that is already there
             cluster_mv_lines_length2, cluster_lv_lines_length2, no_of_service_transf2, \
                 generation_per_year2, peak_load2, total_nodes2 = \
                 self.distribution_network((people - new_connections), (total_energy_per_cell - energy_per_cell),
-                                          num_people_per_hh, grid_cell_area)
+                                          num_people_per_hh, grid_cell_area, productive_nodes)
 
-            # Then calculate the transmission network (HV or MV lines plus transformers)
+            # Then calculate the difference between the two
             mv_lines_distribution_length = max(cluster_lv_lines_length1 - cluster_lv_lines_length2, 0)
             total_lv_lines_length = max(cluster_lv_lines_length1 - cluster_lv_lines_length2, 0)
             num_transformers = max(no_of_service_transf1 - no_of_service_transf2, 0)
@@ -448,11 +519,13 @@ class Technology:
             peak_load = max(peak_load1 - peak_load2, 0)
             total_nodes = max(total_nodes1 - total_nodes2, 0)
 
+            # Examine if there are any MV lines in the distribution network, used to determine transformer type
             if mv_lines_distribution_length > 0:
-                mv_distribution = 1
+                mv_distribution = True
             else:
-                mv_distribution = 0
+                mv_distribution = False
 
+            # Then calculate the transmission network (HV or MV lines plus transformers) using the same methodology
             hv_lines_total_length1, mv_lines_connection_length1, no_of_hv_mv_substation1, no_of_mv_mv_substation1, \
                 no_of_hv_lv_substation1, no_of_mv_lv_substation1 = \
                 self.transmission_network(peak_load1, additional_mv_line_length, additional_transformer,
@@ -471,13 +544,15 @@ class Technology:
             no_of_mv_lv_substation = max(no_of_mv_lv_substation1 - no_of_mv_lv_substation2, 0)
 
         else:
+            # If no distribution network is present, perform the calculations only once
             mv_lines_distribution_length, total_lv_lines_length, num_transformers, generation_per_year, peak_load, \
-                total_nodes = self.distribution_network(people, energy_per_cell, num_people_per_hh, grid_cell_area)
+                total_nodes = self.distribution_network(people, energy_per_cell, num_people_per_hh, grid_cell_area,
+                                                        productive_nodes)
 
             if mv_lines_distribution_length > 0:
-                mv_distribution = 1
+                mv_distribution = True
             else:
-                mv_distribution = 0
+                mv_distribution = False
 
             hv_lines_total_length, mv_lines_connection_length, no_of_hv_mv_substation, no_of_mv_mv_substation, \
                 no_of_hv_lv_substation, no_of_mv_lv_substation = \
