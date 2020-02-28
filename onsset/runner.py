@@ -316,7 +316,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
             onsseter.calc_summaries(df_summary, sumtechs, year)
 
-            onsseter.df['FinalElecCode' + str(year)] = onsseter.df['FinalElecCode' + str(year)].astype(int)
+        onsseter.df['FinalElecCode' + str(year)] = onsseter.df['FinalElecCode' + str(year)].astype(int)
 
         for i in range(len(onsseter.df.columns)):
             if onsseter.df.iloc[:, i].dtype == 'float64':
