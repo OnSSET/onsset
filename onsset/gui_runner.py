@@ -7,7 +7,7 @@ and asks the user to browse to the necessary input files
 import tkinter as tk
 from tkinter import filedialog, messagebox
 import pandas as pd
-from runner import calibration, scenario_run
+from runner import calibration, scenario
 
 root = tk.Tk()
 root.withdraw()
@@ -42,4 +42,4 @@ elif choice == 2:
     messagebox.showinfo('OnSSET', 'Browse to SUMMARIES folder and name the scenario to save outputs')
     summary_folder = filedialog.askdirectory()
 
-    scenario_run(specs_path, calibrated_csv_path, results_folder, summary_folder)
+    scenario(specs_path, calibrated_csv_path, results_folder, summary_folder)

@@ -1,7 +1,6 @@
 import logging
 from math import asin, ceil, cos, exp, log, pi, radians, sin, sqrt
 
-# from pyproj import Proj
 import numpy as np
 import pandas as pd
 
@@ -182,8 +181,9 @@ class Technology:
         cls.load_moment = load_moment  # for 50mm aluminum conductor under 5% voltage drop (kW m)
 
     def get_lcoe(self, energy_per_cell, people, num_people_per_hh, start_year, end_year, new_connections,
-                 total_energy_per_cell, prev_code, conf_status=0, capacity_factor=0, grid_penalty_ratio=1,
-                 fuel_cost=0, elec_loop=0, get_investment_cost=False, get_investment_cost_lv=False,
+                 total_energy_per_cell, prev_code, grid_cell_area, conf_status=0, additional_mv_line_length=0,
+                 capacity_factor=0, grid_penalty_ratio=1, fuel_cost=0, elec_loop=0, productive_nodes=0,
+                 additional_transformer=0, get_investment_cost=False, get_investment_cost_lv=False,
                  get_investment_cost_mv=False, get_investment_cost_hv=False, get_investment_cost_transformer=False,
                  get_investment_cost_connection=False):
         """
@@ -219,34 +219,11 @@ class Technology:
         if capacity_factor == 0:
             capacity_factor = self.capacity_factor
 
-        if people != new_connections and (prev_code == 1 or prev_code == 4 or prev_code == 5 or
-                                          prev_code == 6 or prev_code == 7 or prev_code == 8):
-            hv_km1, mv_km1, cluster_mv_lines_length1, cluster_lv_lines_length1, no_of_service_transf1, \
-                no_of_hv_mv_subs1, no_of_mv_mv_subs1, no_of_hv_lv_subs1, no_of_mv_lv_subs1, \
-                generation_per_year1, peak_load1, total_nodes1 = \
-                Technology.distribution_network(people, total_energy_per_cell)
-
-            hv_km2, mv_km2, cluster_mv_lines_length2, cluster_lv_lines_length2, no_of_service_transf2, \
-                no_of_hv_mv_subs2, no_of_mv_mv_subs2, no_of_hv_lv_subs2, no_of_mv_lv_subs2, \
-            generation_per_year2, peak_load2, total_nodes2 = \
-                Technology.distribution_network((people - new_connections), (total_energy_per_cell - energy_per_cell))
-            hv_lines_total_length = max(hv_km1 - hv_km2, 0)
-            mv_lines_connection_length = max(mv_km1 - mv_km2, 0)
-            mv_lines_distribution_length = max(cluster_lv_lines_length1 - cluster_lv_lines_length2, 0)
-            total_lv_lines_length = max(cluster_lv_lines_length1 - cluster_lv_lines_length2, 0)
-            num_transformers = max(no_of_service_transf1 - no_of_service_transf2, 0)
-            generation_per_year = max(generation_per_year1 - generation_per_year2, 0)
-            peak_load = max(peak_load1 - peak_load2, 0)
-            no_of_hv_lv_substation = max(no_of_hv_lv_subs1 - no_of_hv_lv_subs2, 0)
-            no_of_hv_mv_substation = max(no_of_hv_mv_subs1 - no_of_hv_mv_subs2, 0)
-            no_of_mv_mv_substation = max(no_of_mv_mv_subs1 - no_of_mv_mv_subs2, 0)
-            no_of_mv_lv_substation = max(no_of_mv_lv_subs1 - no_of_mv_lv_subs2, 0)
-            total_nodes = max(total_nodes1 - total_nodes2, 0)
-        else:
-            hv_lines_total_length, mv_lines_connection_length, mv_lines_distribution_length, total_lv_lines_length, \
-                num_transformers, no_of_hv_mv_substation, no_of_mv_mv_substation, no_of_hv_lv_substation, \
-                no_of_mv_lv_substation, generation_per_year, peak_load, total_nodes = \
-                Technology.distribution_network(people, energy_per_cell)
+        hv_lines_total_length, mv_lines_connection_length, mv_lines_distribution_length, total_lv_lines_length, \
+            num_transformers, no_of_hv_mv_substation, no_of_mv_mv_substation, no_of_hv_lv_substation, \
+            no_of_mv_lv_substation, generation_per_year, peak_load, total_nodes = \
+            self.td_network_cost(people, new_connections, prev_code, total_energy_per_cell, energy_per_cell,
+                                 num_people_per_hh, grid_cell_area, additional_mv_line_length, additional_transformer)
 
         try:
             int(conf_status)
@@ -375,41 +352,46 @@ class Technology:
             discounted_generation = el_gen / discount_factor
             return np.sum(discounted_costs) / np.sum(discounted_generation)
 
-    def distribution_network(self, people, energy_per_cell, num_people_per_hh, grid_cell_area,
-                             additional_mv_line_length=0, productive_nodes=0, additional_transformer=0):
-        if energy_per_cell <= 0:
-            energy_per_cell = 0.0001
-        try:
-            int(energy_per_cell)
-        except ValueError:
-            energy_per_cell = 0.0001
-
-        if people <= 0:
-            people = 0.0001
-
-        consumption = energy_per_cell  # kWh/year
-        average_load = consumption / (1 - self.distribution_losses) / HOURS_PER_YEAR  # kW
-        peak_load = average_load / self.base_to_peak_load_ratio  # kW
-
-        try:
-            int(peak_load)
-        except ValueError:
-            peak_load = 1
+    def transmission_network(self, peak_load, additional_mv_line_length=0, additional_transformer=0,
+                             mv_distribution=0):
+        mv_km = 0
+        hv_km = 0
+        no_of_hv_mv_subs = 0
+        no_of_mv_mv_subs = 0
+        no_of_hv_lv_subs = 0
+        no_of_mv_lv_subs = 0
+        no_of_hv_mv_subs += additional_transformer  # to connect the MV line to the HV grid
 
         # Sizing HV/MV
         hv_to_mv_lines = self.hv_line_cost / self.mv_line_cost
         max_mv_load = self.mv_line_amperage_limit * self.mv_line_type * hv_to_mv_lines
 
-        mv_km = 0
-        hv_km = 0
-        if peak_load <= max_mv_load and additional_mv_line_length < 50 and self.grid_price > 0:
+        if peak_load <= max_mv_load and additional_mv_line_length < 50:
             mv_amperage = self.mv_lv_sub_station_type / self.mv_line_type
             no_of_mv_lines = ceil(peak_load / (mv_amperage * self.mv_line_type))
             mv_km = additional_mv_line_length * no_of_mv_lines
-        elif self.grid_price > 0:
+        else:
             hv_amperage = self.hv_lv_sub_station_type / self.hv_line_type
             no_of_hv_lines = ceil(peak_load / (hv_amperage * self.hv_line_type))
             hv_km = additional_mv_line_length * no_of_hv_lines
+
+        if mv_distribution == 1 and hv_km > 0:
+            no_of_hv_mv_subs = ceil(peak_load / self.hv_lv_sub_station_type)  # 1
+        elif mv_distribution == 1 and mv_km > 0:
+            no_of_mv_mv_subs = ceil(peak_load / self.mv_lv_sub_station_type)  # 1
+        elif hv_km > 0:
+            no_of_hv_lv_subs = ceil(peak_load / self.hv_lv_sub_station_type)  # 1
+        else:
+            no_of_mv_lv_subs = ceil(peak_load / self.mv_lv_sub_station_type)  # 1
+
+        return hv_km, mv_km, no_of_hv_mv_subs, no_of_mv_mv_subs, no_of_hv_lv_subs, no_of_mv_lv_subs
+
+    def distribution_network(self, people, energy_per_cell, num_people_per_hh, grid_cell_area,
+                             productive_nodes=0):
+
+        consumption = energy_per_cell  # kWh/year
+        average_load = consumption / (1 - self.distribution_losses) / HOURS_PER_YEAR  # kW
+        peak_load = average_load / self.base_to_peak_load_ratio  # kW
 
         s_max = peak_load / self.power_factor
         max_transformer_area = pi * self.lv_line_max_length ** 2
@@ -419,7 +401,7 @@ class Technology:
             no_of_service_transf = ceil(
                 max(s_max / self.service_transf_type, total_nodes / self.max_nodes_per_serv_trans,
                     grid_cell_area / max_transformer_area))
-        except ValueError:
+        except ValueError:  # TODO Review if this is needed
             no_of_service_transf = 1
         transformer_radius = ((grid_cell_area / no_of_service_transf) / pi) ** 0.5
         transformer_load = peak_load / no_of_service_transf
@@ -431,33 +413,80 @@ class Technology:
             cluster_mv_lines_length = 0
         else:
             cluster_lv_lines_length = 0
-            # cluster_mv_lines_length = 2 / 3 * cluster_radius * no_of_service_transf
             cluster_mv_lines_length = 2 * transformer_radius * no_of_service_transf
 
         hh_area = grid_cell_area / total_nodes
         hh_diameter = 2 * ((hh_area / pi) ** 0.5)
 
         transformer_lv_lines_length = hh_diameter * total_nodes
-        no_of_hv_mv_subs = 0
-        no_of_mv_mv_subs = 0
-        no_of_hv_lv_subs = 0
-        no_of_mv_lv_subs = 0
-        no_of_hv_mv_subs += additional_transformer  # to connect the MV line to the HV grid
-
-        if cluster_mv_lines_length > 0 and hv_km > 0:
-            no_of_hv_mv_subs = ceil(peak_load / self.hv_lv_sub_station_type)  # 1
-        elif cluster_mv_lines_length > 0 and mv_km > 0:
-            no_of_mv_mv_subs = ceil(peak_load / self.mv_lv_sub_station_type)  # 1
-        elif cluster_lv_lines_length > 0 and hv_km > 0:
-            no_of_hv_lv_subs = ceil(peak_load / self.hv_lv_sub_station_type)  # 1
-        else:
-            no_of_mv_lv_subs = ceil(peak_load / self.mv_lv_sub_station_type)  # 1
 
         lv_km = cluster_lv_lines_length + transformer_lv_lines_length
 
-        return hv_km, mv_km, cluster_mv_lines_length, lv_km, no_of_service_transf, \
-            no_of_hv_mv_subs, no_of_mv_mv_subs, no_of_hv_lv_subs, no_of_mv_lv_subs, \
-            consumption, peak_load, total_nodes
+        return cluster_mv_lines_length, lv_km, no_of_service_transf, consumption, peak_load, total_nodes
+
+    def td_network_cost(self, people, new_connections, prev_code, total_energy_per_cell, energy_per_cell,
+                        num_people_per_hh, grid_cell_area, additional_mv_line_length=0, additional_transformer=0):
+
+        if people != new_connections and (prev_code == 1 or prev_code == 4 or prev_code == 5 or
+                                          prev_code == 6 or prev_code == 7 or prev_code == 8):
+
+            # Start by calculating the distribution network required
+            cluster_mv_lines_length1, cluster_lv_lines_length1, no_of_service_transf1, \
+                generation_per_year1, peak_load1, total_nodes1 = \
+                self.distribution_network(people, total_energy_per_cell, num_people_per_hh, grid_cell_area)
+
+            cluster_mv_lines_length2, cluster_lv_lines_length2, no_of_service_transf2, \
+                generation_per_year2, peak_load2, total_nodes2 = \
+                self.distribution_network((people - new_connections), (total_energy_per_cell - energy_per_cell),
+                                          num_people_per_hh, grid_cell_area)
+
+            # Then calculate the transmission network (HV or MV lines plus transformers)
+            mv_lines_distribution_length = max(cluster_lv_lines_length1 - cluster_lv_lines_length2, 0)
+            total_lv_lines_length = max(cluster_lv_lines_length1 - cluster_lv_lines_length2, 0)
+            num_transformers = max(no_of_service_transf1 - no_of_service_transf2, 0)
+            generation_per_year = max(generation_per_year1 - generation_per_year2, 0)
+            peak_load = max(peak_load1 - peak_load2, 0)
+            total_nodes = max(total_nodes1 - total_nodes2, 0)
+
+            if mv_lines_distribution_length > 0:
+                mv_distribution = 1
+            else:
+                mv_distribution = 0
+
+            hv_lines_total_length1, mv_lines_connection_length1, no_of_hv_mv_substation1, no_of_mv_mv_substation1, \
+                no_of_hv_lv_substation1, no_of_mv_lv_substation1 = \
+                self.transmission_network(peak_load1, additional_mv_line_length, additional_transformer,
+                                          mv_distribution=mv_distribution)
+
+            hv_lines_total_length2, mv_lines_connection_length2, no_of_hv_mv_substation2, no_of_mv_mv_substation2, \
+                no_of_hv_lv_substation2, no_of_mv_lv_substation2 = \
+                self.transmission_network(peak_load2, additional_mv_line_length, additional_transformer,
+                                          mv_distribution=mv_distribution)
+
+            hv_lines_total_length = max(hv_lines_total_length1 - hv_lines_total_length2, 0)
+            mv_lines_connection_length = max(mv_lines_connection_length1 - mv_lines_connection_length2, 0)
+            no_of_hv_lv_substation = max(no_of_hv_lv_substation1 - no_of_hv_lv_substation2, 0)
+            no_of_hv_mv_substation = max(no_of_hv_mv_substation1 - no_of_hv_mv_substation2, 0)
+            no_of_mv_mv_substation = max(no_of_mv_mv_substation1 - no_of_mv_mv_substation2, 0)
+            no_of_mv_lv_substation = max(no_of_mv_lv_substation1 - no_of_mv_lv_substation2, 0)
+
+        else:
+            mv_lines_distribution_length, total_lv_lines_length, num_transformers, generation_per_year, peak_load, \
+                total_nodes = self.distribution_network(people, energy_per_cell, num_people_per_hh, grid_cell_area)
+
+            if mv_lines_distribution_length > 0:
+                mv_distribution = 1
+            else:
+                mv_distribution = 0
+
+            hv_lines_total_length, mv_lines_connection_length, no_of_hv_mv_substation, no_of_mv_mv_substation, \
+                no_of_hv_lv_substation, no_of_mv_lv_substation = \
+                self.transmission_network(peak_load, additional_mv_line_length, additional_transformer,
+                                          mv_distribution=mv_distribution)
+
+        return hv_lines_total_length, mv_lines_connection_length, mv_lines_distribution_length, total_lv_lines_length, \
+            num_transformers, no_of_hv_mv_substation, no_of_mv_mv_substation, no_of_hv_lv_substation, \
+            no_of_mv_lv_substation, generation_per_year, peak_load, total_nodes
 
 
 class SettlementProcessor:
@@ -616,7 +645,7 @@ class SettlementProcessor:
 
         Arguments
         ---------
-        column : list
+        column : series
 
         Notes
         -----
@@ -856,6 +885,7 @@ class SettlementProcessor:
         total_elec_ratio = elec_actual
         urban_elec_ratio = elec_actual_urban
         rural_elec_ratio = elec_actual_rural
+        elec_modelled = 0
         factor = (total_pop * total_elec_ratio) / (urban_pop * urban_elec_ratio + rural_pop * rural_elec_ratio)
         urban_elec_ratio *= factor
         rural_elec_ratio *= factor
@@ -877,6 +907,7 @@ class SettlementProcessor:
         else:
             self.df[SET_CALIB_GRID_DIST] = self.df[SET_HV_DIST_CURRENT]
             priority = 2
+            dist_limit = max_hv_dist
 
         condition = 0
 
@@ -947,9 +978,9 @@ class SettlementProcessor:
                 i = 0
                 td_dist_2 = 0.1
                 while elec_actual - elec_modelled > 0.01:
+                    pop_elec_2 = self.df.loc[(self.df[SET_ELEC_CURRENT] == 0) & (self.df[SET_POP_CALIB] > min_pop) &
+                                             (self.df[SET_CALIB_GRID_DIST] < td_dist_2), SET_POP_CALIB].sum()
                     if i < 50:
-                        pop_elec_2 = self.df.loc[(self.df[SET_ELEC_CURRENT] == 0) & (self.df[SET_POP_CALIB] > min_pop) &
-                                                 (self.df[SET_CALIB_GRID_DIST] < td_dist_2), SET_POP_CALIB].sum()
                         if (pop_elec + pop_elec_2) / total_pop > elec_actual:
                             elec_modelled = (pop_elec + pop_elec_2) / total_pop
                             self.df.loc[(self.df[SET_ELEC_CURRENT] == 0) & (self.df[SET_POP_CALIB] > min_pop) &
@@ -980,7 +1011,7 @@ class SettlementProcessor:
                     'No transformers or MV lines were identified as input data; '
                     'therefore we proceed to the calibration with HV line info')
                 self.df.loc[
-                    (self.df[SET_CALIB_GRID_DIST] < max_hv_dist) & (self.df[SET_NIGHT_LIGHTS] > min_night_lights) & (
+                    (self.df[SET_CALIB_GRID_DIST] < dist_limit) & (self.df[SET_NIGHT_LIGHTS] > min_night_lights) & (
                             self.df[SET_POP_CALIB] > min_pop), SET_ELEC_CURRENT] = 1
 
                 urban_elec_modelled = self.df.loc[
@@ -1013,9 +1044,9 @@ class SettlementProcessor:
                 i = 0
                 td_dist_2 = 0.1
                 while elec_actual - elec_modelled > 0.01:
+                    pop_elec_2 = self.df.loc[(self.df[SET_ELEC_CURRENT] == 0) & (self.df[SET_POP_CALIB] > min_pop) &
+                                             (self.df[SET_CALIB_GRID_DIST] < td_dist_2), SET_POP_CALIB].sum()
                     if i < 50:
-                        pop_elec_2 = self.df.loc[(self.df[SET_ELEC_CURRENT] == 0) & (self.df[SET_POP_CALIB] > min_pop) &
-                                                 (self.df[SET_CALIB_GRID_DIST] < td_dist_2), SET_POP_CALIB].sum()
                         if (pop_elec + pop_elec_2) / total_pop > elec_actual:
                             elec_modelled = (pop_elec + pop_elec_2) / total_pop
                             self.df.loc[(self.df[SET_ELEC_CURRENT] == 0) & (self.df[SET_POP_CALIB] > min_pop) &
@@ -1136,6 +1167,7 @@ class SettlementProcessor:
         confl = self.df[SET_CONFLICT].tolist()
         enerperhh = self.df[SET_ENERGY_PER_CELL + "{}".format(year)]
         nupppphh = self.df[SET_NUM_PEOPLE_PER_HH]
+        grid_cell_area = self.df[SET_GRID_CELL_AREA]
         prev_code = self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)]
         new_connections = self.df[SET_NEW_CONNECTIONS + "{}".format(year)]
         total_energy_per_cell = self.df[SET_TOTAL_ENERGY_PER_CELL]
@@ -1211,6 +1243,7 @@ class SettlementProcessor:
                                                total_energy_per_cell=total_energy_per_cell[unelec],
                                                prev_code=prev_code[unelec],
                                                num_people_per_hh=nupppphh[unelec],
+                                               grid_cell_area=grid_cell_area[unelec],
                                                conf_status=confl[unelec],
                                                additional_mv_line_length=0,
                                                elec_loop=0)
@@ -1267,6 +1300,7 @@ class SettlementProcessor:
                                                total_energy_per_cell=total_energy_per_cell[unelec],
                                                prev_code=prev_code[unelec],
                                                num_people_per_hh=nupppphh[unelec],
+                                               grid_cell_area=grid_cell_area[unelec],
                                                conf_status=confl[unelec],
                                                additional_mv_line_length=dist_adjusted,
                                                elec_loop=0)
@@ -1309,6 +1343,7 @@ class SettlementProcessor:
                                                total_energy_per_cell=total_energy_per_cell[unelec],
                                                prev_code=prev_code[unelec],
                                                num_people_per_hh=nupppphh[unelec],
+                                               grid_cell_area=grid_cell_area[unelec],
                                                conf_status=confl[unelec],
                                                additional_mv_line_length=dist_adjusted,
                                                elec_loop=elec_loop_value,
@@ -1357,6 +1392,7 @@ class SettlementProcessor:
                                                        total_energy_per_cell=total_energy_per_cell[unelec],
                                                        prev_code=prev_code[unelec],
                                                        num_people_per_hh=nupppphh[unelec],
+                                                       grid_cell_area=grid_cell_area[unelec],
                                                        conf_status=confl[unelec],
                                                        additional_mv_line_length=dist_adjusted,
                                                        elec_loop=elecorder[electrified[closest_elec_node]] + 1)
@@ -1436,8 +1472,8 @@ class SettlementProcessor:
         ---------
         rural_tier : int
         urban_tier : int
-        num_people_per_hh_rural : int
-        num_people_per_hh_urban : int
+        num_people_per_hh_rural : float
+        num_people_per_hh_urban : float
         productive_demand : int
 
         """
@@ -1601,6 +1637,7 @@ class SettlementProcessor:
                                                   total_energy_per_cell=row[SET_TOTAL_ENERGY_PER_CELL],
                                                   prev_code=row[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
                                                   num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
+                                                  grid_cell_area=row[SET_GRID_CELL_AREA],
                                                   conf_status=row[SET_CONFLICT],
                                                   mv_line_length=row[SET_HYDRO_DIST])
             else:
@@ -1622,6 +1659,7 @@ class SettlementProcessor:
                                             total_energy_per_cell=row[SET_TOTAL_ENERGY_PER_CELL],
                                             prev_code=row[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
                                             num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
+                                            grid_cell_area=row[SET_GRID_CELL_AREA],
                                             conf_status=row[SET_CONFLICT],
                                             capacity_factor=row[SET_GHI] / HOURS_PER_YEAR)
             if row[SET_GHI] > 1000
@@ -1637,6 +1675,7 @@ class SettlementProcessor:
                                               total_energy_per_cell=row[SET_TOTAL_ENERGY_PER_CELL],
                                               prev_code=row[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
                                               num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
+                                              grid_cell_area=row[SET_GRID_CELL_AREA],
                                               conf_status=row[SET_CONFLICT],
                                               capacity_factor=row[SET_WINDCF])
             if row[SET_WINDCF] > 0.1 else 99,
@@ -1656,6 +1695,7 @@ class SettlementProcessor:
                                                     total_energy_per_cell=row[SET_TOTAL_ENERGY_PER_CELL],
                                                     prev_code=row[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
                                                     num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
+                                                    grid_cell_area=row[SET_GRID_CELL_AREA],
                                                     conf_status=row[SET_CONFLICT],
                                                     fuel_cost=row[SET_MG_DIESEL_FUEL + "{}".format(year)],
                                                     ), axis=1)
@@ -1670,6 +1710,7 @@ class SettlementProcessor:
                                                     total_energy_per_cell=row[SET_TOTAL_ENERGY_PER_CELL],
                                                     prev_code=row[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
                                                     num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
+                                                    grid_cell_area=row[SET_GRID_CELL_AREA],
                                                     conf_status=row[SET_CONFLICT],
                                                     fuel_cost=row[SET_SA_DIESEL_FUEL + "{}".format(year)],
                                                     ), axis=1)
@@ -1684,6 +1725,7 @@ class SettlementProcessor:
                                             total_energy_per_cell=row[SET_TOTAL_ENERGY_PER_CELL],
                                             prev_code=row[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
                                             num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
+                                            grid_cell_area=row[SET_GRID_CELL_AREA],
                                             conf_status=row[SET_CONFLICT],
                                             capacity_factor=row[SET_GHI] / HOURS_PER_YEAR) if row[SET_GHI] > 1000
             else 99,
@@ -1795,6 +1837,7 @@ class SettlementProcessor:
                                                total_energy_per_cell=row[SET_TOTAL_ENERGY_PER_CELL],
                                                prev_code=row[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
                                                num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
+                                               grid_cell_area=row[SET_GRID_CELL_AREA],
                                                conf_status=row[SET_CONFLICT],
                                                fuel_cost=row[SET_SA_DIESEL_FUEL + "{}".format(year)],
                                                get_investment_cost=True)
@@ -1808,6 +1851,7 @@ class SettlementProcessor:
                                            total_energy_per_cell=row[SET_TOTAL_ENERGY_PER_CELL],
                                            prev_code=row[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
                                            num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
+                                           grid_cell_area=row[SET_GRID_CELL_AREA],
                                            capacity_factor=row[SET_GHI] / HOURS_PER_YEAR,
                                            conf_status=row[SET_CONFLICT],
                                            get_investment_cost=True)
@@ -1821,6 +1865,7 @@ class SettlementProcessor:
                                              total_energy_per_cell=row[SET_TOTAL_ENERGY_PER_CELL],
                                              prev_code=row[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
                                              num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
+                                             grid_cell_area=row[SET_GRID_CELL_AREA],
                                              capacity_factor=row[SET_WINDCF],
                                              conf_status=row[SET_CONFLICT],
                                              get_investment_cost=True)
@@ -1834,6 +1879,7 @@ class SettlementProcessor:
                                                total_energy_per_cell=row[SET_TOTAL_ENERGY_PER_CELL],
                                                prev_code=row[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
                                                num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
+                                               grid_cell_area=row[SET_GRID_CELL_AREA],
                                                conf_status=row[SET_CONFLICT],
                                                fuel_cost=row[SET_MG_DIESEL_FUEL + "{}".format(year)],
                                                get_investment_cost=True)
@@ -1847,6 +1893,7 @@ class SettlementProcessor:
                                            total_energy_per_cell=row[SET_TOTAL_ENERGY_PER_CELL],
                                            prev_code=row[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
                                            num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
+                                           grid_cell_area=row[SET_GRID_CELL_AREA],
                                            capacity_factor=row[SET_GHI] / HOURS_PER_YEAR,
                                            conf_status=row[SET_CONFLICT],
                                            get_investment_cost=True)
@@ -1860,6 +1907,7 @@ class SettlementProcessor:
                                               total_energy_per_cell=row[SET_TOTAL_ENERGY_PER_CELL],
                                               prev_code=row[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
                                               num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
+                                              grid_cell_area=row[SET_GRID_CELL_AREA],
                                               conf_status=row[SET_CONFLICT],
                                               mv_line_length=row[SET_HYDRO_DIST],
                                               get_investment_cost=True)
@@ -1873,6 +1921,7 @@ class SettlementProcessor:
                                           total_energy_per_cell=row[SET_TOTAL_ENERGY_PER_CELL],
                                           prev_code=row[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
                                           num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
+                                          grid_cell_area=row[SET_GRID_CELL_AREA],
                                           conf_status=row[SET_CONFLICT],
                                           additional_mv_line_length=row[SET_MIN_GRID_DIST + "{}".format(year)],
                                           elec_loop=row[SET_ELEC_ORDER + "{}".format(year)],
