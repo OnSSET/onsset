@@ -120,6 +120,7 @@ class Technology:
                  diesel_price=0.0,  # USD/litre
                  grid_price=0.0,  # USD/kWh for grid electricity
                  standalone=False,
+                 mini_grid=False,
                  existing_grid_cost_ratio=0.1,  # percentage
                  grid_capacity_investment=0.0,  # USD/kW for on-grid capacity investments (excluding grid itself)
                  diesel_truck_consumption=0,  # litres/hour
@@ -138,6 +139,7 @@ class Technology:
         self.diesel_price = diesel_price
         self.grid_price = grid_price
         self.standalone = standalone
+        self.mini_grid = mini_grid
         self.existing_grid_cost_ratio = existing_grid_cost_ratio
         self.grid_capacity_investment = grid_capacity_investment
         self.diesel_truck_consumption = diesel_truck_consumption
@@ -158,7 +160,6 @@ class Technology:
         cls.end_year = end_year
 
         # RUN_PARAM: Here are the assumptions related to cost and physical properties of grid extension elements
-        # REVIEW - A final revision is needed before publishing
         cls.discount_rate = discount_rate
         cls.hv_line_type = hv_line_type  # kV
         cls.hv_line_cost = hv_line_cost  # $/km for 69kV
@@ -181,108 +182,93 @@ class Technology:
         cls.load_moment = load_moment  # for 50mm aluminum conductor under 5% voltage drop (kW m)
 
     def get_lcoe(self, energy_per_cell, people, num_people_per_hh, start_year, end_year, new_connections,
-                 total_energy_per_cell, prev_code, grid_cell_area, conf_status=0, additional_mv_line_length=0,
-                 capacity_factor=0, grid_penalty_ratio=1, fuel_cost=0, elec_loop=0, productive_nodes=0,
-                 additional_transformer=0, get_investment_cost=False, get_investment_cost_lv=False,
-                 get_investment_cost_mv=False, get_investment_cost_hv=False, get_investment_cost_transformer=False,
-                 get_investment_cost_connection=False):
-        """
-        Calculates the LCOE depending on the parameters. Optionally calculates the investment cost instead.
+                 total_energy_per_cell, prev_code, grid_cell_area, conf_status=0, additional_mv_line_length=0.0,
+                 capacity_factor=0.9, grid_penalty_ratio=1, fuel_cost=0, elec_loop=0, productive_nodes=0,
+                 additional_transformer=0, get_investment_cost=False):
+        """Calculates the LCOE depending on the parameters. Optionally calculates the investment cost instead.
 
-        The only required parameters are energy_per_cell, people and num_people_per_hh
-        additional_mv_line_length required for grid
-        capacity_factor required for PV and wind
-        mv_line_length required for hydro
-        travel_hours required for diesel
+        Parameters
+        ----------
+        people : float
+            Number of people in settlement
+        new_connections : float
+            Number of new people in settlement to connect
+        prev_code : int
+            Code representation of previous supply technology in settlement
+        total_energy_per_cell : float
+            Total annual energy demand in cell, including already met demand
+        energy_per_cell : float
+            Annual energy demand in cell, excluding already met demand
+        num_people_per_hh : float
+            Number of people per household in settlement
+        grid_cell_area : float
+            Area of settlement (km2)
+        additional_mv_line_length : float
+            Distance to connect the settlement
+        additional_transformer : int
+            If a transformer is needed on other end to connect to HV line
+        productive_nodes : int
+            Additional connections (schools, health facilities, shops)
+        elec_loop : int
+            Round of extension in grid extension algorithm
+        penalty : float
+            Cost penalty factor for T&D network, e.g. https://www.mdpi.com/2071-1050/12/3/777
+        start_year : int
+        end_year : int
+        capacity_factor : float
+        grid_penalty_ratio : float
+        fuel_cost : float
+        get_investment_cost : float
+        conf_status : float
+
+        Returns
+        -------
+        lcoe or discounted investment cost
         """
 
         if people == 0:
-            # If there are no people, the investment cost is zero.
-            if get_investment_cost:
-                return 0
-            # Otherwise we set the people low (prevent div/0 error) and continue.
-            else:
-                people = 0.00001
+            people = 0.00001  # Set the people low (prevent div/0 error)
 
         if energy_per_cell == 0:
-            # If there is no demand, the investment cost is zero.
             if get_investment_cost:
-                return 0
-            # Otherwise we set the people low (prevent div/0 error) and continue.
+                return 0  # If there is no demand, the investment cost is zero.
             else:
-                energy_per_cell = 0.000000000001
+                energy_per_cell = 0.000000000001  # Otherwise set the demand low (prevent div/0 error)
 
         if grid_penalty_ratio == 0:
             grid_penalty_ratio = self.grid_penalty_ratio
 
-        # If a new capacity factor isn't given, use the class capacity factor (for hydro, diesel etc)
-        if capacity_factor == 0:
-            capacity_factor = self.capacity_factor
-
-        hv_lines_total_length, mv_lines_connection_length, mv_lines_distribution_length, total_lv_lines_length, \
-            num_transformers, no_of_hv_mv_substation, no_of_mv_mv_substation, no_of_hv_lv_substation, \
-            no_of_mv_lv_substation, generation_per_year, peak_load, total_nodes = \
-            self.td_network_cost(people, new_connections, prev_code, total_energy_per_cell, energy_per_cell,
-                                 num_people_per_hh, grid_cell_area, additional_mv_line_length, additional_transformer)
-
-        try:
-            int(conf_status)
-        except ValueError:
-            conf_status = 0
         conf_grid_pen = {0: 1, 1: 1.1, 2: 1.25, 3: 1.5, 4: 2}
-        # The investment and O&M costs are different for grid and non-grid solutions
+        penalty = conf_grid_pen[conf_status]
+        generation_per_year, peak_load, td_investment_cost = self.td_network_cost(people, new_connections, prev_code,
+                                                                                  total_energy_per_cell,
+                                                                                  energy_per_cell, num_people_per_hh,
+                                                                                  grid_cell_area,
+                                                                                  additional_mv_line_length,
+                                                                                  additional_transformer,
+                                                                                  productive_nodes,
+                                                                                  elec_loop,
+                                                                                  penalty)
+
+        td_investment_cost = td_investment_cost * grid_penalty_ratio
+        td_om_cost = td_investment_cost * self.om_of_td_lines * conf_grid_pen[conf_status]
+        installed_capacity = peak_load / capacity_factor
+
+        cap_cost = 0
+        for key in self.capital_cost:
+            if self.standalone and installed_capacity / (people / num_people_per_hh) < key:
+                cap_cost = self.capital_cost[key]
+                break
+            elif installed_capacity < key:
+                cap_cost = self.capital_cost[key]
+                break
+
+        capital_investment = installed_capacity * cap_cost * conf_grid_pen[conf_status]
+        total_om_cost = td_om_cost + (cap_cost * conf_grid_pen[conf_status] * self.om_costs * installed_capacity)
+        total_investment_cost = td_investment_cost + capital_investment
+
         if self.grid_price > 0:
-            td_investment_cost = (hv_lines_total_length * self.hv_line_cost * (
-                    1 + self.existing_grid_cost_ratio * elec_loop) +
-                                  mv_lines_connection_length * self.mv_line_cost * (
-                                          1 + self.existing_grid_cost_ratio * elec_loop) +
-                                  total_lv_lines_length * self.lv_line_cost +
-                                  mv_lines_distribution_length * self.mv_line_cost +
-                                  num_transformers * self.service_transf_cost +
-                                  total_nodes * self.connection_cost_per_hh +
-                                  no_of_hv_lv_substation * self.hv_lv_sub_station_cost +
-                                  no_of_hv_mv_substation * self.hv_mv_sub_station_cost +
-                                  no_of_mv_mv_substation * self.mv_mv_sub_station_cost +
-                                  no_of_mv_lv_substation * self.mv_lv_sub_station_cost) * conf_grid_pen[conf_status]
-            td_investment_cost = td_investment_cost * grid_penalty_ratio
-            td_om_cost = td_investment_cost * self.om_of_td_lines
-
-            total_investment_cost = td_investment_cost
-            total_om_cost = td_om_cost
             fuel_cost = self.grid_price  # TODO / (1 - self.distribution_losses) REVIEW
-        else:
-            # TODO: Possibly add substation here for mini-grids
-            conflict_sa_pen = {0: 1, 1: 1.03, 2: 1.07, 3: 1.125, 4: 1.25}
-            conflict_mg_pen = {0: 1, 1: 1.05, 2: 1.125, 3: 1.25, 4: 1.5}
-            total_lv_lines_length *= 0 if self.standalone else 1
-            mv_lines_distribution_length *= 0 if self.standalone else 1
-            mv_total_line_cost = self.mv_line_cost * mv_lines_distribution_length * conflict_mg_pen[conf_status]
-            lv_total_line_cost = self.lv_line_cost * total_lv_lines_length * conflict_mg_pen[conf_status]
-            service_transformer_total_cost = 0 if self.standalone else num_transformers * self.service_transf_cost * \
-                conflict_mg_pen[conf_status]
-            installed_capacity = peak_load / capacity_factor
-            td_investment_cost = mv_total_line_cost + lv_total_line_cost + total_nodes * self.connection_cost_per_hh + \
-                service_transformer_total_cost
-            td_om_cost = td_investment_cost * self.om_of_td_lines * conflict_sa_pen[conf_status] if self.standalone \
-                else td_investment_cost * self.om_of_td_lines * conflict_mg_pen[conf_status]
-
-            cap_cost = 0
-            for key in self.capital_cost:
-                if self.standalone and installed_capacity / (people / num_people_per_hh) < key:
-                    cap_cost = self.capital_cost[key]
-                    break
-                elif installed_capacity < key:
-                    cap_cost = self.capital_cost[key]
-                    break
-
-            if self.standalone:
-                capital_investment = installed_capacity * cap_cost * conflict_sa_pen[conf_status]
-                total_om_cost = cap_cost * self.om_costs * conflict_sa_pen[conf_status] * installed_capacity
-            else:
-                capital_investment = installed_capacity * cap_cost * conflict_mg_pen[conf_status]
-                total_om_cost = td_om_cost + (cap_cost * conflict_mg_pen[conf_status] *
-                                              self.om_costs * installed_capacity)
-            total_investment_cost = td_investment_cost + capital_investment
 
         # Perform the time-value LCOE calculation
         project_life = end_year - self.base_year + 1
@@ -319,21 +305,6 @@ class Technology:
         if get_investment_cost:
             discounted_investments = investments / discount_factor
             return np.sum(discounted_investments) + self.grid_capacity_investment * peak_load / discount_factor[step]
-        elif get_investment_cost_lv:
-            return total_lv_lines_length * (self.lv_line_cost * conf_grid_pen[conf_status])
-        elif get_investment_cost_mv:
-            return (mv_lines_connection_length * self.mv_line_cost * (1 + self.existing_grid_cost_ratio * elec_loop) +
-                    mv_lines_distribution_length * self.mv_line_cost) * conf_grid_pen[conf_status]
-        elif get_investment_cost_hv:
-            return hv_lines_total_length * (self.hv_line_cost * conf_grid_pen[conf_status]) * \
-                   (1 + self.existing_grid_cost_ratio * elec_loop)
-        elif get_investment_cost_transformer:
-            return (no_of_hv_lv_substation * self.hv_lv_sub_station_cost +
-                    no_of_hv_mv_substation * self.hv_mv_sub_station_cost +
-                    no_of_mv_mv_substation * self.mv_mv_sub_station_cost +
-                    no_of_mv_lv_substation * self.mv_lv_sub_station_cost) * conf_grid_pen[conf_status]
-        elif get_investment_cost_connection:
-            return total_nodes * self.connection_cost_per_hh
         else:
             discounted_costs = (investments + operation_and_maintenance + fuel - salvage) / discount_factor
             discounted_generation = el_gen / discount_factor
@@ -349,7 +320,7 @@ class Technology:
         ---------
         peak_load : float
             Peak load in the settlement (kW)
-        additional_mv_line_length
+        additional_mv_line_length : float
             Distance to connect the settlement
         additional_transformer : int
             If a transformer is needed on other end to connect to HV line
@@ -368,29 +339,32 @@ class Technology:
         no_of_hv_lv_subs = 0
         no_of_mv_lv_subs = 0
 
-        # Sizing HV/MV
-        hv_to_mv_lines = self.hv_line_cost / self.mv_line_cost
-        max_mv_load = self.mv_line_amperage_limit * self.mv_line_type * hv_to_mv_lines
+        if not self.standalone:
+            # Sizing HV/MV
+            hv_to_mv_lines = self.hv_line_cost / self.mv_line_cost
+            max_mv_load = self.mv_line_amperage_limit * self.mv_line_type * hv_to_mv_lines
 
-        if peak_load <= max_mv_load and additional_mv_line_length < 50:
-            mv_amperage = self.mv_lv_sub_station_type / self.mv_line_type
-            no_of_mv_lines = ceil(peak_load / (mv_amperage * self.mv_line_type))
-            mv_km = additional_mv_line_length * no_of_mv_lines
-        else:
-            hv_amperage = self.hv_lv_sub_station_type / self.hv_line_type
-            no_of_hv_lines = ceil(peak_load / (hv_amperage * self.hv_line_type))
-            hv_km = additional_mv_line_length * no_of_hv_lines
+            if peak_load <= max_mv_load and additional_mv_line_length < 50:
+                mv_amperage = self.mv_lv_sub_station_type / self.mv_line_type
+                no_of_mv_lines = ceil(peak_load / (mv_amperage * self.mv_line_type))
+                mv_km = additional_mv_line_length * no_of_mv_lines
+            else:
+                hv_amperage = self.hv_lv_sub_station_type / self.hv_line_type
+                no_of_hv_lines = ceil(peak_load / (hv_amperage * self.hv_line_type))
+                hv_km = additional_mv_line_length * no_of_hv_lines
 
-        if mv_distribution and hv_km > 0:
-            no_of_hv_mv_subs = ceil(peak_load / self.hv_lv_sub_station_type)
-        elif mv_distribution and mv_km > 0:
-            no_of_mv_mv_subs = ceil(peak_load / self.mv_lv_sub_station_type)
-        elif hv_km > 0:
-            no_of_hv_lv_subs = ceil(peak_load / self.hv_lv_sub_station_type)
-        else:
-            no_of_mv_lv_subs = ceil(peak_load / self.mv_lv_sub_station_type)
+            if mv_distribution and hv_km > 0:
+                no_of_hv_mv_subs = ceil(peak_load / self.hv_lv_sub_station_type)
+            elif mv_distribution and mv_km > 0:
+                no_of_mv_mv_subs = ceil(peak_load / self.mv_lv_sub_station_type)
+            elif hv_km > 0:
+                no_of_hv_lv_subs = ceil(peak_load / self.hv_lv_sub_station_type)
+            elif mv_km > 0 and self.mini_grid:  # TODO check if correct if already grid-connected
+                no_of_mv_lv_subs = ceil(peak_load / self.mv_lv_sub_station_type)
+            elif not self.mini_grid:
+                no_of_mv_lv_subs = ceil(peak_load / self.mv_lv_sub_station_type)
 
-        no_of_hv_mv_subs += additional_transformer  # to connect the MV line to the HV grid
+            no_of_hv_mv_subs += additional_transformer  # to connect the MV line to the HV grid
 
         return hv_km, mv_km, no_of_hv_mv_subs, no_of_mv_mv_subs, no_of_hv_lv_subs, no_of_mv_lv_subs
 
@@ -421,40 +395,46 @@ class Technology:
         average_load = consumption / (1 - self.distribution_losses) / HOURS_PER_YEAR  # kW
         peak_load = average_load / self.base_to_peak_load_ratio  # kW
 
-        s_max = peak_load / self.power_factor
-        max_transformer_area = pi * self.lv_line_max_length ** 2
-        total_nodes = (people / num_people_per_hh) + productive_nodes
-
-        try:
-            no_of_service_transf = ceil(
-                max(s_max / self.service_transf_type, total_nodes / self.max_nodes_per_serv_trans,
-                    grid_cell_area / max_transformer_area))
-        except ValueError:  # TODO Review if this is needed
-            no_of_service_transf = 1
-        transformer_radius = ((grid_cell_area / no_of_service_transf) / pi) ** 0.5
-        transformer_load = peak_load / no_of_service_transf
-        cluster_radius = (grid_cell_area / pi) ** 0.5
-
-        # Sizing lv lines in settlement
-        if 2 / 3 * cluster_radius * transformer_load * 1000 < self.load_moment:
-            cluster_lv_lines_length = 2 / 3 * cluster_radius * no_of_service_transf
+        if self.standalone:
             cluster_mv_lines_length = 0
+            lv_km = 0
+            no_of_service_transf = 0
+            total_nodes = 0
         else:
-            cluster_lv_lines_length = 0
-            cluster_mv_lines_length = 2 * transformer_radius * no_of_service_transf
+            s_max = peak_load / self.power_factor
+            max_transformer_area = pi * self.lv_line_max_length ** 2
+            total_nodes = (people / num_people_per_hh) + productive_nodes
 
-        hh_area = grid_cell_area / total_nodes
-        hh_diameter = 2 * ((hh_area / pi) ** 0.5)
+            try:
+                no_of_service_transf = ceil(
+                    max(s_max / self.service_transf_type, total_nodes / self.max_nodes_per_serv_trans,
+                        grid_cell_area / max_transformer_area))
+            except ValueError:  # TODO Review if this is needed
+                no_of_service_transf = 1
+            transformer_radius = ((grid_cell_area / no_of_service_transf) / pi) ** 0.5
+            transformer_load = peak_load / no_of_service_transf
+            cluster_radius = (grid_cell_area / pi) ** 0.5
 
-        transformer_lv_lines_length = hh_diameter * total_nodes
+            # Sizing lv lines in settlement
+            if 2 / 3 * cluster_radius * transformer_load * 1000 < self.load_moment:
+                cluster_lv_lines_length = 2 / 3 * cluster_radius * no_of_service_transf
+                cluster_mv_lines_length = 0
+            else:
+                cluster_lv_lines_length = 0
+                cluster_mv_lines_length = 2 * transformer_radius * no_of_service_transf
 
-        lv_km = cluster_lv_lines_length + transformer_lv_lines_length
+            hh_area = grid_cell_area / total_nodes
+            hh_diameter = 2 * ((hh_area / pi) ** 0.5)
+
+            transformer_lv_lines_length = hh_diameter * total_nodes
+
+            lv_km = cluster_lv_lines_length + transformer_lv_lines_length
 
         return cluster_mv_lines_length, lv_km, no_of_service_transf, consumption, peak_load, total_nodes
 
     def td_network_cost(self, people, new_connections, prev_code, total_energy_per_cell, energy_per_cell,
                         num_people_per_hh, grid_cell_area, additional_mv_line_length=0, additional_transformer=0,
-                        productive_nodes=0):
+                        productive_nodes=0, elec_loop=0, penalty=1):
         """Calculates all the transmission and distribution network components
 
         Parameters
@@ -473,12 +453,16 @@ class Technology:
             Number of people per household in settlement
         grid_cell_area : float
             Area of settlement (km2)
-        additional_mv_line_length
+        additional_mv_line_length : float
             Distance to connect the settlement
         additional_transformer : int
             If a transformer is needed on other end to connect to HV line
         productive_nodes : int
             Additional connections (schools, health facilities, shops)
+        elec_loop : int
+            Round of extension in grid extension algorithm
+        penalty : float
+            Cost penalty factor for T&D network, e.g. https://www.mdpi.com/2071-1050/12/3/777
         """
 
         if people != new_connections and (prev_code < 2 or prev_code > 3):
@@ -546,9 +530,20 @@ class Technology:
                 self.transmission_network(peak_load, additional_mv_line_length, additional_transformer,
                                           mv_distribution=mv_distribution)
 
-        return hv_lines_total_length, mv_lines_connection_length, mv_lines_distribution_length, total_lv_lines_length, \
-            num_transformers, no_of_hv_mv_substation, no_of_mv_mv_substation, no_of_hv_lv_substation, \
-            no_of_mv_lv_substation, generation_per_year, peak_load, total_nodes
+        td_investment_cost = (hv_lines_total_length * self.hv_line_cost * (
+                1 + self.existing_grid_cost_ratio * elec_loop) +
+                              mv_lines_connection_length * self.mv_line_cost * (
+                                      1 + self.existing_grid_cost_ratio * elec_loop) +
+                              total_lv_lines_length * self.lv_line_cost +
+                              mv_lines_distribution_length * self.mv_line_cost +
+                              num_transformers * self.service_transf_cost +
+                              total_nodes * self.connection_cost_per_hh +
+                              no_of_hv_lv_substation * self.hv_lv_sub_station_cost +
+                              no_of_hv_mv_substation * self.hv_mv_sub_station_cost +
+                              no_of_mv_mv_substation * self.mv_mv_sub_station_cost +
+                              no_of_mv_lv_substation * self.mv_lv_sub_station_cost) * penalty
+
+        return generation_per_year, peak_load, td_investment_cost
 
 
 class SettlementProcessor:
@@ -922,13 +917,13 @@ class SettlementProcessor:
         for year in years_of_analysis:
             self.df[SET_POP + "{}".format(year) + 'High'] = \
                 self.df.apply(lambda row: row[SET_POP_CALIB] * (yearly_urban_growth_rate_high ** (year - start_year))
-                              if row[SET_URBAN] > 1
-                              else row[SET_POP_CALIB] * (yearly_rural_growth_rate_high ** (year - start_year)), axis=1)
+                if row[SET_URBAN] > 1
+                else row[SET_POP_CALIB] * (yearly_rural_growth_rate_high ** (year - start_year)), axis=1)
 
             self.df[SET_POP + "{}".format(year) + 'Low'] = \
                 self.df.apply(lambda row: row[SET_POP_CALIB] * (yearly_urban_growth_rate_low ** (year - start_year))
-                              if row[SET_URBAN] > 1
-                              else row[SET_POP_CALIB] * (yearly_rural_growth_rate_low ** (year - start_year)), axis=1)
+                if row[SET_URBAN] > 1
+                else row[SET_POP_CALIB] * (yearly_rural_growth_rate_low ** (year - start_year)), axis=1)
 
         self.df[SET_POP + "{}".format(start_year)] = self.df.apply(lambda row: row[SET_POP_CALIB], axis=1)
 
@@ -1151,7 +1146,7 @@ class SettlementProcessor:
         self.df[SET_ELEC_FUTURE_OFFGRID + "{}".format(start_year)] = self.df.apply(lambda row: 0, axis=1)
         self.df[SET_ELEC_FUTURE_ACTUAL + "{}".format(start_year)] = \
             self.df.apply(lambda row: 1 if row[SET_ELEC_FINAL_CODE + "{}".format(start_year)] == 1 or
-                          row[SET_ELEC_FUTURE_OFFGRID + "{}".format(start_year)] == 1 else 0, axis=1)
+                                           row[SET_ELEC_FUTURE_OFFGRID + "{}".format(start_year)] == 1 else 0, axis=1)
         self.df[SET_ELEC_FINAL_CODE + "{}".format(start_year)] = \
             self.df.apply(lambda row: 1 if row[SET_ELEC_CURRENT] == 1 else 99, axis=1)
 
@@ -2003,7 +1998,7 @@ class SettlementProcessor:
         if (eleclimit == 1) & (choice != 4):
             self.df[SET_LIMIT + "{}".format(year)] = 1
             self.df[SET_INVEST_PER_CAPITA + "{}".format(year)] = self.df[SET_INVESTMENT_COST + "{}".format(year)] / \
-                self.df[SET_NEW_CONNECTIONS + "{}".format(year)]
+                                                                 self.df[SET_NEW_CONNECTIONS + "{}".format(year)]
             elecrate = 1
         else:
             self.df[SET_LIMIT + "{}".format(year)] = 0
@@ -2058,7 +2053,7 @@ class SettlementProcessor:
 
                     elecrate = self.df.loc[
                                    self.df[SET_LIMIT + "{}".format(year)] == 1, SET_POP + "{}".format(year)].sum() / \
-                        self.df[SET_POP + "{}".format(year)].sum()
+                               self.df[SET_POP + "{}".format(year)].sum()
                 else:
                     print(
                         "The electrification target set is quite low and has been reached by "
@@ -2072,7 +2067,7 @@ class SettlementProcessor:
 
                     elecrate = self.df.loc[
                                    self.df[SET_LIMIT + "{}".format(year)] == 1, SET_POP + "{}".format(year)].sum() / \
-                        self.df[SET_POP + "{}".format(year)].sum()
+                               self.df[SET_POP + "{}".format(year)].sum()
 
             elif choice == 2:
                 # Prioritize grid densification/intensification (1 or 2 km). Then lowest investment per capita
@@ -2103,7 +2098,7 @@ class SettlementProcessor:
                                     (self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] == 0) &
                                     (self.df[SET_MV_DIST_PLANNED] >= auto_densification)][
                                 SET_POP + "{}".format(year)]) / \
-                            self.df[SET_POP + "{}".format(year)].sum()
+                                   self.df[SET_POP + "{}".format(year)].sum()
                         if (eleclimit - elecrate > 0.01) and (iter_limit_4 < 100):
                             min_investment += step_size
                             iter_limit_4 += 1
@@ -2264,7 +2259,7 @@ class SettlementProcessor:
 
                     elecrate = self.df.loc[
                                    self.df[SET_LIMIT + "{}".format(year)] == 1, SET_POP + "{}".format(year)].sum() / \
-                        self.df[SET_POP + "{}".format(year)].sum()
+                               self.df[SET_POP + "{}".format(year)].sum()
                 else:
                     print(
                         "The electrification target set is quite low and has been reached by "
@@ -2278,7 +2273,7 @@ class SettlementProcessor:
 
                     elecrate = self.df.loc[
                                    self.df[SET_LIMIT + "{}".format(year)] == 1, SET_POP + "{}".format(year)].sum() / \
-                        self.df[SET_POP + "{}".format(year)].sum()
+                               self.df[SET_POP + "{}".format(year)].sum()
 
         print("The electrification rate achieved in {} is {:.1f} %".format(year, (elecrate - elec_limit_origin) * 100))
 
@@ -2293,7 +2288,7 @@ class SettlementProcessor:
             (self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 1), SET_ELEC_FINAL_CODE + "{}".format(year)] = 1
         self.df.loc[
             (self.df[SET_LIMIT + "{}".format(year)] == 1) & (
-                        self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 1), SET_ELEC_FINAL_CODE + "{}".format(
+                    self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 1), SET_ELEC_FINAL_CODE + "{}".format(
                 year)] = 1
         # Define what is electrified in a given year by off-grid after prioritization process has finished
         self.df[SET_ELEC_FINAL_OFFGRID + "{}".format(year)] = 0
@@ -2305,7 +2300,7 @@ class SettlementProcessor:
             year)] = 1
         self.df.loc[
             (self.df[SET_LIMIT + "{}".format(year)] == 1) & (
-                        self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 0), SET_ELEC_FINAL_OFFGRID + "{}".format(
+                    self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 0), SET_ELEC_FINAL_OFFGRID + "{}".format(
                 year)] = 1
 
         #
