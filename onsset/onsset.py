@@ -40,10 +40,10 @@ SET_ENERGY_PER_CELL = 'EnergyPerSettlement'
 SET_NUM_PEOPLE_PER_HH = 'NumPeoplePerHH'
 SET_ELEC_CURRENT = 'ElecStart'  # If the site is currently electrified (0 or 1)
 SET_ELEC_FUTURE = 'Elec_Status'  # If the site has the potential to be 'easily' electrified in future
-SET_ELEC_FINAL_CODE = "Elec_Initial_Status_Grid"
+SET_ELEC_FUTURE_GRID = "Elec_Initial_Status_Grid"
 SET_ELEC_FUTURE_OFFGRID = "Elec_Init_Status_Offgrid"
 SET_ELEC_FUTURE_ACTUAL = "Actual_Elec_Status_"
-SET_ELEC_FINAL_CODE = "GridElecIn"
+SET_ELEC_FINAL_GRID = "GridElecIn"
 SET_ELEC_FINAL_OFFGRID = "OffGridElecIn"
 SET_NEW_CONNECTIONS = 'NewConnections'  # Number of new people with electricity connections
 SET_MIN_GRID_DIST = 'MinGridDist'
@@ -636,7 +636,8 @@ class SettlementProcessor:
         logging.info('Sort by country, Y and X')
         self.df.sort_values(by=[SET_Y_DEG, SET_X_DEG], inplace=True)
 
-    def classify_road_distance(self, road_distance):
+    @staticmethod
+    def classify_road_distance(road_distance):
         """Classify the road distance according to bins and labels
 
         Arguments
@@ -650,7 +651,8 @@ class SettlementProcessor:
 
         return pd.cut(road_distance, road_distance_bins, labels=road_distance_labels, include_lowest=True).astype(float)
 
-    def classify_substation_distance(self, substation_distance):
+    @staticmethod
+    def classify_substation_distance(substation_distance):
         """Classify the substation distance according to bins and labels
 
         Arguments
@@ -664,7 +666,8 @@ class SettlementProcessor:
 
         return pd.cut(substation_distance, substation_distance_bins, labels=substation_distance_labels).astype(float)
 
-    def classify_elevation(self, elevation):
+    @staticmethod
+    def classify_elevation(elevation):
         """Classify the elevation distance according to bins and labels
 
         Arguments
@@ -679,7 +682,8 @@ class SettlementProcessor:
 
         return pd.cut(elevation, elevation_bins, labels=elevation_labels).astype(float)
 
-    def classify_slope(self, slope):
+    @staticmethod
+    def classify_slope(slope):
         """Classify the slope according to bins and labels
 
         Arguments
@@ -694,7 +698,8 @@ class SettlementProcessor:
 
         return pd.cut(slope, slope_bins, labels=slope_labels, include_lowest=True).astype(float)
 
-    def classify_land_cover(self, column):
+    @staticmethod
+    def classify_land_cover(column):
         """this is a different method employed to classify land cover and create new columns with the classification
 
         Arguments
@@ -703,11 +708,11 @@ class SettlementProcessor:
 
         Notes
         -----
-        0,11 =1,
+        0, 11 = 1
         6, 8 = 2
-        1, 3, 5, 12 ,13,15,=3,
-        2,4=4,
-        7,9,10,14,16=5
+        1, 3, 5, 12, 13, 15 = 3
+        2, 4 = 4
+        7, 9, 10, 14, 16 = 5
         """
 
         land_cover_labels = [1, 3, 4, 3, 4, 3, 2, 5, 2, 5, 5, 1, 3, 3, 5, 3, 5]
@@ -1974,6 +1979,7 @@ class SettlementProcessor:
         logging.info('Determine electrification limits')
         choice = int(prioritization)
         elec_limit_origin = eleclimit
+        elecrate = 0
         if (eleclimit == 1) & (choice != 4):
             self.df[SET_LIMIT + "{}".format(year)] = 1
             self.df[SET_INVEST_PER_CAPITA + "{}".format(year)] = self.df[SET_INVESTMENT_COST + "{}".format(year)] / \
@@ -1985,7 +1991,6 @@ class SettlementProcessor:
             # RUN_PARAM: Here one can modify the prioritization algorithm.
             # Currently only the first option is reviewed and ready to be used
             if choice == 1:  # Prioritize grid densification first, then lowest investment per capita
-                elecrate = 0
                 min_investment = 0
                 min_dist_to_cities = 50
                 iter_limit_3 = 0
@@ -2051,7 +2056,6 @@ class SettlementProcessor:
             elif choice == 2:
                 # Prioritize grid densification/intensification (1 or 2 km). Then lowest investment per capita
                 self.df[SET_LIMIT + "{}".format(year)] = 0
-                elecrate = 0
                 min_investment = 0
                 extension = 0
                 iter_limit_4 = 0
@@ -2110,7 +2114,6 @@ class SettlementProcessor:
 
             elif choice == 3:
                 # Prioritize grid densification first. Then lowest investment per capita in areas close to cities.
-                elecrate = 0
                 min_investment = 0
                 min_dist_to_cities = 1
                 iter_limit_1 = 0
