@@ -178,14 +178,14 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                                    base_to_peak_load_ratio=0.85,
                                    capacity_factor=0.5,
                                    tech_life=30,
-                                   capital_cost=3000,
+                                   capital_cost={float("inf"): 3000},
                                    om_costs=0.03)
 
         mg_wind_calc = Technology(om_of_td_lines=0.02,
                                   distribution_losses=0.05,
                                   connection_cost_per_hh=100,
                                   base_to_peak_load_ratio=0.85,
-                                  capital_cost=3750,
+                                  capital_cost={float("inf"): 3750},
                                   om_costs=0.02,
                                   tech_life=20)
 
@@ -195,7 +195,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                                 base_to_peak_load_ratio=0.85,
                                 tech_life=20,
                                 om_costs=0.015,
-                                capital_cost=2950 * pv_capital_cost_adjust)
+                                capital_cost={float("inf"): 2950 * pv_capital_cost_adjust})
 
         sa_pv_calc = Technology(base_to_peak_load_ratio=0.9,
                                 tech_life=15,
@@ -204,7 +204,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                                               0.050: 8780 * pv_capital_cost_adjust,
                                               0.100: 6380 * pv_capital_cost_adjust,
                                               1: 4470 * pv_capital_cost_adjust,
-                                              5: 6950 * pv_capital_cost_adjust},
+                                              float("inf"): 6950 * pv_capital_cost_adjust},
                                 standalone=True)
 
         mg_diesel_calc = Technology(om_of_td_lines=0.02,
@@ -214,13 +214,13 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                                     capacity_factor=0.7,
                                     tech_life=15,
                                     om_costs=0.1,
-                                    capital_cost=721)
+                                    capital_cost={float("inf"): 721})
 
         sa_diesel_calc = Technology(base_to_peak_load_ratio=0.9,
                                     capacity_factor=0.5,
                                     tech_life=10,
                                     om_costs=0.1,
-                                    capital_cost=938,
+                                    capital_cost={float("inf"): 938},
                                     standalone=True)
 
         sa_diesel_cost = {'diesel_price': diesel_price,
