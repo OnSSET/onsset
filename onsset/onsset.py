@@ -182,66 +182,76 @@ class Technology:
         cls.load_moment = load_moment  # for 50mm aluminum conductor under 5% voltage drop (kW m)
 
     def get_lcoe(self, energy_per_cell, people, num_people_per_hh, start_year, end_year, new_connections,
-                 total_energy_per_cell, prev_code, grid_cell_area, conf_status=0, additional_mv_line_length=0,
+                 total_energy_per_cell, prev_code, grid_cell_area, conf_status=0, additional_mv_line_length=0.0,
                  capacity_factor=0.9, grid_penalty_ratio=1, fuel_cost=0, elec_loop=0, productive_nodes=0,
                  additional_transformer=0, get_investment_cost=False):
-        """
-        Calculates the LCOE depending on the parameters. Optionally calculates the investment cost instead.
+        """Calculates the LCOE depending on the parameters. Optionally calculates the investment cost instead.
 
-        The only required parameters are energy_per_cell, people and num_people_per_hh
-        additional_mv_line_length required for grid
-        capacity_factor required for PV and wind
-        mv_line_length required for hydro
-        travel_hours required for diesel
+        Parameters
+        ----------
+        people : float
+            Number of people in settlement
+        new_connections : float
+            Number of new people in settlement to connect
+        prev_code : int
+            Code representation of previous supply technology in settlement
+        total_energy_per_cell : float
+            Total annual energy demand in cell, including already met demand
+        energy_per_cell : float
+            Annual energy demand in cell, excluding already met demand
+        num_people_per_hh : float
+            Number of people per household in settlement
+        grid_cell_area : float
+            Area of settlement (km2)
+        additional_mv_line_length : float
+            Distance to connect the settlement
+        additional_transformer : int
+            If a transformer is needed on other end to connect to HV line
+        productive_nodes : int
+            Additional connections (schools, health facilities, shops)
+        elec_loop : int
+            Round of extension in grid extension algorithm
+        penalty : float
+            Cost penalty factor for T&D network, e.g. https://www.mdpi.com/2071-1050/12/3/777
+        start_year : int
+        end_year : int
+        capacity_factor : float
+        grid_penalty_ratio : float
+        fuel_cost : float
+        get_investment_cost : float
+        conf_status : float
+
+        Returns
+        -------
+        lcoe or discounted investment cost
         """
 
         if people == 0:
-            # If there are no people, the investment cost is zero.
-            if get_investment_cost:
-                return 0
-            # Otherwise we set the people low (prevent div/0 error) and continue.
-            else:
-                people = 0.00001
+            people = 0.00001  # Set the people low (prevent div/0 error)
 
         if energy_per_cell == 0:
-            # If there is no demand, the investment cost is zero.
             if get_investment_cost:
-                return 0
-            # Otherwise we set the people low (prevent div/0 error) and continue.
+                return 0  # If there is no demand, the investment cost is zero.
             else:
-                energy_per_cell = 0.000000000001
+                energy_per_cell = 0.000000000001  # Otherwise set the demand low (prevent div/0 error)
 
         if grid_penalty_ratio == 0:
             grid_penalty_ratio = self.grid_penalty_ratio
 
-        hv_lines_total_length, mv_lines_connection_length, mv_lines_distribution_length, total_lv_lines_length, \
-            num_transformers, no_of_hv_mv_substation, no_of_mv_mv_substation, no_of_hv_lv_substation, \
-            no_of_mv_lv_substation, generation_per_year, peak_load, total_nodes = \
-            self.td_network_cost(people, new_connections, prev_code, total_energy_per_cell, energy_per_cell,
-                                 num_people_per_hh, grid_cell_area, additional_mv_line_length, additional_transformer,
-                                 productive_nodes)
-
-        try:
-            int(conf_status)
-        except ValueError:
-            conf_status = 0
         conf_grid_pen = {0: 1, 1: 1.1, 2: 1.25, 3: 1.5, 4: 2}
-        # The investment and O&M costs are different for grid and non-grid solutions
-        td_investment_cost = (hv_lines_total_length * self.hv_line_cost * (
-                1 + self.existing_grid_cost_ratio * elec_loop) +
-                              mv_lines_connection_length * self.mv_line_cost * (
-                                      1 + self.existing_grid_cost_ratio * elec_loop) +
-                              total_lv_lines_length * self.lv_line_cost +
-                              mv_lines_distribution_length * self.mv_line_cost +
-                              num_transformers * self.service_transf_cost +
-                              total_nodes * self.connection_cost_per_hh +
-                              no_of_hv_lv_substation * self.hv_lv_sub_station_cost +
-                              no_of_hv_mv_substation * self.hv_mv_sub_station_cost +
-                              no_of_mv_mv_substation * self.mv_mv_sub_station_cost +
-                              no_of_mv_lv_substation * self.mv_lv_sub_station_cost) * conf_grid_pen[conf_status]
+        penalty = conf_grid_pen[conf_status]
+        generation_per_year, peak_load, td_investment_cost = self.td_network_cost(people, new_connections, prev_code,
+                                                                                  total_energy_per_cell,
+                                                                                  energy_per_cell, num_people_per_hh,
+                                                                                  grid_cell_area,
+                                                                                  additional_mv_line_length,
+                                                                                  additional_transformer,
+                                                                                  productive_nodes,
+                                                                                  elec_loop,
+                                                                                  penalty)
+
         td_investment_cost = td_investment_cost * grid_penalty_ratio
         td_om_cost = td_investment_cost * self.om_of_td_lines * conf_grid_pen[conf_status]
-
         installed_capacity = peak_load / capacity_factor
 
         cap_cost = 0
@@ -310,7 +320,7 @@ class Technology:
         ---------
         peak_load : float
             Peak load in the settlement (kW)
-        additional_mv_line_length
+        additional_mv_line_length : float
             Distance to connect the settlement
         additional_transformer : int
             If a transformer is needed on other end to connect to HV line
@@ -349,7 +359,7 @@ class Technology:
                 no_of_mv_mv_subs = ceil(peak_load / self.mv_lv_sub_station_type)
             elif hv_km > 0:
                 no_of_hv_lv_subs = ceil(peak_load / self.hv_lv_sub_station_type)
-            elif mv_km > 0 and self.mini_grid: # TODO check if correct if already grid-connected
+            elif mv_km > 0 and self.mini_grid:  # TODO check if correct if already grid-connected
                 no_of_mv_lv_subs = ceil(peak_load / self.mv_lv_sub_station_type)
             elif not self.mini_grid:
                 no_of_mv_lv_subs = ceil(peak_load / self.mv_lv_sub_station_type)
@@ -424,7 +434,7 @@ class Technology:
 
     def td_network_cost(self, people, new_connections, prev_code, total_energy_per_cell, energy_per_cell,
                         num_people_per_hh, grid_cell_area, additional_mv_line_length=0, additional_transformer=0,
-                        productive_nodes=0):
+                        productive_nodes=0, elec_loop=0, penalty=1):
         """Calculates all the transmission and distribution network components
 
         Parameters
@@ -443,12 +453,16 @@ class Technology:
             Number of people per household in settlement
         grid_cell_area : float
             Area of settlement (km2)
-        additional_mv_line_length
+        additional_mv_line_length : float
             Distance to connect the settlement
         additional_transformer : int
             If a transformer is needed on other end to connect to HV line
         productive_nodes : int
             Additional connections (schools, health facilities, shops)
+        elec_loop : int
+            Round of extension in grid extension algorithm
+        penalty : float
+            Cost penalty factor for T&D network, e.g. https://www.mdpi.com/2071-1050/12/3/777
         """
 
         if people != new_connections and (prev_code < 2 or prev_code > 3):
@@ -516,9 +530,20 @@ class Technology:
                 self.transmission_network(peak_load, additional_mv_line_length, additional_transformer,
                                           mv_distribution=mv_distribution)
 
-        return hv_lines_total_length, mv_lines_connection_length, mv_lines_distribution_length, total_lv_lines_length, \
-            num_transformers, no_of_hv_mv_substation, no_of_mv_mv_substation, no_of_hv_lv_substation, \
-            no_of_mv_lv_substation, generation_per_year, peak_load, total_nodes
+        td_investment_cost = (hv_lines_total_length * self.hv_line_cost * (
+                1 + self.existing_grid_cost_ratio * elec_loop) +
+                              mv_lines_connection_length * self.mv_line_cost * (
+                                      1 + self.existing_grid_cost_ratio * elec_loop) +
+                              total_lv_lines_length * self.lv_line_cost +
+                              mv_lines_distribution_length * self.mv_line_cost +
+                              num_transformers * self.service_transf_cost +
+                              total_nodes * self.connection_cost_per_hh +
+                              no_of_hv_lv_substation * self.hv_lv_sub_station_cost +
+                              no_of_hv_mv_substation * self.hv_mv_sub_station_cost +
+                              no_of_mv_mv_substation * self.mv_mv_sub_station_cost +
+                              no_of_mv_lv_substation * self.mv_lv_sub_station_cost) * penalty
+
+        return generation_per_year, peak_load, td_investment_cost
 
 
 class SettlementProcessor:
@@ -892,13 +917,13 @@ class SettlementProcessor:
         for year in years_of_analysis:
             self.df[SET_POP + "{}".format(year) + 'High'] = \
                 self.df.apply(lambda row: row[SET_POP_CALIB] * (yearly_urban_growth_rate_high ** (year - start_year))
-                              if row[SET_URBAN] > 1
-                              else row[SET_POP_CALIB] * (yearly_rural_growth_rate_high ** (year - start_year)), axis=1)
+                if row[SET_URBAN] > 1
+                else row[SET_POP_CALIB] * (yearly_rural_growth_rate_high ** (year - start_year)), axis=1)
 
             self.df[SET_POP + "{}".format(year) + 'Low'] = \
                 self.df.apply(lambda row: row[SET_POP_CALIB] * (yearly_urban_growth_rate_low ** (year - start_year))
-                              if row[SET_URBAN] > 1
-                              else row[SET_POP_CALIB] * (yearly_rural_growth_rate_low ** (year - start_year)), axis=1)
+                if row[SET_URBAN] > 1
+                else row[SET_POP_CALIB] * (yearly_rural_growth_rate_low ** (year - start_year)), axis=1)
 
         self.df[SET_POP + "{}".format(start_year)] = self.df.apply(lambda row: row[SET_POP_CALIB], axis=1)
 
@@ -1121,7 +1146,7 @@ class SettlementProcessor:
         self.df[SET_ELEC_FUTURE_OFFGRID + "{}".format(start_year)] = self.df.apply(lambda row: 0, axis=1)
         self.df[SET_ELEC_FUTURE_ACTUAL + "{}".format(start_year)] = \
             self.df.apply(lambda row: 1 if row[SET_ELEC_FINAL_CODE + "{}".format(start_year)] == 1 or
-                          row[SET_ELEC_FUTURE_OFFGRID + "{}".format(start_year)] == 1 else 0, axis=1)
+                                           row[SET_ELEC_FUTURE_OFFGRID + "{}".format(start_year)] == 1 else 0, axis=1)
         self.df[SET_ELEC_FINAL_CODE + "{}".format(start_year)] = \
             self.df.apply(lambda row: 1 if row[SET_ELEC_CURRENT] == 1 else 99, axis=1)
 
@@ -1973,7 +1998,7 @@ class SettlementProcessor:
         if (eleclimit == 1) & (choice != 4):
             self.df[SET_LIMIT + "{}".format(year)] = 1
             self.df[SET_INVEST_PER_CAPITA + "{}".format(year)] = self.df[SET_INVESTMENT_COST + "{}".format(year)] / \
-                self.df[SET_NEW_CONNECTIONS + "{}".format(year)]
+                                                                 self.df[SET_NEW_CONNECTIONS + "{}".format(year)]
             elecrate = 1
         else:
             self.df[SET_LIMIT + "{}".format(year)] = 0
@@ -2028,7 +2053,7 @@ class SettlementProcessor:
 
                     elecrate = self.df.loc[
                                    self.df[SET_LIMIT + "{}".format(year)] == 1, SET_POP + "{}".format(year)].sum() / \
-                        self.df[SET_POP + "{}".format(year)].sum()
+                               self.df[SET_POP + "{}".format(year)].sum()
                 else:
                     print(
                         "The electrification target set is quite low and has been reached by "
@@ -2042,7 +2067,7 @@ class SettlementProcessor:
 
                     elecrate = self.df.loc[
                                    self.df[SET_LIMIT + "{}".format(year)] == 1, SET_POP + "{}".format(year)].sum() / \
-                        self.df[SET_POP + "{}".format(year)].sum()
+                               self.df[SET_POP + "{}".format(year)].sum()
 
             elif choice == 2:
                 # Prioritize grid densification/intensification (1 or 2 km). Then lowest investment per capita
@@ -2073,7 +2098,7 @@ class SettlementProcessor:
                                     (self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] == 0) &
                                     (self.df[SET_MV_DIST_PLANNED] >= auto_densification)][
                                 SET_POP + "{}".format(year)]) / \
-                            self.df[SET_POP + "{}".format(year)].sum()
+                                   self.df[SET_POP + "{}".format(year)].sum()
                         if (eleclimit - elecrate > 0.01) and (iter_limit_4 < 100):
                             min_investment += step_size
                             iter_limit_4 += 1
@@ -2234,7 +2259,7 @@ class SettlementProcessor:
 
                     elecrate = self.df.loc[
                                    self.df[SET_LIMIT + "{}".format(year)] == 1, SET_POP + "{}".format(year)].sum() / \
-                        self.df[SET_POP + "{}".format(year)].sum()
+                               self.df[SET_POP + "{}".format(year)].sum()
                 else:
                     print(
                         "The electrification target set is quite low and has been reached by "
@@ -2248,7 +2273,7 @@ class SettlementProcessor:
 
                     elecrate = self.df.loc[
                                    self.df[SET_LIMIT + "{}".format(year)] == 1, SET_POP + "{}".format(year)].sum() / \
-                        self.df[SET_POP + "{}".format(year)].sum()
+                               self.df[SET_POP + "{}".format(year)].sum()
 
         print("The electrification rate achieved in {} is {:.1f} %".format(year, (elecrate - elec_limit_origin) * 100))
 
@@ -2263,7 +2288,7 @@ class SettlementProcessor:
             (self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 1), SET_ELEC_FINAL_CODE + "{}".format(year)] = 1
         self.df.loc[
             (self.df[SET_LIMIT + "{}".format(year)] == 1) & (
-                        self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 1), SET_ELEC_FINAL_CODE + "{}".format(
+                    self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 1), SET_ELEC_FINAL_CODE + "{}".format(
                 year)] = 1
         # Define what is electrified in a given year by off-grid after prioritization process has finished
         self.df[SET_ELEC_FINAL_OFFGRID + "{}".format(year)] = 0
@@ -2275,7 +2300,7 @@ class SettlementProcessor:
             year)] = 1
         self.df.loc[
             (self.df[SET_LIMIT + "{}".format(year)] == 1) & (
-                        self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 0), SET_ELEC_FINAL_OFFGRID + "{}".format(
+                    self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 0), SET_ELEC_FINAL_OFFGRID + "{}".format(
                 year)] = 1
 
         #
