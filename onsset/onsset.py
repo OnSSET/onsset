@@ -28,12 +28,12 @@ SET_SUBSTATION_DIST = 'SubstationDist'
 SET_ELEVATION = 'Elevation'  # in metres
 SET_SLOPE = 'Slope'  # in degrees
 SET_LAND_COVER = 'LandCover'
-SET_ROAD_DIST_CLASSIFIED = 'RoadDistClassified'
-SET_SUBSTATION_DIST_CLASSIFIED = 'SubstationDistClassified'
-SET_ELEVATION_CLASSIFIED = 'ElevationClassified'
-SET_SLOPE_CLASSIFIED = 'SlopeClassified'
-SET_LAND_COVER_CLASSIFIED = 'LandCoverClassified'
-SET_COMBINED_CLASSIFICATION = 'GridClassification'
+SET_road_dist_classified = 'RoadDistClassified'
+SET_substation_dist_classified = 'SubstationDistClassified'
+SET_elevation_classified = 'ElevationClassified'
+SET_slope_classified = 'SlopeClassified'
+SET_land_cover_classified = 'LandCoverClassified'
+SET_combined_classification = 'GridClassification'
 SET_GRID_PENALTY = 'GridPenalty'
 SET_URBAN = 'IsUrban'  # Whether the site is urban (0 or 1)
 SET_ENERGY_PER_CELL = 'EnergyPerSettlement'
@@ -182,9 +182,9 @@ class Technology:
         cls.load_moment = load_moment  # for 50mm aluminum conductor under 5% voltage drop (kW m)
 
     def get_lcoe(self, energy_per_cell, people, num_people_per_hh, start_year, end_year, new_connections,
-                 total_energy_per_cell, prev_code, grid_cell_area, conf_status=0, additional_mv_line_length=0.0,
+                 total_energy_per_cell, prev_code, grid_cell_area, additional_mv_line_length=0.0,
                  capacity_factor=0.9, grid_penalty_ratio=1, fuel_cost=0, elec_loop=0, productive_nodes=0,
-                 additional_transformer=0, get_investment_cost=False):
+                 additional_transformer=0, penalty=1, get_investment_cost=False):
         """Calculates the LCOE depending on the parameters. Optionally calculates the investment cost instead.
 
         Parameters
@@ -219,7 +219,6 @@ class Technology:
         grid_penalty_ratio : float
         fuel_cost : float
         get_investment_cost : float
-        conf_status : float
 
         Returns
         -------
@@ -238,8 +237,6 @@ class Technology:
         if grid_penalty_ratio == 0:
             grid_penalty_ratio = self.grid_penalty_ratio
 
-        conf_grid_pen = {0: 1, 1: 1.1, 2: 1.25, 3: 1.5, 4: 2}
-        penalty = conf_grid_pen[conf_status]
         generation_per_year, peak_load, td_investment_cost = self.td_network_cost(people, new_connections, prev_code,
                                                                                   total_energy_per_cell,
                                                                                   energy_per_cell, num_people_per_hh,
@@ -251,7 +248,7 @@ class Technology:
                                                                                   penalty)
 
         td_investment_cost = td_investment_cost * grid_penalty_ratio
-        td_om_cost = td_investment_cost * self.om_of_td_lines * conf_grid_pen[conf_status]
+        td_om_cost = td_investment_cost * self.om_of_td_lines * penalty
         installed_capacity = peak_load / capacity_factor
 
         cap_cost = 0
@@ -263,8 +260,8 @@ class Technology:
                 cap_cost = self.capital_cost[key]
                 break
 
-        capital_investment = installed_capacity * cap_cost * conf_grid_pen[conf_status]
-        total_om_cost = td_om_cost + (cap_cost * conf_grid_pen[conf_status] * self.om_costs * installed_capacity)
+        capital_investment = installed_capacity * cap_cost * penalty
+        total_om_cost = td_om_cost + (cap_cost * penalty * self.om_costs * installed_capacity)
         total_investment_cost = td_investment_cost + capital_investment
 
         if self.grid_price > 0:
@@ -728,30 +725,30 @@ class SettlementProcessor:
         """
 
         logging.info('Classify road dist')
-        ROAD_DIST_CLASSIFIED = self.classify_road_distance(data_frame[SET_ROAD_DIST])
+        road_dist_classified = self.classify_road_distance(data_frame[SET_ROAD_DIST])
 
         logging.info('Classify substation dist')
-        SUBSTATION_DIST_CLASSIFIED = self.classify_substation_distance(data_frame[SET_SUBSTATION_DIST])
+        substation_dist_classified = self.classify_substation_distance(data_frame[SET_SUBSTATION_DIST])
 
         logging.info('Classify elevation')
-        ELEVATION_CLASSIFIED = self.classify_elevation(data_frame[SET_ELEVATION])
+        elevation_classified = self.classify_elevation(data_frame[SET_ELEVATION])
 
         logging.info('Classify slope')
-        SLOPE_CLASSIFIED = self.classify_slope(data_frame[SET_SLOPE])
+        slope_classified = self.classify_slope(data_frame[SET_SLOPE])
 
         logging.info('Classify land cover')
-        LAND_COVER_CLASSIFIED = self.classify_land_cover(data_frame[SET_LAND_COVER])
+        land_cover_classified = self.classify_land_cover(data_frame[SET_LAND_COVER])
 
         logging.info('Combined classification')
-        COMBINED_CLASSIFICATION = (0.15 * ROAD_DIST_CLASSIFIED +
-                                   0.20 * SUBSTATION_DIST_CLASSIFIED +
-                                   0.15 * ELEVATION_CLASSIFIED +
-                                   0.30 * SLOPE_CLASSIFIED +
-                                   0.20 * LAND_COVER_CLASSIFIED)
+        combined_classification = (0.15 * road_dist_classified +
+                                   0.20 * substation_dist_classified +
+                                   0.15 * elevation_classified +
+                                   0.30 * slope_classified +
+                                   0.20 * land_cover_classified)
 
         logging.info('Grid penalty')
         """this calculates the penalty from the results obtained from the combined classifications"""
-        classification = COMBINED_CLASSIFICATION.astype(float)
+        classification = combined_classification.astype(float)
 
         c = 1 + (np.exp(.85 * np.abs(1 - classification)) - 1) / 100
 
@@ -917,13 +914,13 @@ class SettlementProcessor:
         for year in years_of_analysis:
             self.df[SET_POP + "{}".format(year) + 'High'] = \
                 self.df.apply(lambda row: row[SET_POP_CALIB] * (yearly_urban_growth_rate_high ** (year - start_year))
-                if row[SET_URBAN] > 1
-                else row[SET_POP_CALIB] * (yearly_rural_growth_rate_high ** (year - start_year)), axis=1)
+                              if row[SET_URBAN] > 1
+                              else row[SET_POP_CALIB] * (yearly_rural_growth_rate_high ** (year - start_year)), axis=1)
 
             self.df[SET_POP + "{}".format(year) + 'Low'] = \
                 self.df.apply(lambda row: row[SET_POP_CALIB] * (yearly_urban_growth_rate_low ** (year - start_year))
-                if row[SET_URBAN] > 1
-                else row[SET_POP_CALIB] * (yearly_rural_growth_rate_low ** (year - start_year)), axis=1)
+                              if row[SET_URBAN] > 1
+                              else row[SET_POP_CALIB] * (yearly_rural_growth_rate_low ** (year - start_year)), axis=1)
 
         self.df[SET_POP + "{}".format(start_year)] = self.df.apply(lambda row: row[SET_POP_CALIB], axis=1)
 
@@ -1146,7 +1143,7 @@ class SettlementProcessor:
         self.df[SET_ELEC_FUTURE_OFFGRID + "{}".format(start_year)] = self.df.apply(lambda row: 0, axis=1)
         self.df[SET_ELEC_FUTURE_ACTUAL + "{}".format(start_year)] = \
             self.df.apply(lambda row: 1 if row[SET_ELEC_FINAL_CODE + "{}".format(start_year)] == 1 or
-                                           row[SET_ELEC_FUTURE_OFFGRID + "{}".format(start_year)] == 1 else 0, axis=1)
+                          row[SET_ELEC_FUTURE_OFFGRID + "{}".format(start_year)] == 1 else 0, axis=1)
         self.df[SET_ELEC_FINAL_CODE + "{}".format(start_year)] = \
             self.df.apply(lambda row: 1 if row[SET_ELEC_CURRENT] == 1 else 99, axis=1)
 
@@ -1221,7 +1218,6 @@ class SettlementProcessor:
         x = (self.df[SET_X_DEG]).tolist()
         y = (self.df[SET_Y_DEG]).tolist()
         pop = self.df[SET_POP + "{}".format(year)].tolist()
-        confl = self.df[SET_CONFLICT].tolist()
         enerperhh = self.df[SET_ENERGY_PER_CELL + "{}".format(year)]
         nupppphh = self.df[SET_NUM_PEOPLE_PER_HH]
         grid_cell_area = self.df[SET_GRID_CELL_AREA]
@@ -1301,7 +1297,6 @@ class SettlementProcessor:
                                                prev_code=prev_code[unelec],
                                                num_people_per_hh=nupppphh[unelec],
                                                grid_cell_area=grid_cell_area[unelec],
-                                               conf_status=confl[unelec],
                                                additional_mv_line_length=0,
                                                elec_loop=0)
                 if grid_lcoe < min_code_lcoes[unelec]:
@@ -1358,7 +1353,6 @@ class SettlementProcessor:
                                                prev_code=prev_code[unelec],
                                                num_people_per_hh=nupppphh[unelec],
                                                grid_cell_area=grid_cell_area[unelec],
-                                               conf_status=confl[unelec],
                                                additional_mv_line_length=dist_adjusted,
                                                elec_loop=0)
                 if grid_lcoe < min_code_lcoes[unelec]:
@@ -1401,7 +1395,6 @@ class SettlementProcessor:
                                                prev_code=prev_code[unelec],
                                                num_people_per_hh=nupppphh[unelec],
                                                grid_cell_area=grid_cell_area[unelec],
-                                               conf_status=confl[unelec],
                                                additional_mv_line_length=dist_adjusted,
                                                elec_loop=elec_loop_value,
                                                additional_transformer=1)
@@ -1450,7 +1443,6 @@ class SettlementProcessor:
                                                        prev_code=prev_code[unelec],
                                                        num_people_per_hh=nupppphh[unelec],
                                                        grid_cell_area=grid_cell_area[unelec],
-                                                       conf_status=confl[unelec],
                                                        additional_mv_line_length=dist_adjusted,
                                                        elec_loop=elecorder[electrified[closest_elec_node]] + 1)
                         if grid_lcoe < min_code_lcoes[unelec]:
@@ -1695,7 +1687,6 @@ class SettlementProcessor:
                                                   prev_code=row[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
                                                   num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
                                                   grid_cell_area=row[SET_GRID_CELL_AREA],
-                                                  conf_status=row[SET_CONFLICT],
                                                   mv_line_length=row[SET_HYDRO_DIST])
             else:
                 return 99
@@ -1717,7 +1708,6 @@ class SettlementProcessor:
                                             prev_code=row[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
                                             num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
                                             grid_cell_area=row[SET_GRID_CELL_AREA],
-                                            conf_status=row[SET_CONFLICT],
                                             capacity_factor=row[SET_GHI] / HOURS_PER_YEAR)
             if row[SET_GHI] > 1000
             else 99, axis=1)
@@ -1733,7 +1723,6 @@ class SettlementProcessor:
                                               prev_code=row[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
                                               num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
                                               grid_cell_area=row[SET_GRID_CELL_AREA],
-                                              conf_status=row[SET_CONFLICT],
                                               capacity_factor=row[SET_WINDCF])
             if row[SET_WINDCF] > 0.1 else 99,
             axis=1)
@@ -1753,7 +1742,6 @@ class SettlementProcessor:
                                                     prev_code=row[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
                                                     num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
                                                     grid_cell_area=row[SET_GRID_CELL_AREA],
-                                                    conf_status=row[SET_CONFLICT],
                                                     fuel_cost=row[SET_MG_DIESEL_FUEL + "{}".format(year)],
                                                     ), axis=1)
 
@@ -1768,7 +1756,6 @@ class SettlementProcessor:
                                                     prev_code=row[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
                                                     num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
                                                     grid_cell_area=row[SET_GRID_CELL_AREA],
-                                                    conf_status=row[SET_CONFLICT],
                                                     fuel_cost=row[SET_SA_DIESEL_FUEL + "{}".format(year)],
                                                     ), axis=1)
 
@@ -1783,7 +1770,6 @@ class SettlementProcessor:
                                             prev_code=row[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
                                             num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
                                             grid_cell_area=row[SET_GRID_CELL_AREA],
-                                            conf_status=row[SET_CONFLICT],
                                             capacity_factor=row[SET_GHI] / HOURS_PER_YEAR) if row[SET_GHI] > 1000
             else 99,
             axis=1)
@@ -1895,7 +1881,6 @@ class SettlementProcessor:
                                                prev_code=row[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
                                                num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
                                                grid_cell_area=row[SET_GRID_CELL_AREA],
-                                               conf_status=row[SET_CONFLICT],
                                                fuel_cost=row[SET_SA_DIESEL_FUEL + "{}".format(year)],
                                                get_investment_cost=True)
 
@@ -1910,7 +1895,6 @@ class SettlementProcessor:
                                            num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
                                            grid_cell_area=row[SET_GRID_CELL_AREA],
                                            capacity_factor=row[SET_GHI] / HOURS_PER_YEAR,
-                                           conf_status=row[SET_CONFLICT],
                                            get_investment_cost=True)
 
             elif min_code == 6:
@@ -1924,7 +1908,6 @@ class SettlementProcessor:
                                              num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
                                              grid_cell_area=row[SET_GRID_CELL_AREA],
                                              capacity_factor=row[SET_WINDCF],
-                                             conf_status=row[SET_CONFLICT],
                                              get_investment_cost=True)
 
             elif min_code == 4:
@@ -1937,7 +1920,6 @@ class SettlementProcessor:
                                                prev_code=row[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
                                                num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
                                                grid_cell_area=row[SET_GRID_CELL_AREA],
-                                               conf_status=row[SET_CONFLICT],
                                                fuel_cost=row[SET_MG_DIESEL_FUEL + "{}".format(year)],
                                                get_investment_cost=True)
 
@@ -1952,7 +1934,6 @@ class SettlementProcessor:
                                            num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
                                            grid_cell_area=row[SET_GRID_CELL_AREA],
                                            capacity_factor=row[SET_GHI] / HOURS_PER_YEAR,
-                                           conf_status=row[SET_CONFLICT],
                                            get_investment_cost=True)
 
             elif min_code == 7:
@@ -1965,7 +1946,6 @@ class SettlementProcessor:
                                               prev_code=row[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
                                               num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
                                               grid_cell_area=row[SET_GRID_CELL_AREA],
-                                              conf_status=row[SET_CONFLICT],
                                               mv_line_length=row[SET_HYDRO_DIST],
                                               get_investment_cost=True)
 
@@ -1979,7 +1959,6 @@ class SettlementProcessor:
                                           prev_code=row[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
                                           num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
                                           grid_cell_area=row[SET_GRID_CELL_AREA],
-                                          conf_status=row[SET_CONFLICT],
                                           additional_mv_line_length=row[SET_MIN_GRID_DIST + "{}".format(year)],
                                           elec_loop=row[SET_ELEC_ORDER + "{}".format(year)],
                                           get_investment_cost=True)
@@ -1998,7 +1977,7 @@ class SettlementProcessor:
         if (eleclimit == 1) & (choice != 4):
             self.df[SET_LIMIT + "{}".format(year)] = 1
             self.df[SET_INVEST_PER_CAPITA + "{}".format(year)] = self.df[SET_INVESTMENT_COST + "{}".format(year)] / \
-                                                                 self.df[SET_NEW_CONNECTIONS + "{}".format(year)]
+                self.df[SET_NEW_CONNECTIONS + "{}".format(year)]
             elecrate = 1
         else:
             self.df[SET_LIMIT + "{}".format(year)] = 0
@@ -2053,7 +2032,7 @@ class SettlementProcessor:
 
                     elecrate = self.df.loc[
                                    self.df[SET_LIMIT + "{}".format(year)] == 1, SET_POP + "{}".format(year)].sum() / \
-                               self.df[SET_POP + "{}".format(year)].sum()
+                        self.df[SET_POP + "{}".format(year)].sum()
                 else:
                     print(
                         "The electrification target set is quite low and has been reached by "
@@ -2067,7 +2046,7 @@ class SettlementProcessor:
 
                     elecrate = self.df.loc[
                                    self.df[SET_LIMIT + "{}".format(year)] == 1, SET_POP + "{}".format(year)].sum() / \
-                               self.df[SET_POP + "{}".format(year)].sum()
+                        self.df[SET_POP + "{}".format(year)].sum()
 
             elif choice == 2:
                 # Prioritize grid densification/intensification (1 or 2 km). Then lowest investment per capita
@@ -2098,7 +2077,7 @@ class SettlementProcessor:
                                     (self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] == 0) &
                                     (self.df[SET_MV_DIST_PLANNED] >= auto_densification)][
                                 SET_POP + "{}".format(year)]) / \
-                                   self.df[SET_POP + "{}".format(year)].sum()
+                            self.df[SET_POP + "{}".format(year)].sum()
                         if (eleclimit - elecrate > 0.01) and (iter_limit_4 < 100):
                             min_investment += step_size
                             iter_limit_4 += 1
@@ -2259,7 +2238,7 @@ class SettlementProcessor:
 
                     elecrate = self.df.loc[
                                    self.df[SET_LIMIT + "{}".format(year)] == 1, SET_POP + "{}".format(year)].sum() / \
-                               self.df[SET_POP + "{}".format(year)].sum()
+                        self.df[SET_POP + "{}".format(year)].sum()
                 else:
                     print(
                         "The electrification target set is quite low and has been reached by "
@@ -2273,7 +2252,7 @@ class SettlementProcessor:
 
                     elecrate = self.df.loc[
                                    self.df[SET_LIMIT + "{}".format(year)] == 1, SET_POP + "{}".format(year)].sum() / \
-                               self.df[SET_POP + "{}".format(year)].sum()
+                        self.df[SET_POP + "{}".format(year)].sum()
 
         print("The electrification rate achieved in {} is {:.1f} %".format(year, (elecrate - elec_limit_origin) * 100))
 
