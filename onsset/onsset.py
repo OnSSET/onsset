@@ -113,7 +113,7 @@ class Technology:
                  distribution_losses=0,  # percentage
                  connection_cost_per_hh=0,  # USD/hh
                  om_costs=0.0,  # OM costs as percentage of capital costs
-                 capital_cost=0,  # USD/kW
+                 capital_cost={float("inf"): 0},  # USD/kW
                  capacity_factor=0.9,  # percentage
                  grid_penalty_ratio=1,  # multiplier
                  efficiency=1.0,  # percentage
@@ -266,35 +266,22 @@ class Technology:
             td_om_cost = td_investment_cost * self.om_of_td_lines * conflict_sa_pen[conf_status] if self.standalone \
                 else td_investment_cost * self.om_of_td_lines * conflict_mg_pen[conf_status]
 
-            if self.standalone and fuel_cost == 0:
-                if installed_capacity / (people / num_people_per_hh) < 0.020:
-                    capital_investment = installed_capacity * self.capital_cost[0.020] * conflict_sa_pen[conf_status]
-                    total_om_cost = td_om_cost + (self.capital_cost[0.020] * self.om_costs * conflict_sa_pen[
-                        conf_status] * installed_capacity)
-                elif installed_capacity / (people / num_people_per_hh) < 0.050:
-                    capital_investment = installed_capacity * self.capital_cost[0.050] * conflict_sa_pen[conf_status]
-                    total_om_cost = td_om_cost + (self.capital_cost[0.050] * self.om_costs * conflict_sa_pen[
-                        conf_status] * installed_capacity)
-                elif installed_capacity / (people / num_people_per_hh) < 0.100:
-                    capital_investment = installed_capacity * self.capital_cost[0.100] * conflict_sa_pen[conf_status]
-                    total_om_cost = td_om_cost + (self.capital_cost[0.100] * self.om_costs * conflict_sa_pen[
-                        conf_status] * installed_capacity)
-                elif installed_capacity / (people / num_people_per_hh) < 1:
-                    capital_investment = installed_capacity * self.capital_cost[1] * conflict_sa_pen[conf_status]
-                    total_om_cost = td_om_cost + (self.capital_cost[1] * self.om_costs * conflict_sa_pen[
-                        conf_status] * installed_capacity)
-                else:
-                    capital_investment = installed_capacity * self.capital_cost[5] * conflict_sa_pen[conf_status]
-                    total_om_cost = td_om_cost + (self.capital_cost[5] * self.om_costs * conflict_sa_pen[
-                        conf_status] * installed_capacity)
+            cap_cost = 0
+            for key in self.capital_cost:
+                if self.standalone and installed_capacity / (people / num_people_per_hh) < key:
+                    cap_cost = self.capital_cost[key]
+                    break
+                elif installed_capacity < key:
+                    cap_cost = self.capital_cost[key]
+                    break
+
+            if self.standalone:
+                capital_investment = installed_capacity * cap_cost * conflict_sa_pen[conf_status]
+                total_om_cost = cap_cost * self.om_costs * conflict_sa_pen[conf_status] * installed_capacity
             else:
-                capital_investment = installed_capacity * self.capital_cost * conflict_sa_pen[
-                    conf_status] if self.standalone \
-                    else installed_capacity * self.capital_cost * conflict_mg_pen[conf_status]
-                total_om_cost = td_om_cost + (self.capital_cost * conflict_sa_pen[conf_status] * self.om_costs *
-                                              installed_capacity) if self.standalone \
-                    else td_om_cost + (
-                        self.capital_cost * conflict_mg_pen[conf_status] * self.om_costs * installed_capacity)
+                capital_investment = installed_capacity * cap_cost * conflict_mg_pen[conf_status]
+                total_om_cost = td_om_cost + (cap_cost * conflict_mg_pen[conf_status] *
+                                              self.om_costs * installed_capacity)
             total_investment_cost = td_investment_cost + capital_investment
 
         # Perform the time-value LCOE calculation
