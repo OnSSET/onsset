@@ -120,6 +120,7 @@ class Technology:
                  diesel_price=0.0,  # USD/litre
                  grid_price=0.0,  # USD/kWh for grid electricity
                  standalone=False,
+                 mini_grid=False,
                  existing_grid_cost_ratio=0.1,  # percentage
                  grid_capacity_investment=0.0,  # USD/kW for on-grid capacity investments (excluding grid itself)
                  diesel_truck_consumption=0,  # litres/hour
@@ -138,6 +139,7 @@ class Technology:
         self.diesel_price = diesel_price
         self.grid_price = grid_price
         self.standalone = standalone
+        self.mini_grid = mini_grid
         self.existing_grid_cost_ratio = existing_grid_cost_ratio
         self.grid_capacity_investment = grid_capacity_investment
         self.diesel_truck_consumption = diesel_truck_consumption
@@ -158,7 +160,6 @@ class Technology:
         cls.end_year = end_year
 
         # RUN_PARAM: Here are the assumptions related to cost and physical properties of grid extension elements
-        # REVIEW - A final revision is needed before publishing
         cls.discount_rate = discount_rate
         cls.hv_line_type = hv_line_type  # kV
         cls.hv_line_cost = hv_line_cost  # $/km for 69kV
@@ -182,10 +183,8 @@ class Technology:
 
     def get_lcoe(self, energy_per_cell, people, num_people_per_hh, start_year, end_year, new_connections,
                  total_energy_per_cell, prev_code, grid_cell_area, conf_status=0, additional_mv_line_length=0,
-                 capacity_factor=0, grid_penalty_ratio=1, fuel_cost=0, elec_loop=0, productive_nodes=0,
-                 additional_transformer=0, get_investment_cost=False, get_investment_cost_lv=False,
-                 get_investment_cost_mv=False, get_investment_cost_hv=False, get_investment_cost_transformer=False,
-                 get_investment_cost_connection=False):
+                 capacity_factor=0.9, grid_penalty_ratio=1, fuel_cost=0, elec_loop=0, productive_nodes=0,
+                 additional_transformer=0, get_investment_cost=False):
         """
         Calculates the LCOE depending on the parameters. Optionally calculates the investment cost instead.
 
@@ -215,15 +214,12 @@ class Technology:
         if grid_penalty_ratio == 0:
             grid_penalty_ratio = self.grid_penalty_ratio
 
-        # If a new capacity factor isn't given, use the class capacity factor (for hydro, diesel etc)
-        if capacity_factor == 0:
-            capacity_factor = self.capacity_factor
-
         hv_lines_total_length, mv_lines_connection_length, mv_lines_distribution_length, total_lv_lines_length, \
             num_transformers, no_of_hv_mv_substation, no_of_mv_mv_substation, no_of_hv_lv_substation, \
             no_of_mv_lv_substation, generation_per_year, peak_load, total_nodes = \
             self.td_network_cost(people, new_connections, prev_code, total_energy_per_cell, energy_per_cell,
-                                 num_people_per_hh, grid_cell_area, additional_mv_line_length, additional_transformer)
+                                 num_people_per_hh, grid_cell_area, additional_mv_line_length, additional_transformer,
+                                 productive_nodes)
 
         try:
             int(conf_status)
@@ -231,58 +227,38 @@ class Technology:
             conf_status = 0
         conf_grid_pen = {0: 1, 1: 1.1, 2: 1.25, 3: 1.5, 4: 2}
         # The investment and O&M costs are different for grid and non-grid solutions
+        td_investment_cost = (hv_lines_total_length * self.hv_line_cost * (
+                1 + self.existing_grid_cost_ratio * elec_loop) +
+                              mv_lines_connection_length * self.mv_line_cost * (
+                                      1 + self.existing_grid_cost_ratio * elec_loop) +
+                              total_lv_lines_length * self.lv_line_cost +
+                              mv_lines_distribution_length * self.mv_line_cost +
+                              num_transformers * self.service_transf_cost +
+                              total_nodes * self.connection_cost_per_hh +
+                              no_of_hv_lv_substation * self.hv_lv_sub_station_cost +
+                              no_of_hv_mv_substation * self.hv_mv_sub_station_cost +
+                              no_of_mv_mv_substation * self.mv_mv_sub_station_cost +
+                              no_of_mv_lv_substation * self.mv_lv_sub_station_cost) * conf_grid_pen[conf_status]
+        td_investment_cost = td_investment_cost * grid_penalty_ratio
+        td_om_cost = td_investment_cost * self.om_of_td_lines * conf_grid_pen[conf_status]
+
+        installed_capacity = peak_load / capacity_factor
+
+        cap_cost = 0
+        for key in self.capital_cost:
+            if self.standalone and installed_capacity / (people / num_people_per_hh) < key:
+                cap_cost = self.capital_cost[key]
+                break
+            elif installed_capacity < key:
+                cap_cost = self.capital_cost[key]
+                break
+
+        capital_investment = installed_capacity * cap_cost * conf_grid_pen[conf_status]
+        total_om_cost = td_om_cost + (cap_cost * conf_grid_pen[conf_status] * self.om_costs * installed_capacity)
+        total_investment_cost = td_investment_cost + capital_investment
+
         if self.grid_price > 0:
-            td_investment_cost = (hv_lines_total_length * self.hv_line_cost * (
-                    1 + self.existing_grid_cost_ratio * elec_loop) +
-                                  mv_lines_connection_length * self.mv_line_cost * (
-                                          1 + self.existing_grid_cost_ratio * elec_loop) +
-                                  total_lv_lines_length * self.lv_line_cost +
-                                  mv_lines_distribution_length * self.mv_line_cost +
-                                  num_transformers * self.service_transf_cost +
-                                  total_nodes * self.connection_cost_per_hh +
-                                  no_of_hv_lv_substation * self.hv_lv_sub_station_cost +
-                                  no_of_hv_mv_substation * self.hv_mv_sub_station_cost +
-                                  no_of_mv_mv_substation * self.mv_mv_sub_station_cost +
-                                  no_of_mv_lv_substation * self.mv_lv_sub_station_cost) * conf_grid_pen[conf_status]
-            td_investment_cost = td_investment_cost * grid_penalty_ratio
-            td_om_cost = td_investment_cost * self.om_of_td_lines
-
-            total_investment_cost = td_investment_cost
-            total_om_cost = td_om_cost
             fuel_cost = self.grid_price  # TODO / (1 - self.distribution_losses) REVIEW
-        else:
-            # TODO: Possibly add substation here for mini-grids
-            conflict_sa_pen = {0: 1, 1: 1.03, 2: 1.07, 3: 1.125, 4: 1.25}
-            conflict_mg_pen = {0: 1, 1: 1.05, 2: 1.125, 3: 1.25, 4: 1.5}
-            total_lv_lines_length *= 0 if self.standalone else 1
-            mv_lines_distribution_length *= 0 if self.standalone else 1
-            mv_total_line_cost = self.mv_line_cost * mv_lines_distribution_length * conflict_mg_pen[conf_status]
-            lv_total_line_cost = self.lv_line_cost * total_lv_lines_length * conflict_mg_pen[conf_status]
-            service_transformer_total_cost = 0 if self.standalone else num_transformers * self.service_transf_cost * \
-                conflict_mg_pen[conf_status]
-            installed_capacity = peak_load / capacity_factor
-            td_investment_cost = mv_total_line_cost + lv_total_line_cost + total_nodes * self.connection_cost_per_hh + \
-                service_transformer_total_cost
-            td_om_cost = td_investment_cost * self.om_of_td_lines * conflict_sa_pen[conf_status] if self.standalone \
-                else td_investment_cost * self.om_of_td_lines * conflict_mg_pen[conf_status]
-
-            cap_cost = 0
-            for key in self.capital_cost:
-                if self.standalone and installed_capacity / (people / num_people_per_hh) < key:
-                    cap_cost = self.capital_cost[key]
-                    break
-                elif installed_capacity < key:
-                    cap_cost = self.capital_cost[key]
-                    break
-
-            if self.standalone:
-                capital_investment = installed_capacity * cap_cost * conflict_sa_pen[conf_status]
-                total_om_cost = cap_cost * self.om_costs * conflict_sa_pen[conf_status] * installed_capacity
-            else:
-                capital_investment = installed_capacity * cap_cost * conflict_mg_pen[conf_status]
-                total_om_cost = td_om_cost + (cap_cost * conflict_mg_pen[conf_status] *
-                                              self.om_costs * installed_capacity)
-            total_investment_cost = td_investment_cost + capital_investment
 
         # Perform the time-value LCOE calculation
         project_life = end_year - self.base_year + 1
@@ -319,21 +295,6 @@ class Technology:
         if get_investment_cost:
             discounted_investments = investments / discount_factor
             return np.sum(discounted_investments) + self.grid_capacity_investment * peak_load / discount_factor[step]
-        elif get_investment_cost_lv:
-            return total_lv_lines_length * (self.lv_line_cost * conf_grid_pen[conf_status])
-        elif get_investment_cost_mv:
-            return (mv_lines_connection_length * self.mv_line_cost * (1 + self.existing_grid_cost_ratio * elec_loop) +
-                    mv_lines_distribution_length * self.mv_line_cost) * conf_grid_pen[conf_status]
-        elif get_investment_cost_hv:
-            return hv_lines_total_length * (self.hv_line_cost * conf_grid_pen[conf_status]) * \
-                   (1 + self.existing_grid_cost_ratio * elec_loop)
-        elif get_investment_cost_transformer:
-            return (no_of_hv_lv_substation * self.hv_lv_sub_station_cost +
-                    no_of_hv_mv_substation * self.hv_mv_sub_station_cost +
-                    no_of_mv_mv_substation * self.mv_mv_sub_station_cost +
-                    no_of_mv_lv_substation * self.mv_lv_sub_station_cost) * conf_grid_pen[conf_status]
-        elif get_investment_cost_connection:
-            return total_nodes * self.connection_cost_per_hh
         else:
             discounted_costs = (investments + operation_and_maintenance + fuel - salvage) / discount_factor
             discounted_generation = el_gen / discount_factor
@@ -388,7 +349,9 @@ class Technology:
                 no_of_mv_mv_subs = ceil(peak_load / self.mv_lv_sub_station_type)
             elif hv_km > 0:
                 no_of_hv_lv_subs = ceil(peak_load / self.hv_lv_sub_station_type)
-            else:
+            elif mv_km > 0 and self.mini_grid: # TODO check if correct if already grid-connected
+                no_of_mv_lv_subs = ceil(peak_load / self.mv_lv_sub_station_type)
+            elif not self.mini_grid:
                 no_of_mv_lv_subs = ceil(peak_load / self.mv_lv_sub_station_type)
 
             no_of_hv_mv_subs += additional_transformer  # to connect the MV line to the HV grid

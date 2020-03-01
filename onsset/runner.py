@@ -179,7 +179,8 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                                    capacity_factor=0.5,
                                    tech_life=30,
                                    capital_cost={float("inf"): 3000},
-                                   om_costs=0.03)
+                                   om_costs=0.03,
+                                   mini_grid=True)
 
         mg_wind_calc = Technology(om_of_td_lines=0.02,
                                   distribution_losses=0.05,
@@ -187,7 +188,8 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                                   base_to_peak_load_ratio=0.85,
                                   capital_cost={float("inf"): 3750},
                                   om_costs=0.02,
-                                  tech_life=20)
+                                  tech_life=20,
+                                  mini_grid=True)
 
         mg_pv_calc = Technology(om_of_td_lines=0.02,
                                 distribution_losses=0.05,
@@ -195,7 +197,8 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                                 base_to_peak_load_ratio=0.85,
                                 tech_life=20,
                                 om_costs=0.015,
-                                capital_cost={float("inf"): 2950 * pv_capital_cost_adjust})
+                                capital_cost={float("inf"): 2950 * pv_capital_cost_adjust},
+                                mini_grid=True)
 
         sa_pv_calc = Technology(base_to_peak_load_ratio=0.9,
                                 tech_life=15,
@@ -214,7 +217,8 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                                     capacity_factor=0.7,
                                     tech_life=15,
                                     om_costs=0.1,
-                                    capital_cost={float("inf"): 721})
+                                    capital_cost={float("inf"): 721},
+                                    mini_grid=True)
 
         sa_diesel_calc = Technology(base_to_peak_load_ratio=0.9,
                                     capacity_factor=0.5,
