@@ -368,29 +368,30 @@ class Technology:
         no_of_hv_lv_subs = 0
         no_of_mv_lv_subs = 0
 
-        # Sizing HV/MV
-        hv_to_mv_lines = self.hv_line_cost / self.mv_line_cost
-        max_mv_load = self.mv_line_amperage_limit * self.mv_line_type * hv_to_mv_lines
+        if not self.standalone:
+            # Sizing HV/MV
+            hv_to_mv_lines = self.hv_line_cost / self.mv_line_cost
+            max_mv_load = self.mv_line_amperage_limit * self.mv_line_type * hv_to_mv_lines
 
-        if peak_load <= max_mv_load and additional_mv_line_length < 50:
-            mv_amperage = self.mv_lv_sub_station_type / self.mv_line_type
-            no_of_mv_lines = ceil(peak_load / (mv_amperage * self.mv_line_type))
-            mv_km = additional_mv_line_length * no_of_mv_lines
-        else:
-            hv_amperage = self.hv_lv_sub_station_type / self.hv_line_type
-            no_of_hv_lines = ceil(peak_load / (hv_amperage * self.hv_line_type))
-            hv_km = additional_mv_line_length * no_of_hv_lines
+            if peak_load <= max_mv_load and additional_mv_line_length < 50:
+                mv_amperage = self.mv_lv_sub_station_type / self.mv_line_type
+                no_of_mv_lines = ceil(peak_load / (mv_amperage * self.mv_line_type))
+                mv_km = additional_mv_line_length * no_of_mv_lines
+            else:
+                hv_amperage = self.hv_lv_sub_station_type / self.hv_line_type
+                no_of_hv_lines = ceil(peak_load / (hv_amperage * self.hv_line_type))
+                hv_km = additional_mv_line_length * no_of_hv_lines
 
-        if mv_distribution and hv_km > 0:
-            no_of_hv_mv_subs = ceil(peak_load / self.hv_lv_sub_station_type)
-        elif mv_distribution and mv_km > 0:
-            no_of_mv_mv_subs = ceil(peak_load / self.mv_lv_sub_station_type)
-        elif hv_km > 0:
-            no_of_hv_lv_subs = ceil(peak_load / self.hv_lv_sub_station_type)
-        else:
-            no_of_mv_lv_subs = ceil(peak_load / self.mv_lv_sub_station_type)
+            if mv_distribution and hv_km > 0:
+                no_of_hv_mv_subs = ceil(peak_load / self.hv_lv_sub_station_type)
+            elif mv_distribution and mv_km > 0:
+                no_of_mv_mv_subs = ceil(peak_load / self.mv_lv_sub_station_type)
+            elif hv_km > 0:
+                no_of_hv_lv_subs = ceil(peak_load / self.hv_lv_sub_station_type)
+            else:
+                no_of_mv_lv_subs = ceil(peak_load / self.mv_lv_sub_station_type)
 
-        no_of_hv_mv_subs += additional_transformer  # to connect the MV line to the HV grid
+            no_of_hv_mv_subs += additional_transformer  # to connect the MV line to the HV grid
 
         return hv_km, mv_km, no_of_hv_mv_subs, no_of_mv_mv_subs, no_of_hv_lv_subs, no_of_mv_lv_subs
 
@@ -421,34 +422,40 @@ class Technology:
         average_load = consumption / (1 - self.distribution_losses) / HOURS_PER_YEAR  # kW
         peak_load = average_load / self.base_to_peak_load_ratio  # kW
 
-        s_max = peak_load / self.power_factor
-        max_transformer_area = pi * self.lv_line_max_length ** 2
-        total_nodes = (people / num_people_per_hh) + productive_nodes
-
-        try:
-            no_of_service_transf = ceil(
-                max(s_max / self.service_transf_type, total_nodes / self.max_nodes_per_serv_trans,
-                    grid_cell_area / max_transformer_area))
-        except ValueError:  # TODO Review if this is needed
-            no_of_service_transf = 1
-        transformer_radius = ((grid_cell_area / no_of_service_transf) / pi) ** 0.5
-        transformer_load = peak_load / no_of_service_transf
-        cluster_radius = (grid_cell_area / pi) ** 0.5
-
-        # Sizing lv lines in settlement
-        if 2 / 3 * cluster_radius * transformer_load * 1000 < self.load_moment:
-            cluster_lv_lines_length = 2 / 3 * cluster_radius * no_of_service_transf
+        if self.standalone:
             cluster_mv_lines_length = 0
+            lv_km = 0
+            no_of_service_transf = 0
+            total_nodes = 0
         else:
-            cluster_lv_lines_length = 0
-            cluster_mv_lines_length = 2 * transformer_radius * no_of_service_transf
+            s_max = peak_load / self.power_factor
+            max_transformer_area = pi * self.lv_line_max_length ** 2
+            total_nodes = (people / num_people_per_hh) + productive_nodes
 
-        hh_area = grid_cell_area / total_nodes
-        hh_diameter = 2 * ((hh_area / pi) ** 0.5)
+            try:
+                no_of_service_transf = ceil(
+                    max(s_max / self.service_transf_type, total_nodes / self.max_nodes_per_serv_trans,
+                        grid_cell_area / max_transformer_area))
+            except ValueError:  # TODO Review if this is needed
+                no_of_service_transf = 1
+            transformer_radius = ((grid_cell_area / no_of_service_transf) / pi) ** 0.5
+            transformer_load = peak_load / no_of_service_transf
+            cluster_radius = (grid_cell_area / pi) ** 0.5
 
-        transformer_lv_lines_length = hh_diameter * total_nodes
+            # Sizing lv lines in settlement
+            if 2 / 3 * cluster_radius * transformer_load * 1000 < self.load_moment:
+                cluster_lv_lines_length = 2 / 3 * cluster_radius * no_of_service_transf
+                cluster_mv_lines_length = 0
+            else:
+                cluster_lv_lines_length = 0
+                cluster_mv_lines_length = 2 * transformer_radius * no_of_service_transf
 
-        lv_km = cluster_lv_lines_length + transformer_lv_lines_length
+            hh_area = grid_cell_area / total_nodes
+            hh_diameter = 2 * ((hh_area / pi) ** 0.5)
+
+            transformer_lv_lines_length = hh_diameter * total_nodes
+
+            lv_km = cluster_lv_lines_length + transformer_lv_lines_length
 
         return cluster_mv_lines_length, lv_km, no_of_service_transf, consumption, peak_load, total_nodes
 
