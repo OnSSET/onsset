@@ -1,5 +1,5 @@
 import logging
-from math import asin, ceil, cos, exp, log, pi, radians, sin, sqrt
+from math import asin, cos, exp, log, pi, radians, sin, sqrt
 
 import numpy as np
 import pandas as pd
@@ -451,12 +451,12 @@ class Technology:
             max_transformer_area = pi * self.lv_line_max_length ** 2
             total_nodes = (people / num_people_per_hh) + productive_nodes
 
-            try:
-                no_of_service_transf = ceil(
-                    max(s_max / self.service_transf_type, total_nodes / self.max_nodes_per_serv_trans,
-                        grid_cell_area / max_transformer_area))
-            except ValueError:  # TODO Review if this is needed
-                no_of_service_transf = 1
+            # try:
+            no_of_service_transf = np.ceil(
+                np.maximum(s_max / self.service_transf_type, np.maximum(total_nodes / self.max_nodes_per_serv_trans,
+                                                                        grid_cell_area / max_transformer_area)))
+            # except ValueError:  # TODO Review if this is needed
+            #     no_of_service_transf = 1
             transformer_radius = ((grid_cell_area / no_of_service_transf) / pi) ** 0.5
             transformer_load = peak_load / no_of_service_transf
             cluster_radius = (grid_cell_area / pi) ** 0.5
@@ -530,7 +530,7 @@ class Technology:
                                       num_people_per_hh, grid_cell_area, productive_nodes)
 
         # Then calculate the difference between the two
-        mv_lines_distribution_length3 = np.maximum(cluster_lv_lines_length1 - cluster_lv_lines_length2, 0)
+        mv_lines_distribution_length3 = np.maximum(cluster_lv_lines_length1 - cluster_lv_lines_length2, 0)  # TODO
         total_lv_lines_length3 = np.maximum(cluster_lv_lines_length1 - cluster_lv_lines_length2, 0)
         num_transformers3 = np.maximum(no_of_service_transf1 - no_of_service_transf2, 0)
         generation_per_year3 = np.maximum(generation_per_year1 - generation_per_year2, 0)
