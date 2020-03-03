@@ -234,7 +234,7 @@ class Technology:
                 else:
                     people = 0.00001
         else:
-            people.loc[people == 0] = 0.00001
+            people = np.maximum(people, 0.00001)
 
         if type(energy_per_cell) == int or type(energy_per_cell) == float or type(energy_per_cell) == np.float64:
             if energy_per_cell == 0:
@@ -245,13 +245,13 @@ class Technology:
                 else:
                     energy_per_cell = 0.000000000001
         else:
-            energy_per_cell.loc[energy_per_cell == 0] = 0.000000000001
+            energy_per_cell = np.maximum(energy_per_cell, 0.000000000001)
 
-        if type(grid_penalty_ratio) == int or type(grid_penalty_ratio) == float:
-            if grid_penalty_ratio == 0:
-                grid_penalty_ratio = self.grid_penalty_ratio
-        else:
-            grid_penalty_ratio.loc[grid_penalty_ratio == 0] = self.grid_penalty_ratio
+        # if type(grid_penalty_ratio) == int or type(grid_penalty_ratio) == float:
+        #     if grid_penalty_ratio == 0:
+        #         grid_penalty_ratio = self.grid_penalty_ratio
+        # else:
+        #     grid_penalty_ratio = np.minimum(grid_penalty_ratio, self.grid_penalty_ratio)
 
         # people.loc[people == 0] = 0.00001  # Set the people low (prevent div/0 error)
         # energy_per_cell.loc[energy_per_cell == 0] = 0.000000000001  # Otherwise set the demand low (prevent div/0 error)
@@ -1753,9 +1753,9 @@ class SettlementProcessor:
         # hydro_df = self.df[[SET_HYDRO_FID, SET_HYDRO]].drop_duplicates(subset=SET_HYDRO_FID)
         # hydro_df[hydro_used] = 0
         # hydro_df = hydro_df.set_index(SET_HYDRO_FID)
-        # 
+        #
         # max_hydro_dist = 5  # the max distance in km to consider hydropower viable
-        # 
+        #
         # def hydro_lcoe(self.df):
         #     if self.df[SET_HYDRO_DIST] < max_hydro_dist:
         #         # calculate the capacity that would be added by the settlement
@@ -1763,14 +1763,14 @@ class SettlementProcessor:
         #                                 self.df[SET_ENERGY_PER_CELL + "{}".format(year)]) /
         #                                (HOURS_PER_YEAR * mg_hydro_calc.capacity_factor *
         #                                 mg_hydro_calc.base_to_peak_load_ratio))
-        # 
+        #
         #         # and add it to the tracking df
         #         hydro_df.loc[self.df[SET_HYDRO_FID], hydro_used] += additional_capacity
-        # 
+        #
         #         # if it exceeds the available capacity, it's not an option
         #         if hydro_df.loc[self.df[SET_HYDRO_FID], hydro_used] > hydro_df.loc[self.df[SET_HYDRO_FID], SET_HYDRO]:
         #             return 99
-        # 
+        #
         #         else:
         #             return mg_hydro_calc.get_lcoe(energy_per_cell=self.df[SET_ENERGY_PER_CELL + "{}".format(year)],
         #                                           start_year=year - time_step,
