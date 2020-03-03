@@ -23,12 +23,12 @@
 3.Capacity_MG_Wind,0,28.35529586655862
 3.Capacity_MG_Hydro,0,0
 3.Capacity_MG_Hybrid,0,0
-4.Investment_Grid,102831966.53869838,34024747.030845396
+4.Investment_Grid,,
 4.Investment_SA_Diesel,0,0
-4.Investment_SA_PV,0,5261938.868492031
+4.Investment_SA_PV,0,
 4.Investment_MG_Diesel,0,0
-4.Investment_MG_PV,0,4917598.033174717
-4.Investment_MG_Wind,0,91782.62360189446
+4.Investment_MG_PV,0,
+4.Investment_MG_Wind,0,
 4.Investment_MG_Hydro,0,0
 4.Investment_MG_Hybrid,0,0
 Min_cluster_pop_2030,17.357368242169507,17.697452311893553
@@ -39,5 +39,5 @@ Min_existing_grid_dist,0.0,0.0
 Max_existing_grid_dist,46.018,46.018
 Min_road_dist,0.0,0.0
 Max_road_dist,40.035,40.035
-Min_investment_capita_cost,108.0648034621142,62.43468055306017
-Max_investment_capita_cost,776.1488796417942,235.10310038456802
+Min_investment_capita_cost,,
+Max_investment_capita_cost,,
