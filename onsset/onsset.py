@@ -414,7 +414,7 @@ class Technology:
                                             0)
             else:
                 no_of_mv_lv_subs = np.where(mv_distribution,
-                                            0,
+                                            np.where(hv_km == 0, np.where(mv_km == 0, np.ceil(peak_load / self.mv_lv_sub_station_type), 0), 0),
                                             np.ceil(peak_load / self.mv_lv_sub_station_type))
 
             no_of_hv_mv_subs += additional_transformer  # to connect the MV line to the HV grid
