@@ -314,6 +314,13 @@ class Technology:
             investments[reinvest_year] = 1
         investments = np.outer(total_investment_cost, investments)
 
+        grid_capacity_investments = np.zeros(project_life)
+        grid_capacity_investments[step] = 1
+        # Calculate the year of re-investment if tech_life is smaller than project life
+        if reinvest_year:
+            grid_capacity_investments[reinvest_year] = 1
+        grid_capacity_investments = np.outer(peak_load * self.grid_capacity_investment, grid_capacity_investments)
+
         # Calculate salvage value if tech_life is bigger than project life
         salvage = np.zeros(project_life)
         if reinvest_year > 0:
@@ -330,10 +337,10 @@ class Technology:
         fuel = np.outer(np.asarray(generation_per_year), np.zeros(project_life))
         for p in range(project_life):
             fuel[:, p] = el_gen[:, p] * fuel_cost
-        # fuel[0:step] = 0
 
         discounted_investments = investments / discount_factor
-        investment_cost = np.sum(discounted_investments, axis=1) # TODO + grid_capacity_investment * peak_load
+        dicounted_grid_capacity_investments = grid_capacity_investments / discount_factor
+        investment_cost = np.sum(discounted_investments, axis=1) + np.sum(dicounted_grid_capacity_investments, axis=1)
         discounted_costs = (investments + operation_and_maintenance + fuel - salvage) / discount_factor
         discounted_generation = el_gen / discount_factor
         lcoe = np.sum(discounted_costs, axis=1) / np.sum(discounted_generation, axis=1)
@@ -2091,20 +2098,17 @@ class SettlementProcessor:
                                elec_loop=self.df[SET_ELEC_ORDER + "{}".format(year)],
                                get_investment_cost=True)
 
-        self.df.loc[self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 1,
-                    SET_INVESTMENT_COST + "{}".format(year)] = grid_investment
-        self.df.loc[self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 2,
-                    SET_INVESTMENT_COST + "{}".format(year)] = sa_diesel_investment
-        self.df.loc[self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 3,
-                    SET_INVESTMENT_COST + "{}".format(year)] = sa_pv_investment
-        self.df.loc[self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 4,
-                    SET_INVESTMENT_COST + "{}".format(year)] = mg_diesel_investment
-        self.df.loc[self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 5,
-                    SET_INVESTMENT_COST + "{}".format(year)] = mg_pv_investment
-        self.df.loc[self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 6,
-                    SET_INVESTMENT_COST + "{}".format(year)] = mg_wind_investment
-        self.df.loc[self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 7,
-                    SET_INVESTMENT_COST + "{}".format(year)] = mg_hydro_investment
+        grid = pd.DataFrame(np.where(self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 1, 1, 0))
+        sa_diesel = pd.DataFrame(np.where(self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 2, 1, 0))
+        sa_pv = pd.DataFrame(np.where(self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 3, 1, 0))
+        mg_diesel = pd.DataFrame(np.where(self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 4, 1, 0))
+        mg_pv = pd.DataFrame(np.where(self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 5, 1, 0))
+        mg_wind = pd.DataFrame(np.where(self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 6, 1, 0))
+        mg_hydro = pd.DataFrame(np.where(self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 7, 1, 0))
+
+        self.df[SET_INVESTMENT_COST + "{}".format(year)] = grid * grid_investment + sa_diesel * sa_diesel_investment + \
+            sa_pv * sa_pv_investment + mg_diesel * mg_diesel_investment + mg_pv * mg_pv_investment + \
+            mg_wind * mg_wind_investment + mg_hydro * mg_hydro_investment
 
     def apply_limitations(self, eleclimit, year, time_step, prioritization, auto_densification=0):
 
