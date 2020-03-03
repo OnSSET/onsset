@@ -225,40 +225,67 @@ class Technology:
         lcoe or discounted investment cost
         """
 
-        if people == 0:
-            people = 0.00001  # Set the people low (prevent div/0 error)
+        if type(people) == int or type(people) == float or type(people) == np.float64:
+            if people == 0:
+                # If there are no people, the investment cost is zero.
+                if get_investment_cost:
+                    return 0
+                # Otherwise we set the people low (prevent div/0 error) and continue.
+                else:
+                    people = 0.00001
+        else:
+            people.loc[people == 0] = 0.00001
 
-        if energy_per_cell == 0:
-            if get_investment_cost:
-                return 0  # If there is no demand, the investment cost is zero.
-            else:
-                energy_per_cell = 0.000000000001  # Otherwise set the demand low (prevent div/0 error)
+        if type(energy_per_cell) == int or type(energy_per_cell) == float or type(energy_per_cell) == np.float64:
+            if energy_per_cell == 0:
+                # If there are no people, the investment cost is zero.
+                if get_investment_cost:
+                    return 0
+                # Otherwise we set the people low (prevent div/0 error) and continue.
+                else:
+                    energy_per_cell = 0.000000000001
+        else:
+            energy_per_cell.loc[energy_per_cell == 0] = 0.000000000001
 
-        if grid_penalty_ratio == 0:
-            grid_penalty_ratio = self.grid_penalty_ratio
+        if type(grid_penalty_ratio) == int or type(grid_penalty_ratio) == float:
+            if grid_penalty_ratio == 0:
+                grid_penalty_ratio = self.grid_penalty_ratio
+        else:
+            grid_penalty_ratio.loc[grid_penalty_ratio == 0] = self.grid_penalty_ratio
 
-        generation_per_year, peak_load, td_investment_cost = self.td_network_cost(people, new_connections, prev_code,
+        # people.loc[people == 0] = 0.00001  # Set the people low (prevent div/0 error)
+        # energy_per_cell.loc[energy_per_cell == 0] = 0.000000000001  # Otherwise set the demand low (prevent div/0 error)
+        # grid_penalty_ratio.loc[grid_penalty_ratio == 0] = self.grid_penalty_ratio # TODO
+
+        generation_per_year, peak_load, td_investment_cost = self.td_network_cost(people,
+                                                                                  new_connections,
+                                                                                  prev_code,
                                                                                   total_energy_per_cell,
-                                                                                  energy_per_cell, num_people_per_hh,
+                                                                                  energy_per_cell,
+                                                                                  num_people_per_hh,
                                                                                   grid_cell_area,
                                                                                   additional_mv_line_length,
                                                                                   additional_transformer,
                                                                                   productive_nodes,
                                                                                   elec_loop,
                                                                                   penalty)
+        generation_per_year = pd.Series(generation_per_year)
+        peak_load = pd.Series(peak_load)
+        td_investment_cost = pd.Series(td_investment_cost)
 
         td_investment_cost = td_investment_cost * grid_penalty_ratio
         td_om_cost = td_investment_cost * self.om_of_td_lines * penalty
         installed_capacity = peak_load / capacity_factor
 
-        cap_cost = 0
-        for key in self.capital_cost:
-            if self.standalone and installed_capacity / (people / num_people_per_hh) < key:
-                cap_cost = self.capital_cost[key]
-                break
-            elif installed_capacity < key:
-                cap_cost = self.capital_cost[key]
-                break
+        cap_cost = td_investment_cost * 0
+        cost_dict_list = self.capital_cost.keys()
+        cost_dict_list = sorted(cost_dict_list)
+        for key in cost_dict_list:
+            if self.standalone:
+                cap_cost.loc[((installed_capacity / (people / num_people_per_hh)) < key) & (cap_cost == 0)] = \
+                    self.capital_cost[key]
+            else:
+                cap_cost.loc[(installed_capacity < key) & (cap_cost == 0)] = self.capital_cost[key]
 
         capital_investment = installed_capacity * cap_cost * penalty
         total_om_cost = td_om_cost + (cap_cost * penalty * self.om_costs * installed_capacity)
@@ -276,15 +303,16 @@ class Technology:
             reinvest_year = self.tech_life + step
 
         year = np.arange(project_life)
-        el_gen = generation_per_year * np.ones(project_life)
-        el_gen[0:step] = 0
+        el_gen = np.outer(np.asarray(generation_per_year), np.ones(project_life))
+        for s in range(step):
+            el_gen[:, s] = 0
         discount_factor = (1 + self.discount_rate) ** year
         investments = np.zeros(project_life)
-        investments[step] = total_investment_cost
-
+        investments[step] = 1
         # Calculate the year of re-investment if tech_life is smaller than project life
         if reinvest_year:
-            investments[reinvest_year] = total_investment_cost
+            investments[reinvest_year] = 1
+        investments = np.outer(total_investment_cost, investments)
 
         # Calculate salvage value if tech_life is bigger than project life
         salvage = np.zeros(project_life)
@@ -292,20 +320,30 @@ class Technology:
             used_life = (project_life - step) - self.tech_life
         else:
             used_life = project_life - step - 1
-        salvage[-1] = total_investment_cost * (1 - used_life / self.tech_life)
-        operation_and_maintenance = total_om_cost * np.ones(project_life)
-        operation_and_maintenance[0:step] = 0
-        fuel = el_gen * fuel_cost
+        salvage[-1] = 1
+        salvage = np.outer(total_investment_cost * (1 - used_life / self.tech_life), salvage)
+
+        operation_and_maintenance = np.ones(project_life)
+        for s in range(step):
+            operation_and_maintenance[s] = 0
+        operation_and_maintenance = np.outer(total_om_cost, operation_and_maintenance)
+        fuel = np.outer(np.asarray(generation_per_year), np.zeros(project_life))
+        for p in range(project_life):
+            fuel[:, p] = el_gen[:, p] * fuel_cost
         fuel[0:step] = 0
 
-        # So we also return the total investment cost for this number of people
+        discounted_investments = investments / discount_factor
+        investment_cost = np.sum(discounted_investments, axis=1) # TODO + grid_capacity_investment * peak_load
+        discounted_costs = (investments + operation_and_maintenance + fuel - salvage) / discount_factor
+        discounted_generation = el_gen / discount_factor
+        lcoe = np.sum(discounted_costs, axis=1) / np.sum(discounted_generation, axis=1)
+        lcoe = pd.DataFrame(lcoe[:, np.newaxis])
+        investment_cost = pd.DataFrame(investment_cost[:, np.newaxis])
+
         if get_investment_cost:
-            discounted_investments = investments / discount_factor
-            return np.sum(discounted_investments) + self.grid_capacity_investment * peak_load / discount_factor[step]
+            return investment_cost
         else:
-            discounted_costs = (investments + operation_and_maintenance + fuel - salvage) / discount_factor
-            discounted_generation = el_gen / discount_factor
-            return np.sum(discounted_costs) / np.sum(discounted_generation)
+            return lcoe
 
     def transmission_network(self, peak_load, additional_mv_line_length=0, additional_transformer=0,
                              mv_distribution=False):
@@ -341,25 +379,36 @@ class Technology:
             hv_to_mv_lines = self.hv_line_cost / self.mv_line_cost
             max_mv_load = self.mv_line_amperage_limit * self.mv_line_type * hv_to_mv_lines
 
-            if peak_load <= max_mv_load and additional_mv_line_length < 50:
-                mv_amperage = self.mv_lv_sub_station_type / self.mv_line_type
-                no_of_mv_lines = ceil(peak_load / (mv_amperage * self.mv_line_type))
-                mv_km = additional_mv_line_length * no_of_mv_lines
-            else:
-                hv_amperage = self.hv_lv_sub_station_type / self.hv_line_type
-                no_of_hv_lines = ceil(peak_load / (hv_amperage * self.hv_line_type))
-                hv_km = additional_mv_line_length * no_of_hv_lines
+            mv_amperage = self.mv_lv_sub_station_type / self.mv_line_type
+            no_of_mv_lines = np.ceil(peak_load / (mv_amperage * self.mv_line_type))
+            hv_amperage = self.hv_lv_sub_station_type / self.hv_line_type
+            no_of_hv_lines = np.ceil(peak_load / (hv_amperage * self.hv_line_type))
 
-            if mv_distribution and hv_km > 0:
-                no_of_hv_mv_subs = ceil(peak_load / self.hv_lv_sub_station_type)
-            elif mv_distribution and mv_km > 0:
-                no_of_mv_mv_subs = ceil(peak_load / self.mv_lv_sub_station_type)
-            elif hv_km > 0:
-                no_of_hv_lv_subs = ceil(peak_load / self.hv_lv_sub_station_type)
-            elif mv_km > 0 and self.mini_grid:  # TODO check if correct if already grid-connected
-                no_of_mv_lv_subs = ceil(peak_load / self.mv_lv_sub_station_type)
-            elif not self.mini_grid:
-                no_of_mv_lv_subs = ceil(peak_load / self.mv_lv_sub_station_type)
+            mv_km = np.where((peak_load <= max_mv_load) & (additional_mv_line_length < 50),
+                             additional_mv_line_length * no_of_mv_lines,
+                             0)
+
+            hv_km = np.where((peak_load <= max_mv_load) & (additional_mv_line_length < 50),
+                             0,
+                             additional_mv_line_length * no_of_hv_lines)
+
+            no_of_hv_mv_subs = np.where(mv_distribution & (hv_km > 0),
+                                        np.ceil(peak_load / self.mv_lv_sub_station_type),
+                                        0)
+            no_of_mv_mv_subs = np.where(mv_distribution & (mv_km > 0),
+                                        np.ceil(peak_load / self.mv_lv_sub_station_type),
+                                        0)
+            no_of_hv_lv_subs = np.where(mv_distribution,
+                                        0,
+                                        np.where(hv_km > 0, np.ceil(peak_load / self.hv_lv_sub_station_type), 0))
+            if self.mini_grid:  # TODO check if correct if already grid-connected
+                no_of_mv_lv_subs = np.where(mv_km > 0,
+                                            np.ceil(peak_load / self.mv_lv_sub_station_type),
+                                            0)
+            else:
+                no_of_mv_lv_subs = np.where(mv_distribution,
+                                            0,
+                                            np.ceil(peak_load / self.mv_lv_sub_station_type))
 
             no_of_hv_mv_subs += additional_transformer  # to connect the MV line to the HV grid
 
@@ -413,12 +462,13 @@ class Technology:
             cluster_radius = (grid_cell_area / pi) ** 0.5
 
             # Sizing lv lines in settlement
-            if 2 / 3 * cluster_radius * transformer_load * 1000 < self.load_moment:
-                cluster_lv_lines_length = 2 / 3 * cluster_radius * no_of_service_transf
-                cluster_mv_lines_length = 0
-            else:
-                cluster_lv_lines_length = 0
-                cluster_mv_lines_length = 2 * transformer_radius * no_of_service_transf
+            cluster_lv_lines_length = np.where(2 / 3 * cluster_radius * transformer_load * 1000 < self.load_moment,
+                                               2 / 3 * cluster_radius * no_of_service_transf,
+                                               0)
+
+            cluster_mv_lines_length = np.where(2 / 3 * cluster_radius * transformer_load * 1000 >= self.load_moment,
+                                               2 * transformer_radius * no_of_service_transf,
+                                               0)
 
             hh_area = grid_cell_area / total_nodes
             hh_diameter = 2 * ((hh_area / pi) ** 0.5)
@@ -462,83 +512,113 @@ class Technology:
             Cost penalty factor for T&D network, e.g. https://www.mdpi.com/2071-1050/12/3/777
         """
 
-        if people != new_connections and (prev_code < 2 or prev_code > 3):
+        # if people != new_connections and (prev_code < 2 or prev_code > 3):
             # If there is already a distribution network in the settlement, all calculations are mad twice.
             # First the network required to meet the full demand is calculated, then the existing network is calc.
             # The additional network components required is the difference between the two
 
-            # Start by calculating the distribution network required to meet all of the demand
-            cluster_mv_lines_length1, cluster_lv_lines_length1, no_of_service_transf1, \
-                generation_per_year1, peak_load1, total_nodes1 = \
-                self.distribution_network(people, total_energy_per_cell, num_people_per_hh, grid_cell_area,
-                                          productive_nodes)
+                # Start by calculating the distribution network required to meet all of the demand
+        cluster_mv_lines_length1, cluster_lv_lines_length1, no_of_service_transf1, \
+        generation_per_year1, peak_load1, total_nodes1 = \
+            self.distribution_network(people, total_energy_per_cell, num_people_per_hh, grid_cell_area,
+                                      productive_nodes)
 
-            # Next calculate the network that is already there
-            cluster_mv_lines_length2, cluster_lv_lines_length2, no_of_service_transf2, \
-                generation_per_year2, peak_load2, total_nodes2 = \
-                self.distribution_network((people - new_connections), (total_energy_per_cell - energy_per_cell),
-                                          num_people_per_hh, grid_cell_area, productive_nodes)
+        # Next calculate the network that is already there
+        cluster_mv_lines_length2, cluster_lv_lines_length2, no_of_service_transf2, \
+        generation_per_year2, peak_load2, total_nodes2 = \
+            self.distribution_network(np.maximum((people - new_connections), 1), (total_energy_per_cell - energy_per_cell),
+                                      num_people_per_hh, grid_cell_area, productive_nodes)
 
-            # Then calculate the difference between the two
-            mv_lines_distribution_length = max(cluster_lv_lines_length1 - cluster_lv_lines_length2, 0)
-            total_lv_lines_length = max(cluster_lv_lines_length1 - cluster_lv_lines_length2, 0)
-            num_transformers = max(no_of_service_transf1 - no_of_service_transf2, 0)
-            generation_per_year = max(generation_per_year1 - generation_per_year2, 0)
-            peak_load = max(peak_load1 - peak_load2, 0)
-            total_nodes = max(total_nodes1 - total_nodes2, 0)
+        # Then calculate the difference between the two
+        mv_lines_distribution_length3 = np.maximum(cluster_lv_lines_length1 - cluster_lv_lines_length2, 0)
+        total_lv_lines_length3 = np.maximum(cluster_lv_lines_length1 - cluster_lv_lines_length2, 0)
+        num_transformers3 = np.maximum(no_of_service_transf1 - no_of_service_transf2, 0)
+        generation_per_year3 = np.maximum(generation_per_year1 - generation_per_year2, 0)
+        peak_load3 = np.maximum(peak_load1 - peak_load2, 0)
+        total_nodes3 = np.maximum(total_nodes1 - total_nodes2, 0)
 
-            # Examine if there are any MV lines in the distribution network, used to determine transformer type
-            if mv_lines_distribution_length > 0:
-                mv_distribution = True
-            else:
-                mv_distribution = False
+        # Examine if there are any MV lines in the distribution network, used to determine transformer type
+        mv_distribution = np.where(mv_lines_distribution_length3 > 0, True, False)
 
-            # Then calculate the transmission network (HV or MV lines plus transformers) using the same methodology
-            hv_lines_total_length1, mv_lines_connection_length1, no_of_hv_mv_substation1, no_of_mv_mv_substation1, \
-                no_of_hv_lv_substation1, no_of_mv_lv_substation1 = \
-                self.transmission_network(peak_load1, additional_mv_line_length, additional_transformer,
-                                          mv_distribution=mv_distribution)
+        # Then calculate the transmission network (HV or MV lines plus transformers) using the same methodology
+        hv_lines_total_length1, mv_lines_connection_length1, no_of_hv_mv_substation1, no_of_mv_mv_substation1, \
+            no_of_hv_lv_substation1, no_of_mv_lv_substation1 = \
+            self.transmission_network(peak_load1, additional_mv_line_length, additional_transformer,
+                                      mv_distribution=mv_distribution)
 
-            hv_lines_total_length2, mv_lines_connection_length2, no_of_hv_mv_substation2, no_of_mv_mv_substation2, \
-                no_of_hv_lv_substation2, no_of_mv_lv_substation2 = \
-                self.transmission_network(peak_load2, additional_mv_line_length, additional_transformer,
-                                          mv_distribution=mv_distribution)
+        hv_lines_total_length2, mv_lines_connection_length2, no_of_hv_mv_substation2, no_of_mv_mv_substation2, \
+            no_of_hv_lv_substation2, no_of_mv_lv_substation2 = \
+            self.transmission_network(peak_load2, additional_mv_line_length, additional_transformer,
+                                      mv_distribution=mv_distribution)
 
-            hv_lines_total_length = max(hv_lines_total_length1 - hv_lines_total_length2, 0)
-            mv_lines_connection_length = max(mv_lines_connection_length1 - mv_lines_connection_length2, 0)
-            no_of_hv_lv_substation = max(no_of_hv_lv_substation1 - no_of_hv_lv_substation2, 0)
-            no_of_hv_mv_substation = max(no_of_hv_mv_substation1 - no_of_hv_mv_substation2, 0)
-            no_of_mv_mv_substation = max(no_of_mv_mv_substation1 - no_of_mv_mv_substation2, 0)
-            no_of_mv_lv_substation = max(no_of_mv_lv_substation1 - no_of_mv_lv_substation2, 0)
+        hv_lines_total_length3 = np.maximum(hv_lines_total_length1 - hv_lines_total_length2, 0)
+        mv_lines_connection_length3 = np.maximum(mv_lines_connection_length1 - mv_lines_connection_length2, 0)
+        no_of_hv_lv_substation3 = np.maximum(no_of_hv_lv_substation1 - no_of_hv_lv_substation2, 0)
+        no_of_hv_mv_substation3 = np.maximum(no_of_hv_mv_substation1 - no_of_hv_mv_substation2, 0)
+        no_of_mv_mv_substation3 = np.maximum(no_of_mv_mv_substation1 - no_of_mv_mv_substation2, 0)
+        no_of_mv_lv_substation3 = np.maximum(no_of_mv_lv_substation1 - no_of_mv_lv_substation2, 0)
 
-        else:
-            # If no distribution network is present, perform the calculations only once
-            mv_lines_distribution_length, total_lv_lines_length, num_transformers, generation_per_year, peak_load, \
-                total_nodes = self.distribution_network(people, energy_per_cell, num_people_per_hh, grid_cell_area,
-                                                        productive_nodes)
+        # If no distribution network is present, perform the calculations only once
+        mv_lines_distribution_length_new, total_lv_lines_length_new, num_transformers_new, generation_per_year_new, \
+            peak_load_new, total_nodes_new = self.distribution_network(people, energy_per_cell, num_people_per_hh,
+                                                                       grid_cell_area, productive_nodes)
 
-            if mv_lines_distribution_length > 0:
-                mv_distribution = True
-            else:
-                mv_distribution = False
+        mv_distribution = np.where(mv_lines_distribution_length_new > 0, True, False)
 
-            hv_lines_total_length, mv_lines_connection_length, no_of_hv_mv_substation, no_of_mv_mv_substation, \
-                no_of_hv_lv_substation, no_of_mv_lv_substation = \
-                self.transmission_network(peak_load, additional_mv_line_length, additional_transformer,
-                                          mv_distribution=mv_distribution)
+        hv_lines_total_length_new, mv_lines_connection_length_new, no_of_hv_mv_substation_new, \
+        no_of_mv_mv_substation_new, no_of_hv_lv_substation_new, no_of_mv_lv_substation_new = \
+            self.transmission_network(peak_load_new, additional_mv_line_length, additional_transformer,
+                                      mv_distribution=mv_distribution)
+
+        mv_lines_distribution_length = np.where((people != new_connections) & ((prev_code < 2) | (prev_code > 3)),
+                                                mv_lines_distribution_length3,
+                                                mv_lines_distribution_length_new)
+        hv_lines_total_length = np.where((people != new_connections) & ((prev_code < 2) | (prev_code > 3)),
+                                         hv_lines_total_length3,
+                                         hv_lines_total_length_new)
+        mv_lines_connection_length = np.where((people != new_connections) & ((prev_code < 2) | (prev_code > 3)),
+                                              mv_lines_connection_length3,
+                                              mv_lines_connection_length_new)
+        total_lv_lines_length = np.where((people != new_connections) & ((prev_code < 2) | (prev_code > 3)),
+                                         total_lv_lines_length3,
+                                         total_lv_lines_length_new)
+        num_transformers = np.where((people != new_connections) & ((prev_code < 2) | (prev_code > 3)),
+                                    num_transformers3,
+                                    num_transformers_new)
+        total_nodes = np.where((people != new_connections) & ((prev_code < 2) | (prev_code > 3)),
+                               total_nodes3,
+                               total_nodes_new)
+        no_of_hv_lv_substation = np.where((people != new_connections) & ((prev_code < 2) | (prev_code > 3)),
+                                          no_of_hv_lv_substation3,
+                                          no_of_hv_lv_substation_new)
+        no_of_hv_mv_substation = np.where((people != new_connections) & ((prev_code < 2) | (prev_code > 3)),
+                                          no_of_hv_mv_substation3,
+                                          no_of_hv_mv_substation_new)
+        no_of_mv_mv_substation = np.where((people != new_connections) & ((prev_code < 2) | (prev_code > 3)),
+                                          no_of_mv_mv_substation3,
+                                          no_of_mv_mv_substation_new)
+        no_of_mv_lv_substation = np.where((people != new_connections) & ((prev_code < 2) | (prev_code > 3)),
+                                          no_of_mv_lv_substation3,
+                                          no_of_mv_lv_substation_new)
+        generation_per_year = np.where((people != new_connections) & ((prev_code < 2) | (prev_code > 3)),
+                                       generation_per_year3,
+                                       generation_per_year_new)
+        peak_load = np.where((people != new_connections) & ((prev_code < 2) | (prev_code > 3)),
+                             peak_load3,
+                             peak_load_new)
 
         td_investment_cost = (hv_lines_total_length * self.hv_line_cost * (
-                1 + self.existing_grid_cost_ratio * elec_loop) +
-                              mv_lines_connection_length * self.mv_line_cost * (
-                                      1 + self.existing_grid_cost_ratio * elec_loop) +
-                              total_lv_lines_length * self.lv_line_cost +
-                              mv_lines_distribution_length * self.mv_line_cost +
-                              num_transformers * self.service_transf_cost +
-                              total_nodes * self.connection_cost_per_hh +
-                              no_of_hv_lv_substation * self.hv_lv_sub_station_cost +
-                              no_of_hv_mv_substation * self.hv_mv_sub_station_cost +
-                              no_of_mv_mv_substation * self.mv_mv_sub_station_cost +
-                              no_of_mv_lv_substation * self.mv_lv_sub_station_cost) * penalty
+            1 + self.existing_grid_cost_ratio * elec_loop) +
+                          mv_lines_connection_length * self.mv_line_cost * (
+                                  1 + self.existing_grid_cost_ratio * elec_loop) +
+                          total_lv_lines_length * self.lv_line_cost +
+                          mv_lines_distribution_length * self.mv_line_cost +
+                          num_transformers * self.service_transf_cost +
+                          total_nodes * self.connection_cost_per_hh +
+                          no_of_hv_lv_substation * self.hv_lv_sub_station_cost +
+                          no_of_hv_mv_substation * self.hv_mv_sub_station_cost +
+                          no_of_mv_mv_substation * self.mv_mv_sub_station_cost +
+                          no_of_mv_lv_substation * self.mv_lv_sub_station_cost) * penalty
 
         return generation_per_year, peak_load, td_investment_cost
 
@@ -845,7 +925,7 @@ class SettlementProcessor:
             calibrate = True
         # RUN_PARAM: This is where manual calibration of urban/rural population takes place.
         # The model uses 0, 1, 2 as GHS population layer does.
-        # As of this version, urban are only rows with value equal to 2
+        # As of this version, urban are only self.dfs with value equal to 2
         if calibrate:
             urban_modelled = 2
             factor = 1
@@ -1304,7 +1384,7 @@ class SettlementProcessor:
                                                grid_cell_area=grid_cell_area[unelec],
                                                additional_mv_line_length=0,
                                                elec_loop=0)
-                if grid_lcoe < min_code_lcoes[unelec]:
+                if grid_lcoe[0][0] < min_code_lcoes[unelec]:
                     filtered_unelectrified.append(unelec)
             except KeyError:
                 pass
@@ -1360,6 +1440,7 @@ class SettlementProcessor:
                                                grid_cell_area=grid_cell_area[unelec],
                                                additional_mv_line_length=dist_adjusted,
                                                elec_loop=0)
+                grid_lcoe = grid_lcoe[0][0]
                 if grid_lcoe < min_code_lcoes[unelec]:
                     if (grid_lcoe < new_lcoes[unelec]) and (new_grid_capacity + peak_load < grid_capacity_limit) \
                             and (new_connections[unelec] / nupppphh[unelec] < grid_connect_limit):
@@ -1403,6 +1484,7 @@ class SettlementProcessor:
                                                additional_mv_line_length=dist_adjusted,
                                                elec_loop=elec_loop_value,
                                                additional_transformer=1)
+                grid_lcoe = grid_lcoe[0][0]
                 if (grid_lcoe < min_code_lcoes[unelec]) and (new_grid_capacity + peak_load < grid_capacity_limit) \
                         and (new_connections[unelec] / nupppphh[unelec] < grid_connect_limit):
                     new_lcoes[unelec] = grid_lcoe
@@ -1450,6 +1532,7 @@ class SettlementProcessor:
                                                        grid_cell_area=grid_cell_area[unelec],
                                                        additional_mv_line_length=dist_adjusted,
                                                        elec_loop=elecorder[electrified[closest_elec_node]] + 1)
+                        grid_lcoe = grid_lcoe[0][0]
                         if grid_lcoe < min_code_lcoes[unelec]:
                             if (grid_lcoe < new_lcoes[unelec]) and \
                                     (new_grid_capacity + peak_load < grid_capacity_limit) \
@@ -1659,6 +1742,55 @@ class SettlementProcessor:
 
         """
 
+        # hydro_used = 'HydropowerUsed'  # the amount of the hydro potential that has been assigned
+        # hydro_df = self.df[[SET_HYDRO_FID, SET_HYDRO]].drop_duplicates(subset=SET_HYDRO_FID)
+        # hydro_df[hydro_used] = 0
+        # hydro_df = hydro_df.set_index(SET_HYDRO_FID)
+        # 
+        # max_hydro_dist = 5  # the max distance in km to consider hydropower viable
+        # 
+        # def hydro_lcoe(self.df):
+        #     if self.df[SET_HYDRO_DIST] < max_hydro_dist:
+        #         # calculate the capacity that would be added by the settlement
+        #         additional_capacity = ((self.df[SET_NEW_CONNECTIONS + "{}".format(year)] *
+        #                                 self.df[SET_ENERGY_PER_CELL + "{}".format(year)]) /
+        #                                (HOURS_PER_YEAR * mg_hydro_calc.capacity_factor *
+        #                                 mg_hydro_calc.base_to_peak_load_ratio))
+        # 
+        #         # and add it to the tracking df
+        #         hydro_df.loc[self.df[SET_HYDRO_FID], hydro_used] += additional_capacity
+        # 
+        #         # if it exceeds the available capacity, it's not an option
+        #         if hydro_df.loc[self.df[SET_HYDRO_FID], hydro_used] > hydro_df.loc[self.df[SET_HYDRO_FID], SET_HYDRO]:
+        #             return 99
+        # 
+        #         else:
+        #             return mg_hydro_calc.get_lcoe(energy_per_cell=self.df[SET_ENERGY_PER_CELL + "{}".format(year)],
+        #                                           start_year=year - time_step,
+        #                                           end_year=end_year,
+        #                                           people=self.df[SET_POP + "{}".format(year)],
+        #                                           new_connections=self.df[SET_NEW_CONNECTIONS + "{}".format(year)],
+        #                                           total_energy_per_cell=self.df[SET_TOTAL_ENERGY_PER_CELL],
+        #                                           prev_code=self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
+        #                                           num_people_per_hh=self.df[SET_NUM_PEOPLE_PER_HH],
+        #                                           grid_cell_area=self.df[SET_GRID_CELL_AREA],
+        #                                           mv_line_length=self.df[SET_HYDRO_DIST])
+        #     else:
+        #         return 99
+
+        logging.info('Calculate minigrid hydro LCOE')
+        self.df[SET_LCOE_MG_HYDRO + "{}".format(year)] = \
+            mg_hydro_calc.get_lcoe(energy_per_cell=self.df[SET_ENERGY_PER_CELL + "{}".format(year)],
+                                   start_year=year - time_step,
+                                   end_year=end_year,
+                                   people=self.df[SET_POP + "{}".format(year)],
+                                   new_connections=self.df[SET_NEW_CONNECTIONS + "{}".format(year)],
+                                   total_energy_per_cell=self.df[SET_TOTAL_ENERGY_PER_CELL],
+                                   prev_code=self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
+                                   num_people_per_hh=self.df[SET_NUM_PEOPLE_PER_HH],
+                                   grid_cell_area=self.df[SET_GRID_CELL_AREA],
+                                   additional_mv_line_length=self.df[SET_HYDRO_DIST])
+
         # A df with all hydro-power sites, to ensure that they aren't assigned more capacity than is available
         hydro_used = 'HydropowerUsed'  # the amount of the hydro potential that has been assigned
         hydro_df = self.df[[SET_HYDRO_FID, SET_HYDRO]].drop_duplicates(subset=SET_HYDRO_FID)
@@ -1681,103 +1813,93 @@ class SettlementProcessor:
                 # if it exceeds the available capacity, it's not an option
                 if hydro_df.loc[row[SET_HYDRO_FID], hydro_used] > hydro_df.loc[row[SET_HYDRO_FID], SET_HYDRO]:
                     return 99
-
                 else:
-                    return mg_hydro_calc.get_lcoe(energy_per_cell=row[SET_ENERGY_PER_CELL + "{}".format(year)],
-                                                  start_year=year - time_step,
-                                                  end_year=end_year,
-                                                  people=row[SET_POP + "{}".format(year)],
-                                                  new_connections=row[SET_NEW_CONNECTIONS + "{}".format(year)],
-                                                  total_energy_per_cell=row[SET_TOTAL_ENERGY_PER_CELL],
-                                                  prev_code=row[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
-                                                  num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
-                                                  grid_cell_area=row[SET_GRID_CELL_AREA],
-                                                  mv_line_length=row[SET_HYDRO_DIST])
+                    return 0
             else:
                 return 99
 
-        logging.info('Calculate minigrid hydro LCOE')
-        self.df[SET_LCOE_MG_HYDRO + "{}".format(year)] = self.df.apply(hydro_lcoe, axis=1)
-
+        self.df['HydroLimit'] = self.df.apply(hydro_lcoe, axis=1)
+        self.df[SET_LCOE_MG_HYDRO + "{}".format(year)] = np.where(self.df['HydroLimit'] == 99,
+                                                                  99,
+                                                                  self.df[SET_LCOE_MG_HYDRO + "{}".format(year)])
         num_hydro_limited = hydro_df.loc[hydro_df[hydro_used] > hydro_df[SET_HYDRO]][SET_HYDRO].count()
         logging.info('{} potential hydropower sites were utilised to maximum capacity'.format(num_hydro_limited))
+        del self.df['HydroLimit']
 
         logging.info('Calculate minigrid PV LCOE')
-        self.df[SET_LCOE_MG_PV + "{}".format(year)] = self.df.apply(
-            lambda row: mg_pv_calc.get_lcoe(energy_per_cell=row[SET_ENERGY_PER_CELL + "{}".format(year)],
-                                            start_year=year - time_step,
-                                            end_year=end_year,
-                                            people=row[SET_POP + "{}".format(year)],
-                                            new_connections=row[SET_NEW_CONNECTIONS + "{}".format(year)],
-                                            total_energy_per_cell=row[SET_TOTAL_ENERGY_PER_CELL],
-                                            prev_code=row[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
-                                            num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
-                                            grid_cell_area=row[SET_GRID_CELL_AREA],
-                                            capacity_factor=row[SET_GHI] / HOURS_PER_YEAR)
-            if row[SET_GHI] > 1000
-            else 99, axis=1)
+        self.df[SET_LCOE_MG_PV + "{}".format(year)] = \
+            mg_pv_calc.get_lcoe(energy_per_cell=self.df[SET_ENERGY_PER_CELL + "{}".format(year)],
+                                start_year=year - time_step,
+                                end_year=end_year,
+                                people=self.df[SET_POP + "{}".format(year)],
+                                new_connections=self.df[SET_NEW_CONNECTIONS + "{}".format(year)],
+                                total_energy_per_cell=self.df[SET_TOTAL_ENERGY_PER_CELL],
+                                prev_code=self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
+                                num_people_per_hh=self.df[SET_NUM_PEOPLE_PER_HH],
+                                grid_cell_area=self.df[SET_GRID_CELL_AREA],
+                                capacity_factor=self.df[SET_GHI] / HOURS_PER_YEAR)
+        self.df.loc[self.df[SET_GHI] <= 1000, SET_LCOE_MG_PV + "{}".format(year)] = 99
 
         logging.info('Calculate minigrid wind LCOE')
-        self.df[SET_LCOE_MG_WIND + "{}".format(year)] = self.df.apply(
-            lambda row: mg_wind_calc.get_lcoe(energy_per_cell=row[SET_ENERGY_PER_CELL + "{}".format(year)],
-                                              start_year=year - time_step,
-                                              end_year=end_year,
-                                              people=row[SET_POP + "{}".format(year)],
-                                              new_connections=row[SET_NEW_CONNECTIONS + "{}".format(year)],
-                                              total_energy_per_cell=row[SET_TOTAL_ENERGY_PER_CELL],
-                                              prev_code=row[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
-                                              num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
-                                              grid_cell_area=row[SET_GRID_CELL_AREA],
-                                              capacity_factor=row[SET_WINDCF])
-            if row[SET_WINDCF] > 0.1 else 99,
-            axis=1)
+        self.df[SET_LCOE_MG_WIND + "{}".format(year)] = \
+            mg_wind_calc.get_lcoe(energy_per_cell=self.df[SET_ENERGY_PER_CELL + "{}".format(year)],
+                                  start_year=year - time_step,
+                                  end_year=end_year,
+                                  people=self.df[SET_POP + "{}".format(year)],
+                                  new_connections=self.df[SET_NEW_CONNECTIONS + "{}".format(year)],
+                                  total_energy_per_cell=self.df[SET_TOTAL_ENERGY_PER_CELL],
+                                  prev_code=self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
+                                  num_people_per_hh=self.df[SET_NUM_PEOPLE_PER_HH],
+                                  grid_cell_area=self.df[SET_GRID_CELL_AREA],
+                                  capacity_factor=self.df[SET_WINDCF])
+        self.df.loc[self.df[SET_WINDCF] <= 0.1, SET_LCOE_MG_WIND + "{}".format(year)] = 99
 
         if diesel_techs == 0:
             self.df[SET_LCOE_MG_DIESEL + "{}".format(year)] = 99
             self.df[SET_LCOE_SA_DIESEL + "{}".format(year)] = 99
         else:
             logging.info('Calculate minigrid diesel LCOE')
-            self.df[SET_LCOE_MG_DIESEL + "{}".format(year)] = self.df.apply(
-                lambda row: mg_diesel_calc.get_lcoe(energy_per_cell=row[SET_ENERGY_PER_CELL + "{}".format(year)],
-                                                    start_year=year - time_step,
-                                                    end_year=end_year,
-                                                    people=row[SET_POP + "{}".format(year)],
-                                                    new_connections=row[SET_NEW_CONNECTIONS + "{}".format(year)],
-                                                    total_energy_per_cell=row[SET_TOTAL_ENERGY_PER_CELL],
-                                                    prev_code=row[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
-                                                    num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
-                                                    grid_cell_area=row[SET_GRID_CELL_AREA],
-                                                    fuel_cost=row[SET_MG_DIESEL_FUEL + "{}".format(year)],
-                                                    ), axis=1)
+            self.df[SET_LCOE_MG_DIESEL + "{}".format(year)] = \
+                mg_diesel_calc.get_lcoe(energy_per_cell=self.df[SET_ENERGY_PER_CELL + "{}".format(year)],
+                                        start_year=year - time_step,
+                                        end_year=end_year,
+                                        people=self.df[SET_POP + "{}".format(year)],
+                                        new_connections=self.df[SET_NEW_CONNECTIONS + "{}".format(year)],
+                                        total_energy_per_cell=self.df[SET_TOTAL_ENERGY_PER_CELL],
+                                        prev_code=self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
+                                        num_people_per_hh=self.df[SET_NUM_PEOPLE_PER_HH],
+                                        grid_cell_area=self.df[SET_GRID_CELL_AREA],
+                                        fuel_cost=self.df[SET_MG_DIESEL_FUEL + "{}".format(year)],
+                                        )
 
             logging.info('Calculate standalone diesel LCOE')
-            self.df[SET_LCOE_SA_DIESEL + "{}".format(year)] = self.df.apply(
-                lambda row: sa_diesel_calc.get_lcoe(energy_per_cell=row[SET_ENERGY_PER_CELL + "{}".format(year)],
-                                                    start_year=year - time_step,
-                                                    end_year=end_year,
-                                                    people=row[SET_POP + "{}".format(year)],
-                                                    new_connections=row[SET_NEW_CONNECTIONS + "{}".format(year)],
-                                                    total_energy_per_cell=row[SET_TOTAL_ENERGY_PER_CELL],
-                                                    prev_code=row[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
-                                                    num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
-                                                    grid_cell_area=row[SET_GRID_CELL_AREA],
-                                                    fuel_cost=row[SET_SA_DIESEL_FUEL + "{}".format(year)],
-                                                    ), axis=1)
+            self.df[SET_LCOE_SA_DIESEL + "{}".format(year)] = \
+                sa_diesel_calc.get_lcoe(energy_per_cell=self.df[SET_ENERGY_PER_CELL + "{}".format(year)],
+                                        start_year=year - time_step,
+                                        end_year=end_year,
+                                        people=self.df[SET_POP + "{}".format(year)],
+                                        new_connections=self.df[SET_NEW_CONNECTIONS + "{}".format(year)],
+                                        total_energy_per_cell=self.df[SET_TOTAL_ENERGY_PER_CELL],
+                                        prev_code=self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
+                                        num_people_per_hh=self.df[SET_NUM_PEOPLE_PER_HH],
+                                        grid_cell_area=self.df[SET_GRID_CELL_AREA],
+                                        fuel_cost=self.df[SET_SA_DIESEL_FUEL + "{}".format(year)],
+                                        )
 
         logging.info('Calculate standalone PV LCOE')
-        self.df[SET_LCOE_SA_PV + "{}".format(year)] = self.df.apply(
-            lambda row: sa_pv_calc.get_lcoe(energy_per_cell=row[SET_ENERGY_PER_CELL + "{}".format(year)],
-                                            start_year=year - time_step,
-                                            end_year=end_year,
-                                            people=row[SET_POP + "{}".format(year)],
-                                            new_connections=row[SET_NEW_CONNECTIONS + "{}".format(year)],
-                                            total_energy_per_cell=row[SET_TOTAL_ENERGY_PER_CELL],
-                                            prev_code=row[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
-                                            num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
-                                            grid_cell_area=row[SET_GRID_CELL_AREA],
-                                            capacity_factor=row[SET_GHI] / HOURS_PER_YEAR) if row[SET_GHI] > 1000
-            else 99,
-            axis=1)
+        self.df[SET_LCOE_SA_PV + "{}".format(year)] = \
+            sa_pv_calc.get_lcoe(energy_per_cell=self.df[SET_ENERGY_PER_CELL + "{}".format(year)],
+                                start_year=year - time_step,
+                                end_year=end_year,
+                                people=self.df[SET_POP + "{}".format(year)],
+                                new_connections=self.df[SET_NEW_CONNECTIONS + "{}".format(year)],
+                                total_energy_per_cell=self.df[SET_TOTAL_ENERGY_PER_CELL],
+                                prev_code=self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
+                                num_people_per_hh=self.df[SET_NUM_PEOPLE_PER_HH],
+                                grid_cell_area=self.df[SET_GRID_CELL_AREA],
+                                capacity_factor=self.df[SET_GHI] / HOURS_PER_YEAR)
+        self.df.loc[self.df[SET_GHI] <= 1000, SET_LCOE_SA_PV + "{}".format(year)] = 99
+
         self.choose_minimum_off_grid_tech(year)
 
     def choose_minimum_off_grid_tech(self, year):
@@ -1871,108 +1993,118 @@ class SettlementProcessor:
                         SET_MIN_OVERALL_CODE + "{}".format(year)] = codes[key]
 
     def calculate_investments(self, mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc,
-                              sa_diesel_calc, grid_calc, year,
-                              end_year, time_step):
-        def res_investment_cost(row):
-            min_code = row[SET_MIN_OVERALL_CODE + "{}".format(year)]
-
-            if min_code == 2:
-                return sa_diesel_calc.get_lcoe(energy_per_cell=row[SET_ENERGY_PER_CELL + "{}".format(year)],
-                                               start_year=year - time_step,
-                                               end_year=end_year,
-                                               people=row[SET_POP + "{}".format(year)],
-                                               new_connections=row[SET_NEW_CONNECTIONS + "{}".format(year)],
-                                               total_energy_per_cell=row[SET_TOTAL_ENERGY_PER_CELL],
-                                               prev_code=row[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
-                                               num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
-                                               grid_cell_area=row[SET_GRID_CELL_AREA],
-                                               fuel_cost=row[SET_SA_DIESEL_FUEL + "{}".format(year)],
-                                               get_investment_cost=True)
-
-            elif min_code == 3:
-                return sa_pv_calc.get_lcoe(energy_per_cell=row[SET_ENERGY_PER_CELL + "{}".format(year)],
-                                           start_year=year - time_step,
-                                           end_year=end_year,
-                                           people=row[SET_POP + "{}".format(year)],
-                                           new_connections=row[SET_NEW_CONNECTIONS + "{}".format(year)],
-                                           total_energy_per_cell=row[SET_TOTAL_ENERGY_PER_CELL],
-                                           prev_code=row[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
-                                           num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
-                                           grid_cell_area=row[SET_GRID_CELL_AREA],
-                                           capacity_factor=row[SET_GHI] / HOURS_PER_YEAR,
-                                           get_investment_cost=True)
-
-            elif min_code == 6:
-                return mg_wind_calc.get_lcoe(energy_per_cell=row[SET_ENERGY_PER_CELL + "{}".format(year)],
-                                             start_year=year - time_step,
-                                             end_year=end_year,
-                                             people=row[SET_POP + "{}".format(year)],
-                                             new_connections=row[SET_NEW_CONNECTIONS + "{}".format(year)],
-                                             total_energy_per_cell=row[SET_TOTAL_ENERGY_PER_CELL],
-                                             prev_code=row[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
-                                             num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
-                                             grid_cell_area=row[SET_GRID_CELL_AREA],
-                                             capacity_factor=row[SET_WINDCF],
-                                             get_investment_cost=True)
-
-            elif min_code == 4:
-                return mg_diesel_calc.get_lcoe(energy_per_cell=row[SET_ENERGY_PER_CELL + "{}".format(year)],
-                                               start_year=year - time_step,
-                                               end_year=end_year,
-                                               people=row[SET_POP + "{}".format(year)],
-                                               new_connections=row[SET_NEW_CONNECTIONS + "{}".format(year)],
-                                               total_energy_per_cell=row[SET_TOTAL_ENERGY_PER_CELL],
-                                               prev_code=row[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
-                                               num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
-                                               grid_cell_area=row[SET_GRID_CELL_AREA],
-                                               fuel_cost=row[SET_MG_DIESEL_FUEL + "{}".format(year)],
-                                               get_investment_cost=True)
-
-            elif min_code == 5:
-                return mg_pv_calc.get_lcoe(energy_per_cell=row[SET_ENERGY_PER_CELL + "{}".format(year)],
-                                           start_year=year - time_step,
-                                           end_year=end_year,
-                                           people=row[SET_POP + "{}".format(year)],
-                                           new_connections=row[SET_NEW_CONNECTIONS + "{}".format(year)],
-                                           total_energy_per_cell=row[SET_TOTAL_ENERGY_PER_CELL],
-                                           prev_code=row[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
-                                           num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
-                                           grid_cell_area=row[SET_GRID_CELL_AREA],
-                                           capacity_factor=row[SET_GHI] / HOURS_PER_YEAR,
-                                           get_investment_cost=True)
-
-            elif min_code == 7:
-                return mg_hydro_calc.get_lcoe(energy_per_cell=row[SET_ENERGY_PER_CELL + "{}".format(year)],
-                                              start_year=year - time_step,
-                                              end_year=end_year,
-                                              people=row[SET_POP + "{}".format(year)],
-                                              new_connections=row[SET_NEW_CONNECTIONS + "{}".format(year)],
-                                              total_energy_per_cell=row[SET_TOTAL_ENERGY_PER_CELL],
-                                              prev_code=row[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
-                                              num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
-                                              grid_cell_area=row[SET_GRID_CELL_AREA],
-                                              mv_line_length=row[SET_HYDRO_DIST],
-                                              get_investment_cost=True)
-
-            elif min_code == 1:
-                return grid_calc.get_lcoe(energy_per_cell=row[SET_ENERGY_PER_CELL + "{}".format(year)],
-                                          start_year=year - time_step,
-                                          end_year=end_year,
-                                          people=row[SET_POP + "{}".format(year)],
-                                          new_connections=row[SET_NEW_CONNECTIONS + "{}".format(year)],
-                                          total_energy_per_cell=row[SET_TOTAL_ENERGY_PER_CELL],
-                                          prev_code=row[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
-                                          num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
-                                          grid_cell_area=row[SET_GRID_CELL_AREA],
-                                          additional_mv_line_length=row[SET_MIN_GRID_DIST + "{}".format(year)],
-                                          elec_loop=row[SET_ELEC_ORDER + "{}".format(year)],
-                                          get_investment_cost=True)
-
-            else:
-                return 0
+                              sa_diesel_calc, grid_calc, year, end_year, time_step):
 
         logging.info('Calculate investment cost')
-        self.df[SET_INVESTMENT_COST + "{}".format(year)] = self.df.apply(res_investment_cost, axis=1)
+
+        self.df[SET_INVESTMENT_COST + "{}".format(year)] = 0
+
+        sa_diesel_investment = \
+            sa_diesel_calc.get_lcoe(energy_per_cell=self.df[SET_ENERGY_PER_CELL + "{}".format(year)],
+                                    start_year=year - time_step,
+                                    end_year=end_year,
+                                    people=self.df[SET_POP + "{}".format(year)],
+                                    new_connections=self.df[SET_NEW_CONNECTIONS + "{}".format(year)],
+                                    total_energy_per_cell=self.df[SET_TOTAL_ENERGY_PER_CELL],
+                                    prev_code=self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
+                                    num_people_per_hh=self.df[SET_NUM_PEOPLE_PER_HH],
+                                    grid_cell_area=self.df[SET_GRID_CELL_AREA],
+                                    fuel_cost=self.df[SET_SA_DIESEL_FUEL + "{}".format(year)],
+                                    get_investment_cost=True)
+
+        sa_pv_investment = \
+            sa_pv_calc.get_lcoe(energy_per_cell=self.df[SET_ENERGY_PER_CELL + "{}".format(year)],
+                                start_year=year - time_step,
+                                end_year=end_year,
+                                people=self.df[SET_POP + "{}".format(year)],
+                                new_connections=self.df[SET_NEW_CONNECTIONS + "{}".format(year)],
+                                total_energy_per_cell=self.df[SET_TOTAL_ENERGY_PER_CELL],
+                                prev_code=self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
+                                num_people_per_hh=self.df[SET_NUM_PEOPLE_PER_HH],
+                                grid_cell_area=self.df[SET_GRID_CELL_AREA],
+                                capacity_factor=self.df[SET_GHI] / HOURS_PER_YEAR,
+                                get_investment_cost=True)
+
+        mg_wind_investment = \
+            mg_wind_calc.get_lcoe(energy_per_cell=self.df[SET_ENERGY_PER_CELL + "{}".format(year)],
+                                  start_year=year - time_step,
+                                  end_year=end_year,
+                                  people=self.df[SET_POP + "{}".format(year)],
+                                  new_connections=self.df[SET_NEW_CONNECTIONS + "{}".format(year)],
+                                  total_energy_per_cell=self.df[SET_TOTAL_ENERGY_PER_CELL],
+                                  prev_code=self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
+                                  num_people_per_hh=self.df[SET_NUM_PEOPLE_PER_HH],
+                                  grid_cell_area=self.df[SET_GRID_CELL_AREA],
+                                  capacity_factor=self.df[SET_WINDCF],
+                                  get_investment_cost=True)
+
+        mg_diesel_investment = \
+            mg_diesel_calc.get_lcoe(energy_per_cell=self.df[SET_ENERGY_PER_CELL + "{}".format(year)],
+                                    start_year=year - time_step,
+                                    end_year=end_year,
+                                    people=self.df[SET_POP + "{}".format(year)],
+                                    new_connections=self.df[SET_NEW_CONNECTIONS + "{}".format(year)],
+                                    total_energy_per_cell=self.df[SET_TOTAL_ENERGY_PER_CELL],
+                                    prev_code=self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
+                                    num_people_per_hh=self.df[SET_NUM_PEOPLE_PER_HH],
+                                    grid_cell_area=self.df[SET_GRID_CELL_AREA],
+                                    fuel_cost=self.df[SET_MG_DIESEL_FUEL + "{}".format(year)],
+                                    get_investment_cost=True)
+
+        mg_pv_investment = \
+            mg_pv_calc.get_lcoe(energy_per_cell=self.df[SET_ENERGY_PER_CELL + "{}".format(year)],
+                                start_year=year - time_step,
+                                end_year=end_year,
+                                people=self.df[SET_POP + "{}".format(year)],
+                                new_connections=self.df[SET_NEW_CONNECTIONS + "{}".format(year)],
+                                total_energy_per_cell=self.df[SET_TOTAL_ENERGY_PER_CELL],
+                                prev_code=self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
+                                num_people_per_hh=self.df[SET_NUM_PEOPLE_PER_HH],
+                                grid_cell_area=self.df[SET_GRID_CELL_AREA],
+                                capacity_factor=self.df[SET_GHI] / HOURS_PER_YEAR,
+                                get_investment_cost=True)
+
+        mg_hydro_investment = \
+            mg_hydro_calc.get_lcoe(energy_per_cell=self.df[SET_ENERGY_PER_CELL + "{}".format(year)],
+                                          start_year=year - time_step,
+                                          end_year=end_year,
+                                          people=self.df[SET_POP + "{}".format(year)],
+                                          new_connections=self.df[SET_NEW_CONNECTIONS + "{}".format(year)],
+                                          total_energy_per_cell=self.df[SET_TOTAL_ENERGY_PER_CELL],
+                                          prev_code=self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
+                                          num_people_per_hh=self.df[SET_NUM_PEOPLE_PER_HH],
+                                          grid_cell_area=self.df[SET_GRID_CELL_AREA],
+                                          additional_mv_line_length=self.df[SET_HYDRO_DIST],
+                                          get_investment_cost=True)
+
+        grid_investment = \
+            grid_calc.get_lcoe(energy_per_cell=self.df[SET_ENERGY_PER_CELL + "{}".format(year)],
+                               start_year=year - time_step,
+                               end_year=end_year,
+                               people=self.df[SET_POP + "{}".format(year)],
+                               new_connections=self.df[SET_NEW_CONNECTIONS + "{}".format(year)],
+                               total_energy_per_cell=self.df[SET_TOTAL_ENERGY_PER_CELL],
+                               prev_code=self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
+                               num_people_per_hh=self.df[SET_NUM_PEOPLE_PER_HH],
+                               grid_cell_area=self.df[SET_GRID_CELL_AREA],
+                               additional_mv_line_length=self.df[SET_MIN_GRID_DIST + "{}".format(year)],
+                               elec_loop=self.df[SET_ELEC_ORDER + "{}".format(year)],
+                               get_investment_cost=True)
+
+        self.df.loc[self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 1,
+                    SET_INVESTMENT_COST + "{}".format(year)] = grid_investment
+        self.df.loc[self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 2,
+                    SET_INVESTMENT_COST + "{}".format(year)] = sa_diesel_investment
+        self.df.loc[self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 3,
+                    SET_INVESTMENT_COST + "{}".format(year)] = sa_pv_investment
+        self.df.loc[self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 4,
+                    SET_INVESTMENT_COST + "{}".format(year)] = mg_diesel_investment
+        self.df.loc[self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 5,
+                    SET_INVESTMENT_COST + "{}".format(year)] = mg_pv_investment
+        self.df.loc[self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 6,
+                    SET_INVESTMENT_COST + "{}".format(year)] = mg_wind_investment
+        self.df.loc[self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 7,
+                    SET_INVESTMENT_COST + "{}".format(year)] = mg_hydro_investment
 
     def apply_limitations(self, eleclimit, year, time_step, prioritization, auto_densification=0):
 
