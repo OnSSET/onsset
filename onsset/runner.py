@@ -6,14 +6,24 @@ import os
 import pandas as pd
 from onsset import (SET_ELEC_ORDER, SET_LCOE_GRID, SET_MIN_GRID_DIST, SET_GRID_PENALTY,
                     SET_MV_CONNECT_DIST, SettlementProcessor, Technology)
-from onsset.specs import (SPE_COUNTRY, SPE_ELEC, SPE_ELEC_MODELLED,
-                          SPE_ELEC_RURAL, SPE_ELEC_URBAN, SPE_END_YEAR,
-                          SPE_GRID_CAPACITY_INVESTMENT, SPE_GRID_LOSSES,
-                          SPE_MAX_GRID_EXTENSION_DIST,
-                          SPE_NUM_PEOPLE_PER_HH_RURAL,
-                          SPE_NUM_PEOPLE_PER_HH_URBAN, SPE_POP, SPE_POP_FUTURE,
-                          SPE_START_YEAR, SPE_URBAN, SPE_URBAN_FUTURE,
-                          SPE_URBAN_MODELLED)
+try:
+    from onsset.specs import (SPE_COUNTRY, SPE_ELEC, SPE_ELEC_MODELLED,
+                              SPE_ELEC_RURAL, SPE_ELEC_URBAN, SPE_END_YEAR,
+                              SPE_GRID_CAPACITY_INVESTMENT, SPE_GRID_LOSSES,
+                              SPE_MAX_GRID_EXTENSION_DIST,
+                              SPE_NUM_PEOPLE_PER_HH_RURAL,
+                              SPE_NUM_PEOPLE_PER_HH_URBAN, SPE_POP, SPE_POP_FUTURE,
+                              SPE_START_YEAR, SPE_URBAN, SPE_URBAN_FUTURE,
+                              SPE_URBAN_MODELLED)
+except ImportError:
+    from specs import (SPE_COUNTRY, SPE_ELEC, SPE_ELEC_MODELLED,
+                       SPE_ELEC_RURAL, SPE_ELEC_URBAN, SPE_END_YEAR,
+                       SPE_GRID_CAPACITY_INVESTMENT, SPE_GRID_LOSSES,
+                       SPE_MAX_GRID_EXTENSION_DIST,
+                       SPE_NUM_PEOPLE_PER_HH_RURAL,
+                       SPE_NUM_PEOPLE_PER_HH_URBAN, SPE_POP, SPE_POP_FUTURE,
+                       SPE_START_YEAR, SPE_URBAN, SPE_URBAN_FUTURE,
+                       SPE_URBAN_MODELLED)
 from openpyxl import load_workbook
 
 
