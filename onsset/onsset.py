@@ -330,7 +330,7 @@ class Technology:
         fuel = np.outer(np.asarray(generation_per_year), np.zeros(project_life))
         for p in range(project_life):
             fuel[:, p] = el_gen[:, p] * fuel_cost
-        fuel[0:step] = 0
+        # fuel[0:step] = 0
 
         discounted_investments = investments / discount_factor
         investment_cost = np.sum(discounted_investments, axis=1) # TODO + grid_capacity_investment * peak_load
