@@ -49,7 +49,7 @@ Because of this, the tremendous value they could bring to public and private act
 It has been developed as a public good available to governments, development organizations, non-governmental organizations, academia,
 civil society and individuals to share data and analytics that can help achieving universal access to modern energy services.
 The database considers a variety of open, geospatial datasets of various context and granularity.
-**KTH Division of Energy Systems Analysis** contributes on a contnuous basis by providing relevant datasets for electrification planning.
+**KTH Division of Energy Systems (KTH-dES), formerly known as KTH division of Energy Systems Analysis (KTH-dESA),** contributes on a contnuous basis by providing relevant datasets for electrification planning.
 
 .. figure::  img/energydata.png
    :scale: 70 %
@@ -59,7 +59,7 @@ The database considers a variety of open, geospatial datasets of various context
 Indicative open libraries of GIS data
 ++++++++++++++++++++++++++++++++++++++
 
-Over the past few years, KTH dESA has been actively involved in the field of geospatial analysis.
+Over the past few years, KTH dES has been actively involved in the field of geospatial analysis.
 The following table presents a list of libraries and directories that provide access to open GIS data.
 
 +-----------------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
@@ -71,7 +71,7 @@ The following table presents a list of libraries and directories that provide ac
 +-----------------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
 | EDEnextdata                       | World per region    | https://www.edenextdata.com/?q=content/global-gis-datasets-links-0#Population%20Infrastructure%20Topography%20and%20Administration%20Data |
 +-----------------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
-| Stanford                          | World per region    | https://lib.stanford.edu/GIS/data                                                                                                         |
+| Stanford                          | World per region    | https://library.stanford.edu/research/stanford-geospatial-center/data                                                                                                        |
 +-----------------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
 | GIS Lounge                        | Finding GIS data    | http://www.gislounge.com/data-and-gis-resources/                                                                                          |
 +-----------------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
@@ -95,12 +95,7 @@ The following table presents a list of libraries and directories that provide ac
 +-----------------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+     
 | The Humanitarian Data Exchange    | Different types     | https://data.humdata.org/                                                                                                                 |
 +-----------------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
-| Global Solar Atlas                | Solar GIS  data     | https://globalsolaratlas.info/                                                                                                            |
-+-----------------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
-| Global Wind atlas                 | Wind GIS data       | https://globalsolaratlas.info/                                                                                                            |
-+-----------------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
-| GADM                              | Country GIS data    | https://gadm.org/                                                                                                                         |
-+-----------------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
+| 
 
 Country specific databases
 +++++++++++++++++++++++++++
@@ -257,7 +252,7 @@ Population data
 +===============================================+==========================+===========================+========================+============+===================================================================================+
 | World                                         | Various                  | 1 arc-second              | (depending on country) | HDX        | https://data.humdata.org/organization/facebook                                |
 +-----------------------------------------------+--------------------------+---------------------------+------------------------+------------+-----------------------------------------------------------------------------------+
-| Africa, Asia, America                         | Raster                   | 100 m grid cells          | (depending on country) | Worldpop   | http://www.worldpop.org.uk/data/data_sources/                                     |
+| Africa, Asia, America                         | Raster                   | 100 m grid cells          | (depending on country) | Worldpop   | https://www.worldpop.org/geodata/listing?id=29                                   |
 +-----------------------------------------------+--------------------------+---------------------------+------------------------+------------+-----------------------------------------------------------------------------------+
 | World                                         | grid                     | 2.5 arc-minute grid cells | 90/95/00               | SEDAC      | http://sedac.ciesin.columbia.edu/data/set/gpw-v3-population-density/data-download |
 +-----------------------------------------------+--------------------------+---------------------------+------------------------+------------+-----------------------------------------------------------------------------------+
@@ -291,7 +286,7 @@ Power plants location data
 +======================+======================+====================================+====================+==============+========================================================================================+
 | World                | shapefile (4 levels) | Generators, substations,masts      | 2009               | Vmap level 0 | http://gis-lab.info/qa/vmap0-eng.html                                                  |
 +----------------------+----------------------+------------------------------------+--------------------+--------------+----------------------------------------------------------------------------------------+
-| World                | shapefile            | Generators (power source included) | 2015               | Geofabrik    | Available from KTH-dESA upon request                                                   |
+| World                | shapefile            | Generators (power source included) | 2015               | Geofabrik    | Available from KTH-dES upon request                                                   |
 +----------------------+----------------------+------------------------------------+--------------------+--------------+----------------------------------------------------------------------------------------+
 
 Elevation
@@ -302,15 +297,9 @@ Elevation
 +=======================+==================+=====================================+============+============================+=================================================================================+
 | World                 | geoTIFF          | 30 m spatial resolution             | 2009       | METI Japan, NASA           | http://www.jspacesystems.or.jp/ersdac/GDEM/E/2.html                             |
 +-----------------------+------------------+-------------------------------------+------------+----------------------------+---------------------------------------------------------------------------------+
-| World                 | geoTIFF          | 30 m posting, 1x1 degree tiles      | 2009, 2011 | METI Japan, NASA           | http://asterweb.jpl.nasa.gov/gdem.asp                                           |
+| World                 | geoTIFF          | 30 m posting, 1x1 degree tiles      | 2009, 2011 | METI Japan, NASA           | https://asterweb.jpl.nasa.gov/gdem.asp                                          |
 +-----------------------+------------------+-------------------------------------+------------+----------------------------+---------------------------------------------------------------------------------+
-| World                 | ASCII, GeoTIFF   | 3 arc sec (approx. 90 m resolution) | 2003       | CGIAR CSI                  | http://www.cgiar-csi.org/data/srtm-90m-digital-elevation-database-v4-1#download |
-+-----------------------+------------------+-------------------------------------+------------+----------------------------+---------------------------------------------------------------------------------+
-| Different countries   | GeoTIFF          | 1 to 30 arc sec                     | 2014       | Global Land Cover Facility | http://www.glcf.umd.edu/data/glsdem/description.shtml                           |
-+-----------------------+------------------+-------------------------------------+------------+----------------------------+---------------------------------------------------------------------------------+
-| Different DEM sources | various          | various                             | various    | GIS 4 Geomorphology        | http://gis4geomorphology.com/dem-data-sources/                                  |
-+-----------------------+------------------+-------------------------------------+------------+----------------------------+---------------------------------------------------------------------------------+
-| World                 | .bil and/or .tif | 15 arcseconds/30arcseconds          | various    | ISCGM                      | https://www.iscgm.org/gmd/                                                      |
+| World                 | .bil and/or .tif | 15 arcseconds/30arcseconds          | various    | ISCGM                      | https://globalmaps.github.io/                                                     |
 +-----------------------+------------------+-------------------------------------+------------+----------------------------+---------------------------------------------------------------------------------+
 | World                 | GeoTIFF          | 16 arcseconds/30arcseconds          | various    | NOOA                       | http://www.ngdc.noaa.gov/mgg/topo/gltiles.html                                  |
 +-----------------------+------------------+-------------------------------------+------------+----------------------------+---------------------------------------------------------------------------------+
@@ -322,15 +311,15 @@ Elevation
 Travel time to major cities
 ----------------------------
 
-+----------------------+---------------------------------+------------+-----------------------+--------------------------+----------------------------------------------------------+
-| Coverage             | Type                            | Resolution | Year                  | Source                   | Link                                                     |
-+======================+=================================+============+=======================+==========================+==========================================================+
-| World                | ESRI grid                       | 30 arc sec | 2008 (data from 2000) | Joint Research Center EU | http://forobs.jrc.ec.europa.eu/products/gam/download.php |
-+----------------------+---------------------------------+------------+-----------------------+--------------------------+----------------------------------------------------------+
-| Africa (sub-Saharan) | csv, ESRI ASCII raster, GeoTIFF | 5 arc sec  | 2010                  | Harvest Choice           | http://harvestchoice.org/data/tt_port                    |
-+----------------------+---------------------------------+------------+-----------------------+--------------------------+----------------------------------------------------------+
-| World                | Raster, GeoTIFF                 | 5 arc sec  | 2015                  | Univeristy of Oxford     | https://map.ox.ac.uk/explorer/#/explorer                 |
-+----------------------+---------------------------------+------------+-----------------------+--------------------------+----------------------------------------------------------+
++----------------------+---------------------------------+------------+-----------------------+--------------------------+----------------------------------------------------------------------------------+
+| Coverage             | Type                            | Resolution | Year                  | Source                   | Link                                                                             |
++======================+=================================+============+=======================+==========================+==================================================================================+
+| World                | ESRI grid                       | 30 arc sec | 2008 (data from 2000) | Joint Research Center EU | http://forobs.jrc.ec.europa.eu/products/gam/download.php                         |
++----------------------+---------------------------------+------------+-----------------------+--------------------------+----------------------------------------------------------------------------------+
+| Africa (sub-Saharan) | csv, ESRI ASCII raster, GeoTIFF | 5 arc sec  | 2010                  | Harvest Choice           | https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/YKDWJD  |                 |
++----------------------+---------------------------------+------------+-----------------------+--------------------------+----------------------------------------------------------------------------------+
+| World                | Raster, GeoTIFF                 | 5 arc sec  | 2015                  | Univeristy of Oxford     | https://map.ox.ac.uk/explorer/#/explorer                                         |
++----------------------+---------------------------------+------------+-----------------------+--------------------------+----------------------------------------------------------------------------------+
 
 
 Mining and Quarrying
