@@ -1294,6 +1294,7 @@ class SettlementProcessor:
         prio = int(prioritization)
         new_grid_capacity = 0
         grid_capacity_limit = grid_cap_gen_limit
+
         x = (self.df[SET_X_DEG]).tolist()
         y = (self.df[SET_Y_DEG]).tolist()
         pop = self.df[SET_POP + "{}".format(year)].tolist()
@@ -1364,24 +1365,23 @@ class SettlementProcessor:
             electrified.extend(changes[:])
             unelectrified = set(unelectrified).difference(electrified)
 
+        filter_lcoe = grid_calc.get_lcoe(energy_per_cell=enerperhh,
+                                         start_year=year - time_step,
+                                         end_year=end_year,
+                                         people=pop,
+                                         new_connections=new_connections,
+                                         total_energy_per_cell=total_energy_per_cell,
+                                         prev_code=prev_code,
+                                         num_people_per_hh=nupppphh,
+                                         grid_cell_area=grid_cell_area,
+                                         additional_mv_line_length=0,
+                                         elec_loop=0)
+
         filtered_unelectrified = []
         for unelec in unelectrified:
-            try:
-                grid_lcoe = grid_calc.get_lcoe(energy_per_cell=enerperhh[unelec],
-                                               start_year=year - time_step,
-                                               end_year=end_year,
-                                               people=pop[unelec],
-                                               new_connections=new_connections[unelec],
-                                               total_energy_per_cell=total_energy_per_cell[unelec],
-                                               prev_code=prev_code[unelec],
-                                               num_people_per_hh=nupppphh[unelec],
-                                               grid_cell_area=grid_cell_area[unelec],
-                                               additional_mv_line_length=0,
-                                               elec_loop=0)
-                if grid_lcoe[0][0] < min_code_lcoes[unelec]:
+            if filter_lcoe[0][unelec] < min_code_lcoes[unelec]:
                     filtered_unelectrified.append(unelec)
-            except KeyError:
-                pass
+
         unelectrified = filtered_unelectrified
 
         close = []
