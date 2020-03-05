@@ -944,8 +944,6 @@ class SettlementProcessor:
             print('The modelled urban ratio is {:.2f}. '
                   'In case this is not acceptable please revise this part of the code'.format(urban_modelled))
 
-        print(pop_actual, pop_modelled)
-
         return pop_modelled, urban_modelled
 
     def project_pop_and_urban(self, pop_modelled, pop_future_high, pop_future_low, urban_modelled,
