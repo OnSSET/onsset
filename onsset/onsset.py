@@ -191,7 +191,7 @@ class Technology:
         ----------
         people : float
             Number of people in settlement
-        new_connections : float
+        new_connections : float or pandas.Series
             Number of new people in settlement to connect
         prev_code : int
             Code representation of previous supply technology in settlement
@@ -759,9 +759,12 @@ class SettlementProcessor:
 
         return c
 
-    def calc_wind_cfs(self):
+    def get_wind_cf(self, wind_velocity):
         """Calculate the wind capacity factor based on the average wind velocity.
 
+        Parameters
+        ----------
+        wind_velocity : float
         """
 
         mu = 0.97  # availability factor
@@ -774,24 +777,25 @@ class SettlementProcessor:
         p_curve = [0, 0, 0, 0, 30, 77, 135, 208, 287, 371, 450, 514, 558,
                    582, 594, 598, 600, 600, 600, 600, 600, 600, 600, 600, 600]
 
-        def get_wind_cf(row):
-            u_zr = row[SET_WINDVEL]
-            if u_zr == 0:
-                return 0
+        if wind_velocity == 0:
+            return 0
+        elif wind_velocity < 0:
+            raise ValueError('Wind velocity must be greater than 0')
 
-            else:
-                # Adjust for the correct hub height
-                alpha = (0.37 - 0.088 * log(u_zr)) / (1 - 0.088 * log(zr / 10))
-                u_z = u_zr * (z / zr) ** alpha
+        else:
+            # Adjust for the correct hub height
+            alpha = (0.37 - 0.088 * log(wind_velocity)) / (1 - 0.088 * log(zr / 10))
+            u_z = wind_velocity * (z / zr) ** alpha
 
-                # Rayleigh distribution and sum of series
-                rayleigh = [(pi / 2) * (u / u_z ** 2) * exp((-pi / 4) * (u / u_z) ** 2) for u in u_arr]
-                energy_produced = sum([mu * es * t * p * r for p, r in zip(p_curve, rayleigh)])
+            # Rayleigh distribution and sum of series
+            rayleigh = [(pi / 2) * (u / u_z ** 2) * exp((-pi / 4) * (u / u_z) ** 2) for u in u_arr]
+            energy_produced = sum([mu * es * t * p * r for p, r in zip(p_curve, rayleigh)])
 
-                return energy_produced / (p_rated * t)
+            return energy_produced / (p_rated * t)
 
+    def calc_wind_cfs(self):
         logging.info('Calculate Wind CF')
-        self.df[SET_WINDCF] = self.df.apply(get_wind_cf, axis=1)
+        return self.df[SET_WINDVEL].apply(self.get_wind_cf)
 
     def prepare_wtf_tier_columns(self, num_people_per_hh_rural, num_people_per_hh_urban,
                                  tier_1, tier_2, tier_3, tier_4, tier_5):
