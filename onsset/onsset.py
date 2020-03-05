@@ -1483,8 +1483,8 @@ class SettlementProcessor:
                     dist_adjusted = grid_penalty_ratio[unelec] * dist
                     new_lcoes[unelec] = grid_lcoe[0][unelec]
                     status[unelec] = 1
-                    cell_path_real[unelec] = dist[unelec]
-                    cell_path_adjusted[unelec] = dist_adjusted[unelec]
+                    cell_path_real[unelec] = dist
+                    cell_path_adjusted[unelec] = dist_adjusted
                     new_grid_capacity += peak_load
                     grid_connect_limit -= new_connections[unelec] / nupppphh[unelec]
                     elecorder[unelec] = 1
@@ -1503,38 +1503,46 @@ class SettlementProcessor:
             elec_nodes2 = np.asarray(elec_nodes2)
             changes = []
             if len(elec_nodes2) > 0:
+                closest_elec_node = np.zeros(len(cell_path_real), dtype=int)
+                nearest_dist = np.zeros(len(cell_path_real))
+                nearest_dist_adjusted = np.zeros(len(cell_path_real))
+                nearest_elec_order = np.zeros(len(cell_path_real), dtype=int)
                 for unelec in unelectrified:
-                    consumption = enerperhh[unelec]  # kWh/year
-                    average_load = consumption / (1 - grid_calc.distribution_losses) / HOURS_PER_YEAR  # kW
-                    peak_load = average_load / grid_calc.base_to_peak_load_ratio  # kW
-
                     node = (x[unelec], y[unelec])
-                    closest_elec_node = closest_elec(node, elec_nodes2)
-                    dist = haversine(x[electrified[closest_elec_node]], y[electrified[closest_elec_node]],
+                    closest_elec_node[unelec] = closest_elec(node, elec_nodes2)
+                    dist = haversine(x[electrified[closest_elec_node[unelec]]], y[electrified[closest_elec_node[unelec]]],
                                      x[unelec], y[unelec])
                     dist_adjusted = grid_penalty_ratio[unelec] * dist
-                    prev_dist = cell_path_real[electrified[closest_elec_node]]
-                    if dist + prev_dist < max_dist:
-                        grid_lcoe = grid_calc.get_lcoe(energy_per_cell=enerperhh[unelec],
-                                                       start_year=year - time_step,
-                                                       end_year=end_year,
-                                                       people=pop[unelec],
-                                                       new_connections=new_connections[unelec],
-                                                       total_energy_per_cell=total_energy_per_cell[unelec],
-                                                       prev_code=prev_code[unelec],
-                                                       num_people_per_hh=nupppphh[unelec],
-                                                       grid_cell_area=grid_cell_area[unelec],
-                                                       additional_mv_line_length=dist_adjusted,
-                                                       elec_loop=elecorder[electrified[closest_elec_node]] + 1)
-                        grid_lcoe = grid_lcoe[0][0]
-                        if grid_lcoe < min_code_lcoes[unelec]:
-                            if (grid_lcoe < new_lcoes[unelec]) and \
+                    nearest_dist[unelec] = dist
+                    nearest_dist_adjusted[unelec] = dist_adjusted
+                    nearest_elec_order[unelec] = elecorder[electrified[closest_elec_node[unelec]]] + 1
+
+                grid_lcoe = grid_calc.get_lcoe(energy_per_cell=enerperhh,
+                                               start_year=year - time_step,
+                                               end_year=end_year,
+                                               people=pop,
+                                               new_connections=new_connections,
+                                               total_energy_per_cell=total_energy_per_cell,
+                                               prev_code=prev_code,
+                                               num_people_per_hh=nupppphh,
+                                               grid_cell_area=grid_cell_area,
+                                               additional_mv_line_length=nearest_dist_adjusted,
+                                               elec_loop=nearest_elec_order)
+
+                for unelec in unelectrified:
+                    prev_dist = cell_path_real[electrified[closest_elec_node[unelec]]]
+                    if nearest_dist[unelec] + prev_dist < max_dist:
+                        consumption = enerperhh[unelec]  # kWh/year
+                        average_load = consumption / (1 - grid_calc.distribution_losses) / HOURS_PER_YEAR  # kW
+                        peak_load = average_load / grid_calc.base_to_peak_load_ratio  # kW
+                        if grid_lcoe[0][unelec] < min_code_lcoes[unelec]:
+                            if (grid_lcoe[0][unelec] < new_lcoes[unelec]) and \
                                     (new_grid_capacity + peak_load < grid_capacity_limit) \
                                     and (new_connections[unelec] / nupppphh[unelec] < grid_connect_limit):
-                                new_lcoes[unelec] = grid_lcoe
-                                cell_path_real[unelec] = dist + cell_path_real[electrified[closest_elec_node]]
-                                cell_path_adjusted[unelec] = dist_adjusted
-                                elecorder[unelec] = elecorder[electrified[closest_elec_node]] + 1
+                                new_lcoes[unelec] = grid_lcoe[0][unelec]
+                                cell_path_real[unelec] = nearest_dist[unelec] + prev_dist
+                                cell_path_adjusted[unelec] = nearest_dist_adjusted[unelec]
+                                elecorder[unelec] = nearest_elec_order[unelec]
                                 new_grid_capacity += peak_load
                                 grid_connect_limit -= new_connections[unelec] / nupppphh[unelec]
                                 if unelec not in changes:

@@ -26,6 +26,8 @@ except ImportError:
                        SPE_URBAN_MODELLED)
 from openpyxl import load_workbook
 
+logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.DEBUG)
+
 
 def calibration(specs_path, csv_path, specs_path_calib, calibrated_csv_path):
     """
@@ -346,3 +348,5 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
         df_summary.to_csv(summary_csv, index=sumtechs)
         onsseter.df.to_csv(settlements_out_csv, index=False)
+
+        logging.info('Finished')
