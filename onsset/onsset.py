@@ -1692,7 +1692,7 @@ class SettlementProcessor:
                                                   prev_code=row[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
                                                   num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
                                                   grid_cell_area=row[SET_GRID_CELL_AREA],
-                                                  mv_line_length=row[SET_HYDRO_DIST])
+                                                  additional_mv_line_length=row[SET_HYDRO_DIST])
             else:
                 return 99
 
@@ -1951,7 +1951,7 @@ class SettlementProcessor:
                                               prev_code=row[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
                                               num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
                                               grid_cell_area=row[SET_GRID_CELL_AREA],
-                                              mv_line_length=row[SET_HYDRO_DIST],
+                                              additional_mv_line_length=row[SET_HYDRO_DIST],
                                               get_investment_cost=True)
 
             elif min_code == 1:
