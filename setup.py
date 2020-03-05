@@ -1,11 +1,12 @@
+from os import path
+
 import setuptools
 
-with open("README.md", "r") as fh:
-    long_description = fh.read()
+# read the contents of your README file
+this_directory = path.abspath(path.dirname(__file__))
 
-long_description = """
-Modified version of the Open Source Spatial Electrification Tool (OnSSET) to serve GEP objectives.
-"""
+with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
+    long_description = f.read()
 
 setuptools.setup(
     name='onsset',

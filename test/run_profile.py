@@ -1,20 +1,15 @@
-"""Performs a regression test of the OnSSET modules
+"""Profile a run of OnSSET using the test datasets
 
-Notes
------
-
-Run ``python test/test_runner.py`` to update the test files,
-if an intended modification is made to the codebase which
-changes the contents of the output files.
-
+Note, requires that KCacheGrind, or QCacheGrind is installed, along with
+the Python script ``pyprof2calltree`` which can be acquired using ``pip``.
 """
-
+import cProfile
 import filecmp
 import os
-from shutil import copyfile
 from tempfile import TemporaryDirectory
 
 from onsset.runner import calibration, scenario
+from pyprof2calltree import convert, visualize
 
 
 def run_analysis(tmpdir):
@@ -47,40 +42,26 @@ def run_analysis(tmpdir):
 
     actual = os.path.join(tmpdir, 'dj-1-1_1_1_1_0_0.csv')
     expected = os.path.join('test', 'test_results', 'expected_full.csv')
-    full = filecmp.cmp(actual, expected)
-    return summary, full
+    actual = filecmp.cmp(actual, expected)
+
+    return summary, actual
 
 
-def test_regression_summary():
-    """A regression test to track changes to the summary results of OnSSET
+def profile_code():
 
-    """
+    pr = cProfile.Profile()
+    pr.enable()
 
     with TemporaryDirectory() as tmpdir:
-        summary, full = run_analysis(tmpdir)
+        run_analysis(tmpdir)
 
-    assert summary
-    assert full
+    pr.disable()
 
+    visualize(pr.getstats())                            # run kcachegrind
+    convert(pr.getstats(), 'profiling_results.kgrind')  # save for later
 
-def update_test_file():
-    """A utility function to produce a new test file if intended changes are made
-    """
-    tmpdir = '.'
-
-    summary, actual = run_analysis(tmpdir)
-
-    actual = os.path.join(tmpdir, 'dj-1-1_1_1_1_0_0_summary.csv')
-    expected = os.path.join('test', 'test_results', 'expected_summary.csv')
-    if not summary:
-        copyfile(actual, expected)
-
-    actual = os.path.join(tmpdir, 'dj-1-1_1_1_1_0_0.csv')
-    expected = os.path.join('test', 'test_results', 'expected_full.csv')
-    if not actual:
-        copyfile(actual, expected)
+    assert 0
 
 
 if __name__ == '__main__':
-
-    update_test_file()
+    profile_code()

@@ -25,23 +25,25 @@ Contents
 .. toctree::
    :maxdepth: 3
 
-   introduction
+   Introduction <introduction>
    OnSSET_model
-   installation
+   Installation <installation>
    data_acquisition
    data_preparation
    otherinputs
    running
    analysis_visualization
-   applications
-   references
-   contact
-   faq
-   license
+   Applications <applications>
+   References <references>
+   Contact <contact>
+   Frequently Asked Questions <faq>
+   License <license>
+   Module Reference <api/modules>
 
 
 Indices and tables
 ==================
 
 * :ref:`genindex`
+* :ref:`modindex`
 * :ref:`search`

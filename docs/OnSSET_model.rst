@@ -53,7 +53,11 @@ Energy resources assessment
 
 **Wind energy potential and capacity factors**
 
-Wind speed data extracted into a GIS environment are used to calculate wind turbine capacity factors per location. The latter is defined as the ratio of the yearly expected wind energy production to the energy production if the wind turbine were to operate at its rated power throughout the year. The capacity factor reflects the potential wind power at a given site and it can be used for comparing different sites before the installation of wind power plants. Additional documentation on wind power assessment is available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/Wind>`_.
+Wind speed data extracted into a GIS environment are used to calculate wind turbine capacity factors per location.
+The latter is defined as the ratio of the yearly expected wind energy production to the energy production if the
+wind turbine were to operate at its rated power throughout the year.
+The capacity factor reflects the potential wind power at a given site and it can be used for comparing different sites before the installation of wind power plants.
+Additional documentation on wind power assessment is available `here <https://github.com/OnSSET/OnSSET/tree/master/Resource_Assessment/Wind>`_.
 
 .. image::  img/AfghanCF.png
     :scale: 80 %
@@ -61,7 +65,7 @@ Wind speed data extracted into a GIS environment are used to calculate wind turb
 
 **Solar energy potential**
 
-GIS data for Global Horizontal Irradiation (GHI - kWh/m^2/time) are used to indicate the available solar energy that Photovoltaic (PV) systems can utilize per location. This layer is combined with additional datasets that are used to define restriction zones for mini-grid PV installations such as protected areas, reserved forests etc. Documentation on solar power assessment is available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/Solar>`_.
+GIS data for Global Horizontal Irradiation (GHI - kWh/m^2/time) are used to indicate the available solar energy that Photovoltaic (PV) systems can utilize per location. This layer is combined with additional datasets that are used to define restriction zones for mini-grid PV installations such as protected areas, reserved forests etc. Documentation on solar power assessment is available `here <https://github.com/OnSSET/OnSSET/tree/master/Resource_Assessment/Solar>`_.
 
 .. image::  img/AfghanSolar.png
     :scale: 80 %
@@ -69,7 +73,7 @@ GIS data for Global Horizontal Irradiation (GHI - kWh/m^2/time) are used to indi
 
 **Hydropower potential**
 
-A number of GIS datasets (runoff, accumulation, elevation, river network) have been utilized in a novel methodology developed by KTH dESA in order to spatially identify potential site for small scale hydropower deployment. Documentation on hydropower assessment together with a GIS based assessment tool is available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/HydroPower>`_.
+A number of GIS datasets (runoff, accumulation, elevation, river network) have been utilized in a novel methodology developed by KTH dESA in order to spatially identify potential site for small scale hydropower deployment. Documentation on hydropower assessment together with a GIS based assessment tool is available `here <https://github.com/OnSSET/OnSSET/tree/master/Resource_Assessment/HydroPower>`_.
 
 .. image::  img/AfghanHydro.png
     :scale: 80 %
@@ -77,7 +81,7 @@ A number of GIS datasets (runoff, accumulation, elevation, river network) have b
 
 **Transportation Cost for Diesel**
 
-Diesel is an important energy carrier, especially in remote areas of many developing countries and is therefore included in the OnSSET analysis. Transportation of diesel incurs costs, which may lead to high costs of electricity for isolated and low populated communities. OnSSET uses GIS datasets that indicate travel time and distance from main urban hubs, in order to calculate and assign transportation costs for diesel in each location. These costs are then included as fuel costs in the calculation of LCoE for diesel gensets. Documentation on diesel cost assessment is available `here <https://github.com/KTH-dESA/PyOnSSET/tree/master/Resource_Assessment/DieselCost>`_.
+Diesel is an important energy carrier, especially in remote areas of many developing countries and is therefore included in the OnSSET analysis. Transportation of diesel incurs costs, which may lead to high costs of electricity for isolated and low populated communities. OnSSET uses GIS datasets that indicate travel time and distance from main urban hubs, in order to calculate and assign transportation costs for diesel in each location. These costs are then included as fuel costs in the calculation of LCoE for diesel gensets. Documentation on diesel cost assessment is available `here <https://github.com/OnSSET/OnSSET/tree/master/Resource_Assessment/DieselCost>`_.
 
 .. image::  img/AfghanDiesel.png
     :scale: 80 %
