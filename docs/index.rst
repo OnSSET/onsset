@@ -9,7 +9,7 @@ Welcome to OnSSET's documentation!
 .. figure::  img/onsset_logo1.png
    :align:   center
 
-   KTH dESA - http://www.onsset.org
+   KTH dES - http://www.onsset.org
 
 Electricity for all
 +++++++++++++++++++++
