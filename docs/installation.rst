@@ -73,7 +73,7 @@ Software installation and setup
   Please make sure that you download the version that is compatible with your operating system.
   Select the “Community”, open-source version.
 
-3. Download the code from `**GitHub** here <https://github.com/onsset/OnSSET>`_.
+3. Download the code from **GitHub** `here <https://github.com/onsset/OnSSET>`_.
 
 
 Additional Info
