@@ -1,10 +1,12 @@
 import logging
 from math import asin, cos, exp, log, pi, radians, sin, sqrt
+from typing import Dict
 
 import numpy as np
 import pandas as pd
 
 logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 # Columns in settlements file must match these exactly
 SET_COUNTRY = 'Country'  # This cannot be changed, lots of code will break
@@ -191,7 +193,7 @@ class Technology:
         ----------
         people : float
             Number of people in settlement
-        new_connections : float
+        new_connections : float or pandas.Series
             Number of new people in settlement to connect
         prev_code : int
             Code representation of previous supply technology in settlement
@@ -639,31 +641,87 @@ class SettlementProcessor:
                 print('Column "GHI" not found, check column names in calibrated csv-file')
                 raise
 
-    def diesel_cost_columns(self, sa_diesel_cost, mg_diesel_cost, year):
+    def _diesel_fuel_cost_calculator(self, diesel_price: float,
+                                     diesel_truck_consumption: float,
+                                     diesel_truck_volume: float,
+                                     traveltime: np.ndarray,
+                                     efficiency: float):
+        """We apply the Szabo formula to calculate the transport cost for the diesel
 
-        def diesel_fuel_cost_calculator(diesel_price, diesel_truck_consumption, diesel_truck_volume,
-                                        traveltime, efficiency):
-            # We apply the Szabo formula to calculate the transport cost for the diesel
-            # p = (p_d + 2*p_d*consumption*time/volume)*(1/mu)*(1/LHVd)
+        Formulae is::
 
-            return (diesel_price + 2 * diesel_price * diesel_truck_consumption *
-                    traveltime) / diesel_truck_volume / LHV_DIESEL / efficiency
+            p = (p_d + 2*p_d*consumption*time/volume)*(1/mu)*(1/LHVd)
 
-        self.df[SET_SA_DIESEL_FUEL + "{}".format(year)] = self.df.apply(
-            lambda row: diesel_fuel_cost_calculator(diesel_price=sa_diesel_cost['diesel_price'],
-                                                    diesel_truck_volume=sa_diesel_cost['diesel_truck_volume'],
-                                                    diesel_truck_consumption=sa_diesel_cost['diesel_truck_consumption'],
-                                                    efficiency=sa_diesel_cost['efficiency'],
-                                                    traveltime=row[SET_TRAVEL_HOURS]
-                                                    ), axis=1)
+        Arguments
+        ---------
+        diesel_price: float
+        diesel_truck_consumption: float
+        diesel_truck_volume: float
+        traveltime: numpy.ndarray
+        efficiency: float
 
-        self.df[SET_MG_DIESEL_FUEL + "{}".format(year)] = self.df.apply(
-            lambda row: diesel_fuel_cost_calculator(diesel_price=mg_diesel_cost['diesel_price'],
-                                                    diesel_truck_volume=mg_diesel_cost['diesel_truck_volume'],
-                                                    diesel_truck_consumption=mg_diesel_cost['diesel_truck_consumption'],
-                                                    efficiency=mg_diesel_cost['efficiency'],
-                                                    traveltime=row[SET_TRAVEL_HOURS]
-                                                    ), axis=1)
+        Returns
+        -------
+        numpy.ndarray
+        """
+        return (diesel_price + 2 * diesel_price * diesel_truck_consumption *
+                traveltime) / diesel_truck_volume / LHV_DIESEL / efficiency
+
+    def compute_diesel_cost(self,
+                            dataframe: pd.DataFrame,
+                            sa_diesel_cost: Dict,
+                            mg_diesel_cost: Dict,
+                            year: int):
+        """Calculate diesel fuel cost
+
+        Arguments
+        ---------
+        dataframe: pandas.DataFrame
+        sa_diesel_cost: Dict
+        mg_diesel_cost: Dict
+        year: int
+
+        Returns
+        -------
+        pandas.DataFrame
+        """
+        df = dataframe.copy(deep=True).set_index(['X_deg', 'Y_deg'])
+        travel_time = df[SET_TRAVEL_HOURS].values
+
+        df[SET_SA_DIESEL_FUEL + "{}".format(year)] = self._diesel_fuel_cost_calculator(
+            diesel_price=sa_diesel_cost['diesel_price'],
+            diesel_truck_volume=sa_diesel_cost['diesel_truck_volume'],
+            diesel_truck_consumption=sa_diesel_cost['diesel_truck_consumption'],
+            efficiency=sa_diesel_cost['efficiency'],
+            traveltime=travel_time)
+
+        df[SET_MG_DIESEL_FUEL + "{}".format(year)] = self._diesel_fuel_cost_calculator(
+            diesel_price=mg_diesel_cost['diesel_price'],
+            diesel_truck_volume=mg_diesel_cost['diesel_truck_volume'],
+            diesel_truck_consumption=mg_diesel_cost['diesel_truck_consumption'],
+            efficiency=mg_diesel_cost['efficiency'],
+            traveltime=travel_time)
+
+        return df.drop(columns=SET_TRAVEL_HOURS)
+
+    def diesel_cost_columns(self, sa_diesel_cost: Dict[str, float],
+                            mg_diesel_cost: Dict[str, float], year: int) -> pd.DataFrame:
+        """Calculate diesel fuel cost based on TravelHours column
+
+        Arguments
+        ---------
+        sa_diesel_cost: Dict
+        mg_diesel_cost: Dict
+        year: int
+
+        Returns
+        -------
+        pandas.DataFrame
+        """
+        diesel_cost = self.compute_diesel_cost(self.df[['X_deg', 'Y_deg', SET_TRAVEL_HOURS]],
+                                               sa_diesel_cost, mg_diesel_cost, year)
+
+        self.df = pd.merge(self.df, diesel_cost, left_on=['X_deg', 'Y_deg'], right_index=True)
 
     def condition_df(self):
         """
@@ -833,9 +891,12 @@ class SettlementProcessor:
 
         return c
 
-    def calc_wind_cfs(self):
+    def get_wind_cf(self, wind_velocity):
         """Calculate the wind capacity factor based on the average wind velocity.
 
+        Parameters
+        ----------
+        wind_velocity : float
         """
 
         mu = 0.97  # availability factor
@@ -848,24 +909,25 @@ class SettlementProcessor:
         p_curve = [0, 0, 0, 0, 30, 77, 135, 208, 287, 371, 450, 514, 558,
                    582, 594, 598, 600, 600, 600, 600, 600, 600, 600, 600, 600]
 
-        def get_wind_cf(row):
-            u_zr = row[SET_WINDVEL]
-            if u_zr == 0:
-                return 0
+        if wind_velocity == 0:
+            return 0
+        elif wind_velocity < 0:
+            raise ValueError('Wind velocity must be greater than 0')
 
-            else:
-                # Adjust for the correct hub height
-                alpha = (0.37 - 0.088 * log(u_zr)) / (1 - 0.088 * log(zr / 10))
-                u_z = u_zr * (z / zr) ** alpha
+        else:
+            # Adjust for the correct hub height
+            alpha = (0.37 - 0.088 * log(wind_velocity)) / (1 - 0.088 * log(zr / 10))
+            u_z = wind_velocity * (z / zr) ** alpha
 
-                # Rayleigh distribution and sum of series
-                rayleigh = [(pi / 2) * (u / u_z ** 2) * exp((-pi / 4) * (u / u_z) ** 2) for u in u_arr]
-                energy_produced = sum([mu * es * t * p * r for p, r in zip(p_curve, rayleigh)])
+            # Rayleigh distribution and sum of series
+            rayleigh = [(pi / 2) * (u / u_z ** 2) * exp((-pi / 4) * (u / u_z) ** 2) for u in u_arr]
+            energy_produced = sum([mu * es * t * p * r for p, r in zip(p_curve, rayleigh)])
 
-                return energy_produced / (p_rated * t)
+            return energy_produced / (p_rated * t)
 
+    def calc_wind_cfs(self):
         logging.info('Calculate Wind CF')
-        self.df[SET_WINDCF] = self.df.apply(get_wind_cf, axis=1)
+        return self.df[SET_WINDVEL].apply(self.get_wind_cf)
 
     def prepare_wtf_tier_columns(self, num_people_per_hh_rural, num_people_per_hh_urban,
                                  tier_1, tier_2, tier_3, tier_4, tier_5):
