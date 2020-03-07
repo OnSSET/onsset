@@ -1448,7 +1448,7 @@ class SettlementProcessor:
             min_dist = np.argmin(dist_2)
             return min_dist
 
-        logging.info('Initially {} electrified'.format(len(electrified)))
+        logging.info('Initially {} electrified'.format(sum(electrified)))
         loops = 1
 
         # First round of extension from MV network
@@ -1539,7 +1539,7 @@ class SettlementProcessor:
         prev_electrified = np.zeros(len(x))
         #  Second to last round of extension loops from existing and new lines, including newly connected settlements
         while sum(electrified) > sum(prev_electrified):
-            logging.info('Electrification loop {} with {} electrified'.format(loops, len(electrified)))
+            logging.info('Electrification loop {} with {} electrified'.format(loops, sum(electrified)))
             prev_electrified = electrified
             loops += 1
             elec_nodes2 = []
