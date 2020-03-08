@@ -1357,7 +1357,7 @@ class SettlementProcessor:
         Iterate through all electrified settlements and find which settlements can be economically connected to the grid
         Repeat with newly electrified settlements until no more are added
         """
-        logging.info('Elec extension starting')
+
         prio = int(prioritization)
         new_grid_capacity = 0
         grid_capacity_limit = grid_cap_gen_limit
@@ -1443,11 +1443,6 @@ class SettlementProcessor:
         filtered_unelectrified = np.where(filter_lcoe < min_code_lcoes)
         filtered_unelectrified = filtered_unelectrified[0].tolist()
 
-        elec_nodes2 = []
-        changes = []
-        for elec in electrified:
-            elec_nodes2.append((x[elec], y[elec]))
-
         def haversine(lon1, lat1, lon2, lat2):
             """
             Calculate the great circle distance between two points
@@ -1515,11 +1510,9 @@ class SettlementProcessor:
         electrified = np.where(grid_lcoe < min_code_lcoes, 1, electrified)
         new_lcoes = np.where(grid_lcoe < min_code_lcoes, grid_lcoe, new_lcoes)
 
-        logging.info('Extension from MV complete')
-
+        #  Extension from HV lines
         dist = planned_hv_dist * grid_penalty_ratio
         dist = np.nan_to_num(dist)
-        #  Extension from HV lines
         grid_lcoe = grid_calc.get_lcoe(energy_per_cell=enerperhh,
                                        start_year=year - time_step,
                                        end_year=end_year,
@@ -1563,8 +1556,6 @@ class SettlementProcessor:
         original_electrified = np.where(prev_code == 1, 1, 0)
         new_electrified = electrified - original_electrified
 
-        logging.info('HV extension complete')
-
         prev_electrified = np.zeros(len(x))
         #  Second to last round of extension loops from existing and new lines, including newly connected settlements
         while sum(electrified) > sum(prev_electrified):
@@ -1574,7 +1565,7 @@ class SettlementProcessor:
             elec_nodes2 = []
             extension_nodes = np.where(new_electrified == 1)
             extension_nodes = extension_nodes[0].tolist()
-            for e in extension_nodes:
+            for e in extension_nodes:  # TODO
                 elec_nodes2.append((x[e], y[e]))
             elec_nodes2 = np.asarray(elec_nodes2)
 
@@ -1597,7 +1588,7 @@ class SettlementProcessor:
                     nearest_dist_adjusted[unelec] = dist_adjusted[unelec]
                     nearest_elec_order[unelec] = elecorder[extension_nodes[closest_elec_node[unelec]]] + 1
                     prev_dist[unelec] = cell_path_real[extension_nodes[closest_elec_node[unelec]]]
-                logging.info('Distances calculated')
+
 
                 grid_lcoe = grid_calc.get_lcoe(energy_per_cell=enerperhh,
                                                start_year=year - time_step,
@@ -1610,7 +1601,6 @@ class SettlementProcessor:
                                                grid_cell_area=grid_cell_area,
                                                additional_mv_line_length=nearest_dist_adjusted,
                                                elec_loop=nearest_elec_order)
-                logging.info('LCOEs calculated')
 
                 grid_lcoe = grid_lcoe[0]
                 grid_lcoe.loc[electrified == 1] = 99
@@ -1640,8 +1630,6 @@ class SettlementProcessor:
                 new_lcoes = np.where(grid_lcoe < new_lcoes, grid_lcoe, new_lcoes)
 
                 new_electrified = electrified - prev_electrified
-
-                logging.info('Values updated')
 
         return new_lcoes, cell_path_adjusted, elecorder, cell_path_real
 
