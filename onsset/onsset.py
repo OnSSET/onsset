@@ -249,6 +249,8 @@ class Technology:
         else:
             energy_per_cell = np.maximum(energy_per_cell, 0.000000000001)
 
+        grid_penalty_ratio = np.maximum(1, grid_penalty_ratio)
+
         generation_per_year, peak_load, td_investment_cost = self.td_network_cost(people,
                                                                                   new_connections,
                                                                                   prev_code,
@@ -383,13 +385,17 @@ class Technology:
             hv_amperage = self.hv_lv_sub_station_type / self.hv_line_type
             no_of_hv_lines = np.ceil(peak_load / (hv_amperage * self.hv_line_type))
 
-            mv_km = np.where((peak_load <= max_mv_load) & (additional_mv_line_length < 50),
-                             additional_mv_line_length * no_of_mv_lines,
-                             0)
+            if additional_transformer > 0:
+                mv_km = 0
+                hv_km = additional_mv_line_length * no_of_hv_lines
+            else:
+                mv_km = np.where((peak_load <= max_mv_load) & (additional_mv_line_length < 50),
+                                 additional_mv_line_length * no_of_mv_lines,
+                                 0)
 
-            hv_km = np.where((peak_load <= max_mv_load) & (additional_mv_line_length < 50),
-                             0,
-                             additional_mv_line_length * no_of_hv_lines)
+                hv_km = np.where((peak_load <= max_mv_load) & (additional_mv_line_length < 50),
+                                 0,
+                                 additional_mv_line_length * no_of_hv_lines)
 
             no_of_hv_mv_subs = np.where(mv_distribution & (hv_km > 0),
                                         np.ceil(peak_load / self.mv_lv_sub_station_type),
@@ -1421,6 +1427,22 @@ class SettlementProcessor:
                 except KeyError:
                     pass
 
+        filter_lcoe = grid_calc.get_lcoe(energy_per_cell=enerperhh,
+                                         start_year=year - time_step,
+                                         end_year=end_year,
+                                         people=pop,
+                                         new_connections=new_connections,
+                                         total_energy_per_cell=total_energy_per_cell,
+                                         prev_code=prev_code,
+                                         num_people_per_hh=nupppphh,
+                                         grid_cell_area=grid_cell_area,
+                                         additional_mv_line_length=0,
+                                         elec_loop=0)
+        filter_lcoe = filter_lcoe[0]
+        filter_lcoe.loc[prev_code == 1] = 99
+        filtered_unelectrified = np.where(filter_lcoe < min_code_lcoes)
+        filtered_unelectrified = filtered_unelectrified[0].tolist()
+
         elec_nodes2 = []
         changes = []
         for elec in electrified:
@@ -1470,6 +1492,7 @@ class SettlementProcessor:
         grid_lcoe = grid_lcoe[0]
         grid_lcoe.loc[prev_code == 1] = 99
         grid_lcoe.loc[dist_adjusted > max_dist] = 99
+        grid_lcoe.loc[grid_lcoe > new_lcoes] = 99
         consumption = enerperhh  # kWh/year
         average_load = consumption / (1 - grid_calc.distribution_losses) / HOURS_PER_YEAR  # kW
         peak_load = average_load / grid_calc.base_to_peak_load_ratio  # kW
@@ -1481,20 +1504,21 @@ class SettlementProcessor:
         new_grid_connections_cum_sum = np.cumsum(new_grid_connections)
         grid_lcoe.loc[new_grid_connections_cum_sum > grid_connect_limit] = 99
 
-        # Update values for settlements that meet conditions
-        new_lcoes = np.where(grid_lcoe < new_lcoes, grid_lcoe, new_lcoes)
-        cell_path_real = np.where(grid_lcoe < new_lcoes, dist, cell_path_real)
-        cell_path_adjusted = np.where(grid_lcoe < new_lcoes, dist_adjusted, cell_path_adjusted)
-        elecorder = np.where(grid_lcoe < new_lcoes, 1, elecorder)
-        electrified = np.where(grid_lcoe < new_lcoes, 1, electrified)
-
         # Update limiting values
         grid_capacity_limit -= peak_load.loc[grid_lcoe < min_code_lcoes].sum()
-        grid_connect_limit -= new_grid_connections.loc[grid_lcoe < min_code_lcoes.sum()]
+        grid_connect_limit -= new_grid_connections.loc[grid_lcoe < min_code_lcoes].sum()
 
+        # Update values for settlements that meet conditions
+        cell_path_real = np.where(grid_lcoe < min_code_lcoes, dist, cell_path_real)
+        cell_path_adjusted = np.where(grid_lcoe < min_code_lcoes, dist_adjusted, cell_path_adjusted)
+        elecorder = np.where(grid_lcoe < min_code_lcoes, 1, elecorder)
+        electrified = np.where(grid_lcoe < min_code_lcoes, 1, electrified)
+        new_lcoes = np.where(grid_lcoe < min_code_lcoes, grid_lcoe, new_lcoes)
 
         logging.info('Extension from MV complete')
 
+        dist = planned_hv_dist * grid_penalty_ratio
+        dist = np.nan_to_num(dist)
         #  Extension from HV lines
         grid_lcoe = grid_calc.get_lcoe(energy_per_cell=enerperhh,
                                        start_year=year - time_step,
@@ -1505,12 +1529,13 @@ class SettlementProcessor:
                                        prev_code=prev_code,
                                        num_people_per_hh=nupppphh,
                                        grid_cell_area=grid_cell_area,
-                                       additional_mv_line_length=planned_hv_dist * grid_penalty_ratio,
+                                       additional_mv_line_length=dist,
                                        elec_loop=0,
                                        additional_transformer=1)
 
         grid_lcoe = grid_lcoe[0]
         grid_lcoe.loc[prev_code == 1] = 99
+        grid_lcoe.loc[grid_lcoe > new_lcoes] = 99
         grid_lcoe.loc[planned_hv_dist > max_dist] = 99  # TODO review if still needed
         consumption = enerperhh  # kWh/year
         average_load = consumption / (1 - grid_calc.distribution_losses) / HOURS_PER_YEAR  # kW
@@ -1522,31 +1547,37 @@ class SettlementProcessor:
         new_grid_connections.loc[grid_lcoe >= min_code_lcoes] = 0
         new_grid_connections_cum_sum = np.cumsum(new_grid_connections)
         grid_lcoe.loc[new_grid_connections_cum_sum > grid_connect_limit] = 99
-
-        # Update values for settlements that meet conditions
-        new_lcoes = np.where(grid_lcoe < new_lcoes, grid_lcoe, new_lcoes)
-        cell_path_real = np.where(grid_lcoe < new_lcoes, dist, cell_path_real)
-        cell_path_adjusted = np.where(grid_lcoe < new_lcoes, dist_adjusted, cell_path_adjusted)
-        elecorder = np.where(grid_lcoe < new_lcoes, 1, elecorder)
-        electrified = np.where(grid_lcoe < new_lcoes, 1, electrified)
+        grid_lcoe.loc[grid_lcoe > min_code_lcoes] = 99
 
         # Update limiting values
         grid_capacity_limit -= peak_load.loc[grid_lcoe < min_code_lcoes].sum()
-        grid_connect_limit -= new_grid_connections.loc[grid_lcoe < min_code_lcoes.sum()]
+        grid_connect_limit -= new_grid_connections.loc[grid_lcoe < min_code_lcoes].sum()
+
+        # Update values for settlements that meet conditions
+        cell_path_real = np.where(grid_lcoe < min_code_lcoes, dist, cell_path_real)
+        cell_path_adjusted = np.where(grid_lcoe < min_code_lcoes, dist_adjusted, cell_path_adjusted)
+        elecorder = np.where(grid_lcoe < min_code_lcoes, 1, elecorder)
+        electrified = np.where(grid_lcoe < min_code_lcoes, 1, electrified)
+        new_lcoes = np.where(grid_lcoe < new_lcoes, grid_lcoe, new_lcoes)
+
+        original_electrified = np.where(prev_code == 1, 1, 0)
+        new_electrified = electrified - original_electrified
 
         logging.info('HV extension complete')
 
         prev_electrified = np.zeros(len(x))
         #  Second to last round of extension loops from existing and new lines, including newly connected settlements
         while sum(electrified) > sum(prev_electrified):
-            logging.info('Electrification loop {} with {} electrified'.format(loops, sum(electrified)))
+            logging.info('Electrification loop {} with {} electrified'.format(loops, sum(new_electrified)))
             prev_electrified = electrified
             loops += 1
             elec_nodes2 = []
-            for elec in electrified:
-                elec_nodes2.append((x[elec], y[elec]))
+            extension_nodes = np.where(new_electrified == 1)
+            extension_nodes = extension_nodes[0].tolist()
+            for e in extension_nodes:
+                elec_nodes2.append((x[e], y[e]))
             elec_nodes2 = np.asarray(elec_nodes2)
-            changes = []
+
             if len(elec_nodes2) > 0:
                 closest_elec_node = np.zeros(len(x), dtype=int)
                 nearest_dist = np.zeros(len(x))
@@ -1554,16 +1585,18 @@ class SettlementProcessor:
                 nearest_elec_order = np.zeros(len(x), dtype=int)
                 prev_dist = np.zeros(len(x))
 
-                for unelec in unelectrified:
+                filtered_unelectrified = np.setdiff1d(filtered_unelectrified, extension_nodes).tolist()
+                for unelec in filtered_unelectrified:
                     node = (x[unelec], y[unelec])
                     closest_elec_node[unelec] = closest_elec(node, elec_nodes2)
-                    dist = haversine(x[electrified[closest_elec_node[unelec]]], y[electrified[closest_elec_node[unelec]]],
+                    dist = haversine(x[extension_nodes[closest_elec_node[unelec]]],
+                                     y[extension_nodes[closest_elec_node[unelec]]],
                                      x[unelec], y[unelec])
-                    dist_adjusted = grid_penalty_ratio[unelec] * dist
+                    dist_adjusted[unelec] = grid_penalty_ratio[unelec] * dist
                     nearest_dist[unelec] = dist
-                    nearest_dist_adjusted[unelec] = dist_adjusted
-                    nearest_elec_order[unelec] = elecorder[electrified[closest_elec_node[unelec]]] + 1
-                    prev_dist[unelec] = cell_path_real[electrified[closest_elec_node[unelec]]]
+                    nearest_dist_adjusted[unelec] = dist_adjusted[unelec]
+                    nearest_elec_order[unelec] = elecorder[extension_nodes[closest_elec_node[unelec]]] + 1
+                    prev_dist[unelec] = cell_path_real[extension_nodes[closest_elec_node[unelec]]]
                 logging.info('Distances calculated')
 
                 grid_lcoe = grid_calc.get_lcoe(energy_per_cell=enerperhh,
@@ -1580,7 +1613,8 @@ class SettlementProcessor:
                 logging.info('LCOEs calculated')
 
                 grid_lcoe = grid_lcoe[0]
-                grid_lcoe.loc[prev_code == 1] = 99
+                grid_lcoe.loc[electrified == 1] = 99
+                grid_lcoe.loc[grid_lcoe > new_lcoes] = 99
                 grid_lcoe.loc[prev_dist + nearest_dist > max_dist] = 99  # TODO review if still needed
                 consumption = enerperhh  # kWh/year
                 average_load = consumption / (1 - grid_calc.distribution_losses) / HOURS_PER_YEAR  # kW
@@ -1592,17 +1626,20 @@ class SettlementProcessor:
                 new_grid_connections.loc[grid_lcoe >= min_code_lcoes] = 0
                 new_grid_connections_cum_sum = np.cumsum(new_grid_connections)
                 grid_lcoe.loc[new_grid_connections_cum_sum > grid_connect_limit] = 99
-
-                # Update values for settlements that meet conditions
-                new_lcoes = np.where(grid_lcoe < new_lcoes, grid_lcoe, new_lcoes)
-                cell_path_real = np.where(grid_lcoe < new_lcoes, dist, cell_path_real)
-                cell_path_adjusted = np.where(grid_lcoe < new_lcoes, dist_adjusted, cell_path_adjusted)
-                elecorder = np.where(grid_lcoe < new_lcoes, nearest_elec_order, elecorder)
-                electrified = np.where(grid_lcoe < new_lcoes, 1, electrified)
+                grid_lcoe.loc[grid_lcoe > min_code_lcoes] = 99
 
                 # Update limiting values
                 grid_capacity_limit -= peak_load.loc[grid_lcoe < min_code_lcoes].sum()
                 grid_connect_limit -= new_grid_connections.loc[grid_lcoe < min_code_lcoes.sum()]
+
+                # Update values for settlements that meet conditions
+                cell_path_real = np.where(grid_lcoe < min_code_lcoes, nearest_dist + prev_dist, cell_path_real)
+                cell_path_adjusted = np.where(grid_lcoe < min_code_lcoes, nearest_dist_adjusted, cell_path_adjusted)
+                elecorder = np.where(grid_lcoe < min_code_lcoes, nearest_elec_order, elecorder)
+                electrified = np.where(grid_lcoe < min_code_lcoes, 1, electrified)
+                new_lcoes = np.where(grid_lcoe < new_lcoes, grid_lcoe, new_lcoes)
+
+                new_electrified = electrified - prev_electrified
 
                 logging.info('Values updated')
 
