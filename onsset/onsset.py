@@ -1465,6 +1465,16 @@ class SettlementProcessor:
             min_dist = np.argmin(dist_2)
             return min_dist
 
+        def closest_elec_vector(unelec_nodes, elec_nodes):
+            unelec_nodes = np.array(unelec_nodes)
+            rows = np.ones(len(unelec_nodes))
+            columns = np.ones(len(elec_nodes))
+            dist = np.sqrt((np.outer(unelec_nodes[:, 0], columns).astype('float32') -
+                            np.outer(rows, elec_nodes[:, 0]).astype('float32')) ** 2 +
+                           (np.outer(unelec_nodes[:, 1], columns).astype('float32') -
+                            np.outer(rows, elec_nodes[:, 1]).astype('float32')) ** 2).astype('float32')
+            return np.argmin(dist, axis=1)
+
         logging.info('Initially {} electrified'.format(sum(electrified)))
         loops = 1
 
@@ -1577,9 +1587,19 @@ class SettlementProcessor:
                 prev_dist = np.zeros(len(x))
 
                 filtered_unelectrified = np.setdiff1d(filtered_unelectrified, extension_nodes).tolist()
+                filter_unelec = []
                 for unelec in filtered_unelectrified:
-                    node = (x[unelec], y[unelec])
-                    closest_elec_node[unelec] = closest_elec(node, elec_nodes2)
+                    filter_unelec.append((x[unelec], y[unelec]))
+                filter_unelec = np.asarray(filter_unelec)
+                
+                closest_node = closest_elec_vector(filter_unelec, elec_nodes2)
+                i = 0
+                for unelec in filtered_unelectrified:
+                    closest_elec_node[unelec] = closest_node[i]
+                    i += 1
+                for unelec in filtered_unelectrified:
+                    #node = (x[unelec], y[unelec])
+                    #closest_elec_node[unelec] = closest_elec(node, elec_nodes2)
                     dist = haversine(x[extension_nodes[closest_elec_node[unelec]]],
                                      y[extension_nodes[closest_elec_node[unelec]]],
                                      x[unelec], y[unelec])
