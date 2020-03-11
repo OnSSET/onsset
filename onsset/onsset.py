@@ -1555,17 +1555,12 @@ class SettlementProcessor:
             loops += 1
             extension_nodes = np.where(new_electrified == 1)
             extension_nodes = extension_nodes[0].tolist()
-            #x_elec = x.loc[extension_nodes]
-            #y_elec = y.loc[extension_nodes]
+            x_elec = x.loc[extension_nodes]
+            y_elec = y.loc[extension_nodes]
 
-            elec_nodes2 = []
-            for e in extension_nodes:  # TODO
-                elec_nodes2.append((x[e], y[e]))
-            elec_nodes2 = np.asarray(elec_nodes2)
-
-            logging.info('Elec nodes created')
-
-            if len(elec_nodes2) > 0:
+            if len(x_elec) > 1:  # TODO
+                elec_nodes2 = np.array([x_elec, y_elec])
+                elec_nodes2 = np.transpose(elec_nodes2)
                 closest_elec_node = np.zeros(len(x), dtype=int)
                 nearest_dist = np.zeros(len(x))
                 nearest_dist_adjusted = np.zeros(len(x))
@@ -1575,13 +1570,9 @@ class SettlementProcessor:
                 filtered_unelectrified = np.setdiff1d(filtered_unelectrified, extension_nodes).tolist()
                 x_unelec = x.loc[filtered_unelectrified]
                 y_unelec = y.loc[filtered_unelectrified]
-
-                filter_unelec = []
-                for unelec in filtered_unelectrified:
-                    filter_unelec.append((x[unelec], y[unelec]))
+                filter_unelec = np.array([x_unelec, y_unelec])
+                filter_unelec = np.transpose(filter_unelec)
                 filter_unelec = pd.DataFrame(filter_unelec)
-
-                logging.info('Filter unelec created')
 
                 closest_node = filter_unelec.apply(lambda row: np.argmin(np.sqrt((elec_nodes2[:, 0] - row[0]) ** 2 +
                                                                                  (elec_nodes2[:, 1] - row[1]) ** 2)),
