@@ -1577,7 +1577,6 @@ class SettlementProcessor:
                 closest_node = filter_unelec.apply(lambda row: np.argmin(np.sqrt((elec_nodes2[:, 0] - row[0]) ** 2 +
                                                                                  (elec_nodes2[:, 1] - row[1]) ** 2)),
                                                    axis=1)
-                logging.info('Closest elec node calculated')
 
                 j = 0
                 for unelec in filtered_unelectrified:
@@ -1591,15 +1590,11 @@ class SettlementProcessor:
                 y_closest_elec.index = y_unelec.index
                 dist = haversine_vector(x_closest_elec, y_closest_elec, x_unelec, y_unelec)
 
-                logging.info('Closest elec node updated')
-                for unelec in filtered_unelectrified:
-                    dist_adjusted[unelec] = grid_penalty_ratio[unelec] * dist[unelec]
-                    nearest_dist[unelec] = dist[unelec]
-                    nearest_dist_adjusted[unelec] = dist_adjusted[unelec]
-                    nearest_elec_order[unelec] = elecorder[extension_nodes[closest_elec_node[unelec]]] + 1
-                    prev_dist[unelec] = cell_path_real[extension_nodes[closest_elec_node[unelec]]]
-
-                logging.info('Filtered values updated')
+                dist_adjusted[filtered_unelectrified] = grid_penalty_ratio[filtered_unelectrified] * dist[filtered_unelectrified]
+                nearest_dist[filtered_unelectrified] = dist[filtered_unelectrified]
+                nearest_dist_adjusted[filtered_unelectrified] = dist_adjusted[filtered_unelectrified]
+                nearest_elec_order[filtered_unelectrified] = elecorder[extension_nodes[closest_elec_node[filtered_unelectrified]]] + 1
+                prev_dist[filtered_unelectrified] = cell_path_real[extension_nodes[closest_elec_node[filtered_unelectrified]]]
 
                 grid_lcoe = grid_calc.get_lcoe(energy_per_cell=enerperhh,
                                                start_year=year - time_step,
