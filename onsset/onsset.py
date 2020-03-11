@@ -1,5 +1,5 @@
 import logging
-from math import asin, cos, exp, log, pi, radians, sin, sqrt
+from math import asin, cos, exp, ceil, log, pi, radians, sin, sqrt
 from typing import Dict
 
 import numpy as np
@@ -1405,7 +1405,7 @@ class SettlementProcessor:
 
         cell_path_adjusted = list(np.zeros(len(x)).tolist())
 
-        logging.info('Densification/Intensification')
+        logging.info('Densification/Intensification')  # TODO
         if (prio == 2) or (prio == 4):
             changes = []
             for unelec in unelectrified:
@@ -1443,37 +1443,18 @@ class SettlementProcessor:
         filtered_unelectrified = np.where(filter_lcoe < min_code_lcoes)
         filtered_unelectrified = filtered_unelectrified[0].tolist()
 
-        def haversine(lon1, lat1, lon2, lat2):
-            """
-            Calculate the great circle distance between two points
+        def haversine_vector(lon1, lat1, lon2, lat2):
+            """Calculate the great circle distance between two points
             on the earth (specified in decimal degrees)
             """
             # convert decimal degrees to radians
-            lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
-
-            # haversine formula
+            lon1, lat1, lon2, lat2 = map(np.deg2rad, [lon1, lat1, lon2, lat2])
             dlon = lon2 - lon1
             dlat = lat2 - lat1
-            a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
-            c = 2 * asin(sqrt(a))
+            a = np.sin(dlat / 2) ** 2 + np.cos(lat1) * np.cos(lat2) * np.sin(dlon / 2) ** 2
+            c = 2 * np.arcsin(np.sqrt(a))
             r = 6371  # Radius of earth in kilometers. Use 3956 for miles
             return c * r
-
-        def closest_elec(unelec_node, elec_nodes):
-            deltas = elec_nodes - unelec_node
-            dist_2 = np.einsum('ij,ij->i', deltas, deltas)
-            min_dist = np.argmin(dist_2)
-            return min_dist
-
-        def closest_elec_vector(unelec_nodes, elec_nodes):
-            unelec_nodes = np.array(unelec_nodes)
-            rows = np.ones(len(unelec_nodes))
-            columns = np.ones(len(elec_nodes))
-            dist = np.sqrt((np.outer(unelec_nodes[:, 0], columns).astype('float32') -
-                            np.outer(rows, elec_nodes[:, 0]).astype('float32')) ** 2 +
-                           (np.outer(unelec_nodes[:, 1], columns).astype('float32') -
-                            np.outer(rows, elec_nodes[:, 1]).astype('float32')) ** 2).astype('float32')
-            return np.argmin(dist, axis=1)
 
         logging.info('Initially {} electrified'.format(sum(electrified)))
         loops = 1
@@ -1572,12 +1553,17 @@ class SettlementProcessor:
             logging.info('Electrification loop {} with {} electrified'.format(loops, sum(new_electrified)))
             prev_electrified = electrified
             loops += 1
-            elec_nodes2 = []
             extension_nodes = np.where(new_electrified == 1)
             extension_nodes = extension_nodes[0].tolist()
+            #x_elec = x.loc[extension_nodes]
+            #y_elec = y.loc[extension_nodes]
+
+            elec_nodes2 = []
             for e in extension_nodes:  # TODO
                 elec_nodes2.append((x[e], y[e]))
             elec_nodes2 = np.asarray(elec_nodes2)
+
+            logging.info('Elec nodes created')
 
             if len(elec_nodes2) > 0:
                 closest_elec_node = np.zeros(len(x), dtype=int)
@@ -1587,28 +1573,42 @@ class SettlementProcessor:
                 prev_dist = np.zeros(len(x))
 
                 filtered_unelectrified = np.setdiff1d(filtered_unelectrified, extension_nodes).tolist()
+                x_unelec = x.loc[filtered_unelectrified]
+                y_unelec = y.loc[filtered_unelectrified]
+
                 filter_unelec = []
                 for unelec in filtered_unelectrified:
                     filter_unelec.append((x[unelec], y[unelec]))
-                filter_unelec = np.asarray(filter_unelec)
-                
-                closest_node = closest_elec_vector(filter_unelec, elec_nodes2)
-                i = 0
+                filter_unelec = pd.DataFrame(filter_unelec)
+
+                logging.info('Filter unelec created')
+
+                closest_node = filter_unelec.apply(lambda row: np.argmin(np.sqrt((elec_nodes2[:, 0] - row[0]) ** 2 +
+                                                                                 (elec_nodes2[:, 1] - row[1]) ** 2)),
+                                                   axis=1)
+                logging.info('Closest elec node calculated')
+
+                j = 0
                 for unelec in filtered_unelectrified:
-                    closest_elec_node[unelec] = closest_node[i]
-                    i += 1
+                    closest_elec_node[unelec] = closest_node[j]
+                    j += 1
+
+                extension_nodes = np.array(extension_nodes)
+                x_closest_elec = x.loc[extension_nodes[closest_elec_node[filtered_unelectrified]]]
+                x_closest_elec.index = x_unelec.index
+                y_closest_elec = y.loc[extension_nodes[closest_elec_node[filtered_unelectrified]]]
+                y_closest_elec.index = y_unelec.index
+                dist = haversine_vector(x_closest_elec, y_closest_elec, x_unelec, y_unelec)
+
+                logging.info('Closest elec node updated')
                 for unelec in filtered_unelectrified:
-                    #node = (x[unelec], y[unelec])
-                    #closest_elec_node[unelec] = closest_elec(node, elec_nodes2)
-                    dist = haversine(x[extension_nodes[closest_elec_node[unelec]]],
-                                     y[extension_nodes[closest_elec_node[unelec]]],
-                                     x[unelec], y[unelec])
-                    dist_adjusted[unelec] = grid_penalty_ratio[unelec] * dist
-                    nearest_dist[unelec] = dist
+                    dist_adjusted[unelec] = grid_penalty_ratio[unelec] * dist[unelec]
+                    nearest_dist[unelec] = dist[unelec]
                     nearest_dist_adjusted[unelec] = dist_adjusted[unelec]
                     nearest_elec_order[unelec] = elecorder[extension_nodes[closest_elec_node[unelec]]] + 1
                     prev_dist[unelec] = cell_path_real[extension_nodes[closest_elec_node[unelec]]]
 
+                logging.info('Filtered values updated')
 
                 grid_lcoe = grid_calc.get_lcoe(energy_per_cell=enerperhh,
                                                start_year=year - time_step,
