@@ -692,7 +692,7 @@ class SettlementProcessor:
         -------
         pandas.DataFrame
         """
-        df = dataframe.copy(deep=True).set_index(['X_deg', 'Y_deg'])
+        df = dataframe.copy(deep=True)
         travel_time = df[SET_TRAVEL_HOURS].values
 
         df[SET_SA_DIESEL_FUEL + "{}".format(year)] = self._diesel_fuel_cost_calculator(
@@ -725,10 +725,10 @@ class SettlementProcessor:
         -------
         pandas.DataFrame
         """
-        diesel_cost = self.compute_diesel_cost(self.df[['X_deg', 'Y_deg', SET_TRAVEL_HOURS]],
+        diesel_cost = self.compute_diesel_cost(self.df[[SET_TRAVEL_HOURS]],
                                                sa_diesel_cost, mg_diesel_cost, year)
-
-        self.df = pd.merge(self.df, diesel_cost, left_on=['X_deg', 'Y_deg'], right_index=True)
+        
+        self.df = self.df.join(diesel_cost)
 
     def condition_df(self):
         """
