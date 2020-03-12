@@ -1,6 +1,7 @@
 import logging
 from math import asin, cos, exp, ceil, log, pi, radians, sin, sqrt
 from typing import Dict
+import scipy.spatial
 
 import numpy as np
 import pandas as pd
@@ -1405,8 +1406,7 @@ class SettlementProcessor:
 
         cell_path_adjusted = list(np.zeros(len(x)).tolist())
 
-        logging.info('Densification/Intensification')  # TODO
-        if (prio == 2) or (prio == 4):
+        if (prio == 2) or (prio == 4):  # TODO
             changes = []
             for unelec in unelectrified:
                 try:
@@ -1455,6 +1455,11 @@ class SettlementProcessor:
             c = 2 * np.arcsin(np.sqrt(a))
             r = 6371  # Radius of earth in kilometers. Use 3956 for miles
             return c * r
+
+        def do_kdtree(combined_x_y_arrays, points):
+            mytree = scipy.spatial.cKDTree(combined_x_y_arrays)
+            dist, indexes = mytree.query(points)
+            return indexes
 
         logging.info('Initially {} electrified'.format(sum(electrified)))
         loops = 1
@@ -1573,10 +1578,7 @@ class SettlementProcessor:
                 filter_unelec = np.array([x_unelec, y_unelec])
                 filter_unelec = np.transpose(filter_unelec)
                 filter_unelec = pd.DataFrame(filter_unelec)
-
-                closest_node = filter_unelec.apply(lambda row: np.argmin(np.sqrt((elec_nodes2[:, 0] - row[0]) ** 2 +
-                                                                                 (elec_nodes2[:, 1] - row[1]) ** 2)),
-                                                   axis=1)
+                closest_node = do_kdtree(elec_nodes2, filter_unelec)
 
                 j = 0
                 for unelec in filtered_unelectrified:
