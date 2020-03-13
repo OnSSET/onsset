@@ -29,6 +29,7 @@ SET_SUBSTATION_DIST = 'SubstationDist'
 SET_ELEVATION = 'Elevation'  # in metres
 SET_SLOPE = 'Slope'  # in degrees
 SET_LAND_COVER = 'LandCover'
+SET_BIOELEC = 'bioelec_potential_kWh'   # in kWh
 SET_ROAD_DIST_CLASSIFIED = 'RoadDistClassified'
 SET_SUBSTATION_DIST_CLASSIFIED = 'SubstationDistClassified'
 SET_ELEVATION_CLASSIFIED = 'ElevationClassified'
@@ -55,6 +56,7 @@ SET_LCOE_MG_WIND = 'MG_Wind'
 SET_LCOE_MG_DIESEL = 'MG_Diesel'
 SET_LCOE_MG_PV = 'MG_PV'
 SET_LCOE_MG_HYDRO = 'MG_Hydro'
+SET_LCOE_BIOELEC = 'Bioelec'
 SET_GRID_LCOE_Round1 = "Grid_lcoe_PreElec"
 SET_MIN_OFFGRID = 'Minimum_Tech_Off_grid'  # The technology with lowest lcoe (excluding grid)
 SET_MIN_OVERALL = 'MinimumOverall'  # Same as above, but including grid
@@ -96,10 +98,12 @@ SET_NTL_BIN = 'NTLBin'
 SET_MIN_TD_DIST = 'minTDdist'
 SET_SA_DIESEL_FUEL = 'SADieselFuelCost'
 SET_MG_DIESEL_FUEL = 'MGDieselFuelCost'
+SET_BIOMASS = 'BiomassFuelCost'
 
 # General
 LHV_DIESEL = 9.9445485  # (kWh/l) lower heating value
 HOURS_PER_YEAR = 8760
+annual_full_load_hours = 5600 #hours
 
 class Technology:
     """
@@ -119,12 +123,15 @@ class Technology:
                  efficiency=1.0,  # percentage
                  diesel_price=0.0,  # USD/litre
                  grid_price=0.0,  # USD/kWh for grid electricity
+                 biomass_price=0.0, #USD/KwH for biomass residue cost
                  standalone=False,
                  existing_grid_cost_ratio=0.1,  # percentage
                  grid_capacity_investment=0.0,  # USD/kW for on-grid capacity investments (excluding grid itself)
                  diesel_truck_consumption=0,  # litres/hour
                  diesel_truck_volume=0,  # litres
+                 biomass_truck_mass=0, #tonnes
                  om_of_td_lines=0):  # percentage
+
 
         self.distribution_losses = distribution_losses
         self.connection_cost_per_hh = connection_cost_per_hh
@@ -142,7 +149,9 @@ class Technology:
         self.grid_capacity_investment = grid_capacity_investment
         self.diesel_truck_consumption = diesel_truck_consumption
         self.diesel_truck_volume = diesel_truck_volume
+        self.biomass_truck_mass = biomass_truck_mass
         self.om_of_td_lines = om_of_td_lines
+        self.biomass_price = biomass_price
 
     @classmethod
     def set_default_values(cls, base_year, start_year, end_year, discount_rate, HV_line_type=69, HV_line_cost=53000,
@@ -310,7 +319,7 @@ class Technology:
                    consumption, peak_load, total_nodes
 
         if people != new_connections and (prev_code == 1 or prev_code == 4 or prev_code == 5 or
-                                          prev_code == 6 or prev_code == 7 or prev_code == 8):
+                                          prev_code == 6 or prev_code == 7 or prev_code == 8 or prev_code == 9):
             HV_km1, MV_km1, cluster_mv_lines_length1, cluster_lv_lines_length1, no_of_service_transf1, \
             No_of_HV_MV_subs1, No_of_MV_MV_subs1, No_of_HV_LV_subs1, No_of_MV_LV_subs1, \
             generation_per_year1, peak_load1, total_nodes1 = distribution_network(people, total_energy_per_cell)
@@ -489,7 +498,6 @@ class SettlementProcessor:
     def diesel_cost_columns(self, sa_diesel_cost, mg_diesel_cost, year):
 
 
-
         def diesel_fuel_cost_calculator(diesel_price, diesel_truck_consumption, diesel_truck_volume,
                                         traveltime, efficiency):
             # We apply the Szabo formula to calculate the transport cost for the diesel
@@ -513,7 +521,38 @@ class SettlementProcessor:
                                                     efficiency=mg_diesel_cost['efficiency'],
                                                     traveltime=row[SET_TRAVEL_HOURS]
                                                     ), axis=1)
+    def biomass_cost_columns(self,biomass_cost,year):
+        
+        """
+        this method calculates the transportation cost for biomass to the gasification plant
 
+        the Szabo formula is adopted for this calculation
+
+        Arguments
+        ---------
+
+        diesel_price = int
+        biomass_price = int
+        diesel_truck_comsumption = int
+        biomass_truck_mass = int
+        traveltime = list
+
+        """
+
+        def biomass_cost_calculator(diesel_price, biomass_price,biomass_truck_mass, biomass_truck_diesel_consumption,
+                                    specific_biomass,traveltime):
+            return (biomass_price + 2 * diesel_price * biomass_truck_diesel_consumption *
+                    traveltime) / biomass_truck_mass / specific_biomass
+
+        self.df[SET_BIOMASS + "{}".format(year)] = self.df.apply(
+            lambda row:biomass_cost_calculator(diesel_price=biomass_cost['diesel_price'],
+                                               biomass_price=biomass_cost['biomass_price'],
+                                               biomass_truck_mass=biomass_cost['biomass_truck_mass'],
+                                               biomass_truck_diesel_consumption=biomass_cost['biomass_truck_diesel_consumption'],
+                                               specific_biomass=biomass_cost['specific_biomass'],
+                                               traveltime=row[SET_TRAVEL_HOURS]
+                                               ), axis=1)
+    
 
     def condition_df(self):
         """
@@ -551,6 +590,7 @@ class SettlementProcessor:
         self.df[SET_COMMERCIAL_DEMAND] = pd.to_numeric(self.df[SET_COMMERCIAL_DEMAND], errors='coerce')
         self.df[SET_ELEC_ORDER] = pd.to_numeric(self.df[SET_ELEC_ORDER], errors='coerce')
         self.df[SET_CONFLICT] = pd.to_numeric(self.df[SET_CONFLICT], errors = 'coerce')
+        self.df[SET_BIOELEC] = pd.to_numeric(self.df[SET_BIOELEC], errors = 'coerce')
 
         self.df.loc[self.df[SET_ELEC_POP] > self.df[SET_POP], SET_ELEC_POP] = self.df[SET_POP]
 
@@ -850,6 +890,7 @@ class SettlementProcessor:
         else:
             self.df[SET_CALIB_GRID_DIST] = self.df[SET_HV_DIST_CURRENT]
             priority = 2
+
 
         condition = 0
 
@@ -1536,8 +1577,8 @@ class SettlementProcessor:
         self.calculate_total_demand_per_settlement(year)
 
     def calculate_off_grid_lcoes(self, mg_hydro_calc, mg_wind_calc, mg_pv_calc,
-                                 sa_pv_calc, mg_diesel_calc, sa_diesel_calc,
-                                 year, start_year, end_year, timestep, diesel_techs=0):
+                                 sa_pv_calc, mg_diesel_calc, sa_diesel_calc, bioelec_calc,
+                                 year, end_year, timestep, diesel_techs=0):
         """Calcuate the LCOEs for all off-grid technologies, and calculate the minimum, so that the electrification
         algorithm knows where the bar is before it becomes economical to electrify
 
@@ -1577,7 +1618,7 @@ class SettlementProcessor:
                                                   num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
                                                   grid_cell_area=row[SET_GRID_CELL_AREA],
                                                   conf_status=row[SET_CONFLICT],
-                                                  mv_line_length=row[SET_HYDRO_DIST])
+                                                  additional_mv_line_length=row[SET_HYDRO_DIST])
             else:
                 return 99
 
@@ -1618,6 +1659,23 @@ class SettlementProcessor:
                                               capacity_factor=row[SET_WINDCF])
             if row[SET_WINDCF] > 0.1 else 99,
             axis=1)
+
+        logging.info('Calculate bioelectricity LCOE')
+        self.df[SET_LCOE_BIOELEC + "{}".format(year)] = self.df.apply(
+            lambda row: bioelec_calc.get_lcoe(energy_per_cell=row[SET_ENERGY_PER_CELL + "{}".format(year)],
+                                              start_year=year - timestep,
+                                              end_year=end_year,
+                                              people=row[SET_POP + "{}".format(year)],
+                                              new_connections=row[SET_NEW_CONNECTIONS + "{}".format(year)],
+                                              total_energy_per_cell=row[SET_TOTAL_ENERGY_PER_CELL],
+                                              prev_code=row[SET_ELEC_FINAL_CODE + "{}".format(year - timestep)],
+                                              num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
+                                              grid_cell_area=row[SET_GRID_CELL_AREA],
+                                              fuel_cost=row[SET_BIOMASS + "{}".format(year)],
+                                              conf_status=row[SET_CONFLICT])
+
+            if (row[SET_BIOELEC]/annual_full_load_hours) > (row[SET_ENERGY_PER_CELL+ "{}".format(year)]/HOURS_PER_YEAR)else 99,
+            axis = 1)
 
         if diesel_techs == 0:
             self.df[SET_LCOE_MG_DIESEL + "{}".format(year)] = 99
@@ -1686,6 +1744,7 @@ class SettlementProcessor:
                                                                 SET_LCOE_MG_WIND + "{}".format(year),
                                                                 SET_LCOE_MG_PV + "{}".format(year),
                                                                 SET_LCOE_MG_HYDRO + "{}".format(year),
+                                                                SET_LCOE_BIOELEC + "{}".format(year),
                                                                 SET_LCOE_MG_DIESEL + "{}".format(year),
                                                                 SET_LCOE_SA_DIESEL + "{}".format(year)]].T.idxmin()
 
@@ -1694,6 +1753,7 @@ class SettlementProcessor:
                                                                      SET_LCOE_MG_WIND + "{}".format(year),
                                                                      SET_LCOE_MG_PV + "{}".format(year),
                                                                      SET_LCOE_MG_HYDRO + "{}".format(year),
+                                                                     SET_LCOE_BIOELEC + "{}".format(year),
                                                                      SET_LCOE_MG_DIESEL + "{}".format(year),
                                                                      SET_LCOE_SA_DIESEL + "{}".format(year)]].T.min()
 
@@ -1702,7 +1762,8 @@ class SettlementProcessor:
                  SET_LCOE_MG_PV + "{}".format(year): 5,
                  SET_LCOE_MG_DIESEL + "{}".format(year): 4,
                  SET_LCOE_SA_DIESEL + "{}".format(year): 2,
-                 SET_LCOE_SA_PV + "{}".format(year): 3}
+                 SET_LCOE_SA_PV + "{}".format(year): 3,
+                 SET_LCOE_BIOELEC + "{}".format(year): 8}
 
         self.df.loc[self.df[SET_MIN_OFFGRID + "{}".format(year)] == SET_LCOE_MG_HYDRO + "{}".format(
             year), SET_MIN_OFFGRID_CODE + "{}".format(year)] = codes[SET_LCOE_MG_HYDRO + "{}".format(year)]
@@ -1716,6 +1777,9 @@ class SettlementProcessor:
             year), SET_MIN_OFFGRID_CODE + "{}".format(year)] = codes[SET_LCOE_MG_DIESEL + "{}".format(year)]
         self.df.loc[self.df[SET_MIN_OFFGRID + "{}".format(year)] == SET_LCOE_SA_DIESEL + "{}".format(
             year), SET_MIN_OFFGRID_CODE + "{}".format(year)] = codes[SET_LCOE_SA_DIESEL + "{}".format(year)]
+        self.df.loc[self.df[SET_MIN_OFFGRID + "{}".format(year)] == SET_LCOE_BIOELEC + "{}".format(
+            year), SET_MIN_OFFGRID_CODE + "{}".format(year)] = codes[SET_LCOE_BIOELEC + "{}".format(year)]
+
 
     def results_columns(self, year):
         """Calculate the capacity and investment requirements for each settlement
@@ -1735,6 +1799,7 @@ class SettlementProcessor:
                                                                 SET_LCOE_MG_WIND + "{}".format(year),
                                                                 SET_LCOE_MG_PV + "{}".format(year),
                                                                 SET_LCOE_MG_HYDRO + "{}".format(year),
+                                                                SET_LCOE_BIOELEC + "{}".format(year),
                                                                 SET_LCOE_MG_DIESEL + "{}".format(year),
                                                                 SET_LCOE_SA_DIESEL + "{}".format(year)]].T.idxmin()
 
@@ -1744,6 +1809,7 @@ class SettlementProcessor:
                                                                      SET_LCOE_MG_WIND + "{}".format(year),
                                                                      SET_LCOE_MG_PV + "{}".format(year),
                                                                      SET_LCOE_MG_HYDRO + "{}".format(year),
+                                                                     SET_LCOE_BIOELEC + "{}".format(year),
                                                                      SET_LCOE_MG_DIESEL + "{}".format(year),
                                                                      SET_LCOE_SA_DIESEL + "{}".format(year)]].T.min()
 
@@ -1754,14 +1820,15 @@ class SettlementProcessor:
                  SET_LCOE_MG_PV + "{}".format(year): 5,
                  SET_LCOE_MG_DIESEL + "{}".format(year): 4,
                  SET_LCOE_SA_DIESEL + "{}".format(year): 2,
-                 SET_LCOE_SA_PV + "{}".format(year): 3}
+                 SET_LCOE_SA_PV + "{}".format(year): 3,
+                 SET_LCOE_BIOELEC + "{}".format(year):8}
 
         for key in codes.keys():
             self.df.loc[self.df[SET_MIN_OVERALL + "{}".format(year)] == key,
                         SET_MIN_OVERALL_CODE + "{}".format(year)] = codes[key]
 
     def calculate_investments(self, mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc,
-                              sa_diesel_calc, grid_calc, year,
+                              sa_diesel_calc, grid_calc, bioelec_calc, year,
                               end_year, timestep):
         def res_investment_cost(row):
             min_code = row[SET_MIN_OVERALL_CODE + "{}".format(year)]
@@ -1847,7 +1914,7 @@ class SettlementProcessor:
                                               num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
                                               grid_cell_area=row[SET_GRID_CELL_AREA],
                                               conf_status=row[SET_CONFLICT],
-                                              mv_line_length=row[SET_HYDRO_DIST],
+                                              additional_mv_line_length=row[SET_HYDRO_DIST],
                                               get_investment_cost=True)
 
             elif min_code == 1:
@@ -1864,7 +1931,21 @@ class SettlementProcessor:
                                           additional_mv_line_length=row[SET_MIN_GRID_DIST + "{}".format(year)],
                                           elec_loop=row[SET_ELEC_ORDER + "{}".format(year)],
                                           get_investment_cost=True)
-
+            
+            elif min_code == 8:
+                return bioelec_calc.get_lcoe(energy_per_cell=row[SET_ENERGY_PER_CELL + "{}".format(year)],
+                                             start_year=year - timestep,
+                                             end_year=end_year,
+                                             people=row[SET_POP + "{}".format(year)],
+                                             new_connections=row[SET_NEW_CONNECTIONS + "{}".format(year)],
+                                             total_energy_per_cell=row[SET_TOTAL_ENERGY_PER_CELL],
+                                             prev_code=row[SET_ELEC_FINAL_CODE + "{}".format(year - timestep)],
+                                             num_people_per_hh=row[SET_NUM_PEOPLE_PER_HH],
+                                             grid_cell_area=row[SET_GRID_CELL_AREA],
+                                             conf_status=row[SET_CONFLICT],
+                                             fuel_cost=row[SET_BIOMASS + "{}".format(year)],
+                                             get_investment_cost=True)
+            
             else:
                 return 0
 
@@ -2192,8 +2273,9 @@ class SettlementProcessor:
         self.df.loc[(self.df[SET_LIMIT + "{}".format(year)] == 0),
                     SET_ELEC_FINAL_CODE + "{}".format(year)] = 99
 
+
     def calculate_new_capacity(self, mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc,
-                       sa_diesel_calc, grid_calc, year):
+                       sa_diesel_calc, grid_calc,bioelec_calc, year):
 
         logging.info('Calculate new capacity')
         self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 99, SET_NEW_CAPACITY + "{}".format(year)] = 0
@@ -2232,6 +2314,11 @@ class SettlementProcessor:
                 (self.df[SET_ENERGY_PER_CELL + "{}".format(year)]) /
                 (HOURS_PER_YEAR * (self.df[SET_GHI] / HOURS_PER_YEAR) * sa_pv_calc.base_to_peak_load_ratio *
                  (1 - sa_pv_calc.distribution_losses)))
+
+        self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 8, SET_NEW_CAPACITY + "{}".format(year)] = (
+                (self.df[SET_ENERGY_PER_CELL + "{}".format(year)]) /
+                (annual_full_load_hours * bioelec_calc.capacity_factor * bioelec_calc.base_to_peak_load_ratio *
+                 (1 - bioelec_calc.distribution_losses)))
 
     def calc_summaries(self, df_summary, sumtechs, year):
 
@@ -2308,6 +2395,7 @@ class SettlementProcessor:
                                                          (self.df[SET_LIMIT + "{}".format(year)] == 1)]
                                              [SET_NEW_CONNECTIONS + "{}".format(year)])
 
+
         # Capacity Summaries
         df_summary[year][sumtechs[16]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 1) &
                                                          (self.df[SET_LIMIT + "{}".format(year)] == 1)]
@@ -2342,6 +2430,7 @@ class SettlementProcessor:
                                                          (self.df[SET_LIMIT + "{}".format(year)] == 1)]
                                              [SET_NEW_CAPACITY + "{}".format(year)])
 
+
         # Investment Summaries
         df_summary[year][sumtechs[24]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 1) &
                                                          (self.df[SET_LIMIT + "{}".format(year)] == 1)]
@@ -2375,6 +2464,8 @@ class SettlementProcessor:
         df_summary[year][sumtechs[31]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 8) &
                                                          (self.df[SET_LIMIT + "{}".format(year)] == 1)]
                                              [SET_INVESTMENT_COST + "{}".format(year)])
+
+
 
         df_summary[year][sumtechs[32]] = min(self.df[SET_POP + "{}".format(year)])
         df_summary[year][sumtechs[33]] = max(self.df[SET_POP + "{}".format(year)])

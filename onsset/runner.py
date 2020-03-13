@@ -6,7 +6,8 @@ import os
 import pandas as pd
 from onsset import (SET_ELEC_ORDER, SET_LCOE_GRID, SET_MIN_GRID_DIST,
                     SET_MV_CONNECT_DIST, SettlementProcessor, Technology)
-from onsset.specs import (SPE_COUNTRY, SPE_ELEC, SPE_ELEC_MODELLED,
+try:
+    from onsset.specs import (SPE_COUNTRY, SPE_ELEC, SPE_ELEC_MODELLED,
                           SPE_ELEC_RURAL, SPE_ELEC_URBAN, SPE_END_YEAR,
                           SPE_EXISTING_GRID_COST_RATIO,
                           SPE_GRID_CAPACITY_INVESTMENT, SPE_GRID_LOSSES,
@@ -15,6 +16,17 @@ from onsset.specs import (SPE_COUNTRY, SPE_ELEC, SPE_ELEC_MODELLED,
                           SPE_NUM_PEOPLE_PER_HH_URBAN, SPE_POP, SPE_POP_FUTURE,
                           SPE_START_YEAR, SPE_URBAN, SPE_URBAN_FUTURE,
                           SPE_URBAN_MODELLED)
+except ImportError:
+    from specs import (SPE_COUNTRY, SPE_ELEC, SPE_ELEC_MODELLED,
+                              SPE_ELEC_RURAL, SPE_ELEC_URBAN, SPE_END_YEAR,
+                              SPE_EXISTING_GRID_COST_RATIO,
+                              SPE_GRID_CAPACITY_INVESTMENT, SPE_GRID_LOSSES,
+                              SPE_MAX_GRID_EXTENSION_DIST,
+                              SPE_NUM_PEOPLE_PER_HH_RURAL,
+                              SPE_NUM_PEOPLE_PER_HH_URBAN, SPE_POP, SPE_POP_FUTURE,
+                              SPE_START_YEAR, SPE_URBAN, SPE_URBAN_FUTURE,
+                              SPE_URBAN_MODELLED)
+
 from openpyxl import load_workbook
 
 
@@ -121,6 +133,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
         gridIndex = ScenarioInfo.iloc[scenario]['Grid_electricity_generation_cost']
         pvIndex = ScenarioInfo.iloc[scenario]['PV_cost_adjust']
         dieselIndex = ScenarioInfo.iloc[scenario]['Diesel_price']
+        biomassIndex= ScenarioInfo.iloc[scenario]['Biomass_price']
         productiveIndex = ScenarioInfo.iloc[scenario]['Productive_uses_demand']
         prioIndex = ScenarioInfo.iloc[scenario]['Prioritization_algorithm']
 
@@ -133,6 +146,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
         grid_price = ScenarioParameters.iloc[gridIndex]['GridGenerationCost']
         pv_capital_cost_adjust = ScenarioParameters.iloc[pvIndex]['PV_Cost_adjust']
         diesel_price = ScenarioParameters.iloc[dieselIndex]['DieselPrice']
+        biomass_price = ScenarioParameters.iloc[biomassIndex]['BiomassPrice']
         productive_demand = ScenarioParameters.iloc[productiveIndex]['ProductiveDemand']
         prioritization = ScenarioParameters.iloc[prioIndex]['PrioritizationAlgorithm']
         auto_intensification = ScenarioParameters.iloc[prioIndex]['AutoIntensificationKM']
@@ -230,6 +244,15 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                                     capital_cost=938,
                                     standalone=True)
 
+        bioelec_calc = Technology(om_of_td_lines=0.02,
+                                  distribution_losses=0.05,
+                                  connection_cost_per_hh=100,
+                                  base_to_peak_load_ratio=0.85,
+                                  capacity_factor=0.8,
+                                  tech_life=40,
+                                  om_costs=0.1,
+                                  capital_cost=2105)
+
 
         sa_diesel_cost = {'diesel_price': diesel_price,
                           'efficiency': 0.28,
@@ -241,6 +264,13 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                           'efficiency': 0.33,
                           'diesel_truck_consumption': 33.7,
                           'diesel_truck_volume': 15000}
+        
+        biomass_cost = {'diesel_price': diesel_price,
+                        'biomass_price': biomass_price,
+                        'specific_biomass': 1.21,
+                        'biomass_truck_diesel_consumption': 33.7,
+                        'biomass_truck_mass': 20000}
+                          
 
 
         # RUN_PARAM: One shall define here the years of analysis (excluding start year) together with access targets per interval and timestep duration
@@ -249,7 +279,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
         time_steps = {2025: 7, 2030: 5}
 
         elements = ["1.Population", "2.New_Connections", "3.Capacity", "4.Investment"]
-        techs = ["Grid", "SA_Diesel", "SA_PV", "MG_Diesel", "MG_PV", "MG_Wind", "MG_Hydro", "MG_Hybrid"]
+        techs = ["Grid", "SA_Diesel", "SA_PV", "MG_Diesel", "MG_PV", "MG_Wind", "MG_Hydro", "Bioelec"]
 
         sumtechs = []
 
@@ -294,9 +324,10 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
             onsseter.diesel_cost_columns(sa_diesel_cost, mg_diesel_cost, year)
 
+            onsseter.biomass_cost_columns(biomass_cost,year)
 
             onsseter.calculate_off_grid_lcoes(mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc,
-                                              sa_diesel_calc, year, start_year, end_year, time_step)
+                                              sa_diesel_calc, bioelec_calc, year,end_year, time_step)
 
             onsseter.pre_electrification(grid_price, year, time_step, start_year)
 
@@ -318,14 +349,14 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
             onsseter.results_columns(year)
 
             onsseter.calculate_investments(mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc,
-                                           sa_diesel_calc, grid_calc, year, end_year, time_step)
+                                           sa_diesel_calc, grid_calc, bioelec_calc, year, end_year, time_step)
 
             onsseter.apply_limitations(eleclimit, year, time_step, prioritization, auto_intensification)
 
             onsseter.final_decision(year)
 
             onsseter.calculate_new_capacity(mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc,
-                                            sa_diesel_calc, grid_calc, year)
+                                            sa_diesel_calc, grid_calc,bioelec_calc,year)
 
             onsseter.calc_summaries(df_summary, sumtechs, year)
 
