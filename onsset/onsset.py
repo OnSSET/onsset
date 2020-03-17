@@ -727,7 +727,7 @@ class SettlementProcessor:
         """
         diesel_cost = self.compute_diesel_cost(self.df[[SET_TRAVEL_HOURS]],
                                                sa_diesel_cost, mg_diesel_cost, year)
-        
+
         self.df = self.df.join(diesel_cost)
 
     def condition_df(self):
@@ -1828,8 +1828,7 @@ class SettlementProcessor:
     def calculate_off_grid_lcoes(self, mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc,
                                  sa_diesel_calc, year, end_year, time_step, diesel_techs=0):
         """
-        Calculate the LCOEs for all off-grid technologies, and calculate the minimum, so that the electrification
-        algorithm knows where the bar is before it becomes economical to electrify
+        Calculate the LCOEs for all off-grid technologies
 
         """
 
@@ -1845,41 +1844,6 @@ class SettlementProcessor:
                                    num_people_per_hh=self.df[SET_NUM_PEOPLE_PER_HH],
                                    grid_cell_area=self.df[SET_GRID_CELL_AREA],
                                    additional_mv_line_length=self.df[SET_HYDRO_DIST])
-
-        # A df with all hydro-power sites, to ensure that they aren't assigned more capacity than is available
-        hydro_used = 'HydropowerUsed'  # the amount of the hydro potential that has been assigned
-        hydro_df = self.df[[SET_HYDRO_FID, SET_HYDRO]].drop_duplicates(subset=SET_HYDRO_FID)
-        hydro_df[hydro_used] = 0
-        hydro_df = hydro_df.set_index(SET_HYDRO_FID)
-
-        max_hydro_dist = 5  # the max distance in km to consider hydropower viable
-
-        def hydro_lcoe(row):
-            if row[SET_HYDRO_DIST] < max_hydro_dist:
-                # calculate the capacity that would be added by the settlement
-                additional_capacity = ((row[SET_NEW_CONNECTIONS + "{}".format(year)] *
-                                        row[SET_ENERGY_PER_CELL + "{}".format(year)]) /
-                                       (HOURS_PER_YEAR * mg_hydro_calc.capacity_factor *
-                                        mg_hydro_calc.base_to_peak_load_ratio))
-
-                # and add it to the tracking df
-                hydro_df.loc[row[SET_HYDRO_FID], hydro_used] += additional_capacity
-
-                # if it exceeds the available capacity, it's not an option
-                if hydro_df.loc[row[SET_HYDRO_FID], hydro_used] > hydro_df.loc[row[SET_HYDRO_FID], SET_HYDRO]:
-                    return 99
-                else:
-                    return 0
-            else:
-                return 99
-
-        self.df['HydroLimit'] = self.df.apply(hydro_lcoe, axis=1)
-        self.df[SET_LCOE_MG_HYDRO + "{}".format(year)] = np.where(self.df['HydroLimit'] == 99,
-                                                                  99,
-                                                                  self.df[SET_LCOE_MG_HYDRO + "{}".format(year)])
-        num_hydro_limited = hydro_df.loc[hydro_df[hydro_used] > hydro_df[SET_HYDRO]][SET_HYDRO].count()
-        logging.info('{} potential hydropower sites were utilised to maximum capacity'.format(num_hydro_limited))
-        del self.df['HydroLimit']
 
         logging.info('Calculate minigrid PV LCOE')
         self.df[SET_LCOE_MG_PV + "{}".format(year)] = \
@@ -1955,9 +1919,9 @@ class SettlementProcessor:
                                 capacity_factor=self.df[SET_GHI] / HOURS_PER_YEAR)
         self.df.loc[self.df[SET_GHI] <= 1000, SET_LCOE_SA_PV + "{}".format(year)] = 99
 
-        self.choose_minimum_off_grid_tech(year)
+        self.choose_minimum_off_grid_tech(year, mg_hydro_calc)
 
-    def choose_minimum_off_grid_tech(self, year):
+    def choose_minimum_off_grid_tech(self, year, mg_hydro_calc):
         """Choose minimum LCOE off-grid technology
 
         First step determines the off-grid technology with minimum LCOE
@@ -1969,6 +1933,38 @@ class SettlementProcessor:
         """
 
         logging.info('Determine minimum technology (off-grid)')
+        self.df[SET_MIN_OFFGRID + "{}".format(year)] = self.df[[SET_LCOE_SA_PV + "{}".format(year),
+                                                                SET_LCOE_MG_WIND + "{}".format(year),
+                                                                SET_LCOE_MG_PV + "{}".format(year),
+                                                                SET_LCOE_MG_HYDRO + "{}".format(year),
+                                                                SET_LCOE_MG_DIESEL + "{}".format(year),
+                                                                SET_LCOE_SA_DIESEL + "{}".format(year)]].T.idxmin()
+
+        # A df with all hydro-power sites, to ensure that they aren't assigned more capacity than is available
+        hydro_used = 'HydropowerUsed'  # the amount of the hydro potential that has been assigned
+        hydro_lcoe = self.df[SET_LCOE_MG_HYDRO + "{}".format(year)].copy()
+        hydro_df = self.df[[SET_HYDRO_FID, SET_HYDRO]].drop_duplicates(subset=SET_HYDRO_FID)
+        hydro_df[hydro_used] = 0
+        hydro_df = hydro_df.set_index(SET_HYDRO_FID)
+        max_hydro_dist = 5  # the max distance in km to consider hydropower viable # TODO below
+        additional_capacity = (
+                (self.df[SET_ENERGY_PER_CELL + "{}".format(year)]) /
+                (HOURS_PER_YEAR * mg_hydro_calc.capacity_factor * mg_hydro_calc.base_to_peak_load_ratio *
+                 (1 - mg_hydro_calc.distribution_losses)))
+
+        for index, row in hydro_df.iterrows():
+            hydro_usage = additional_capacity.loc[(self.df[SET_HYDRO_FID] == index) &
+                                                  (self.df[SET_HYDRO_DIST] < max_hydro_dist)].sum()
+            if hydro_usage > hydro_df[SET_HYDRO][index]:
+                hydro_usage_cumsum = additional_capacity.loc[(self.df[SET_HYDRO_FID] == index) &
+                                                             (self.df[SET_HYDRO_DIST] < max_hydro_dist)].cumsum()
+                hydro_usage = hydro_usage_cumsum.loc[hydro_usage_cumsum > hydro_df[SET_HYDRO][index]]
+                hydro_lcoe[hydro_usage.index] = 99
+
+        self.df[SET_LCOE_MG_HYDRO + "{}".format(year)] = hydro_lcoe
+
+        self.df.loc[self.df[SET_HYDRO_DIST] > max_hydro_dist, SET_LCOE_MG_HYDRO + "{}".format(year)] = 99
+
         self.df[SET_MIN_OFFGRID + "{}".format(year)] = self.df[[SET_LCOE_SA_PV + "{}".format(year),
                                                                 SET_LCOE_MG_WIND + "{}".format(year),
                                                                 SET_LCOE_MG_PV + "{}".format(year),
