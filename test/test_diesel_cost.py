@@ -78,6 +78,6 @@ class TestSettlementProcessor:
              'MGDieselFuelCost2015': [2.031466808374478e-06,
                                       0.0013712400956527725,
                                       0.002740448724497171]
-             }).set_index(['X_deg', 'Y_deg'])
+             })
 
         assert_frame_equal(actual, expected)

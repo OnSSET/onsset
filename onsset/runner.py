@@ -6,6 +6,7 @@ import os
 import pandas as pd
 from onsset import (SET_ELEC_ORDER, SET_LCOE_GRID, SET_MIN_GRID_DIST, SET_GRID_PENALTY,
                     SET_MV_CONNECT_DIST, SET_WINDCF, SettlementProcessor, Technology)
+
 try:
     from onsset.specs import (SPE_COUNTRY, SPE_ELEC, SPE_ELEC_MODELLED,
                               SPE_ELEC_RURAL, SPE_ELEC_URBAN, SPE_END_YEAR,
@@ -25,6 +26,8 @@ except ImportError:
                        SPE_START_YEAR, SPE_URBAN, SPE_URBAN_FUTURE,
                        SPE_URBAN_MODELLED)
 from openpyxl import load_workbook
+
+logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.DEBUG)
 
 
 def calibration(specs_path, csv_path, specs_path_calib, calibrated_csv_path):
@@ -214,11 +217,17 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
         sa_pv_calc = Technology(base_to_peak_load_ratio=0.9,
                                 tech_life=15,
                                 om_costs=0.02,
-                                capital_cost={0.020: 9620 * pv_capital_cost_adjust,
-                                              0.050: 8780 * pv_capital_cost_adjust,
-                                              0.100: 6380 * pv_capital_cost_adjust,
+                                # capital_cost={0.020: 9620 * pv_capital_cost_adjust,
+                                #               0.050: 8780 * pv_capital_cost_adjust,
+                                #               0.100: 6380 * pv_capital_cost_adjust,
+                                #               1: 4470 * pv_capital_cost_adjust,
+                                #               float("inf"): 6950 * pv_capital_cost_adjust},
+                                capital_cost={float("inf"): 6950 * pv_capital_cost_adjust,
                                               1: 4470 * pv_capital_cost_adjust,
-                                              float("inf"): 6950 * pv_capital_cost_adjust},
+                                              0.100: 6380 * pv_capital_cost_adjust,
+                                              0.050: 8780 * pv_capital_cost_adjust,
+                                              0.020: 9620 * pv_capital_cost_adjust
+                                              },
                                 standalone=True)
 
         mg_diesel_calc = Technology(om_of_td_lines=0.02,
@@ -341,3 +350,5 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
         df_summary.to_csv(summary_csv, index=sumtechs)
         onsseter.df.to_csv(settlements_out_csv, index=False)
+
+        logging.info('Finished')
