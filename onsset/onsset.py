@@ -1592,6 +1592,8 @@ class SettlementProcessor:
                 y_closest_elec.index = y_unelec.index
                 dist = haversine_vector(x_closest_elec, y_closest_elec, x_unelec, y_unelec)
 
+                dist_adjusted[filtered_unelectrified] = grid_penalty_ratio[filtered_unelectrified] * dist[
+                    filtered_unelectrified]
                 nearest_dist[filtered_unelectrified] = dist[filtered_unelectrified]
                 nearest_dist_adjusted[filtered_unelectrified] = dist_adjusted[filtered_unelectrified]
                 nearest_elec_order[filtered_unelectrified] = elecorder[extension_nodes[
@@ -2079,15 +2081,15 @@ class SettlementProcessor:
         mg_hydro = pd.DataFrame(np.where(self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 7, 1, 0))
 
         self.df[SET_INVESTMENT_COST + "{}".format(year)] = grid * grid_investment + sa_diesel * sa_diesel_investment + \
-                                                           sa_pv * sa_pv_investment + mg_diesel * mg_diesel_investment + mg_pv * mg_pv_investment + \
+                                                           sa_pv * sa_pv_investment + \
+                                                           mg_diesel * mg_diesel_investment + \
+                                                           mg_pv * mg_pv_investment + \
                                                            mg_wind * mg_wind_investment + mg_hydro * mg_hydro_investment
 
     def apply_limitations(self, eleclimit, year, time_step, prioritization, auto_densification=0):
 
         logging.info('Determine electrification limits')
         choice = int(prioritization)
-        elec_limit_origin = eleclimit
-        elecrate = 0
         self.df[SET_LIMIT + "{}".format(year)] = 0
 
         # Calculate the total population targeted to be electrified
@@ -2098,119 +2100,55 @@ class SettlementProcessor:
             self.df[SET_INVESTMENT_COST + "{}".format(year)] / self.df[SET_NEW_CONNECTIONS + "{}".format(year)]
 
         if choice == 4:
-            self.df[SET_LIMIT + "{}".format(year)] = 0
-
+            # Choose only already electrified settlements and settlements within intensification target range,
+            # regardless of target electrification rate
             self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] < 99),
                         SET_LIMIT + "{}".format(year)] = 1
             self.df.loc[self.df[SET_MV_DIST_PLANNED] < auto_densification, SET_LIMIT + "{}".format(year)] = 1
 
         elif eleclimit == 1:
+            # If electrification target rate is 100%, set all settlements to electrified
             self.df[SET_LIMIT + "{}".format(year)] = 1
-
         elif choice == 2:
-            # Prioritize grid densification/intensification (1 or 2 km). Then lowest investment per capita
-            min_investment = 0
-            new_elec_pop = 0
-            iter_limit_1 = 0
-            iter_limit_2 = 0
+            # Prioritize already electrified settlements, then intensification, then lowest investment per capita
 
-            step_size = self.df[SET_INVEST_PER_CAPITA + "{}".format(year)].quantile(q=0.95) / 100
-            densification_pop = sum(self.df[self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] < 99][
-                                        SET_POP + "{}".format(year)])
-            intensification_pop = sum(self.df[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] == 99) &
-                                              (self.df[SET_MV_DIST_PLANNED] < auto_densification)][
-                                          SET_POP + "{}".format(year)])
+            self.df['Intensification'] = np.where(self.df[SET_MV_DIST_PLANNED] < auto_densification, 1, 0)
 
-            if (densification_pop + intensification_pop) < elec_target_pop:
-                remaining_pop = elec_target_pop - densification_pop - intensification_pop
+            self.df.sort_values(by=[SET_ELEC_FINAL_CODE + "{}".format(year - time_step),
+                                    'Intensification',
+                                    SET_INVEST_PER_CAPITA + "{}".format(year)], inplace=True)
 
-                while abs(new_elec_pop - remaining_pop) > 0.01 * remaining_pop:
+            cumulative_pop = self.df[SET_POP + "{}".format(year)].cumsum()
 
-                    new_elec_pop = sum(
-                        self.df[(self.df[SET_INVEST_PER_CAPITA + "{}".format(year)] < min_investment) &
-                                (self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] == 99) &
-                                (self.df[SET_MV_DIST_PLANNED] >= auto_densification)][
-                            SET_POP + "{}".format(year)])
-                    if (remaining_pop - new_elec_pop > 0.01 * remaining_pop) and (iter_limit_1 < 100):
-                        min_investment += step_size
-                        iter_limit_1 += 1
-                    elif (new_elec_pop - remaining_pop > 0.01 * remaining_pop) and (iter_limit_2 < 50):
-                        min_investment -= 0.02 * step_size
-                        iter_limit_2 += 1
-                        iter_limit_1 = 100
-                    else:
-                        break
+            self.df[SET_LIMIT + "{}".format(year)] = np.where(cumulative_pop < elec_target_pop, 1, 0)
 
-                # Updating (using the SET_LIMIT function) what is electrified in the year and what is not
-                self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] < 99),
-                            SET_LIMIT + "{}".format(year)] = 1
+            del self.df['Intensification']
 
-                self.df.loc[self.df[SET_MV_DIST_PLANNED] < auto_densification, SET_LIMIT + "{}".format(year)] = 1
+            self.df.sort_index(inplace=True)
 
-                self.df.loc[(self.df[SET_INVEST_PER_CAPITA + "{}".format(year)] <= min_investment),
-                            SET_LIMIT + "{}".format(year)] = 1
-
-            else:
-                print("The electrification target is met in already electrified areas and intensification")
-                self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] < 99),
-                            SET_LIMIT + "{}".format(year)] = 1
-                self.df.loc[(self.df[SET_MV_DIST_PLANNED] < auto_densification), SET_LIMIT + "{}".format(year)] = 1
+            # Ensure already electrified settlements remain electrified
+            self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] < 99),
+                        SET_LIMIT + "{}".format(year)] = 1
 
         elif choice == 5:
-            # Prioritize grid densification first, then lowest investment per capita combined with travel time
-            new_elec_pop = 0
-            min_investment = 0
-            iteration_limit_1 = 0
-            iteration_limit_2 = 0
+            # Prioritize already electrified settlements first, then lowest investment per capita
+            self.df.sort_values(by=[SET_ELEC_FINAL_CODE + "{}".format(year - time_step),
+                                    SET_INVEST_PER_CAPITA + "{}".format(year)], inplace=True)
 
-            # Identify how much of the population lives in already electrified settlements
-            electrified_settlement_pop = sum(self.df[self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] <
-                                                     99][SET_POP + "{}".format(year)])
+            cumulative_pop = self.df[SET_POP + "{}".format(year)].cumsum()
 
-            min_dist_to_cities = max(self.df[SET_TRAVEL_HOURS])
-            step_size = self.df[SET_INVEST_PER_CAPITA + "{}".format(year)].quantile(q=0.95) / 20
-            travel_time_step = self.df[SET_TRAVEL_HOURS].quantile(q=1) / 100
+            self.df[SET_LIMIT + "{}".format(year)] = np.where(cumulative_pop < elec_target_pop, 1, 0)
 
-            if electrified_settlement_pop < elec_target_pop:
-                remaining_pop = elec_target_pop - electrified_settlement_pop
+            self.df.sort_index(inplace=True)
 
-                while abs(new_elec_pop - remaining_pop) > 0.01 * remaining_pop:
-                    # Summarize population in settlements which are currently unelectrified and are within
-                    # investment and travel time limits
-                    new_elec_pop = sum(
-                        self.df[(self.df[SET_INVEST_PER_CAPITA + "{}".format(year)] < min_investment) &
-                                (self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] == 99) &
-                                (self.df[SET_TRAVEL_HOURS] < min_dist_to_cities)][SET_POP + "{}".format(year)])
-
-                    if (remaining_pop - new_elec_pop > 0.01 * remaining_pop) and (iteration_limit_1 < 20):
-                        # If not enough people, increase investment cost/capita limit
-                        min_investment += step_size
-                        iteration_limit_1 += 1
-                    elif (new_elec_pop - remaining_pop > 0.01 * remaining_pop) and (iteration_limit_2 < 100):
-                        # If too many people meet condition, reduce based on travel time
-                        min_dist_to_cities -= travel_time_step
-                        iteration_limit_2 += 1
-                    else:
-                        # If too many iterations, break
-                        break
-
-                # Updating (using the SET_LIMIT function) what is electrified in the year and what is not
-                self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] < 99),
-                            SET_LIMIT + "{}".format(year)] = 1
-
-                self.df.loc[(self.df[SET_INVEST_PER_CAPITA + "{}".format(year)] <= min_investment) &
-                            (self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] == 99) &
-                            (self.df[SET_TRAVEL_HOURS] <= min_dist_to_cities), SET_LIMIT + "{}".format(year)] = 1
-
-            else:
-                print("The electrification target is met in already electrified areas")
-                self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] < 99),
-                            SET_LIMIT + "{}".format(year)] = 1
+            # Ensure already electrified settlements remain electrified
+            self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] < 99),
+                         SET_LIMIT + "{}".format(year)] = 1
 
         elecrate = self.df.loc[self.df[SET_LIMIT + "{}".format(year)] == 1,
                                SET_POP + "{}".format(year)].sum() / self.df[SET_POP + "{}".format(year)].sum()
 
-        print("The electrification rate achieved in {} is {:.1f} %".format(year, (elecrate - elec_limit_origin) * 100))
+        print("The electrification rate achieved in {} is {:.1f} %".format(year, elecrate * 100))
 
     def final_decision(self, year):
         """" ... """
