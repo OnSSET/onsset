@@ -458,12 +458,10 @@ class Technology:
             max_transformer_area = pi * self.lv_line_max_length ** 2
             total_nodes = (people / num_people_per_hh) + productive_nodes
 
-            # try:
             no_of_service_transf = np.ceil(
                 np.maximum(s_max / self.service_transf_type, np.maximum(total_nodes / self.max_nodes_per_serv_trans,
                                                                         grid_cell_area / max_transformer_area)))
-            # except ValueError:  # TODO Review if this is needed
-            #     no_of_service_transf = 1
+
             transformer_radius = ((grid_cell_area / no_of_service_transf) / pi) ** 0.5
             transformer_load = peak_load / no_of_service_transf
             cluster_radius = (grid_cell_area / pi) ** 0.5
@@ -1300,6 +1298,7 @@ class SettlementProcessor:
         """" ... """
 
         logging.info('Define the initial electrification status')
+        grid_investment = np.zeros(len(self.df[SET_X_DEG]))
 
         # Update electrification status based on already existing
         if (year - time_step) == start_year:
@@ -1346,14 +1345,16 @@ class SettlementProcessor:
         self.df.loc[
             self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 1, SET_LCOE_GRID + "{}".format(year)] = grid_price
 
+        return grid_investment
+
     def current_mv_line_dist(self):
         logging.info('Determine current MV line length')
         self.df[SET_MV_CONNECT_DIST] = 0
         self.df.loc[self.df[SET_ELEC_CURRENT] == 1, SET_MV_CONNECT_DIST] = self.df[SET_HV_DIST_CURRENT]
         self.df[SET_MIN_TD_DIST] = self.df[[SET_MV_DIST_PLANNED, SET_HV_DIST_PLANNED]].min(axis=1)
 
-    def elec_extension(self, grid_calc, max_dist, year, start_year, end_year, time_step, grid_cap_gen_limit,
-                       grid_connect_limit, auto_intensification=0, prioritization=0):
+    def elec_extension(self, grid_calc, max_dist, year, start_year, end_year, time_step, grid_capacity_limit,
+                       grid_connect_limit, new_investment, auto_intensification=0, prioritization=0):
         """
         Iterate through all electrified settlements and find which settlements can be economically connected to the grid
         Repeat with newly electrified settlements until no more are added
@@ -1361,17 +1362,10 @@ class SettlementProcessor:
 
         prio = int(prioritization)
         new_grid_capacity = 0
-        grid_capacity_limit = grid_cap_gen_limit
 
         x = self.df[SET_X_DEG].copy(deep=True)
         y = self.df[SET_Y_DEG].copy(deep=True)
-        pop = self.df[SET_POP + "{}".format(year)].copy(deep=True)
-        enerperhh = self.df[SET_ENERGY_PER_CELL + "{}".format(year)].copy(deep=True)
-        nupppphh = self.df[SET_NUM_PEOPLE_PER_HH].copy(deep=True)
-        grid_cell_area = self.df[SET_GRID_CELL_AREA].copy(deep=True)
         prev_code = self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)].copy(deep=True)
-        new_connections = self.df[SET_NEW_CONNECTIONS + "{}".format(year)].copy(deep=True)
-        total_energy_per_cell = self.df[SET_TOTAL_ENERGY_PER_CELL].copy(deep=True)
         if year - time_step == start_year:
             elecorder = self.df[SET_ELEC_ORDER].copy(deep=True)
         else:
@@ -1380,269 +1374,228 @@ class SettlementProcessor:
         min_code_lcoes = self.df[SET_MIN_OFFGRID_LCOE + "{}".format(year)].copy(deep=True)
         new_lcoes = self.df[SET_LCOE_GRID + "{}".format(year)].copy(deep=True)
         cell_path_real = self.df[SET_MV_CONNECT_DIST].copy(deep=True)
-        planned_hv_dist = self.df[SET_HV_DIST_PLANNED].copy(deep=True)  # If connecting from anywhere on the HV line
-        planned_mv_dist = self.df[SET_MV_DIST_PLANNED].copy(deep=True)  # If connecting from anywhere on the HV line
-        self.df['new_connections_household'] = self.df[SET_NEW_CONNECTIONS + "{}".format(year)] / self.df[
-            SET_NUM_PEOPLE_PER_HH].copy(deep=True)
+        cell_path_adjusted = list(np.zeros(len(x)).tolist())
 
+        # Start by identifying which settlements are grid-connected already and which are not
         electrified = np.where(prev_code == 1, 1, 0)
         unelectrified = np.where(prev_code == 1, 0, 1)
 
-        urban_initially_electrified = sum(self.df.loc[
-                                              (self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] == 1) & (
-                                                      self.df[SET_URBAN] == 2)][
-                                              SET_ENERGY_PER_CELL + "{}".format(year)])
-        rural_initially_electrified = sum(self.df.loc[
-                                              (self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] == 1) & (
-                                                      self.df[SET_URBAN] < 2)][
-                                              SET_ENERGY_PER_CELL + "{}".format(year)])
-        densification_connections = sum(
-            self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] == 1]['new_connections_household'])
-        consumption = rural_initially_electrified + urban_initially_electrified
+        # Two restrictions may be imposed on the grid. The new grid generation capacity that can be added and the
+        # number of new households that can be connected. The next step calculates how much of that will be used up due
+        # to demand (population) growth in already electrified settlements
+        consumption = sum(self.df.loc[prev_code == 1][SET_ENERGY_PER_CELL + "{}".format(year)])
         average_load = consumption / (1 - grid_calc.distribution_losses) / HOURS_PER_YEAR  # kW
         peak_load = average_load / grid_calc.base_to_peak_load_ratio  # kW
         grid_capacity_limit -= peak_load
-        grid_connect_limit -= densification_connections
 
-        cell_path_adjusted = list(np.zeros(len(x)).tolist())
+        self.df['Densification_connections'] = self.df[SET_NEW_CONNECTIONS + "{}".format(year)] / self.df[SET_NUM_PEOPLE_PER_HH]
+        grid_connect_limit -= sum(self.df.loc[prev_code == 1]['Densification_connections'])
+        del self.df['Densification_connections']
 
+        # The grid may be forced to expand around existing MV lines if this option has been selected, regardless
+        # off-grid alternatives are less costly. The following section implements that
         if (prio == 2) or (prio == 4):  # TODO
-            changes = []
             for unelec in unelectrified:
-                try:
-                    if planned_mv_dist[unelec] < auto_intensification:
-                        consumption = enerperhh[unelec]  # kWh/year
-                        average_load = consumption / (1 - grid_calc.distribution_losses) / HOURS_PER_YEAR  # kW
-                        peak_load = average_load / grid_calc.base_to_peak_load_ratio  # kW
-                        dist = planned_mv_dist[unelec]
-                        dist_adjusted = grid_penalty_ratio[unelec] * dist
-                        grid_lcoe = 0.001
-                        new_lcoes[unelec] = grid_lcoe
-                        cell_path_real[unelec] = dist
-                        cell_path_adjusted[unelec] = dist_adjusted
-                        new_grid_capacity += peak_load
-                        grid_connect_limit -= new_connections[unelec] / nupppphh[unelec]
-                        elecorder[unelec] = 0
-                        changes.append(unelec)
-                except KeyError:
-                    pass
+                if self.df[SET_MV_DIST_PLANNED][unelec] < auto_intensification:
+                    consumption = self.df[SET_ENERGY_PER_CELL + "{}".format(year)][unelec]  # kWh/year
+                    average_load = consumption / (1 - grid_calc.distribution_losses) / HOURS_PER_YEAR  # kW
+                    peak_load = average_load / grid_calc.base_to_peak_load_ratio  # kW
+                    new_lcoes[unelec] = 0.001
+                    cell_path_real[unelec] = self.df[SET_MV_DIST_PLANNED][unelec]
+                    cell_path_adjusted[unelec] = grid_penalty_ratio[unelec] * self.df[SET_MV_DIST_PLANNED][unelec]
+                    new_grid_capacity += peak_load
+                    grid_connect_limit -= self.df[SET_NEW_CONNECTIONS + "{}".format(year)][unelec] / \
+                                          self.df[SET_NUM_PEOPLE_PER_HH][unelec]
 
-        filter_lcoe, filter_investment = grid_calc.get_lcoe(energy_per_cell=enerperhh,
-                                                            start_year=year - time_step,
-                                                            end_year=end_year,
-                                                            people=pop,
-                                                            new_connections=new_connections,
-                                                            total_energy_per_cell=total_energy_per_cell,
-                                                            prev_code=prev_code,
-                                                            num_people_per_hh=nupppphh,
-                                                            grid_cell_area=grid_cell_area,
-                                                            additional_mv_line_length=0,
-                                                            elec_loop=0)
+        # Filter out settlements where grid is more costly than off-grid even if the connection distance is zero
+        filter_lcoe, filter_investment = self.get_grid_lcoe(0, 0, 0, year, time_step, end_year, grid_calc)
         filter_lcoe = filter_lcoe[0]
         filter_lcoe.loc[prev_code == 1] = 99
         filtered_unelectrified = np.where(filter_lcoe < min_code_lcoes)
         filtered_unelectrified = filtered_unelectrified[0].tolist()
 
-        def haversine_vector(lon1, lat1, lon2, lat2):
-            """Calculate the great circle distance between two points
-            on the earth (specified in decimal degrees)
-            """
-            # convert decimal degrees to radians
-            lon1, lat1, lon2, lat2 = map(np.deg2rad, [lon1, lat1, lon2, lat2])
-            dlon = lon2 - lon1
-            dlat = lat2 - lat1
-            a = np.sin(dlat / 2) ** 2 + np.cos(lat1) * np.cos(lat2) * np.sin(dlon / 2) ** 2
-            c = 2 * np.arcsin(np.sqrt(a))
-            r = 6371  # Radius of earth in kilometers. Use 3956 for miles
-            return c * r
-
-        def do_kdtree(combined_x_y_arrays, points):
-            mytree = scipy.spatial.cKDTree(combined_x_y_arrays)
-            dist, indexes = mytree.query(points)
-            return indexes
-
         logging.info('Initially {} electrified'.format(sum(electrified)))
-        loops = 1
 
         # First round of extension from MV network
-        dist = pd.Series(planned_mv_dist)
-        dist_adjusted = grid_penalty_ratio * dist
-        dist_adjusted = np.nan_to_num(dist_adjusted)
+        mv_dist = pd.Series(self.df[SET_MV_DIST_PLANNED])
+        mv_dist_adjusted = np.nan_to_num(grid_penalty_ratio * mv_dist)
 
-        grid_lcoe, grid_investment = grid_calc.get_lcoe(energy_per_cell=enerperhh,
-                                                        start_year=year - time_step,
-                                                        end_year=end_year,
-                                                        people=pop,
-                                                        new_connections=new_connections,
-                                                        total_energy_per_cell=total_energy_per_cell,
-                                                        prev_code=prev_code,
-                                                        num_people_per_hh=nupppphh,
-                                                        grid_cell_area=grid_cell_area,
-                                                        additional_mv_line_length=dist_adjusted,
-                                                        elec_loop=0)
-        grid_lcoe = grid_lcoe[0]
-        grid_lcoe.loc[prev_code == 1] = 99
-        grid_lcoe.loc[dist_adjusted > max_dist] = 99
-        grid_lcoe.loc[grid_lcoe > new_lcoes] = 99
-        consumption = enerperhh  # kWh/year
-        average_load = consumption / (1 - grid_calc.distribution_losses) / HOURS_PER_YEAR  # kW
-        peak_load = average_load / grid_calc.base_to_peak_load_ratio  # kW
-        peak_load.loc[grid_lcoe >= min_code_lcoes] = 0
-        peak_load_cum_sum = np.cumsum(peak_load)
-        grid_lcoe.loc[peak_load_cum_sum > grid_capacity_limit] = 99
-        new_grid_connections = new_connections / nupppphh
-        new_grid_connections.loc[grid_lcoe >= min_code_lcoes] = 0
-        new_grid_connections_cum_sum = np.cumsum(new_grid_connections)
-        grid_lcoe.loc[new_grid_connections_cum_sum > grid_connect_limit] = 99
+        grid_lcoe, grid_investment = self.get_grid_lcoe(dist_adjusted=mv_dist_adjusted, elecorder=0,
+                                                        additional_transformer=0, year=year, time_step=time_step,
+                                                        end_year=end_year, grid_calc=grid_calc)
 
-        # Update limiting values
-        grid_capacity_limit -= peak_load.loc[grid_lcoe < min_code_lcoes].sum()
-        grid_connect_limit -= new_grid_connections.loc[grid_lcoe < min_code_lcoes].sum()
+        grid_capacity_limit, grid_connect_limit, cell_path_real, cell_path_adjusted, elecorder, electrified, new_lcoes, \
+            new_investment \
+            = self.update_grid_extension_info(grid_lcoe=grid_lcoe, dist=mv_dist, dist_adjusted=mv_dist_adjusted,
+                                              prev_dist=0, elecorder=elecorder, new_elec_order=1, max_dist=max_dist,
+                                              new_lcoes=new_lcoes, grid_capacity_limit=grid_capacity_limit,
+                                              grid_connect_limit=grid_connect_limit,
+                                              cell_path_real=cell_path_real, cell_path_adjusted=cell_path_adjusted,
+                                              electrified=electrified, year=year, time_step=time_step,
+                                              grid_calc=grid_calc, grid_investment=grid_investment,
+                                              new_investment=new_investment)
 
-        # Update values for settlements that meet conditions
-        cell_path_real = np.where(grid_lcoe < min_code_lcoes, dist, cell_path_real)
-        cell_path_adjusted = np.where(grid_lcoe < min_code_lcoes, dist_adjusted, cell_path_adjusted)
-        elecorder = np.where(grid_lcoe < min_code_lcoes, 1, elecorder)
-        electrified = np.where(grid_lcoe < min_code_lcoes, 1, electrified)
-        new_lcoes = np.where(grid_lcoe < min_code_lcoes, grid_lcoe, new_lcoes)
+        #  Second round of extension from HV lines
+        hv_dist = np.nan_to_num(self.df[SET_HV_DIST_PLANNED])
+        hv_dist_adjusted = np.nan_to_num(hv_dist * grid_penalty_ratio)
 
-        #  Extension from HV lines
-        dist = planned_hv_dist * grid_penalty_ratio
-        dist = np.nan_to_num(dist)
-        grid_lcoe, grid_invsestment = grid_calc.get_lcoe(energy_per_cell=enerperhh,
-                                                         start_year=year - time_step,
-                                                         end_year=end_year,
-                                                         people=pop,
-                                                         new_connections=new_connections,
-                                                         total_energy_per_cell=total_energy_per_cell,
-                                                         prev_code=prev_code,
-                                                         num_people_per_hh=nupppphh,
-                                                         grid_cell_area=grid_cell_area,
-                                                         additional_mv_line_length=dist,
-                                                         elec_loop=0,
-                                                         additional_transformer=1)
+        grid_lcoe, grid_investment = self.get_grid_lcoe(dist_adjusted=hv_dist_adjusted, elecorder=0, additional_transformer=1,
+                                       year=year, time_step=time_step, end_year=end_year, grid_calc=grid_calc)
 
-        grid_lcoe = grid_lcoe[0]
-        grid_lcoe.loc[prev_code == 1] = 99
-        grid_lcoe.loc[grid_lcoe > new_lcoes] = 99
-        grid_lcoe.loc[planned_hv_dist > max_dist] = 99  # TODO review if still needed
-        consumption = enerperhh  # kWh/year
-        average_load = consumption / (1 - grid_calc.distribution_losses) / HOURS_PER_YEAR  # kW
-        peak_load = average_load / grid_calc.base_to_peak_load_ratio  # kW
-        peak_load.loc[grid_lcoe >= min_code_lcoes] = 0
-        peak_load_cum_sum = np.cumsum(peak_load)
-        grid_lcoe.loc[peak_load_cum_sum > grid_capacity_limit] = 99
-        new_grid_connections = new_connections / nupppphh
-        new_grid_connections.loc[grid_lcoe >= min_code_lcoes] = 0
-        new_grid_connections_cum_sum = np.cumsum(new_grid_connections)
-        grid_lcoe.loc[new_grid_connections_cum_sum > grid_connect_limit] = 99
-        grid_lcoe.loc[grid_lcoe > min_code_lcoes] = 99
+        grid_capacity_limit, grid_connect_limit, cell_path_real, cell_path_adjusted, elecorder, electrified, new_lcoes,\
+            new_investment \
+            = self.update_grid_extension_info(grid_lcoe=grid_lcoe, dist=hv_dist, dist_adjusted=hv_dist_adjusted,
+                                              prev_dist=0, elecorder=elecorder, new_elec_order=1, max_dist=999999,
+                                              new_lcoes=new_lcoes, grid_capacity_limit=grid_capacity_limit,
+                                              grid_connect_limit=grid_connect_limit, cell_path_real=cell_path_real,
+                                              cell_path_adjusted=cell_path_adjusted, electrified=electrified,
+                                              year=year, time_step=time_step, grid_calc=grid_calc,
+                                              grid_investment=grid_investment, new_investment=new_investment)
 
-        # Update limiting values
-        grid_capacity_limit -= peak_load.loc[grid_lcoe < min_code_lcoes].sum()
-        grid_connect_limit -= new_grid_connections.loc[grid_lcoe < min_code_lcoes].sum()
-
-        # Update values for settlements that meet conditions
-        cell_path_real = np.where(grid_lcoe < min_code_lcoes, dist, cell_path_real)
-        cell_path_adjusted = np.where(grid_lcoe < min_code_lcoes, dist_adjusted, cell_path_adjusted)
-        elecorder = np.where(grid_lcoe < min_code_lcoes, 1, elecorder)
-        electrified = np.where(grid_lcoe < min_code_lcoes, 1, electrified)
-        new_lcoes = np.where(grid_lcoe < new_lcoes, grid_lcoe, new_lcoes)
-
-        original_electrified = np.where(prev_code == 1, 1, 0)
-        new_electrified = electrified - original_electrified
-
+        # Third to last round of extension loops from electrified settlements. First considering all
+        # electrified settlements up until this point, then from the newly electrified settlements in each round
         prev_electrified = np.zeros(len(x))
-        #  Second to last round of extension loops from existing and new lines, including newly connected settlements
+        loops = 1
         while sum(electrified) > sum(prev_electrified):
-            logging.info('Electrification loop {} with {} electrified'.format(loops, sum(new_electrified)))
+            new_electrified = electrified - prev_electrified
             prev_electrified = electrified
+            logging.info('Electrification loop {} with {} electrified'.format(loops, int(sum(new_electrified))))
             loops += 1
+            # Identifies the electrified settlements
             extension_nodes = np.where(new_electrified == 1)
             extension_nodes = extension_nodes[0].tolist()
-            x_elec = x.loc[extension_nodes]
-            y_elec = y.loc[extension_nodes]
 
-            if len(x_elec) > 1:  # TODO
-                elec_nodes2 = np.array([x_elec, y_elec])
-                elec_nodes2 = np.transpose(elec_nodes2)
+            if len(extension_nodes) > 1:
+                # Creates an array of x, y coordinates of the electrified settlements
+                elec_nodes2 = np.transpose(np.array([x.loc[extension_nodes], y.loc[extension_nodes]]))
+
                 closest_elec_node = np.zeros(len(x), dtype=int)
                 nearest_dist = np.zeros(len(x))
-                nearest_dist_adjusted = np.zeros(len(x))
                 nearest_elec_order = np.zeros(len(x), dtype=int)
                 prev_dist = np.zeros(len(x))
 
+                # Create an array of x-, y-coordinates of the (filtered) unelectrified settlements
                 filtered_unelectrified = np.setdiff1d(filtered_unelectrified, extension_nodes).tolist()
                 x_unelec = x.loc[filtered_unelectrified]
                 y_unelec = y.loc[filtered_unelectrified]
-                filter_unelec = np.array([x_unelec, y_unelec])
-                filter_unelec = np.transpose(filter_unelec)
-                filter_unelec = pd.DataFrame(filter_unelec)
-                closest_node = do_kdtree(elec_nodes2, filter_unelec)
+                filter_unelec = pd.DataFrame(np.transpose(np.array([x_unelec, y_unelec])))
 
+                # Calculate for each unelectrified settlement which is the closest electrified settlement
+                closest_node = self.do_kdtree(elec_nodes2, filter_unelec)
+
+                # For each unelectrified settlement, find the electrifiecation order, distance to closest electrified
+                # settlement, distance including grid penalty, and total mv length up until the electrrfied settlement
                 j = 0
                 for unelec in filtered_unelectrified:
                     closest_elec_node[unelec] = closest_node[j]
                     j += 1
-
                 extension_nodes = np.array(extension_nodes)
                 x_closest_elec = x.loc[extension_nodes[closest_elec_node[filtered_unelectrified]]]
                 x_closest_elec.index = x_unelec.index
                 y_closest_elec = y.loc[extension_nodes[closest_elec_node[filtered_unelectrified]]]
                 y_closest_elec.index = y_unelec.index
-                dist = haversine_vector(x_closest_elec, y_closest_elec, x_unelec, y_unelec)
-
-                dist_adjusted[filtered_unelectrified] = grid_penalty_ratio[filtered_unelectrified] * dist[
-                    filtered_unelectrified]
+                dist = self.haversine_vector(x_closest_elec, y_closest_elec, x_unelec, y_unelec)
                 nearest_dist[filtered_unelectrified] = dist[filtered_unelectrified]
-                nearest_dist_adjusted[filtered_unelectrified] = dist_adjusted[filtered_unelectrified]
+                nearest_dist_adjusted = np.nan_to_num(nearest_dist * grid_penalty_ratio)
                 nearest_elec_order[filtered_unelectrified] = elecorder[extension_nodes[
                     closest_elec_node[filtered_unelectrified]]] + 1
                 prev_dist[filtered_unelectrified] = cell_path_real[
                     extension_nodes[closest_elec_node[filtered_unelectrified]]]
 
-                grid_lcoe, grid_investment = grid_calc.get_lcoe(energy_per_cell=enerperhh,
-                                                                start_year=year - time_step,
-                                                                end_year=end_year,
-                                                                people=pop,
-                                                                new_connections=new_connections,
-                                                                total_energy_per_cell=total_energy_per_cell,
-                                                                prev_code=prev_code,
-                                                                num_people_per_hh=nupppphh,
-                                                                grid_cell_area=grid_cell_area,
-                                                                additional_mv_line_length=nearest_dist_adjusted,
-                                                                elec_loop=nearest_elec_order)
+                grid_lcoe, grid_investment = self.get_grid_lcoe(dist_adjusted=nearest_dist_adjusted,
+                                                                elecorder=nearest_elec_order,
+                                                                additional_transformer=0, year=year,
+                                                                time_step=time_step,
+                                                                end_year=end_year, grid_calc=grid_calc)
 
-                grid_lcoe = grid_lcoe[0]
-                grid_lcoe.loc[electrified == 1] = 99
-                grid_lcoe.loc[grid_lcoe > new_lcoes] = 99
-                grid_lcoe.loc[prev_dist + nearest_dist > max_dist] = 99  # TODO review if still needed
-                consumption = enerperhh  # kWh/year
-                average_load = consumption / (1 - grid_calc.distribution_losses) / HOURS_PER_YEAR  # kW
-                peak_load = average_load / grid_calc.base_to_peak_load_ratio  # kW
-                peak_load.loc[grid_lcoe >= min_code_lcoes] = 0
-                peak_load_cum_sum = np.cumsum(peak_load)
-                grid_lcoe.loc[peak_load_cum_sum > grid_capacity_limit] = 99
-                new_grid_connections = new_connections / nupppphh
-                new_grid_connections.loc[grid_lcoe >= min_code_lcoes] = 0
-                new_grid_connections_cum_sum = np.cumsum(new_grid_connections)
-                grid_lcoe.loc[new_grid_connections_cum_sum > grid_connect_limit] = 99
-                grid_lcoe.loc[grid_lcoe > min_code_lcoes] = 99
+                grid_capacity_limit, grid_connect_limit, cell_path_real, cell_path_adjusted, elecorder, electrified, \
+                    new_lcoes, new_investment = \
+                    self.update_grid_extension_info(grid_lcoe=grid_lcoe, dist=cell_path_real,
+                                                    dist_adjusted=cell_path_adjusted,
+                                                    prev_dist=prev_dist, elecorder=elecorder,
+                                                    new_elec_order=nearest_elec_order, max_dist=max_dist,
+                                                    new_lcoes=new_lcoes, grid_capacity_limit=grid_capacity_limit,
+                                                    grid_connect_limit=grid_connect_limit,
+                                                    cell_path_real=cell_path_real,
+                                                    cell_path_adjusted=cell_path_adjusted, electrified=electrified,
+                                                    year=year, time_step=time_step, grid_calc=grid_calc,
+                                                    grid_investment=grid_investment, new_investment=new_investment)
 
-                # Update limiting values
-                grid_capacity_limit -= peak_load.loc[grid_lcoe < min_code_lcoes].sum()
-                grid_connect_limit -= new_grid_connections.loc[grid_lcoe < min_code_lcoes.sum()]
+        return new_lcoes, cell_path_adjusted, elecorder, cell_path_real, new_investment
 
-                # Update values for settlements that meet conditions
-                cell_path_real = np.where(grid_lcoe < min_code_lcoes, nearest_dist + prev_dist, cell_path_real)
-                cell_path_adjusted = np.where(grid_lcoe < min_code_lcoes, nearest_dist_adjusted, cell_path_adjusted)
-                elecorder = np.where(grid_lcoe < min_code_lcoes, nearest_elec_order, elecorder)
-                electrified = np.where(grid_lcoe < min_code_lcoes, 1, electrified)
-                new_lcoes = np.where(grid_lcoe < new_lcoes, grid_lcoe, new_lcoes)
+    def get_grid_lcoe(self, dist_adjusted, elecorder, additional_transformer, year, time_step, end_year, grid_calc):
+        grid_lcoe, grid_investment = \
+            grid_calc.get_lcoe(energy_per_cell=self.df[SET_ENERGY_PER_CELL + "{}".format(year)],
+                               start_year=year - time_step,
+                               end_year=end_year,
+                               people=self.df[SET_POP + "{}".format(year)],
+                               new_connections=self.df[SET_NEW_CONNECTIONS + "{}".format(year)],
+                               total_energy_per_cell=self.df[SET_TOTAL_ENERGY_PER_CELL],
+                               prev_code=self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
+                               num_people_per_hh=self.df[SET_NUM_PEOPLE_PER_HH],
+                               grid_cell_area=self.df[SET_GRID_CELL_AREA],
+                               additional_mv_line_length=dist_adjusted,
+                               elec_loop=elecorder,
+                               additional_transformer=additional_transformer)
+        return grid_lcoe, grid_investment
 
-                new_electrified = electrified - prev_electrified
+    def update_grid_extension_info(self, grid_lcoe, dist, dist_adjusted, prev_dist, elecorder, new_elec_order,
+                                   max_dist, new_lcoes, grid_capacity_limit, grid_connect_limit, cell_path_real,
+                                   cell_path_adjusted, electrified, year, time_step, grid_calc,
+                                   grid_investment, new_investment):
 
-        return new_lcoes, cell_path_adjusted, elecorder, cell_path_real
+        prev_code = self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)].copy(deep=True)
+        min_code_lcoes = self.df[SET_MIN_OFFGRID_LCOE + "{}".format(year)].copy(deep=True)
+
+        grid_lcoe = grid_lcoe[0]
+        grid_lcoe.loc[prev_code == 1] = 99
+        grid_lcoe.loc[prev_dist + dist_adjusted > max_dist] = 99
+        grid_lcoe.loc[grid_lcoe > new_lcoes] = 99
+        consumption = self.df[SET_ENERGY_PER_CELL + "{}".format(year)]  # kWh/year
+        average_load = consumption / (1 - grid_calc.distribution_losses) / HOURS_PER_YEAR  # kW
+        peak_load = average_load / grid_calc.base_to_peak_load_ratio  # kW
+        peak_load.loc[grid_lcoe >= min_code_lcoes] = 0
+        peak_load_cum_sum = np.cumsum(peak_load)
+        grid_lcoe.loc[peak_load_cum_sum > grid_capacity_limit] = 99
+        new_grid_connections = self.df[SET_NEW_CONNECTIONS + "{}".format(year)] / self.df[SET_NUM_PEOPLE_PER_HH]
+        new_grid_connections.loc[grid_lcoe >= min_code_lcoes] = 0
+        new_grid_connections_cum_sum = np.cumsum(new_grid_connections)
+        grid_lcoe.loc[new_grid_connections_cum_sum > grid_connect_limit] = 99
+
+        # Update limiting values
+        grid_capacity_limit -= peak_load.loc[grid_lcoe < min_code_lcoes].sum()
+        grid_connect_limit -= new_grid_connections.loc[grid_lcoe < min_code_lcoes].sum()
+
+        # Update values for settlements that meet conditions
+        cell_path_real = np.where(grid_lcoe < min_code_lcoes, prev_dist + dist, cell_path_real)
+        cell_path_adjusted = np.where(grid_lcoe < min_code_lcoes, dist_adjusted, cell_path_adjusted)
+        elecorder = np.where(grid_lcoe < min_code_lcoes, new_elec_order, elecorder)
+        electrified = np.where(grid_lcoe < min_code_lcoes, 1, electrified)
+        new_lcoes = np.where(grid_lcoe < min_code_lcoes, grid_lcoe, new_lcoes)
+        new_investment = np.where(grid_lcoe < min_code_lcoes, grid_investment, new_investment)
+
+        return grid_capacity_limit, grid_connect_limit, cell_path_real, cell_path_adjusted, elecorder, \
+               electrified, new_lcoes, new_investment
+
+    @staticmethod
+    def haversine_vector(lon1, lat1, lon2, lat2):
+        """Calculate the great circle distance between two points
+        on the earth (specified in decimal degrees)
+        """
+        # convert decimal degrees to radians
+        lon1, lat1, lon2, lat2 = map(np.deg2rad, [lon1, lat1, lon2, lat2])
+        dlon = lon2 - lon1
+        dlat = lat2 - lat1
+        a = np.sin(dlat / 2) ** 2 + np.cos(lat1) * np.cos(lat2) * np.sin(dlon / 2) ** 2
+        c = 2 * np.arcsin(np.sqrt(a))
+        r = 6371  # Radius of earth in kilometers. Use 3956 for miles
+        return c * r
+
+    @staticmethod
+    def do_kdtree(combined_x_y_arrays, points):
+        mytree = scipy.spatial.cKDTree(combined_x_y_arrays)
+        dist, indexes = mytree.query(points)
+        return indexes
 
     def calculate_new_connections(self, year, time_step, start_year):
         """this method defines new connections for grid related purposes
@@ -2132,8 +2085,7 @@ class SettlementProcessor:
 
         elif choice == 5:
             # Prioritize already electrified settlements first, then lowest investment per capita
-            self.df.sort_values(by=[SET_ELEC_FINAL_CODE + "{}".format(year - time_step),
-                                    SET_INVEST_PER_CAPITA + "{}".format(year)], inplace=True)
+            self.df.sort_values(by=[SET_ELEC_FINAL_CODE + "{}".format(year - time_step), SET_INVEST_PER_CAPITA + "{}".format(year)], inplace=True)
 
             cumulative_pop = self.df[SET_POP + "{}".format(year)].cumsum()
 

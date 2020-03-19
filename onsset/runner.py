@@ -309,14 +309,14 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
             onsseter.diesel_cost_columns(sa_diesel_cost, mg_diesel_cost, year)
 
             sa_diesel_investment, sa_pv_investment, mg_diesel_investment, mg_pv_investment, mg_wind_investment, \
-            mg_hydro_investment = onsseter.calculate_off_grid_lcoes(mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc,
-                                                                    mg_diesel_calc,
-                                                                    sa_diesel_calc, year, end_year, time_step)
+                mg_hydro_investment = onsseter.calculate_off_grid_lcoes(mg_hydro_calc, mg_wind_calc, mg_pv_calc,
+                                                                        sa_pv_calc, mg_diesel_calc,
+                                                                        sa_diesel_calc, year, end_year, time_step)
 
-            onsseter.pre_electrification(grid_price, year, time_step, start_year)
+            grid_investment = onsseter.pre_electrification(grid_price, year, time_step, start_year)
 
             onsseter.df[SET_LCOE_GRID + "{}".format(year)], onsseter.df[SET_MIN_GRID_DIST + "{}".format(year)], \
-            onsseter.df[SET_ELEC_ORDER + "{}".format(year)], onsseter.df[SET_MV_CONNECT_DIST] = \
+            onsseter.df[SET_ELEC_ORDER + "{}".format(year)], onsseter.df[SET_MV_CONNECT_DIST], grid_investment = \
                 onsseter.elec_extension(grid_calc,
                                         max_grid_extension_dist,
                                         year,
@@ -326,7 +326,8 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                                         grid_cap_gen_limit,
                                         grid_connect_limit,
                                         auto_intensification=auto_intensification,
-                                        prioritization=prioritization)
+                                        prioritization=prioritization,
+                                        new_investment=grid_investment)
 
             onsseter.results_columns(year)
 
