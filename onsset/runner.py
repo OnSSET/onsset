@@ -217,11 +217,6 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
         sa_pv_calc = Technology(base_to_peak_load_ratio=0.9,
                                 tech_life=15,
                                 om_costs=0.02,
-                                # capital_cost={0.020: 9620 * pv_capital_cost_adjust,
-                                #               0.050: 8780 * pv_capital_cost_adjust,
-                                #               0.100: 6380 * pv_capital_cost_adjust,
-                                #               1: 4470 * pv_capital_cost_adjust,
-                                #               float("inf"): 6950 * pv_capital_cost_adjust},
                                 capital_cost={float("inf"): 6950 * pv_capital_cost_adjust,
                                               1: 4470 * pv_capital_cost_adjust,
                                               0.100: 6380 * pv_capital_cost_adjust,
@@ -265,28 +260,12 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
         elements = ["1.Population", "2.New_Connections", "3.Capacity", "4.Investment"]
         techs = ["Grid", "SA_Diesel", "SA_PV", "MG_Diesel", "MG_PV", "MG_Wind", "MG_Hydro", "MG_Hybrid"]
-
         sumtechs = []
-
         for element in elements:
             for tech in techs:
                 sumtechs.append(element + "_" + tech)
-
-        sumtechs.append('Min_cluster_pop_2030')
-        sumtechs.append('Max_cluster_pop_2030')
-        sumtechs.append('Min_cluster_area')
-        sumtechs.append('Max_cluster_area')
-        sumtechs.append('Min_existing_grid_dist')
-        sumtechs.append('Max_existing_grid_dist')
-        sumtechs.append('Min_road_dist')
-        sumtechs.append('Max_road_dist')
-        sumtechs.append('Min_investment_capita_cost')
-        sumtechs.append('Max_investment_capita_cost')
-
         total_rows = len(sumtechs)
-
         df_summary = pd.DataFrame(columns=yearsofanalysis)
-
         for row in range(0, total_rows):
             df_summary.loc[sumtechs[row]] = "Nan"
 
@@ -309,14 +288,16 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
             onsseter.diesel_cost_columns(sa_diesel_cost, mg_diesel_cost, year)
 
             sa_diesel_investment, sa_pv_investment, mg_diesel_investment, mg_pv_investment, mg_wind_investment, \
-            mg_hydro_investment = onsseter.calculate_off_grid_lcoes(mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc,
-                                                                    mg_diesel_calc,
-                                                                    sa_diesel_calc, year, end_year, time_step)
+                mg_hydro_investment = onsseter.calculate_off_grid_lcoes(mg_hydro_calc, mg_wind_calc, mg_pv_calc,
+                                                                        sa_pv_calc, mg_diesel_calc,
+                                                                        sa_diesel_calc, year, end_year, time_step)
 
-            onsseter.pre_electrification(grid_price, year, time_step, start_year)
+            grid_investment, grid_cap_gen_limit, grid_connect_limit = \
+                onsseter.pre_electrification(grid_price, year, time_step, end_year, grid_calc, grid_cap_gen_limit,
+                                             grid_connect_limit)
 
             onsseter.df[SET_LCOE_GRID + "{}".format(year)], onsseter.df[SET_MIN_GRID_DIST + "{}".format(year)], \
-            onsseter.df[SET_ELEC_ORDER + "{}".format(year)], onsseter.df[SET_MV_CONNECT_DIST] = \
+            onsseter.df[SET_ELEC_ORDER + "{}".format(year)], onsseter.df[SET_MV_CONNECT_DIST], grid_investment = \
                 onsseter.elec_extension(grid_calc,
                                         max_grid_extension_dist,
                                         year,
@@ -326,24 +307,21 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                                         grid_cap_gen_limit,
                                         grid_connect_limit,
                                         auto_intensification=auto_intensification,
-                                        prioritization=prioritization)
+                                        prioritization=prioritization,
+                                        new_investment=grid_investment)
 
             onsseter.results_columns(year)
 
             onsseter.calculate_investments(sa_diesel_investment, sa_pv_investment, mg_diesel_investment,
                                            mg_pv_investment, mg_wind_investment,
-                                           mg_hydro_investment, grid_calc, year, end_year, time_step)
+                                           mg_hydro_investment, grid_investment, year)
 
             onsseter.apply_limitations(eleclimit, year, time_step, prioritization, auto_intensification)
-
-            onsseter.final_decision(year)
 
             onsseter.calculate_new_capacity(mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc,
                                             sa_diesel_calc, grid_calc, year)
 
             onsseter.calc_summaries(df_summary, sumtechs, year)
-
-        onsseter.df['FinalElecCode' + str(year)] = onsseter.df['FinalElecCode' + str(year)].astype(int)
 
         for i in range(len(onsseter.df.columns)):
             if onsseter.df.iloc[:, i].dtype == 'float64':
