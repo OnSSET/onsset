@@ -186,36 +186,36 @@ class Technology:
 
         Parameters
         ----------
-        people : float
+        people : float or pandas.Series
             Number of people in settlement
         new_connections : float or pandas.Series
             Number of new people in settlement to connect
-        prev_code : int
+        prev_code : int or pandas.Series
             Code representation of previous supply technology in settlement
-        total_energy_per_cell : float
+        total_energy_per_cell : float or pandas.Series
             Total annual energy demand in cell, including already met demand
-        energy_per_cell : float
+        energy_per_cell : float or pandas.Series
             Annual energy demand in cell, excluding already met demand
-        num_people_per_hh : float
+        num_people_per_hh : float or pandas.Series
             Number of people per household in settlement
-        grid_cell_area : float
+        grid_cell_area : float or pandas.Series
             Area of settlement (km2)
-        additional_mv_line_length : float
+        additional_mv_line_length : float or pandas.Series
             Distance to connect the settlement
         additional_transformer : int
             If a transformer is needed on other end to connect to HV line
-        productive_nodes : int
+        productive_nodes : int or pandas.Series
             Additional connections (schools, health facilities, shops)
-        elec_loop : int
+        elec_loop : int or pandas.Series
             Round of extension in grid extension algorithm
-        penalty : float
+        penalty : float or pandas.Series
             Cost penalty factor for T&D network, e.g. https://www.mdpi.com/2071-1050/12/3/777
         start_year : int
         end_year : int
-        capacity_factor : float
-        grid_penalty_ratio : float
-        fuel_cost : float
-        get_investment_cost : float
+        capacity_factor : float or pandas.Series
+        grid_penalty_ratio : float or pandas.Series
+        fuel_cost : float or pandas.Series
+        get_investment_cost : bool
 
         Returns
         -------
@@ -281,7 +281,7 @@ class Technology:
         total_investment_cost = td_investment_cost + capital_investment
 
         if self.grid_price > 0:
-            fuel_cost = self.grid_price  # TODO / (1 - self.distribution_losses) REVIEW
+            fuel_cost = self.grid_price
 
         # Perform the time-value LCOE calculation
         project_life = end_year - self.base_year + 1
@@ -401,7 +401,7 @@ class Technology:
             no_of_hv_lv_subs = np.where(mv_distribution,
                                         0,
                                         np.where(hv_km > 0, np.ceil(peak_load / self.hv_lv_sub_station_type), 0))
-            if self.mini_grid:  # TODO check if correct if already grid-connected
+            if self.mini_grid:
                 no_of_mv_lv_subs = np.where(mv_km > 0,
                                             np.ceil(peak_load / self.mv_lv_sub_station_type),
                                             0)
@@ -512,94 +512,101 @@ class Technology:
         """
 
         # Start by calculating the distribution network required to meet all of the demand
-        cluster_mv_lines_length1, cluster_lv_lines_length1, no_of_service_transf1, \
-        generation_per_year1, peak_load1, total_nodes1 = \
+        cluster_mv_lines_length_total, cluster_lv_lines_length_total, no_of_service_transf_total, \
+            generation_per_year_total, peak_load_total, total_nodes_total = \
             self.distribution_network(people, total_energy_per_cell, num_people_per_hh, grid_cell_area,
                                       productive_nodes)
 
         # Next calculate the network that is already there
-        cluster_mv_lines_length2, cluster_lv_lines_length2, no_of_service_transf2, \
-        generation_per_year2, peak_load2, total_nodes2 = \
+        cluster_mv_lines_length_existing, cluster_lv_lines_length_existing, no_of_service_transf_existing, \
+            generation_per_year_existing, peak_load_existing, total_nodes_existing = \
             self.distribution_network(np.maximum((people - new_connections), 1),
                                       (total_energy_per_cell - energy_per_cell),
                                       num_people_per_hh, grid_cell_area, productive_nodes)
 
         # Then calculate the difference between the two
-        mv_lines_distribution_length3 = np.maximum(cluster_lv_lines_length1 - cluster_lv_lines_length2, 0)  # TODO
-        total_lv_lines_length3 = np.maximum(cluster_lv_lines_length1 - cluster_lv_lines_length2, 0)
-        num_transformers3 = np.maximum(no_of_service_transf1 - no_of_service_transf2, 0)
-        generation_per_year3 = np.maximum(generation_per_year1 - generation_per_year2, 0)
-        peak_load3 = np.maximum(peak_load1 - peak_load2, 0)
-        total_nodes3 = np.maximum(total_nodes1 - total_nodes2, 0)
+        mv_lines_distribution_length_additional = \
+            np.maximum(cluster_lv_lines_length_total - cluster_lv_lines_length_existing, 0)
+        total_lv_lines_length_additional = \
+            np.maximum(cluster_lv_lines_length_total - cluster_lv_lines_length_existing, 0)
+        num_transformers_additional = np.maximum(no_of_service_transf_total - no_of_service_transf_existing, 0)
+        generation_per_year_additional = np.maximum(generation_per_year_total - generation_per_year_existing, 0)
+        peak_load_additional = np.maximum(peak_load_total - peak_load_existing, 0)
+        total_nodes_additional = np.maximum(total_nodes_total - total_nodes_existing, 0)
 
         # Examine if there are any MV lines in the distribution network, used to determine transformer type
-        mv_distribution = np.where(mv_lines_distribution_length3 > 0, True, False)
+        mv_distribution = np.where(mv_lines_distribution_length_additional > 0, True, False)
 
         # Then calculate the transmission network (HV or MV lines plus transformers) using the same methodology
-        hv_lines_total_length1, mv_lines_connection_length1, no_of_hv_mv_substation1, no_of_mv_mv_substation1, \
-        no_of_hv_lv_substation1, no_of_mv_lv_substation1 = \
-            self.transmission_network(peak_load1, additional_mv_line_length, additional_transformer,
+        hv_lines_total_length_total, mv_lines_connection_length_total, no_of_hv_mv_substation_total, \
+            no_of_mv_mv_substation_total, no_of_hv_lv_substation_total, no_of_mv_lv_substation_total = \
+            self.transmission_network(peak_load_total, additional_mv_line_length, additional_transformer,
                                       mv_distribution=mv_distribution)
 
-        hv_lines_total_length2, mv_lines_connection_length2, no_of_hv_mv_substation2, no_of_mv_mv_substation2, \
-        no_of_hv_lv_substation2, no_of_mv_lv_substation2 = \
-            self.transmission_network(peak_load2, additional_mv_line_length, additional_transformer,
+        hv_lines_total_length_existing, mv_lines_connection_length_existing, no_of_hv_mv_substation_existing, \
+            no_of_mv_mv_substation_existing, no_of_hv_lv_substation_existing, no_of_mv_lv_substation_existing = \
+            self.transmission_network(peak_load_existing, additional_mv_line_length, additional_transformer,
                                       mv_distribution=mv_distribution)
 
-        hv_lines_total_length3 = np.maximum(hv_lines_total_length1 - hv_lines_total_length2, 0)
-        mv_lines_connection_length3 = np.maximum(mv_lines_connection_length1 - mv_lines_connection_length2, 0)
-        no_of_hv_lv_substation3 = np.maximum(no_of_hv_lv_substation1 - no_of_hv_lv_substation2, 0)
-        no_of_hv_mv_substation3 = np.maximum(no_of_hv_mv_substation1 - no_of_hv_mv_substation2, 0)
-        no_of_mv_mv_substation3 = np.maximum(no_of_mv_mv_substation1 - no_of_mv_mv_substation2, 0)
-        no_of_mv_lv_substation3 = np.maximum(no_of_mv_lv_substation1 - no_of_mv_lv_substation2, 0)
+        hv_lines_total_length_additional = np.maximum(hv_lines_total_length_total - hv_lines_total_length_existing, 0)
+        mv_lines_connection_length_additional = \
+            np.maximum(mv_lines_connection_length_total - mv_lines_connection_length_existing, 0)
+        no_of_hv_lv_substation_additional = \
+            np.maximum(no_of_hv_lv_substation_total - no_of_hv_lv_substation_existing, 0)
+        no_of_hv_mv_substation_additional = \
+            np.maximum(no_of_hv_mv_substation_total - no_of_hv_mv_substation_existing, 0)
+        no_of_mv_mv_substation_additional = \
+            np.maximum(no_of_mv_mv_substation_total - no_of_mv_mv_substation_existing, 0)
+        no_of_mv_lv_substation_additional = \
+            np.maximum(no_of_mv_lv_substation_total - no_of_mv_lv_substation_existing, 0)
 
         # If no distribution network is present, perform the calculations only once
         mv_lines_distribution_length_new, total_lv_lines_length_new, num_transformers_new, generation_per_year_new, \
-        peak_load_new, total_nodes_new = self.distribution_network(people, energy_per_cell, num_people_per_hh,
-                                                                   grid_cell_area, productive_nodes)
+            peak_load_new, total_nodes_new = self.distribution_network(people, energy_per_cell, num_people_per_hh,
+                                                                       grid_cell_area, productive_nodes)
 
         mv_distribution = np.where(mv_lines_distribution_length_new > 0, True, False)
 
         hv_lines_total_length_new, mv_lines_connection_length_new, no_of_hv_mv_substation_new, \
-        no_of_mv_mv_substation_new, no_of_hv_lv_substation_new, no_of_mv_lv_substation_new = \
+            no_of_mv_mv_substation_new, no_of_hv_lv_substation_new, no_of_mv_lv_substation_new = \
             self.transmission_network(peak_load_new, additional_mv_line_length, additional_transformer,
                                       mv_distribution=mv_distribution)
 
         mv_lines_distribution_length = np.where((people != new_connections) & ((prev_code < 2) | (prev_code > 3)),
-                                                mv_lines_distribution_length3,
+                                                mv_lines_distribution_length_additional,
                                                 mv_lines_distribution_length_new)
         hv_lines_total_length = np.where((people != new_connections) & ((prev_code < 2) | (prev_code > 3)),
-                                         hv_lines_total_length3,
+                                         hv_lines_total_length_additional,
                                          hv_lines_total_length_new)
         mv_lines_connection_length = np.where((people != new_connections) & ((prev_code < 2) | (prev_code > 3)),
-                                              mv_lines_connection_length3,
+                                              mv_lines_connection_length_additional,
                                               mv_lines_connection_length_new)
         total_lv_lines_length = np.where((people != new_connections) & ((prev_code < 2) | (prev_code > 3)),
-                                         total_lv_lines_length3,
+                                         total_lv_lines_length_additional,
                                          total_lv_lines_length_new)
         num_transformers = np.where((people != new_connections) & ((prev_code < 2) | (prev_code > 3)),
-                                    num_transformers3,
+                                    num_transformers_additional,
                                     num_transformers_new)
         total_nodes = np.where((people != new_connections) & ((prev_code < 2) | (prev_code > 3)),
-                               total_nodes3,
+                               total_nodes_additional,
                                total_nodes_new)
         no_of_hv_lv_substation = np.where((people != new_connections) & ((prev_code < 2) | (prev_code > 3)),
-                                          no_of_hv_lv_substation3,
+                                          no_of_hv_lv_substation_additional,
                                           no_of_hv_lv_substation_new)
         no_of_hv_mv_substation = np.where((people != new_connections) & ((prev_code < 2) | (prev_code > 3)),
-                                          no_of_hv_mv_substation3,
+                                          no_of_hv_mv_substation_additional,
                                           no_of_hv_mv_substation_new)
         no_of_mv_mv_substation = np.where((people != new_connections) & ((prev_code < 2) | (prev_code > 3)),
-                                          no_of_mv_mv_substation3,
+                                          no_of_mv_mv_substation_additional,
                                           no_of_mv_mv_substation_new)
         no_of_mv_lv_substation = np.where((people != new_connections) & ((prev_code < 2) | (prev_code > 3)),
-                                          no_of_mv_lv_substation3,
+                                          no_of_mv_lv_substation_additional,
                                           no_of_mv_lv_substation_new)
         generation_per_year = np.where((people != new_connections) & ((prev_code < 2) | (prev_code > 3)),
-                                       generation_per_year3,
+                                       generation_per_year_additional,
                                        generation_per_year_new)
         peak_load = np.where((people != new_connections) & ((prev_code < 2) | (prev_code > 3)),
-                             peak_load3,
+                             peak_load_additional,
                              peak_load_new)
 
         td_investment_cost = (hv_lines_total_length * self.hv_line_cost * (
@@ -705,7 +712,7 @@ class SettlementProcessor:
         return df.drop(columns=SET_TRAVEL_HOURS)
 
     def diesel_cost_columns(self, sa_diesel_cost: Dict[str, float],
-                            mg_diesel_cost: Dict[str, float], year: int) -> pd.DataFrame:
+                            mg_diesel_cost: Dict[str, float], year: int):
         """Calculate diesel fuel cost based on TravelHours column
 
         Arguments
@@ -716,7 +723,6 @@ class SettlementProcessor:
 
         Returns
         -------
-        pandas.DataFrame
         """
         diesel_cost = self.compute_diesel_cost(self.df[[SET_TRAVEL_HOURS]],
                                                sa_diesel_cost, mg_diesel_cost, year)
@@ -1315,7 +1321,7 @@ class SettlementProcessor:
         grid_connect_limit -= sum(self.df.loc[prev_code == 1]['Densification_connections'])
         del self.df['Densification_connections']
 
-        return grid_investment, grid_capacity_limit, grid_connect_limit
+        return pd.Series(grid_investment), grid_capacity_limit, grid_connect_limit
 
     def current_mv_line_dist(self):
         logging.info('Determine current MV line length')
@@ -1332,8 +1338,6 @@ class SettlementProcessor:
 
         prio = int(prioritization)
 
-        x = self.df[SET_X_DEG].copy(deep=True)
-        y = self.df[SET_Y_DEG].copy(deep=True)
         prev_code = self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)].copy(deep=True)
         if year - time_step == start_year:
             elecorder = self.df[SET_ELEC_ORDER].copy(deep=True)
@@ -1343,7 +1347,7 @@ class SettlementProcessor:
         min_code_lcoes = self.df[SET_MIN_OFFGRID_LCOE + "{}".format(year)].copy(deep=True)
         new_lcoes = self.df[SET_LCOE_GRID + "{}".format(year)].copy(deep=True)
         cell_path_real = self.df[SET_MV_CONNECT_DIST].copy(deep=True)
-        cell_path_adjusted = list(np.zeros(len(x)).tolist())
+        cell_path_adjusted = list(np.zeros(len(prev_code)).tolist())
         mv_planned = self.df[SET_MV_DIST_PLANNED].copy(deep=True)
 
         # Start by identifying which settlements are grid-connected already
@@ -1352,13 +1356,12 @@ class SettlementProcessor:
         # The grid may be forced to expand around existing MV lines if this option has been selected, regardless
         # off-grid alternatives are less costly. The following section implements that
         if (prio == 2) or (prio == 4):
-            electrified = np.where(mv_planned < auto_intensification, 1, electrified)
             mv_dist_adjusted = np.nan_to_num(grid_penalty_ratio * mv_planned)
 
             intensification_lcoe, intensification_investment = \
                 self.get_grid_lcoe(dist_adjusted=mv_dist_adjusted, elecorder=0, additional_transformer=0, year=year,
                                    time_step=time_step, end_year=end_year, grid_calc=grid_calc)
-            intensification_lcoe = new_lcoes
+            intensification_lcoe = new_lcoes.copy(deep=True)
             intensification_lcoe.loc[(mv_planned < auto_intensification) & (prev_code != 1)] = 0.01
             intensification_lcoe = pd.DataFrame(intensification_lcoe)
             intensification_lcoe.columns = [0]
@@ -1371,7 +1374,7 @@ class SettlementProcessor:
                                                   grid_capacity_limit=grid_capacity_limit,
                                                   grid_connect_limit=grid_connect_limit, cell_path_real=cell_path_real,
                                                   cell_path_adjusted=cell_path_adjusted, electrified=electrified,
-                                                  year=year, time_step=time_step, grid_calc=grid_calc,
+                                                  year=year, grid_calc=grid_calc,
                                                   grid_investment=intensification_investment,
                                                   new_investment=new_investment)
 
@@ -1397,9 +1400,8 @@ class SettlementProcessor:
             = self.update_grid_extension_info(grid_lcoe=grid_lcoe, dist=mv_dist, dist_adjusted=mv_dist_adjusted,
                                               prev_dist=0, elecorder=elecorder, new_elec_order=1, max_dist=max_dist,
                                               new_lcoes=new_lcoes, grid_capacity_limit=grid_capacity_limit,
-                                              grid_connect_limit=grid_connect_limit,
-                                              cell_path_real=cell_path_real, cell_path_adjusted=cell_path_adjusted,
-                                              electrified=electrified, year=year, time_step=time_step,
+                                              grid_connect_limit=grid_connect_limit, cell_path_real=cell_path_real,
+                                              cell_path_adjusted=cell_path_adjusted, electrified=electrified, year=year,
                                               grid_calc=grid_calc, grid_investment=grid_investment,
                                               new_investment=new_investment)
 
@@ -1408,9 +1410,8 @@ class SettlementProcessor:
         hv_dist_adjusted = np.nan_to_num(hv_dist * grid_penalty_ratio)
 
         grid_lcoe, grid_investment = self.get_grid_lcoe(dist_adjusted=hv_dist_adjusted, elecorder=0,
-                                                        additional_transformer=1,
-                                                        year=year, time_step=time_step, end_year=end_year,
-                                                        grid_calc=grid_calc)
+                                                        additional_transformer=1, year=year, time_step=time_step,
+                                                        end_year=end_year, grid_calc=grid_calc)
 
         grid_capacity_limit, grid_connect_limit, cell_path_real, cell_path_adjusted, elecorder, electrified, \
             new_lcoes, new_investment \
@@ -1419,58 +1420,26 @@ class SettlementProcessor:
                                               new_lcoes=new_lcoes, grid_capacity_limit=grid_capacity_limit,
                                               grid_connect_limit=grid_connect_limit, cell_path_real=cell_path_real,
                                               cell_path_adjusted=cell_path_adjusted, electrified=electrified,
-                                              year=year, time_step=time_step, grid_calc=grid_calc,
-                                              grid_investment=grid_investment, new_investment=new_investment)
+                                              year=year, grid_calc=grid_calc, grid_investment=grid_investment,
+                                              new_investment=new_investment)
 
         # Third to last round of extension loops from electrified settlements. First considering all
         # electrified settlements up until this point, then from the newly electrified settlements in each round
-        prev_electrified = np.zeros(len(x))
+        prev_electrified = np.zeros(len(prev_code))
         loops = 1
         while sum(electrified) > sum(prev_electrified):
             new_electrified = electrified - prev_electrified
             prev_electrified = electrified
             logging.info('Electrification loop {} with {} electrified'.format(loops, int(sum(new_electrified))))
             loops += 1
-            # Identifies the electrified settlements from which to extens the network
-            extension_nodes = np.where(new_electrified == 1)
-            extension_nodes = extension_nodes[0].tolist()
 
-            if len(extension_nodes) > 1:
-                # Creates an array of x, y coordinates of the electrified settlements
-                elec_nodes2 = np.transpose(np.array([x.loc[extension_nodes], y.loc[extension_nodes]]))
-
-                closest_elec_node = np.zeros(len(x), dtype=int)
-                nearest_dist = np.zeros(len(x))
-                nearest_elec_order = np.zeros(len(x), dtype=int)
-                prev_dist = np.zeros(len(x))
-
-                # Create an array of x-, y-coordinates of the (filtered) unelectrified settlements
-                unelectrified = np.setdiff1d(unelectrified, extension_nodes).tolist()
-                x_unelec = x.loc[unelectrified]
-                y_unelec = y.loc[unelectrified]
-                unelec_nodes = pd.DataFrame(np.transpose(np.array([x_unelec, y_unelec])))
-
-                # Calculate for each unelectrified settlement which is the closest electrified settlement
-                closest_node = self.do_kdtree(elec_nodes2, unelec_nodes) # TODO create separate method for finding closest elec etc.
-
-                # For each unelectrified settlement, find the electrifiecation order, distance to closest electrified
-                # settlement, distance including grid penalty, and total mv length up until the electrrfied settlement
-                j = 0
-                for unelec in unelectrified:
-                    closest_elec_node[unelec] = closest_node[j]
-                    j += 1
-                extension_nodes = np.array(extension_nodes)
-                x_closest_elec = x.loc[extension_nodes[closest_elec_node[unelectrified]]]
-                x_closest_elec.index = x_unelec.index
-                y_closest_elec = y.loc[extension_nodes[closest_elec_node[unelectrified]]]
-                y_closest_elec.index = y_unelec.index
-                dist = self.haversine_vector(x_closest_elec, y_closest_elec, x_unelec, y_unelec)
-                nearest_dist[unelectrified] = dist[unelectrified]
-                nearest_dist_adjusted = np.nan_to_num(nearest_dist * grid_penalty_ratio)
-                nearest_elec_order[unelectrified] = elecorder[extension_nodes[
-                    closest_elec_node[unelectrified]]] + 1
-                prev_dist[unelectrified] = cell_path_real[
-                    extension_nodes[closest_elec_node[unelectrified]]]
+            if sum(new_electrified) > 1:
+                # Calculating the distance and adjusted distance from each unelectrified settelement to the closest
+                # electrified settlement, as well as the electrification order an total MV distance to that electrified
+                # settlement
+                nearest_dist_adjusted, nearest_elec_order, prev_dist, nearest_dist = \
+                    self.closest_electrified_settlement(new_electrified, unelectrified, cell_path_real,
+                                                        grid_penalty_ratio, elecorder)
 
                 grid_lcoe, grid_investment = self.get_grid_lcoe(dist_adjusted=nearest_dist_adjusted,
                                                                 elecorder=nearest_elec_order,
@@ -1480,16 +1449,16 @@ class SettlementProcessor:
 
                 grid_capacity_limit, grid_connect_limit, cell_path_real, cell_path_adjusted, elecorder, electrified, \
                     new_lcoes, new_investment = \
-                    self.update_grid_extension_info(grid_lcoe=grid_lcoe, dist=cell_path_real,
-                                                    dist_adjusted=cell_path_adjusted,
+                    self.update_grid_extension_info(grid_lcoe=grid_lcoe, dist=nearest_dist,
+                                                    dist_adjusted=nearest_dist_adjusted,
                                                     prev_dist=prev_dist, elecorder=elecorder,
                                                     new_elec_order=nearest_elec_order, max_dist=max_dist,
                                                     new_lcoes=new_lcoes, grid_capacity_limit=grid_capacity_limit,
                                                     grid_connect_limit=grid_connect_limit,
                                                     cell_path_real=cell_path_real,
                                                     cell_path_adjusted=cell_path_adjusted, electrified=electrified,
-                                                    year=year, time_step=time_step, grid_calc=grid_calc,
-                                                    grid_investment=grid_investment, new_investment=new_investment)
+                                                    year=year, grid_calc=grid_calc, grid_investment=grid_investment,
+                                                    new_investment=new_investment)
 
         return new_lcoes, cell_path_adjusted, elecorder, cell_path_real, pd.DataFrame(new_investment)
 
@@ -1509,10 +1478,56 @@ class SettlementProcessor:
                                additional_transformer=additional_transformer)
         return grid_lcoe, grid_investment
 
+    def closest_electrified_settlement(self, new_electrified, unelectrified, cell_path_real, grid_penalty_ratio,
+                                       elecorder):
+
+        x = self.df[SET_X_DEG].copy(deep=True)
+        y = self.df[SET_Y_DEG].copy(deep=True)
+
+        # Identifies the electrified settlements from which to extend the network
+        extension_nodes = np.where(new_electrified == 1)
+        extension_nodes = extension_nodes[0].tolist()
+        # Creates an array of x, y coordinates of the electrified settlements
+        elec_nodes2 = np.transpose(np.array([x.loc[extension_nodes], y.loc[extension_nodes]]))
+
+        closest_elec_node = np.zeros(len(x), dtype=int)
+        nearest_dist = np.zeros(len(x))
+        nearest_elec_order = np.zeros(len(x), dtype=int)
+        prev_dist = np.zeros(len(x))
+
+        # Create an array of x-, y-coordinates of the (filtered) unelectrified settlements
+        unelectrified = np.setdiff1d(unelectrified, extension_nodes).tolist()
+        x_unelec = x.loc[unelectrified]
+        y_unelec = y.loc[unelectrified]
+        unelec_nodes = pd.DataFrame(np.transpose(np.array([x_unelec, y_unelec])))
+
+        # Calculate for each unelectrified settlement which is the closest electrified settlement
+        closest_node = self.do_kdtree(elec_nodes2, unelec_nodes)
+
+        # For each unelectrified settlement, find the electrifiecation order, distance to closest electrified
+        # settlement, distance including grid penalty, and total mv length up until the electrrfied settlement
+        j = 0
+        for unelec in unelectrified:
+            closest_elec_node[unelec] = closest_node[j]
+            j += 1
+        extension_nodes = np.array(extension_nodes)
+        x_closest_elec = x.loc[extension_nodes[closest_elec_node[unelectrified]]]
+        x_closest_elec.index = x_unelec.index
+        y_closest_elec = y.loc[extension_nodes[closest_elec_node[unelectrified]]]
+        y_closest_elec.index = y_unelec.index
+        dist = self.haversine_vector(x_closest_elec, y_closest_elec, x_unelec, y_unelec)
+        nearest_dist[unelectrified] = dist[unelectrified]
+        nearest_dist_adjusted = np.nan_to_num(nearest_dist * grid_penalty_ratio)
+        nearest_elec_order[unelectrified] = elecorder[extension_nodes[
+            closest_elec_node[unelectrified]]] + 1
+        prev_dist[unelectrified] = cell_path_real[
+            extension_nodes[closest_elec_node[unelectrified]]]
+
+        return nearest_dist_adjusted, nearest_elec_order, prev_dist, nearest_dist
+
     def update_grid_extension_info(self, grid_lcoe, dist, dist_adjusted, prev_dist, elecorder, new_elec_order,
                                    max_dist, new_lcoes, grid_capacity_limit, grid_connect_limit, cell_path_real,
-                                   cell_path_adjusted, electrified, year, time_step, grid_calc,
-                                   grid_investment, new_investment):
+                                   cell_path_adjusted, electrified, year, grid_calc, grid_investment, new_investment):
 
         min_code_lcoes = self.df[SET_MIN_OFFGRID_LCOE + "{}".format(year)].copy(deep=True)
 
