@@ -729,7 +729,7 @@ class SettlementProcessor:
         Do any initial data conditioning that may be required.
         """
 
-        logging.info('Ensure that columns that are supposed to be numeric are numeric')
+       #logging.info('Ensure that columns that are supposed to be numeric are numeric')
         self.df[SET_NIGHT_LIGHTS] = pd.to_numeric(self.df[SET_NIGHT_LIGHTS], errors='coerce')
         self.df[SET_POP] = pd.to_numeric(self.df[SET_POP], errors='coerce')
         self.df[SET_GRID_CELL_AREA] = pd.to_numeric(self.df[SET_GRID_CELL_AREA], errors='coerce')
@@ -763,10 +763,10 @@ class SettlementProcessor:
 
         self.df.loc[self.df[SET_ELEC_POP] > self.df[SET_POP], SET_ELEC_POP] = self.df[SET_POP]
 
-        logging.info('Replace null values with zero')
+       #logging.info('Replace null values with zero')
         self.df.fillna(0, inplace=True)
 
-        logging.info('Sort by country, Y and X')
+       #logging.info('Sort by country, Y and X')
         self.df.sort_values(by=[SET_Y_DEG, SET_X_DEG], inplace=True)
 
     @staticmethod
@@ -862,29 +862,29 @@ class SettlementProcessor:
 
         """
 
-        logging.info('Classify road dist')
+       #logging.info('Classify road dist')
         road_dist_classified = self.classify_road_distance(data_frame[SET_ROAD_DIST])
 
-        logging.info('Classify substation dist')
+       #logging.info('Classify substation dist')
         substation_dist_classified = self.classify_substation_distance(data_frame[SET_SUBSTATION_DIST])
 
-        logging.info('Classify elevation')
+       #logging.info('Classify elevation')
         elevation_classified = self.classify_elevation(data_frame[SET_ELEVATION])
 
-        logging.info('Classify slope')
+       #logging.info('Classify slope')
         slope_classified = self.classify_slope(data_frame[SET_SLOPE])
 
-        logging.info('Classify land cover')
+       #logging.info('Classify land cover')
         land_cover_classified = self.classify_land_cover(data_frame[SET_LAND_COVER])
 
-        logging.info('Combined classification')
+       #logging.info('Combined classification')
         combined_classification = (0.15 * road_dist_classified +
                                    0.20 * substation_dist_classified +
                                    0.15 * elevation_classified +
                                    0.30 * slope_classified +
                                    0.20 * land_cover_classified)
 
-        logging.info('Grid penalty')
+       #logging.info('Grid penalty')
         """this calculates the penalty from the results obtained from the combined classifications"""
         classification = combined_classification.astype(float)
 
@@ -928,7 +928,7 @@ class SettlementProcessor:
             return energy_produced / (p_rated * t)
 
     def calc_wind_cfs(self):
-        logging.info('Calculate Wind CF')
+       #logging.info('Calculate Wind CF')
         return self.df[SET_WINDVEL].apply(self.get_wind_cf)
 
     def prepare_wtf_tier_columns(self, num_people_per_hh_rural, num_people_per_hh_urban,
@@ -939,7 +939,7 @@ class SettlementProcessor:
         # (BEYOND CONNECTIONS Energy Access Redefined, ESMAP, 2015).
         # Tiers in kWh/capita/year depends on the average ppl/hh which is different in every country
 
-        logging.info('Populate ResidentialDemandTier columns')
+        #logging.info('Populate ResidentialDemandTier columns')
         tier_num = [1, 2, 3, 4, 5]
         ppl_hh_average = (num_people_per_hh_urban + num_people_per_hh_rural) / 2
         tier_1 = tier_1 / ppl_hh_average  # 38.7 refers to kWh/household/year (mean value between Tier 1 and Tier 2)
@@ -959,7 +959,7 @@ class SettlementProcessor:
         on actual values provided by the user for the start year.
         """
 
-        logging.info('Population calibration process')
+       #logging.info('Population calibration process')
 
         # First, calculate ratio between GIS retrieved and user provided population
         pop_ratio = pop_actual / self.df[SET_POP].sum()
@@ -974,7 +974,7 @@ class SettlementProcessor:
         # TODO Why do we apply the ratio to elec_pop? Shouldn't the calibration take place before defining elec_pop?
         self.df[SET_ELEC_POP_CALIB] = self.df[SET_ELEC_POP] * pop_ratio
 
-        logging.info('Urban/rural calibration process')
+       #logging.info('Urban/rural calibration process')
         # TODO As indicated below, HRSL classifies in 0, 1 and 2; I don't get why if statement uses 3 here.
         if max(self.df[SET_URBAN]) == 3:  # THIS OPTION IS CURRENTLY DISABLED
             calibrate = True if 'n' in input(
@@ -1018,7 +1018,7 @@ class SettlementProcessor:
         project_life = end_year - start_year
 
         # Project future population, with separate growth rates for urban and rural
-        logging.info('Population projection process')
+       #logging.info('Population projection process')
 
         # TODO this is a residual of the previous process;
         # shall we delete? Is there any scenario where we don't apply projections?
@@ -1086,7 +1086,7 @@ class SettlementProcessor:
         rural_elec_ratio *= factor
         self.df.loc[self.df[SET_NIGHT_LIGHTS] <= 0, [SET_ELEC_POP_CALIB]] = 0
 
-        logging.info('Calibrate current electrification')
+       #logging.info('Calibrate current electrification')
         self.df[SET_ELEC_CURRENT] = 0
 
         # This if function here skims through T&D columns to identify if any non 0 values exist;
@@ -1289,7 +1289,7 @@ class SettlementProcessor:
 
         """" ... """
 
-        logging.info('Define the initial electrification status')
+        #logging.info('Define the initial electrification status')
         grid_investment = np.zeros(len(self.df[SET_X_DEG]))
         prev_code = self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)].copy(deep=True)
 
@@ -1319,7 +1319,7 @@ class SettlementProcessor:
         return pd.Series(grid_investment), grid_capacity_limit, grid_connect_limit
 
     def current_mv_line_dist(self):
-        logging.info('Determine current MV line length')
+        #logging.info('Determine current MV line length')
         self.df[SET_MV_CONNECT_DIST] = 0
         self.df.loc[self.df[SET_ELEC_CURRENT] == 1, SET_MV_CONNECT_DIST] = self.df[SET_HV_DIST_CURRENT]
         self.df[SET_MIN_TD_DIST] = self.df[[SET_MV_DIST_PLANNED, SET_HV_DIST_PLANNED]].min(axis=1)
@@ -1380,7 +1380,7 @@ class SettlementProcessor:
         unelectrified = np.where(filter_lcoe < min_code_lcoes)
         unelectrified = unelectrified[0].tolist()
 
-        logging.info('Initially {} electrified'.format(sum(electrified)))
+       #logging.info('Initially {} electrified'.format(sum(electrified)))
 
         # First round of extension from MV network
         mv_dist = pd.Series(self.df[SET_MV_DIST_PLANNED])
@@ -1425,7 +1425,7 @@ class SettlementProcessor:
         while sum(electrified) > sum(prev_electrified):
             new_electrified = electrified - prev_electrified
             prev_electrified = electrified
-            logging.info('Electrification loop {} with {} electrified'.format(loops, int(sum(new_electrified))))
+           #logging.info('Electrification loop {} with {} electrified'.format(loops, int(sum(new_electrified))))
             loops += 1
 
             if sum(new_electrified) > 1:
@@ -1491,7 +1491,7 @@ class SettlementProcessor:
         prev_dist = np.zeros(len(x))
 
         # Create an array of x-, y-coordinates of the (filtered) unelectrified settlements
-        unelectrified = np.setdiff1d(unelectrified, extension_nodes).tolist()
+        unelectrified = np.setdiff1d(unelectrified, extension_nodes).tolist()  # TODO
         x_unelec = x.loc[unelectrified]
         y_unelec = y.loc[unelectrified]
         unelec_nodes = pd.DataFrame(np.transpose(np.array([x_unelec, y_unelec])))
@@ -1588,7 +1588,7 @@ class SettlementProcessor:
 
         """
 
-        logging.info('Calculate new connections')
+       #logging.info('Calculate new connections')
         # Calculate new connections for grid related purposes
         # TODO - This was changed based on your "newly created" column SET_ELEC_POP.
         # Please review and check whether this creates any problem at your distribution_network function
@@ -1642,7 +1642,7 @@ class SettlementProcessor:
 
         """
 
-        logging.info('Setting electrification demand as per target per year')
+       #logging.info('Setting electrification demand as per target per year')
 
         if max(self.df[SET_CAPITA_DEMAND]) == 0:
             # RUN_PARAM: This shall be changed if different urban/rural categorization is decided
@@ -1768,7 +1768,7 @@ class SettlementProcessor:
 
         """
 
-        logging.info('Calculate minigrid hydro LCOE')
+       #logging.info('Calculate minigrid hydro LCOE')
         self.df[SET_LCOE_MG_HYDRO + "{}".format(year)], mg_hydro_investment = \
             mg_hydro_calc.get_lcoe(energy_per_cell=self.df[SET_ENERGY_PER_CELL + "{}".format(year)],
                                    start_year=year - time_step,
@@ -1781,7 +1781,7 @@ class SettlementProcessor:
                                    grid_cell_area=self.df[SET_GRID_CELL_AREA],
                                    additional_mv_line_length=self.df[SET_HYDRO_DIST])
 
-        logging.info('Calculate minigrid PV LCOE')
+       #logging.info('Calculate minigrid PV LCOE')
         self.df[SET_LCOE_MG_PV + "{}".format(year)], mg_pv_investment = \
             mg_pv_calc.get_lcoe(energy_per_cell=self.df[SET_ENERGY_PER_CELL + "{}".format(year)],
                                 start_year=year - time_step,
@@ -1795,7 +1795,7 @@ class SettlementProcessor:
                                 capacity_factor=self.df[SET_GHI] / HOURS_PER_YEAR)
         self.df.loc[self.df[SET_GHI] <= 1000, SET_LCOE_MG_PV + "{}".format(year)] = 99
 
-        logging.info('Calculate minigrid wind LCOE')
+       #logging.info('Calculate minigrid wind LCOE')
         self.df[SET_LCOE_MG_WIND + "{}".format(year)], mg_wind_investment = \
             mg_wind_calc.get_lcoe(energy_per_cell=self.df[SET_ENERGY_PER_CELL + "{}".format(year)],
                                   start_year=year - time_step,
@@ -1815,7 +1815,7 @@ class SettlementProcessor:
             sa_diesel_investment = mg_pv_investment * 0
             mg_diesel_investment = mg_pv_investment * 0
         else:
-            logging.info('Calculate minigrid diesel LCOE')
+           #logging.info('Calculate minigrid diesel LCOE')
             self.df[SET_LCOE_MG_DIESEL + "{}".format(year)], mg_diesel_investment = \
                 mg_diesel_calc.get_lcoe(energy_per_cell=self.df[SET_ENERGY_PER_CELL + "{}".format(year)],
                                         start_year=year - time_step,
@@ -1829,7 +1829,7 @@ class SettlementProcessor:
                                         fuel_cost=self.df[SET_MG_DIESEL_FUEL + "{}".format(year)],
                                         )
 
-            logging.info('Calculate standalone diesel LCOE')
+           #logging.info('Calculate standalone diesel LCOE')
             self.df[SET_LCOE_SA_DIESEL + "{}".format(year)], sa_diesel_investment = \
                 sa_diesel_calc.get_lcoe(energy_per_cell=self.df[SET_ENERGY_PER_CELL + "{}".format(year)],
                                         start_year=year - time_step,
@@ -1843,7 +1843,7 @@ class SettlementProcessor:
                                         fuel_cost=self.df[SET_SA_DIESEL_FUEL + "{}".format(year)],
                                         )
 
-        logging.info('Calculate standalone PV LCOE')
+       #logging.info('Calculate standalone PV LCOE')
         self.df[SET_LCOE_SA_PV + "{}".format(year)], sa_pv_investment = \
             sa_pv_calc.get_lcoe(energy_per_cell=self.df[SET_ENERGY_PER_CELL + "{}".format(year)],
                                 start_year=year - time_step,
@@ -1874,7 +1874,7 @@ class SettlementProcessor:
         mg_hydro_calc : dict
         """
 
-        logging.info('Determine minimum technology (off-grid)')
+       #logging.info('Determine minimum technology (off-grid)')
         self.df[SET_MIN_OFFGRID + "{}".format(year)] = self.df[[SET_LCOE_SA_PV + "{}".format(year),
                                                                 SET_LCOE_MG_WIND + "{}".format(year),
                                                                 SET_LCOE_MG_PV + "{}".format(year),
@@ -1914,7 +1914,7 @@ class SettlementProcessor:
                                                                 SET_LCOE_MG_DIESEL + "{}".format(year),
                                                                 SET_LCOE_SA_DIESEL + "{}".format(year)]].T.idxmin()
 
-        logging.info('Determine minimum tech LCOE')
+       #logging.info('Determine minimum tech LCOE')
         self.df[SET_MIN_OFFGRID_LCOE + "{}".format(year)] = self.df[[SET_LCOE_SA_PV + "{}".format(year),
                                                                      SET_LCOE_MG_WIND + "{}".format(year),
                                                                      SET_LCOE_MG_PV + "{}".format(year),
@@ -1954,7 +1954,7 @@ class SettlementProcessor:
 
         """
 
-        logging.info('Determine minimum overall')
+       #logging.info('Determine minimum overall')
         self.df[SET_MIN_OVERALL + "{}".format(year)] = self.df[[SET_LCOE_GRID + "{}".format(year),
                                                                 SET_LCOE_SA_PV + "{}".format(year),
                                                                 SET_LCOE_MG_WIND + "{}".format(year),
@@ -1963,7 +1963,7 @@ class SettlementProcessor:
                                                                 SET_LCOE_MG_DIESEL + "{}".format(year),
                                                                 SET_LCOE_SA_DIESEL + "{}".format(year)]].T.idxmin()
 
-        logging.info('Determine minimum overall LCOE')
+       #logging.info('Determine minimum overall LCOE')
         self.df[SET_MIN_OVERALL_LCOE + "{}".format(year)] = self.df[[SET_LCOE_GRID + "{}".format(year),
                                                                      SET_LCOE_SA_PV + "{}".format(year),
                                                                      SET_LCOE_MG_WIND + "{}".format(year),
@@ -1972,7 +1972,7 @@ class SettlementProcessor:
                                                                      SET_LCOE_MG_DIESEL + "{}".format(year),
                                                                      SET_LCOE_SA_DIESEL + "{}".format(year)]].T.min()
 
-        logging.info('Add technology codes')
+       #logging.info('Add technology codes')
         codes = {SET_LCOE_GRID + "{}".format(year): 1,
                  SET_LCOE_MG_HYDRO + "{}".format(year): 7,
                  SET_LCOE_MG_WIND + "{}".format(year): 6,
@@ -1988,7 +1988,7 @@ class SettlementProcessor:
     def calculate_investments(self, sa_diesel_investment, sa_pv_investment, mg_diesel_investment, mg_pv_investment,
                               mg_wind_investment, mg_hydro_investment, grid_investment, year):
 
-        logging.info('Calculate investment cost')
+       #logging.info('Calculate investment cost')
 
         self.df[SET_INVESTMENT_COST + "{}".format(year)] = 0
 
@@ -2006,7 +2006,7 @@ class SettlementProcessor:
 
     def apply_limitations(self, eleclimit, year, time_step, prioritization, auto_densification=0):
 
-        logging.info('Determine electrification limits')
+       #logging.info('Determine electrification limits')
         choice = int(prioritization)
         self.df[SET_LIMIT + "{}".format(year)] = 0
 
@@ -2067,16 +2067,16 @@ class SettlementProcessor:
         elecrate = self.df.loc[self.df[SET_LIMIT + "{}".format(year)] == 1,
                                SET_POP + "{}".format(year)].sum() / self.df[SET_POP + "{}".format(year)].sum()
 
-        logging.info('Determine final electrification decision')
+        #logging.info('Determine final electrification decision')
         self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] = self.df[SET_MIN_OVERALL_CODE + "{}".format(year)]
         self.df.loc[(self.df[SET_LIMIT + "{}".format(year)] == 0), SET_ELEC_FINAL_CODE + "{}".format(year)] = 99
-
-        print("The electrification rate achieved in {} is {:.1f} %".format(year, elecrate * 100))
+        if abs(eleclimit-elecrate) > 0.03:
+            print("The electrification rate achieved in {} is {:.1f} %".format(year, (eleclimit-elecrate) * 100))
 
     def calculate_new_capacity(self, mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc,
                                sa_diesel_calc, grid_calc, year):
 
-        logging.info('Calculate new capacity')
+        #logging.info('Calculate new capacity')
         self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 99, SET_NEW_CAPACITY + "{}".format(year)] = 0
 
         self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 1, SET_NEW_CAPACITY + "{}".format(year)] = (
@@ -2119,7 +2119,7 @@ class SettlementProcessor:
         """The next section calculates the summaries for technology split,
         consumption added and total investment cost"""
 
-        logging.info('Calculate summaries')
+        #logging.info('Calculate summaries')
 
         # Population Summaries
         df_summary[year][sumtechs[0]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 1) &

@@ -106,7 +106,7 @@ def calibration(specs_path, csv_path, specs_path_calib, calibrated_csv_path):
     onsseter.df.to_csv(settlements_out_csv, index=False)
 
 
-def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
+def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder, general_specs):
     """
 
     Arguments
@@ -118,14 +118,14 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
     """
 
-    scenario_info = pd.read_excel(specs_path, sheet_name='ScenarioInfo')
+    scenario_info = pd.read_excel(general_specs, sheet_name='ScenarioInfo')
     scenarios = scenario_info['Scenario']
     scenario_parameters = pd.read_excel(specs_path, sheet_name='ScenarioParameters')
     specs_data = pd.read_excel(specs_path, sheet_name='SpecsDataCalib')
-    print(specs_data.loc[0, SPE_COUNTRY])
+    logging.info(specs_data.loc[0, SPE_COUNTRY])
 
     for scenario in scenarios:
-        print('Scenario: ' + str(scenario + 1))
+        #logging.info('Scenario: ' + str(scenario + 1))
         country_id = specs_data.iloc[0]['CountryCode']
 
         pop_index = scenario_info.iloc[scenario]['Population_Growth']
@@ -330,6 +330,6 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                 onsseter.df.iloc[:, i] = pd.to_numeric(onsseter.df.iloc[:, i], downcast='signed')
 
         df_summary.to_csv(summary_csv, index=sumtechs)
-        onsseter.df.to_csv(settlements_out_csv, index=False)
+        # onsseter.df.to_csv(settlements_out_csv, index=False)
 
-        logging.info('Finished')
+        #logging.info('Finished')
