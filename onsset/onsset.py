@@ -1752,6 +1752,8 @@ class SettlementProcessor:
         """
 
         if end_year_pop == 0:
+            self.df[SET_POP + "{}".format(year)] = self.df[SET_POP + "{}".format(year) + 'Lowest']
+        elif end_year_pop == 1:
             self.df[SET_POP + "{}".format(year)] = self.df[SET_POP + "{}".format(year) + 'Low']
         else:
             self.df[SET_POP + "{}".format(year)] = self.df[SET_POP + "{}".format(year) + 'High']
