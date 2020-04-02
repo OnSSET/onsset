@@ -1351,7 +1351,7 @@ class SettlementProcessor:
 
         # The grid may be forced to expand around existing MV lines if this option has been selected, regardless
         # off-grid alternatives are less costly. The following section implements that
-        if (prio == 2) or (prio == 4):
+        if (prio == 2) or (prio == 4):  # TODO how to deal with grid cap?
             mv_dist_adjusted = np.nan_to_num(grid_penalty_ratio * mv_planned)
 
             intensification_lcoe, intensification_investment = \
@@ -1978,7 +1978,7 @@ class SettlementProcessor:
 
         if (prio == 2) or (prio == 4):
             self.df.loc[(self.df[SET_MV_DIST_PLANNED] < auto_intensification) &
-                        (self.df[SET_LCOE_GRID + "{}".format(year)] < 99),
+                        (self.df[SET_LCOE_GRID + "{}".format(year)] != 99),
                         SET_MIN_OVERALL + "{}".format(year)] = 'Grid' + "{}".format(year)
 
         #logging.info('Determine minimum overall LCOE')
@@ -1995,7 +1995,7 @@ class SettlementProcessor:
 
         if (prio == 2) or (prio == 4):
             self.df.loc[(self.df[SET_MV_DIST_PLANNED] < auto_intensification) &
-                        (self.df[SET_LCOE_GRID + "{}".format(year)] < 99),
+                        (self.df[SET_LCOE_GRID + "{}".format(year)] != 99),
                         SET_MIN_OVERALL_LCOE + "{}".format(year)] = self.df[SET_LCOE_GRID + "{}".format(year)]
 
         #logging.info('Add technology codes')
@@ -2282,3 +2282,18 @@ class SettlementProcessor:
         df_summary[year][sumtechs[31]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 8) &
                                                          (self.df[SET_LIMIT + "{}".format(year)] == 1)]
                                              [SET_INVESTMENT_COST + "{}".format(year)])
+
+        df_summary[year][sumtechs[32]] = sum(self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] < 99]
+                                             [SET_NEW_CONNECTIONS + "{}".format(year)])
+
+        df_summary[year][sumtechs[33]] = sum(self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] < 99]
+                                             [SET_ENERGY_PER_CELL + "{}".format(year)])
+
+        a = self.df[SET_NEW_CONNECTIONS + "{}".format(year)] * self.df[SET_MIN_OVERALL_LCOE + "{}".format(year)]
+        b = self.df[SET_ENERGY_PER_CELL + "{}".format(year)] * self.df[SET_MIN_OVERALL_LCOE + "{}".format(year)]
+
+        df_summary[year][sumtechs[34]] = sum(a.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] < 99]) / sum(self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] < 99]
+                                             [SET_NEW_CONNECTIONS + "{}".format(year)])
+
+        df_summary[year][sumtechs[35]] = sum(b.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] < 99]) / sum(self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] < 99]
+                                             [SET_ENERGY_PER_CELL + "{}".format(year)])

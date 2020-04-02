@@ -264,6 +264,12 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder, ge
         for element in elements:
             for tech in techs:
                 sumtechs.append(element + "_" + tech)
+
+        sumtechs.append('Total_new_connections')
+        sumtechs.append('Total_new_energy')
+        sumtechs.append('Connections_average_lcoe')
+        sumtechs.append('Energy_average_lcoe')
+
         total_rows = len(sumtechs)
         df_summary = pd.DataFrame(columns=yearsofanalysis)
         for row in range(0, total_rows):
