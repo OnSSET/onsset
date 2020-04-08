@@ -1129,9 +1129,6 @@ class SettlementProcessor:
                             1 / urban_elec_factor)
                 else:
                     i = 0
-                    print(
-                        "The urban settlements identified as electrified are lower than in statistics; "
-                        "Please re-adjust the calibration conditions")
                     while urban_elec_factor <= 1:
                         if i < 10:
                             self.df.loc[
@@ -1150,9 +1147,6 @@ class SettlementProcessor:
                             1 / rural_elec_factor)
                 else:
                     i = 0
-                    print(
-                        "The rural settlements identified as electrified are lower than in statistics; "
-                        "Please re-adjust the calibration conditions")
                     while rural_elec_factor <= 1:
                         if i < 10:
                             self.df.loc[
@@ -1220,17 +1214,12 @@ class SettlementProcessor:
                     self.df.loc[(self.df[SET_ELEC_CURRENT] == 1) & (self.df[SET_URBAN] > 1), SET_ELEC_POP_CALIB] *= (
                             1 / urban_elec_factor)
                 else:
-                    print(
-                        "The urban settlements identified as electrified are lower than in statistics; "
-                        "Please re-adjust the calibration conditions")
-
+                    pass
                 if rural_elec_factor > 1:
                     self.df.loc[(self.df[SET_ELEC_CURRENT] == 1) & (self.df[SET_URBAN] <= 1), SET_ELEC_POP_CALIB] *= (
                             1 / rural_elec_factor)
                 else:
-                    print(
-                        "The rural settlements identified as electrified are lower than in statistics; "
-                        "Please re-adjust the calibration conditions")
+                    pass
 
                 pop_elec = self.df.loc[self.df[SET_ELEC_CURRENT] == 1, SET_ELEC_POP_CALIB].sum()
                 elec_modelled = pop_elec / total_pop
@@ -1271,8 +1260,8 @@ class SettlementProcessor:
             rural_elec_ratio = self.df.loc[(self.df[SET_ELEC_CURRENT] == 1) & (
                     self.df[SET_URBAN] <= 1), SET_ELEC_POP_CALIB].sum() / rural_pop
 
-            print('The modelled electrification rate achieved is {0:.2f}.'
-                  'Urban elec. rate is {1:.2f} and Rural elec. rate is {2:.2f}. \n'
+            print('The modelled electrification rate differ by {0:.2f}. '
+                  'Urban elec. rate differ by {1:.2f} and Rural elec. rate differ by {2:.2f}. \n'
                   'If this is not acceptable please revise this '
                   'part of the algorithm'.format(elec_modelled - elec_actual,
                                                  urban_elec_ratio - elec_actual_urban,
@@ -1942,7 +1931,7 @@ class SettlementProcessor:
         self.df.loc[self.df[SET_MIN_OFFGRID + "{}".format(year)] == SET_LCOE_SA_DIESEL + "{}".format(
             year), SET_MIN_OFFGRID_CODE + "{}".format(year)] = codes[SET_LCOE_SA_DIESEL + "{}".format(year)]
 
-    def results_columns(self, year):
+    def results_columns(self, year, time_step, prio, auto_intensification):
         """Calculate the capacity and investment requirements for each settlement
 
         Once the grid extension algorithm has been run, determine the minimum overall option,
@@ -1954,7 +1943,7 @@ class SettlementProcessor:
 
         """
 
-        logging.info('Determine minimum overall')
+        # logging.info('Determine minimum overall')
         self.df[SET_MIN_OVERALL + "{}".format(year)] = self.df[[SET_LCOE_GRID + "{}".format(year),
                                                                 SET_LCOE_SA_PV + "{}".format(year),
                                                                 SET_LCOE_MG_WIND + "{}".format(year),
@@ -1963,7 +1952,15 @@ class SettlementProcessor:
                                                                 SET_LCOE_MG_DIESEL + "{}".format(year),
                                                                 SET_LCOE_SA_DIESEL + "{}".format(year)]].T.idxmin()
 
-        logging.info('Determine minimum overall LCOE')
+        self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] == 1,
+                    SET_MIN_OVERALL + "{}".format(year)] = 'Grid' + "{}".format(year)
+
+        if (prio == 2) or (prio == 4):
+            self.df.loc[(self.df[SET_MV_DIST_PLANNED] < auto_intensification) &
+                        (self.df[SET_LCOE_GRID + "{}".format(year)] != 99),
+                        SET_MIN_OVERALL + "{}".format(year)] = 'Grid' + "{}".format(year)
+
+        # logging.info('Determine minimum overall LCOE')
         self.df[SET_MIN_OVERALL_LCOE + "{}".format(year)] = self.df[[SET_LCOE_GRID + "{}".format(year),
                                                                      SET_LCOE_SA_PV + "{}".format(year),
                                                                      SET_LCOE_MG_WIND + "{}".format(year),
@@ -1972,7 +1969,15 @@ class SettlementProcessor:
                                                                      SET_LCOE_MG_DIESEL + "{}".format(year),
                                                                      SET_LCOE_SA_DIESEL + "{}".format(year)]].T.min()
 
-        logging.info('Add technology codes')
+        self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] == 1,
+                    SET_MIN_OVERALL_LCOE + "{}".format(year)] = self.df[SET_LCOE_GRID + "{}".format(year)]
+
+        if (prio == 2) or (prio == 4):
+            self.df.loc[(self.df[SET_MV_DIST_PLANNED] < auto_intensification) &
+                        (self.df[SET_LCOE_GRID + "{}".format(year)] != 99),
+                        SET_MIN_OVERALL_LCOE + "{}".format(year)] = self.df[SET_LCOE_GRID + "{}".format(year)]
+
+        # logging.info('Add technology codes')
         codes = {SET_LCOE_GRID + "{}".format(year): 1,
                  SET_LCOE_MG_HYDRO + "{}".format(year): 7,
                  SET_LCOE_MG_WIND + "{}".format(year): 6,
