@@ -29,6 +29,10 @@ setuptools.setup(
         'pytz',
         'six',
         'xlrd',
+        'notebook',
+        'seaborn',
+        'scipy',
+        'matplotlib',
     ],
     classifiers=[
         'Programming Language :: Python :: 3',
