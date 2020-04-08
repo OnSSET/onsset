@@ -29,6 +29,9 @@ OnSSET requires Python > 3.5 with the following packages installed:
 - pytz
 - six
 - xlrd
+- notebook
+- seaborn
+- matplotlib
 
 ### Install with pip
 
