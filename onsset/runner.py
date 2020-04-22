@@ -164,7 +164,9 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
         start_year = specs_data.iloc[0][SPE_START_YEAR]
         end_year = specs_data.iloc[0][SPE_END_YEAR]
+        
 
+        
         num_people_per_hh_rural = float(specs_data.iloc[0][SPE_NUM_PEOPLE_PER_HH_RURAL])
         num_people_per_hh_urban = float(specs_data.iloc[0][SPE_NUM_PEOPLE_PER_HH_URBAN])
         max_grid_extension_dist = float(specs_data.iloc[0][SPE_MAX_GRID_EXTENSION_DIST])
@@ -254,9 +256,9 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
         # RUN_PARAM: One shall define here the years of analysis (excluding start year),
         # together with access targets per interval and timestep duration
-        yearsofanalysis = [2025, 2030]
-        eleclimits = {2025: five_year_target, 2030: 1}
-        time_steps = {2025: 7, 2030: 5}
+        yearsofanalysis = [2025]
+        eleclimits = { 2025: 1}
+        time_steps = {2025: 13}
 
         elements = ["1.Population", "2.New_Connections", "3.Capacity", "4.Investment"]
         techs = ["Grid", "SA_Diesel", "SA_PV", "MG_Diesel", "MG_PV", "MG_Wind", "MG_Hydro", "MG_Hybrid"]
@@ -274,6 +276,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
         for year in yearsofanalysis:
             eleclimit = eleclimits[year]
             time_step = time_steps[year]
+            
 
             if year - time_step == start_year:
                 grid_cap_gen_limit = time_step * annual_grid_cap_gen_limit
@@ -290,7 +293,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
             sa_diesel_investment, sa_pv_investment, mg_diesel_investment, mg_pv_investment, mg_wind_investment, \
                 mg_hydro_investment = onsseter.calculate_off_grid_lcoes(mg_hydro_calc, mg_wind_calc, mg_pv_calc,
                                                                         sa_pv_calc, mg_diesel_calc,
-                                                                        sa_diesel_calc, year, end_year, time_step)
+                                                                        sa_diesel_calc, year, end_year, time_step,diesel_techs=1)
 
             grid_investment, grid_cap_gen_limit, grid_connect_limit = \
                 onsseter.pre_electrification(grid_price, year, time_step, end_year, grid_calc, grid_cap_gen_limit,

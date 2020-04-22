@@ -221,6 +221,7 @@ class Technology:
             if people == 0:
                 # If there are no people, the investment cost is zero.
                 if get_investment_cost:
+ #                   print(1)
                     return 0
                 # Otherwise we set the people low (prevent div/0 error) and continue.
                 else:
@@ -232,6 +233,7 @@ class Technology:
             if energy_per_cell == 0:
                 # If there are no people, the investment cost is zero.
                 if get_investment_cost:
+#                    print(1)
                     return 0
                 # Otherwise we set the people low (prevent div/0 error) and continue.
                 else:
@@ -259,8 +261,11 @@ class Technology:
 
         td_investment_cost = td_investment_cost * grid_penalty_ratio
         td_om_cost = td_investment_cost * self.om_of_td_lines * penalty
-        installed_capacity = peak_load / capacity_factor
-
+#        installed_capacity = peak_load / capacity_factor
+#        print(capacity_factor)
+#        print(self.capacity_factor)
+        installed_capacity = peak_load / self.capacity_factor
+        
         cap_cost = td_investment_cost * 0
         cost_dict_list = self.capital_cost.keys()
         cost_dict_list = sorted(cost_dict_list)
@@ -279,14 +284,17 @@ class Technology:
             fuel_cost = self.grid_price
 
         # Perform the time-value LCOE calculation
-        project_life = end_year - self.base_year + 1
+
+        project_life = int(end_year - self.base_year + 1)
+        
         reinvest_year = 0
-        step = start_year - self.base_year
+        step = int(start_year - self.base_year)
         # If the technology life is less than the project life, we will have to invest twice to buy it again
         if self.tech_life + step < project_life:
             reinvest_year = self.tech_life + step
 
         year = np.arange(project_life)
+            
         el_gen = np.outer(np.asarray(generation_per_year), np.ones(project_life))
         for s in range(step):
             el_gen[:, s] = 0
@@ -666,6 +674,7 @@ class SettlementProcessor:
         -------
         numpy.ndarray
         """
+
         return (diesel_price + 2 * diesel_price * diesel_truck_consumption *
                 traveltime) / diesel_truck_volume / LHV_DIESEL / efficiency
 
