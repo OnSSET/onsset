@@ -139,7 +139,7 @@ class Technology:
         self.om_of_td_lines = om_of_td_lines
 
     @classmethod
-    def set_default_values(cls, base_year, start_year, end_year, discount_rate, hv_line_type=69, hv_line_cost=53000,
+    def set_default_values(cls, base_year, start_year, end_year, discount_rate, network_adjust, hv_line_type=69, hv_line_cost=53000,
                            mv_line_type=33, mv_line_amperage_limit=8.0, mv_line_cost=7000, lv_line_type=0.240,
                            lv_line_cost=4250, lv_line_max_length=0.5, service_transf_type=50, service_transf_cost=4250,
                            max_nodes_per_serv_trans=300, mv_lv_sub_station_type=400, mv_lv_sub_station_cost=10000,
@@ -154,12 +154,12 @@ class Technology:
         # RUN_PARAM: Here are the assumptions related to cost and physical properties of grid extension elements
         cls.discount_rate = discount_rate
         cls.hv_line_type = hv_line_type  # kV
-        cls.hv_line_cost = hv_line_cost  # $/km for 69kV
+        cls.hv_line_cost = hv_line_cost * network_adjust # $/km for 69kV
         cls.mv_line_type = mv_line_type  # kV
         cls.mv_line_amperage_limit = mv_line_amperage_limit  # Ampere (A)
-        cls.mv_line_cost = mv_line_cost  # $/km  for 11-33 kV
+        cls.mv_line_cost = mv_line_cost * network_adjust  # $/km  for 11-33 kV
         cls.lv_line_type = lv_line_type  # kV
-        cls.lv_line_cost = lv_line_cost  # $/km
+        cls.lv_line_cost = lv_line_cost * network_adjust # $/km
         cls.lv_line_max_length = lv_line_max_length  # km
         cls.service_transf_type = service_transf_type  # kVa
         cls.service_transf_cost = service_transf_cost  # $/unit
