@@ -221,26 +221,27 @@ class Technology:
             if people == 0:
                 # If there are no people, the investment cost is zero.
                 if get_investment_cost:
- #                   print(1)
-                    return 0
+                    
+                   return 0
                 # Otherwise we set the people low (prevent div/0 error) and continue.
                 else:
                     people = 0.00001
         else:
             people = np.maximum(people, 0.00001)
+            
 
         if type(energy_per_cell) == int or type(energy_per_cell) == float or type(energy_per_cell) == np.float64:
             if energy_per_cell == 0:
                 # If there are no people, the investment cost is zero.
                 if get_investment_cost:
-#                    print(1)
+                    
                     return 0
                 # Otherwise we set the people low (prevent div/0 error) and continue.
-                else:
+#                else:
                     energy_per_cell = 0.000000000001
         else:
             energy_per_cell = np.maximum(energy_per_cell, 0.000000000001)
-
+            
         grid_penalty_ratio = np.maximum(1, grid_penalty_ratio)
 
         generation_per_year, peak_load, td_investment_cost = self.td_network_cost(people,
