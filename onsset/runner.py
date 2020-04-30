@@ -223,12 +223,12 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                     grid_calc = i
             
             
-            invesments['Grid'], grid_cap_gen_limit, grid_connect_limit = \
+            invesments['Grid'+ "{}".format(year)], grid_cap_gen_limit, grid_connect_limit = \
                 onsseter.pre_electrification(grid_price, year, time_step, end_year, grid_calc, grid_cap_gen_limit,
                                              grid_connect_limit)
 
             onsseter.df[SET_LCOE_GRID + "{}".format(year)], onsseter.df[SET_MIN_GRID_DIST + "{}".format(year)], \
-            onsseter.df[SET_ELEC_ORDER + "{}".format(year)], onsseter.df[SET_MV_CONNECT_DIST], grid_investment = \
+            onsseter.df[SET_ELEC_ORDER + "{}".format(year)], onsseter.df[SET_MV_CONNECT_DIST], invesments['Grid'+ "{}".format(year)] = \
                 onsseter.elec_extension(grid_calc,
                                         max_grid_extension_dist,
                                         year,
@@ -239,9 +239,9 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                                         grid_connect_limit,
                                         auto_intensification=auto_intensification,
                                         prioritization=prioritization,
-                                        new_investment=grid_investment)
+                                        new_investment=invesments['Grid'+ "{}".format(year)])
 
-            onsseter.results_columns(year, time_step, prioritization, auto_intensification)
+            onsseter.results_columns(year, time_step, prioritization, auto_intensification, technologies)
 
             onsseter.calculate_investments(invesments, year)
 

@@ -21,3 +21,4 @@ scenario(specs_path, calibrated_csv_path, results_folder, summary_folder)
 # step = int(start_year - self.base_year) in get_lcoe
 # if wind is equal to 0, the invesment in that row is nan, leading to a lot of problems in the summary.csv
 # print(self.capacity_factor)  for   installed_capacity = peak_load / self.capacity_factor
+#check the hydro =>A df with all hydro-power sites, to ensure that they aren't assigned more capacity than is available
