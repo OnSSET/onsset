@@ -176,7 +176,7 @@ class Technology:
     def get_lcoe(self, energy_per_cell, people, num_people_per_hh, start_year, end_year, new_connections,
                  total_energy_per_cell, prev_code, grid_cell_area, additional_mv_line_length=0.0,
                  capacity_factor=0.9, grid_penalty_ratio=1, fuel_cost=0, elec_loop=0, productive_nodes=0,
-                 additional_transformer=0, penalty=1, get_investment_cost=False):
+                 additional_transformer=0, penalty=1, compatability=0, get_investment_cost=False):
         """Calculates the LCOE depending on the parameters. Optionally calculates the investment cost instead.
 
         Parameters
@@ -475,7 +475,7 @@ class Technology:
 
     def td_network_cost(self, people, new_connections, prev_code, total_energy_per_cell, energy_per_cell,
                         num_people_per_hh, grid_cell_area, additional_mv_line_length=0, additional_transformer=0,
-                        productive_nodes=0, elec_loop=0, penalty=1):
+                        productive_nodes=0, elec_loop=0, penalty=1, compat=0):
         """Calculates all the transmission and distribution network components
 
         Parameters
@@ -529,6 +529,16 @@ class Technology:
         peak_load_additional = np.maximum(peak_load_total - peak_load_existing, 0)
         total_nodes_additional = np.maximum(total_nodes_total - total_nodes_existing, 0)
 
+        if compat == 2:
+            mv_lines_distribution_length_additional = np.where(prev_code !=1, cluster_lv_lines_length_total, mv_lines_distribution_length_additional)
+            total_lv_lines_length_additional = np.where(prev_code !=1, cluster_lv_lines_length_total, total_lv_lines_length_additional)
+            num_transformers_additional = np.where(prev_code !=1, no_of_service_transf_total, num_transformers_additional)
+
+        if compat >= 1:
+            generation_per_year_additional = np.where(prev_code != 1, generation_per_year_total, generation_per_year_additional)
+            peak_load_additional = np.where(prev_code != 1, peak_load_total, peak_load_additional)
+            total_nodes_additional = np.where(prev_code != 1, total_nodes_total, total_nodes_additional)
+
         # Examine if there are any MV lines in the distribution network, used to determine transformer type
         mv_distribution = np.where(mv_lines_distribution_length_additional > 0, True, False)
 
@@ -554,6 +564,14 @@ class Technology:
             np.maximum(no_of_mv_mv_substation_total - no_of_mv_mv_substation_existing, 0)
         no_of_mv_lv_substation_additional = \
             np.maximum(no_of_mv_lv_substation_total - no_of_mv_lv_substation_existing, 0)
+
+        if compat == 2:
+            hv_lines_total_length_additional = np.where(prev_code !=1, hv_lines_total_length_total, hv_lines_total_length_additional)
+            mv_lines_connection_length_additional = np.where(prev_code !=1, mv_lines_connection_length_total, mv_lines_connection_length_additional)
+            no_of_hv_lv_substation_additional = np.where(prev_code !=1, no_of_hv_lv_substation_total, no_of_hv_lv_substation_additional)
+            no_of_hv_mv_substation_additional = np.where(prev_code !=1, no_of_hv_mv_substation_total, no_of_hv_mv_substation_additional)
+            no_of_mv_mv_substation_additional = np.where(prev_code !=1, no_of_mv_mv_substation_total, no_of_mv_mv_substation_additional)
+            no_of_mv_lv_substation_additional = np.where(prev_code !=1, no_of_mv_lv_substation_total, no_of_mv_lv_substation_additional)
 
         # If no distribution network is present, perform the calculations only once
         mv_lines_distribution_length_new, total_lv_lines_length_new, num_transformers_new, generation_per_year_new, \
@@ -1655,7 +1673,7 @@ class SettlementProcessor:
         if max(self.df[SET_CAPITA_DEMAND]) == 0:
             # RUN_PARAM: This shall be changed if different urban/rural categorization is decided
             wb_tier_rural = int(rural_tier)
-            wb_tier_urban_clusters = int(rural_tier)
+            wb_tier_urban_clusters = int(urban_tier - 1)
             wb_tier_urban_centers = int(urban_tier)
 
             if wb_tier_urban_centers == 6:
@@ -1674,12 +1692,19 @@ class SettlementProcessor:
             self.df.loc[self.df[SET_URBAN] == 2, SET_NUM_PEOPLE_PER_HH] = num_people_per_hh_urban
 
             # Define per capita residential demand
-            self.df.loc[self.df[SET_URBAN] == 0, SET_CAPITA_DEMAND] = self.df[
-                SET_RESIDENTIAL_TIER + str(wb_tier_rural)]
-            self.df.loc[self.df[SET_URBAN] == 1, SET_CAPITA_DEMAND] = self.df[
+            # self.df.loc[self.df[SET_URBAN] == 0, SET_CAPITA_DEMAND] = self.df[
+            #     SET_RESIDENTIAL_TIER + str(wb_tier_rural)]
+            # self.df.loc[self.df[SET_URBAN] == 1, SET_CAPITA_DEMAND] = self.df[
+            #     SET_RESIDENTIAL_TIER + str(wb_tier_urban_clusters)]
+            # self.df.loc[self.df[SET_URBAN] == 2, SET_CAPITA_DEMAND] = self.df[
+            #     SET_RESIDENTIAL_TIER + str(wb_tier_urban_centers)]
+
+            self.df.loc[self.df[SET_POP_CALIB] > 1000, SET_CAPITA_DEMAND] = self.df[
                 SET_RESIDENTIAL_TIER + str(wb_tier_urban_clusters)]
-            self.df.loc[self.df[SET_URBAN] == 2, SET_CAPITA_DEMAND] = self.df[
+            self.df.loc[self.df[SET_POP_CALIB] > 50000, SET_CAPITA_DEMAND] = self.df[
                 SET_RESIDENTIAL_TIER + str(wb_tier_urban_centers)]
+            self.df.loc[self.df[SET_POP_CALIB] <= 1000, SET_CAPITA_DEMAND] = self.df[
+                SET_RESIDENTIAL_TIER + str(wb_tier_rural)]
 
             # TODO: REVIEW, added Tier column
             tier_1 = 38.7  # 38.7 refers to kWh/household/year. It is the mean value between Tier 1 and Tier 2
@@ -2078,7 +2103,7 @@ class SettlementProcessor:
         elif choice == 5:
             # Prioritize already electrified settlements first, then lowest investment per capita
             self.df.sort_values(by=[SET_ELEC_FINAL_CODE + "{}".format(year - time_step),
-                                    SET_INVEST_PER_CAPITA + "{}".format(year)], inplace=True)
+                                    SET_MIN_OVERALL_LCOE + "{}".format(year)], inplace=True)
 
             cumulative_pop = self.df[SET_POP + "{}".format(year)].cumsum()
 

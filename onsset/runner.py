@@ -123,15 +123,15 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder, ge
     specs_data = pd.read_excel(specs_path, sheet_name='SpecsDataCalib')
     logging.info(specs_data.loc[0, SPE_COUNTRY])
 
-    population = [1]
-    pv_cost = [0, 1, 2, 3, 4]
-    grid_cost = [0, 1, 2, 3, 4]
-    discount_rate = [0, 1, 2, 3]
+    population = [0, 1, 2, 3]
+    pv_cost = [1, 2, 3]
+    grid_cost = [1, 2, 3]
+    discount_rate = [0, 1, 2]
     demand = [0, 1]
-    grid_options = [0, 1, 2]
-    distribution = [0, 1, 2, 3, 4]
+    grid_options = [0]
+    distribution = [2]  # TODO
 
-    for pop in population:
+    for pop in population: # USING POP FOR GRID GEN CAP
         for pv in pv_cost:
             for grid in grid_cost:
                 for discount in discount_rate:
@@ -144,6 +144,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder, ge
                                 rural_tier = scenario_parameters.iloc[dem]['RuralTargetTier']
                                 urban_tier = scenario_parameters.iloc[dem]['UrbanTargetTier']
                                 five_year_target = scenario_parameters.iloc[dem]['5YearTarget']
+                                annual_grid_cap_gen_limit = scenario_parameters.loc[pop]['NewGridGenerationCapacityAnnualLimitMW']
                                 if option < 3:
                                     annual_new_grid_connections_limit = scenario_parameters.iloc[option]['GridConnectionsLimitThousands'] * 1000
                                 else:
@@ -153,7 +154,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder, ge
                                 pv_capital_cost_adjust = general_parameters.iloc[pv]['PV_Cost_adjust']
                                 prioritization = general_parameters.iloc[option]['PrioritizationAlgorithm']
                                 auto_intensification = general_parameters.iloc[option]['AutoIntensificationKM']
-                                end_year_pop = general_parameters.iloc[pop]['PopEndYear']
+                                end_year_pop = general_parameters.iloc[1]['PopEndYear'] # TODO
                                 discountrate = general_parameters.iloc[discount]['DiscountRate']
                                 network_adjust = general_parameters.iloc[dist]['MVCost']
                                 max_grid_extension_dist = general_parameters.iloc[option]['MVLineDist']
@@ -179,7 +180,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder, ge
                                 num_people_per_hh_rural = float(specs_data.iloc[0][SPE_NUM_PEOPLE_PER_HH_RURAL])
                                 num_people_per_hh_urban = float(specs_data.iloc[0][SPE_NUM_PEOPLE_PER_HH_URBAN])
                                 # max_grid_extension_dist = float(specs_data.iloc[0][SPE_MAX_GRID_EXTENSION_DIST])
-                                annual_grid_cap_gen_limit = specs_data.loc[0, 'NewGridGenerationCapacityAnnualLimitMW'] * 1000
+
 
                                 # RUN_PARAM: Fill in general and technology specific parameters (e.g. discount rate, losses etc.)
                                 Technology.set_default_values(base_year=start_year,
@@ -270,9 +271,9 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder, ge
                                 eleclimits = {2025: five_year_target, 2030: 1}
                                 time_steps = {2025: 7, 2030: 5}
 
-                                yearsofanalysis = [2030]
-                                eleclimits = {2030: 1}
-                                time_steps = {2030: 12}
+                                # yearsofanalysis = [2030]
+                                # eleclimits = {2030: 1}
+                                # time_steps = {2030: 12}
 
                                 elements = ["1.Population", "2.New_Connections", "3.Capacity", "4.Investment"]
                                 techs = ["Grid", "SA_Diesel", "SA_PV", "MG_Diesel", "MG_PV", "MG_Wind", "MG_Hydro", "MG_Hybrid"]
@@ -298,11 +299,12 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder, ge
                                     time_step = time_steps[year]
 
                                     if year - time_step == start_year:
-                                        grid_cap_gen_limit = 9999999999
-                                        #grid_cap_gen_limit = time_step * annual_grid_cap_gen_limit
-                                        grid_connect_limit = time_step * annual_new_grid_connections_limit
+                                        grid_cap_gen_limit = time_step * annual_grid_cap_gen_limit * 1000
+                                        grid_connect_limit = 9999999999
+                                        # grid_connect_limit = time_step * annual_new_grid_connections_limit
                                     else:
-                                        grid_cap_gen_limit = 9999999999
+                                        # grid_cap_gen_limit = 9999999999
+                                        grid_cap_gen_limit = time_step * annual_grid_cap_gen_limit * 1000
                                         grid_connect_limit = 9999999999
 
                                     onsseter.set_scenario_variables(year, num_people_per_hh_rural, num_people_per_hh_urban, time_step,
