@@ -1,5 +1,5 @@
 import os
-from runner import calibration, scenario
+from runner import scenario
 
 
 # 'Database_lower_ElecPopCalib.csv'

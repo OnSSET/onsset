@@ -16,3 +16,8 @@ new_conections = data[8:16]['2025'].sum()
 
 #%%
 data_2 = pd.read_csv('Bolivia/bo-1-0_0_0_0_0_0.csv')  
+
+
+#%%
+
+data_3 = pd.read_csv('Bolivia/Old_result.csv')  

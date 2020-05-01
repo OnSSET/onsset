@@ -240,7 +240,8 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                                         auto_intensification=auto_intensification,
                                         prioritization=prioritization,
                                         new_investment=invesments['Grid'+ "{}".format(year)])
-
+            
+            
             onsseter.results_columns(year, time_step, prioritization, auto_intensification, technologies)
 
             onsseter.calculate_investments(invesments, year)

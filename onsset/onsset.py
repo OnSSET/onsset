@@ -225,7 +225,7 @@ class Technology:
             if people == 0:
                 # If there are no people, the investment cost is zero.
                 if get_investment_cost:
-                    
+                    print(1)
                    return 0
                 # Otherwise we set the people low (prevent div/0 error) and continue.
                 else:
@@ -1598,7 +1598,7 @@ class SettlementProcessor:
 
         if year - time_step == start_year:
             # Assign new connections to those that are already electrified to a certain percent
-            self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] < 99),
+            self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] != 99),
                         SET_NEW_CONNECTIONS + "{}".format(year)] = \
                 (self.df[SET_POP + "{}".format(year)] - self.df[SET_ELEC_POP_CALIB])
             # Assign new connections to those that are not currently electrified
@@ -1948,14 +1948,16 @@ class SettlementProcessor:
 
         # logging.info('Determine minimum overall')
         tech_list = []
-        for i in technologies[1:]:
+        for i in technologies:
             tech_list.append(i.name + "{}".format(year))
-        
+            
+                
+            
         self.df[SET_MIN_OVERALL + "{}".format(year)] = self.df[tech_list].T.idxmin()
 
-        self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] == 1,
+        self.df.loc[self.df[SET_ELEC_FINAL + "{}".format(year - time_step)] == 1,
                     SET_MIN_OVERALL + "{}".format(year)] = 'Grid' + "{}".format(year)
-
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
         if (prio == 2) or (prio == 4):
             self.df.loc[(self.df[SET_MV_DIST_PLANNED] < auto_intensification) &
                         (self.df[SET_LCOE_GRID + "{}".format(year)] != 99),
@@ -2017,7 +2019,7 @@ class SettlementProcessor:
         if choice == 4:
             # Choose only already electrified settlements and settlements within intensification target range,
             # regardless of target electrification rate
-            self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] < 99),
+            self.df.loc[(self.df[SET_ELEC_FINAL + "{}".format(year - time_step)] < 99),
                         SET_LIMIT + "{}".format(year)] = 1
             self.df.loc[self.df[SET_MV_DIST_PLANNED] < auto_densification, SET_LIMIT + "{}".format(year)] = 1
 
@@ -2030,7 +2032,7 @@ class SettlementProcessor:
 
             self.df['Intensification'] = np.where(self.df[SET_MV_DIST_PLANNED] < auto_densification, 1, 0)
 
-            self.df.sort_values(by=[SET_ELEC_FINAL_CODE + "{}".format(year - time_step),
+            self.df.sort_values(by=[SET_ELEC_FINAL + "{}".format(year - time_step),
                                     'Intensification',
                                     SET_INVEST_PER_CAPITA + "{}".format(year)], inplace=True)
 
@@ -2043,7 +2045,7 @@ class SettlementProcessor:
             self.df.sort_index(inplace=True)
 
             # Ensure already electrified settlements remain electrified
-            self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] < 99),
+            self.df.loc[(self.df[SET_ELEC_FINAL + "{}".format(year - time_step)] < 99),
                         SET_LIMIT + "{}".format(year)] = 1
 
         elif choice == 5:

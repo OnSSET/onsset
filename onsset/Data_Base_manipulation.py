@@ -8,6 +8,7 @@ Created on Tue Apr 14 21:34:50 2020
 
 import pandas as pd
 from random import shuffle
+import numpy as np
 
 #%%
 data = pd.read_csv('Bolivia/Database_new.csv')  
@@ -50,7 +51,28 @@ data.loc[7797,  'ElecStart'] = 0
 data.loc[9620,  'ElecStart'] = 0
 data.loc[13070, 'ElecStart'] = 0
 
-data.to_csv('Bolivia/Database_new_1.csv')
+# Change FinalElecCode2012
+
+#codes = {7: 'MG_Hydro',
+#         6: 'MG_Wind',
+#         5: 'MG_PV',
+#         4: 'MG_Diesel',
+#         3: 'SA_PV',
+#         2: 'SA_Diesel',
+#         1: 'Grid',
+#         99: 99}
+
+#for i in data.index:
+#    tech =  codes[data.loc[i, 'FinalElecCode2012']]
+#    data.loc[i, 'FinalElecCode2012'] = tech
+
+data['FinalElecCode2012'] = np.where(data['FinalElecCode2012'] == 1, 1, 99)
+
+
+ 
+    
+
+data.to_csv('Bolivia/Database_new_2.csv')
 
 #%%
 
