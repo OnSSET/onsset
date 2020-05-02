@@ -87,6 +87,7 @@ SET_RESIDENTIAL_TIER = 'ResidentialDemandTier'
 SET_MIN_TD_DIST = 'minTDdist'
 SET_SA_DIESEL_FUEL = 'SADieselFuelCost'
 SET_MG_DIESEL_FUEL = 'MGDieselFuelCost'
+SA_TECH = 'IsStandAlone?'
 
 # General
 LHV_DIESEL = 9.9445485  # (kWh/l) lower heating value
@@ -226,7 +227,7 @@ class Technology:
                 # If there are no people, the investment cost is zero.
                 if get_investment_cost:
                     print(1)
-                   return 0
+#                   return 0
                 # Otherwise we set the people low (prevent div/0 error) and continue.
                 else:
                     people = 0.00001
@@ -239,7 +240,7 @@ class Technology:
                 # If there are no people, the investment cost is zero.
                 if get_investment_cost:
                     
-                    return 0
+#                    return 0
                 # Otherwise we set the people low (prevent div/0 error) and continue.
 #                else:
                     energy_per_cell = 0.000000000001
@@ -1709,21 +1710,22 @@ class SettlementProcessor:
                 self.df[SET_CAPITA_DEMAND] += self.df[SET_EDU_DEMAND]
 
     def calculate_total_demand_per_settlement(self, year):
-        """this method calculates total demand for each settlement per year
+        """this method calculates total demand for each settlement per year. First it calculates 
+        the demand of the new conections, then it calculates the demand for the whole system.
 
         Arguments
         ---------
         year : int
 
         """
-
+        # New Connections demand
         self.df.loc[self.df[SET_URBAN] == 0, SET_ENERGY_PER_CELL + "{}".format(year)] = \
             self.df[SET_CAPITA_DEMAND] * self.df[SET_NEW_CONNECTIONS + "{}".format(year)]
         self.df.loc[self.df[SET_URBAN] == 1, SET_ENERGY_PER_CELL + "{}".format(year)] = \
             self.df[SET_CAPITA_DEMAND] * self.df[SET_NEW_CONNECTIONS + "{}".format(year)]
         self.df.loc[self.df[SET_URBAN] == 2, SET_ENERGY_PER_CELL + "{}".format(year)] = \
             self.df[SET_CAPITA_DEMAND] * self.df[SET_NEW_CONNECTIONS + "{}".format(year)]
-
+        # Total demand of the comunity/city
         # if year - time_step == start_year:
         self.df.loc[self.df[SET_URBAN] == 0, SET_TOTAL_ENERGY_PER_CELL] = \
             self.df[SET_CAPITA_DEMAND] * self.df[SET_POP + "{}".format(year)]
@@ -1731,9 +1733,17 @@ class SettlementProcessor:
             self.df[SET_CAPITA_DEMAND] * self.df[SET_POP + "{}".format(year)]
         self.df.loc[self.df[SET_URBAN] == 2, SET_TOTAL_ENERGY_PER_CELL] = \
             self.df[SET_CAPITA_DEMAND] * self.df[SET_POP + "{}".format(year)]
+            
+    def set_sa_communities(self, technologies, year, time_step):
+        
+        self.df[SA_TECH] = False
+        for i in technologies:
+            if i.standalone == True:
+                self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] == i.name, SA_TECH] = True
+        
 
     def set_scenario_variables(self, year, num_people_per_hh_rural, num_people_per_hh_urban, time_step, start_year,
-                               urban_tier, rural_tier, end_year_pop, productive_demand):
+                               urban_tier, rural_tier, end_year_pop, productive_demand, technologies):
         """
         this method determines some basic parameters required in LCOE calculation
         it sets the basic scenario parameters that differ based on urban/rural so that they are in the table and
@@ -1762,6 +1772,7 @@ class SettlementProcessor:
         self.set_residential_demand(rural_tier, urban_tier, num_people_per_hh_rural, num_people_per_hh_urban,
                                     productive_demand)
         self.calculate_total_demand_per_settlement(year)
+        self.set_sa_communities(technologies, year, time_step)
 
     def calculate_off_grid_lcoes(self, technologies, year, end_year, time_step):
         """

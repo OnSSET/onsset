@@ -212,7 +212,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                 grid_connect_limit = 9999999999
 
             onsseter.set_scenario_variables(year, num_people_per_hh_rural, num_people_per_hh_urban, time_step,
-                                            start_year, urban_tier, rural_tier, end_year_pop, productive_demand)
+                                            start_year, urban_tier, rural_tier, end_year_pop, productive_demand, technologies)
 
             onsseter.diesel_cost_columns(sa_diesel_cost, mg_diesel_cost, year)
 
