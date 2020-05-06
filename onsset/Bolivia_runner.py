@@ -23,3 +23,4 @@ scenario(specs_path, calibrated_csv_path, results_folder, summary_folder)
 # print(self.capacity_factor)  for   installed_capacity = peak_load / self.capacity_factor
 #check the hydro =>A df with all hydro-power sites, to ensure that they aren't assigned more capacity than is available
 # ask about the grid_cell_area effect on the calculations
+# SET_ELEC_FINAL_CODE / SET_DISTRIBUTION_NETWORK 
