@@ -38,7 +38,7 @@ data['Pop2030High'] = test['Pop2030']
 
 # Change the name of column Elecpop to ElecPopCalib
 data['ElecPopCalib'] = data['ElecPop']
-data.to_csv('Bolivia/Database_new_1.csv')
+
 data = data.drop('ElecPop',axis=1)
 
 # change the wind
@@ -47,10 +47,11 @@ data['WindCF'] = 0.3
 
 # Change small mistakes in elecstart 2012
 
-data.loc[7797,  'ElecStart'] = 0
-data.loc[9620,  'ElecStart'] = 0
-data.loc[13070, 'ElecStart'] = 0
+#data.loc[7797,  'ElecStart'] = 0
+#data.loc[9620,  'ElecStart'] = 0
+#data.loc[13070, 'ElecStart'] = 0
 
+data.to_csv('Bolivia/Database_new_1.csv')
 # Change FinalElecCode2012
 
 codes = {7: 'MG_Hydro2012',

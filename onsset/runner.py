@@ -186,16 +186,14 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
         eleclimits = {2030:1}
         time_steps = {2030:18}
 
-        elements = ["1.Population", "2.New_Connections", "3.Capacity", "4.Investment"]
-        techs = ["Grid", "SA_Diesel", "SA_PV", "MG_Diesel", "MG_PV", "MG_Wind", "MG_Hydro", "MG_Hybrid"]
-        sumtechs = []
-        for element in elements:
-            for tech in techs:
-                sumtechs.append(element + "_" + tech)
-        total_rows = len(sumtechs)
-        df_summary = pd.DataFrame(columns=yearsofanalysis)
-        for row in range(0, total_rows):
-            df_summary.loc[sumtechs[row]] = "Nan"
+#        elements = ["1.Population", "2.New_Connections", "3.Capacity", "4.Investment"]
+#        techs = ["Grid", "SA_Diesel", "SA_PV", "MG_Diesel", "MG_PV", "MG_Wind", "MG_Hydro", "MG_Hybrid"]
+#        sumtechs = []
+#        for element in elements:
+#            for tech in techs:
+#                sumtechs.append(element + "_" + tech)
+#        total_rows = len(sumtechs)
+        df_summary = pd.DataFrame()
 
         onsseter.current_mv_line_dist()
 
@@ -248,10 +246,9 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
             onsseter.apply_limitations(eleclimit, year, time_step, prioritization, auto_intensification)
 
-            onsseter.calculate_new_capacity(mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc,
-                                            sa_diesel_calc, grid_calc, year)
+            onsseter.calculate_new_capacity(technologies, year)
 
-            onsseter.calc_summaries(df_summary, sumtechs, year)
+            onsseter.calc_summaries(df_summary, technologies, year)
 
         for i in range(len(onsseter.df.columns)):
             if onsseter.df.iloc[:, i].dtype == 'float64':
@@ -259,7 +256,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
             elif onsseter.df.iloc[:, i].dtype == 'int64':
                 onsseter.df.iloc[:, i] = pd.to_numeric(onsseter.df.iloc[:, i], downcast='signed')
 
-        df_summary.to_csv(summary_csv, index=sumtechs)
+        df_summary.to_csv(summary_csv)
         onsseter.df.to_csv(settlements_out_csv, index=False)
 
         logging.info('Finished')
