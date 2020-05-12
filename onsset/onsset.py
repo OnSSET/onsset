@@ -226,7 +226,7 @@ class Technology:
             if people == 0:
                 # If there are no people, the investment cost is zero.
                 if get_investment_cost:
-
+                    
                     return 0
                 # Otherwise we set the people low (prevent div/0 error) and continue.
                 else:
@@ -242,7 +242,7 @@ class Technology:
                     
                     return 0
                 # Otherwise we set the people low (prevent div/0 error) and continue.
-#                else:
+                else:
                     energy_per_cell = 0.000000000001
         else:
             energy_per_cell = np.maximum(energy_per_cell, 0.000000000001)
@@ -1739,7 +1739,8 @@ class SettlementProcessor:
         self.df[SET_DISTRIBUTION_NETWORK+ "{}".format(year - time_step)] = True
         for i in technologies:
             if i.standalone == True:
-                self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] == i.name,\
+                
+                self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] == i.name+ "{}".format(year - time_step),\
                                     SET_DISTRIBUTION_NETWORK + "{}".format(year - time_step)] = False
      
 
@@ -2155,7 +2156,7 @@ class SettlementProcessor:
                 
         # New_Connection Summaries    
         for j in technologies:
-                name = '2.New_Connections_Grid' + j.name                        
+                name = '2.New_Connections_' + j.name                        
                 df_summary.loc[name,year] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == j.name + "{}".format(year)) &
                                                         (self.df[SET_LIMIT + "{}".format(year)] == 1)]
                                             [SET_NEW_CONNECTIONS + "{}".format(year)])

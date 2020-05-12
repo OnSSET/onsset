@@ -182,9 +182,9 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
         # RUN_PARAM: One shall define here the years of analysis (excluding start year),
         # together with access targets per interval and timestep duration
-        yearsofanalysis = [2030]
-        eleclimits = {2030:1}
-        time_steps = {2030:18}
+        yearsofanalysis = [2020, 2030]
+        eleclimits = {2020:0.9,2030:1}
+        time_steps = {2020:8,2030:18}
 
 #        elements = ["1.Population", "2.New_Connections", "3.Capacity", "4.Investment"]
 #        techs = ["Grid", "SA_Diesel", "SA_PV", "MG_Diesel", "MG_PV", "MG_Wind", "MG_Hydro", "MG_Hybrid"]
