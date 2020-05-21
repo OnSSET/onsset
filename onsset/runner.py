@@ -280,7 +280,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                 grid_connect_limit = time_step * annual_new_grid_connections_limit
             else:
                 grid_cap_gen_limit = 9999999999
-                grid_connect_limit = 9999999999
+                grid_connect_limit = time_step * annual_new_grid_connections_limit
 
             onsseter.set_scenario_variables(year, num_people_per_hh_rural, num_people_per_hh_urban, time_step,
                                             start_year, urban_tier, rural_tier, end_year_pop, productive_demand)

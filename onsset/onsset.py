@@ -1355,12 +1355,14 @@ class SettlementProcessor:
                 = self.update_grid_extension_info(grid_lcoe=intensification_lcoe, dist=mv_planned,
                                                   dist_adjusted=mv_dist_adjusted, prev_dist=0, elecorder=elecorder,
                                                   new_elec_order=1, max_dist=max_dist, new_lcoes=new_lcoes,
-                                                  grid_capacity_limit=grid_capacity_limit,
-                                                  grid_connect_limit=grid_connect_limit, cell_path_real=cell_path_real,
+                                                  grid_capacity_limit=999999999,
+                                                  grid_connect_limit=999999999, cell_path_real=cell_path_real,
                                                   cell_path_adjusted=cell_path_adjusted, electrified=electrified,
                                                   year=year, grid_calc=grid_calc,
                                                   grid_investment=intensification_investment,
                                                   new_investment=new_investment)
+
+            grid_connect_limit = 0
 
         # Find the unelectrified settlements where grid can be less costly than off-grid
         filter_lcoe, filter_investment = self.get_grid_lcoe(0, 0, 0, year, time_step, end_year, grid_calc)
