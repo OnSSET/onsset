@@ -2046,7 +2046,7 @@ class SettlementProcessor:
 
             cumulative_pop = self.df[SET_POP + "{}".format(year)].cumsum()
 
-            self.df[SET_LIMIT + "{}".format(year)] = np.where(cumulative_pop < elec_target_pop, 1, 0)
+            self.df[SET_LIMIT + "{}".format(year)] = np.where(cumulative_pop < elec_target_pop, 0, 1)
 
             del self.df['Intensification']
 
