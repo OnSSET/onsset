@@ -1753,7 +1753,7 @@ class SettlementProcessor:
         self.calculate_total_demand_per_settlement(year)
 
     def calculate_off_grid_lcoes(self, mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc,
-                                 sa_diesel_calc, year, end_year, time_step, diesel_techs=0):
+                                 sa_diesel_calc, year, end_year, time_step):
         """
         Calculate the LCOEs for all off-grid technologies
 
@@ -1800,39 +1800,22 @@ class SettlementProcessor:
                                   capacity_factor=self.df[SET_WINDCF])
         self.df.loc[self.df[SET_WINDCF] <= 0.1, SET_LCOE_MG_WIND + "{}".format(year)] = 99
 
-        if diesel_techs == 0:
-            self.df[SET_LCOE_MG_DIESEL + "{}".format(year)] = 99
-            self.df[SET_LCOE_SA_DIESEL + "{}".format(year)] = 99
-            sa_diesel_investment = mg_pv_investment * 0
-            mg_diesel_investment = mg_pv_investment * 0
-        else:
-            logging.info('Calculate minigrid diesel LCOE')
-            self.df[SET_LCOE_MG_DIESEL + "{}".format(year)], mg_diesel_investment = \
-                mg_diesel_calc.get_lcoe(energy_per_cell=self.df[SET_ENERGY_PER_CELL + "{}".format(year)],
-                                        start_year=year - time_step,
-                                        end_year=end_year,
-                                        people=self.df[SET_POP + "{}".format(year)],
-                                        new_connections=self.df[SET_NEW_CONNECTIONS + "{}".format(year)],
-                                        total_energy_per_cell=self.df[SET_TOTAL_ENERGY_PER_CELL],
-                                        prev_code=self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
-                                        num_people_per_hh=self.df[SET_NUM_PEOPLE_PER_HH],
-                                        grid_cell_area=self.df[SET_GRID_CELL_AREA],
-                                        fuel_cost=self.df[SET_MG_DIESEL_FUEL + "{}".format(year)],
-                                        )
+        self.df[SET_LCOE_SA_DIESEL + "{}".format(year)] = 99
+        sa_diesel_investment = mg_pv_investment * 0
 
-            logging.info('Calculate standalone diesel LCOE')
-            self.df[SET_LCOE_SA_DIESEL + "{}".format(year)], sa_diesel_investment = \
-                sa_diesel_calc.get_lcoe(energy_per_cell=self.df[SET_ENERGY_PER_CELL + "{}".format(year)],
-                                        start_year=year - time_step,
-                                        end_year=end_year,
-                                        people=self.df[SET_POP + "{}".format(year)],
-                                        new_connections=self.df[SET_NEW_CONNECTIONS + "{}".format(year)],
-                                        total_energy_per_cell=self.df[SET_TOTAL_ENERGY_PER_CELL],
-                                        prev_code=self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
-                                        num_people_per_hh=self.df[SET_NUM_PEOPLE_PER_HH],
-                                        grid_cell_area=self.df[SET_GRID_CELL_AREA],
-                                        fuel_cost=self.df[SET_SA_DIESEL_FUEL + "{}".format(year)],
-                                        )
+        logging.info('Calculate minigrid diesel LCOE')
+        self.df[SET_LCOE_MG_DIESEL + "{}".format(year)], mg_diesel_investment = \
+            mg_diesel_calc.get_lcoe(energy_per_cell=self.df[SET_ENERGY_PER_CELL + "{}".format(year)],
+                                    start_year=year - time_step,
+                                    end_year=end_year,
+                                    people=self.df[SET_POP + "{}".format(year)],
+                                    new_connections=self.df[SET_NEW_CONNECTIONS + "{}".format(year)],
+                                    total_energy_per_cell=self.df[SET_TOTAL_ENERGY_PER_CELL],
+                                    prev_code=self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
+                                    num_people_per_hh=self.df[SET_NUM_PEOPLE_PER_HH],
+                                    grid_cell_area=self.df[SET_GRID_CELL_AREA],
+                                    fuel_cost=self.df[SET_MG_DIESEL_FUEL + "{}".format(year)],
+                                    )
 
         logging.info('Calculate standalone PV LCOE')
         self.df[SET_LCOE_SA_PV + "{}".format(year)], sa_pv_investment = \
