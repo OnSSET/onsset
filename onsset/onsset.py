@@ -139,8 +139,8 @@ class Technology:
         self.om_of_td_lines = om_of_td_lines
 
     @classmethod
-    def set_default_values(cls, base_year, start_year, end_year, discount_rate, hv_line_type=69, hv_line_cost=53000,
-                           mv_line_type=33, mv_line_amperage_limit=8.0, mv_line_cost=7000, lv_line_type=0.240,
+    def set_default_values(cls, base_year, start_year, end_year, discount_rate, hv_line_type=69, hv_line_cost=123000,
+                           mv_line_type=33, mv_line_amperage_limit=8.0, mv_line_cost=57000, lv_line_type=0.240,
                            lv_line_cost=4250, lv_line_max_length=0.5, service_transf_type=50, service_transf_cost=4250,
                            max_nodes_per_serv_trans=300, mv_lv_sub_station_type=400, mv_lv_sub_station_cost=10000,
                            mv_mv_sub_station_cost=10000, hv_lv_sub_station_type=1000, hv_lv_sub_station_cost=25000,
@@ -1937,8 +1937,8 @@ class SettlementProcessor:
                                                                 SET_LCOE_MG_DIESEL + "{}".format(year),
                                                                 SET_LCOE_SA_DIESEL + "{}".format(year)]].T.idxmin()
 
-        self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] == 1,
-                    SET_MIN_OVERALL + "{}".format(year)] = 'Grid' + "{}".format(year)
+        # self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] == 1,
+        #             SET_MIN_OVERALL + "{}".format(year)] = 'Grid' + "{}".format(year)
 
         if (prio == 2) or (prio == 4):
             self.df.loc[(self.df[SET_MV_DIST_PLANNED] < auto_intensification) &
