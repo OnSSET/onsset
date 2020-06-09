@@ -1635,6 +1635,8 @@ class SettlementProcessor:
 
         logging.info('Setting electrification demand as per target per year')
 
+        productive_demand_factor = 1.5 #  Increases demand by X % in all settlements as proxy for productive uses
+
         if max(self.df[SET_CAPITA_DEMAND]) == 0:
             # RUN_PARAM: This shall be changed if different urban/rural categorization is decided
             wb_tier_rural = int(rural_tier)
@@ -1658,17 +1660,17 @@ class SettlementProcessor:
 
             # Define per capita residential demand
             self.df.loc[self.df[SET_URBAN] == 0, SET_CAPITA_DEMAND] = self.df[
-                SET_RESIDENTIAL_TIER + str(wb_tier_rural)]
+                SET_RESIDENTIAL_TIER + str(wb_tier_rural)] * productive_demand_factor
             self.df.loc[self.df[SET_URBAN] == 1, SET_CAPITA_DEMAND] = self.df[
-                SET_RESIDENTIAL_TIER + str(wb_tier_urban_clusters)]
+                SET_RESIDENTIAL_TIER + str(wb_tier_urban_clusters)] * productive_demand_factor
             self.df.loc[self.df[SET_URBAN] == 2, SET_CAPITA_DEMAND] = self.df[
-                SET_RESIDENTIAL_TIER + str(wb_tier_urban_centers)]
+                SET_RESIDENTIAL_TIER + str(wb_tier_urban_centers)] * productive_demand_factor
 
             # TODO: REVIEW, added Tier column
-            tier_1 = 38.7  # 38.7 refers to kWh/household/year. It is the mean value between Tier 1 and Tier 2
-            tier_2 = 219
-            tier_3 = 803
-            tier_4 = 2117
+            tier_1 = 38.7 * productive_demand_factor # 38.7 refers to kWh/household/year. It is the mean value between Tier 1 and Tier 2
+            tier_2 = 219 * productive_demand_factor
+            tier_3 = 803 * productive_demand_factor
+            tier_4 = 2117 * productive_demand_factor
 
             self.df[SET_TIER] = 5
             self.df.loc[self.df[SET_CAPITA_DEMAND] * self.df[SET_NUM_PEOPLE_PER_HH] < tier_4, SET_TIER] = 4
