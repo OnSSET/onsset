@@ -324,7 +324,7 @@ class Technology:
 
         discounted_investments = investments / discount_factor
         dicounted_grid_capacity_investments = grid_capacity_investments / discount_factor
-        investment_cost = np.sum(discounted_investments, axis=1) + np.sum(dicounted_grid_capacity_investments, axis=1)
+        investment_cost = np.sum(investments, axis=1) + np.sum(grid_capacity_investments, axis=1)
         discounted_costs = (investments + operation_and_maintenance + fuel - salvage) / discount_factor
         discounted_generation = el_gen / discount_factor
         lcoe = np.sum(discounted_costs, axis=1) / np.sum(discounted_generation, axis=1)
