@@ -1987,6 +1987,14 @@ class SettlementProcessor:
 
         logging.info('Calculate investment cost')
 
+        sa_diesel_investment.fillna(0, inplace=True)
+        sa_pv_investment.fillna(0, inplace=True)
+        mg_diesel_investment.fillna(0, inplace=True)
+        mg_pv_investment.fillna(0, inplace=True)
+        mg_wind_investment.fillna(0, inplace=True)
+        mg_hydro_investment.fillna(0, inplace=True)
+        grid_investment.fillna(0, inplace=True)
+
         self.df[SET_INVESTMENT_COST + "{}".format(year)] = 0
 
         grid = pd.DataFrame(np.where(self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 1, 1, 0))
@@ -2000,6 +2008,8 @@ class SettlementProcessor:
         self.df[SET_INVESTMENT_COST + "{}".format(year)] = grid * grid_investment + sa_diesel * sa_diesel_investment + \
             sa_pv * sa_pv_investment + mg_diesel * mg_diesel_investment + mg_pv * mg_pv_investment + \
             mg_wind * mg_wind_investment + mg_hydro * mg_hydro_investment
+
+        1+1
 
     def apply_limitations(self, eleclimit, year, time_step, prioritization, auto_densification=0):
 
