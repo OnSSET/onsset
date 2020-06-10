@@ -2124,46 +2124,37 @@ class SettlementProcessor:
                 (HOURS_PER_YEAR * (self.df[SET_GHI] / HOURS_PER_YEAR) * sa_pv_calc.base_to_peak_load_ratio *
                  (1 - sa_pv_calc.distribution_losses)))
 
-    def calc_summaries(self, df_summary, sumtechs, year):
+    def calc_summaries(self, df_summary, sumtechs, year, time_step):
 
         """The next section calculates the summaries for technology split,
         consumption added and total investment cost"""
 
         logging.info('Calculate summaries')
 
-        # Population Summaries
-        df_summary[year][sumtechs[0]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 1) &
-                                                        (self.df[SET_LIMIT + "{}".format(year)] == 1)]
-                                            [SET_POP + "{}".format(year)])
+        # Population Summaries 2018
+        df_summary[2018][sumtechs[0]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(2018)] == 1)]
+                                            [SET_POP + "{}".format(2018)])
 
-        df_summary[year][sumtechs[1]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 2) &
-                                                        (self.df[SET_LIMIT + "{}".format(year)] == 1)]
-                                            [SET_POP + "{}".format(year)])
+        df_summary[2018][sumtechs[1]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(2018)] == 2)]
+                                            [SET_POP + "{}".format(2018)])
 
-        df_summary[year][sumtechs[2]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 3) &
-                                                        (self.df[SET_LIMIT + "{}".format(year)] == 1) & (
-                                                                self.df[SET_POP + "{}".format(year)] > 0)]
-                                            [SET_POP + "{}".format(year)])
+        df_summary[2018][sumtechs[2]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(2018)] == 3)]
+                                            [SET_POP + "{}".format(2018)])
 
-        df_summary[year][sumtechs[3]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 4) &
-                                                        (self.df[SET_LIMIT + "{}".format(year)] == 1)]
-                                            [SET_POP + "{}".format(year)])
+        df_summary[2018][sumtechs[3]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(2018)] == 4)]
+                                            [SET_POP + "{}".format(2018)])
 
-        df_summary[year][sumtechs[4]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 5) &
-                                                        (self.df[SET_LIMIT + "{}".format(year)] == 1)]
-                                            [SET_POP + "{}".format(year)])
+        df_summary[2018][sumtechs[4]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(2018)] == 5)]
+                                            [SET_POP + "{}".format(2018)])
 
-        df_summary[year][sumtechs[5]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 6) &
-                                                        (self.df[SET_LIMIT + "{}".format(year)] == 1)]
-                                            [SET_POP + "{}".format(year)])
+        df_summary[2018][sumtechs[5]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(2018)] == 6)]
+                                            [SET_POP + "{}".format(2018)])
 
-        df_summary[year][sumtechs[6]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 7) &
-                                                        (self.df[SET_LIMIT + "{}".format(year)] == 1)]
-                                            [SET_POP + "{}".format(year)])
+        df_summary[2018][sumtechs[6]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(2018)] == 7)]
+                                            [SET_POP + "{}".format(2018)])
 
-        df_summary[year][sumtechs[7]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 8) &
-                                                        (self.df[SET_LIMIT + "{}".format(year)] == 1)]
-                                            [SET_POP + "{}".format(year)])
+        df_summary[2018][sumtechs[7]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(2018)] == 8)]
+                                            [SET_POP + "{}".format(2018)])
 
         # New_Connection Summaries
         df_summary[year][sumtechs[8]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 1) &
@@ -2198,6 +2189,23 @@ class SettlementProcessor:
         df_summary[year][sumtechs[15]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 8) &
                                                          (self.df[SET_LIMIT + "{}".format(year)] == 1)]
                                              [SET_NEW_CONNECTIONS + "{}".format(year)])
+
+        # Population Summaries
+        df_summary[year][sumtechs[0]] = df_summary[year-time_step][sumtechs[0]] + df_summary[year][sumtechs[8]]
+
+        df_summary[year][sumtechs[1]] = df_summary[year-time_step][sumtechs[1]] + df_summary[year][sumtechs[9]]
+
+        df_summary[year][sumtechs[2]] = df_summary[year-time_step][sumtechs[2]] + df_summary[year][sumtechs[10]]
+
+        df_summary[year][sumtechs[3]] = df_summary[year-time_step][sumtechs[3]] + df_summary[year][sumtechs[11]]
+
+        df_summary[year][sumtechs[4]] = df_summary[year-time_step][sumtechs[4]] + df_summary[year][sumtechs[12]]
+
+        df_summary[year][sumtechs[5]] = df_summary[year-time_step][sumtechs[5]] + df_summary[year][sumtechs[13]]
+
+        df_summary[year][sumtechs[6]] = df_summary[year-time_step][sumtechs[6]] + df_summary[year][sumtechs[14]]
+
+        df_summary[year][sumtechs[7]] = df_summary[year-time_step][sumtechs[7]] + df_summary[year][sumtechs[15]]
 
         # Capacity Summaries
         df_summary[year][sumtechs[16]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 1) &

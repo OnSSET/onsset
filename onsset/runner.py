@@ -264,7 +264,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
             for tech in techs:
                 sumtechs.append(element + "_" + tech)
         total_rows = len(sumtechs)
-        df_summary = pd.DataFrame(columns=yearsofanalysis)
+        df_summary = pd.DataFrame(columns=[2018, 2025, 2030])
         for row in range(0, total_rows):
             df_summary.loc[sumtechs[row]] = "Nan"
 
@@ -320,7 +320,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
             onsseter.calculate_new_capacity(mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc,
                                             sa_diesel_calc, grid_calc, year)
 
-            onsseter.calc_summaries(df_summary, sumtechs, year)
+            onsseter.calc_summaries(df_summary, sumtechs, year, time_step)
 
         for i in range(len(onsseter.df.columns)):
             if onsseter.df.iloc[:, i].dtype == 'float64':
