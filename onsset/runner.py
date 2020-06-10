@@ -210,14 +210,14 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                                 connection_cost_per_hh=100,
                                 base_to_peak_load_ratio=0.85,
                                 tech_life=20,
-                                om_costs=0.015,
+                                om_costs=0.06,
                                 capital_cost={float("inf"): 1486,
                                               5: 2937},
                                 mini_grid=True)
 
         sa_pv_calc = Technology(base_to_peak_load_ratio=0.9,
                                 tech_life=15,
-                                om_costs=0.02,
+                                om_costs=0.08,
                                 capital_cost={float("inf"): 2726,
                                               1: 4364,
                                               0.300: 3272

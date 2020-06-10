@@ -1839,6 +1839,7 @@ class SettlementProcessor:
                                 grid_cell_area=self.df[SET_GRID_CELL_AREA],
                                 capacity_factor=self.df[SET_GHI] / HOURS_PER_YEAR)
         self.df.loc[self.df[SET_GHI] <= 1000, SET_LCOE_SA_PV + "{}".format(year)] = 99
+        self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] > 3) & (self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] < 99), SET_LCOE_SA_PV + "{}".format(year)] = 99
 
         self.choose_minimum_off_grid_tech(year, mg_hydro_calc)
 
