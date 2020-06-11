@@ -1790,7 +1790,7 @@ class SettlementProcessor:
                                 capacity_factor=self.df[SET_GHI] / HOURS_PER_YEAR)
         self.df.loc[self.df[SET_GHI] <= 1000, SET_LCOE_MG_PV + "{}".format(year)] = 99
 
-        self.df.loc[self.df[SET_POP_CALIB] < 50, SET_LCOE_MG_PV + "{}".format(year)] = 99
+        self.df.loc[(self.df[SET_POP_CALIB] < 50) & (self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] != 5), SET_LCOE_MG_PV + "{}".format(year)] = 99
 
         logging.info('Calculate minigrid wind LCOE')
         self.df[SET_LCOE_MG_WIND + "{}".format(year)], mg_wind_investment = \
@@ -1805,7 +1805,7 @@ class SettlementProcessor:
                                   grid_cell_area=self.df[SET_GRID_CELL_AREA],
                                   capacity_factor=self.df[SET_WINDCF])
         self.df.loc[self.df[SET_WINDCF] <= 0.1, SET_LCOE_MG_WIND + "{}".format(year)] = 99
-        self.df.loc[self.df[SET_POP_CALIB] < 50, SET_LCOE_MG_WIND + "{}".format(year)] = 99
+        self.df.loc[(self.df[SET_POP_CALIB] < 50) & (self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] != 6), SET_LCOE_MG_WIND + "{}".format(year)] = 99
 
         self.df[SET_LCOE_SA_DIESEL + "{}".format(year)] = 99
         sa_diesel_investment = mg_pv_investment * 0
@@ -1824,7 +1824,7 @@ class SettlementProcessor:
                                     fuel_cost=self.df[SET_MG_DIESEL_FUEL + "{}".format(year)],
                                     )
 
-        self.df.loc[self.df[SET_POP_CALIB] < 50, SET_LCOE_MG_DIESEL + "{}".format(year)] = 99
+        self.df.loc[(self.df[SET_POP_CALIB] < 50) & (self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] != 4), SET_LCOE_MG_DIESEL + "{}".format(year)] = 99
 
         logging.info('Calculate standalone PV LCOE')
         self.df[SET_LCOE_SA_PV + "{}".format(year)], sa_pv_investment = \
@@ -1839,7 +1839,7 @@ class SettlementProcessor:
                                 grid_cell_area=self.df[SET_GRID_CELL_AREA],
                                 capacity_factor=self.df[SET_GHI] / HOURS_PER_YEAR)
         self.df.loc[self.df[SET_GHI] <= 1000, SET_LCOE_SA_PV + "{}".format(year)] = 99
-        self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] > 3) & (self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] < 99), SET_LCOE_SA_PV + "{}".format(year)] = 99
+        self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] > 4) & (self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] < 99), SET_LCOE_SA_PV + "{}".format(year)] = 99
 
         self.choose_minimum_off_grid_tech(year, mg_hydro_calc)
 
