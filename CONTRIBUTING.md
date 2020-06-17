@@ -3,11 +3,15 @@
 There are many ways in which you can contribute to OnSSET.
 
 For example, here are a list of ways you could help out:
-- Connecting potential users with OnSSET
+- Connecting potential users of the tool with OnSSET
 - Development of new functionality
 - Organising issues, bug reports and project management
 - Coordinating student studies which use OnSSET
--
+- Collaboration and sharing results
+- Developing training material
+- Answering questions and discussing issues for other users
+- Recording instructional videos
+- Develop the wiki and documentation to answer frequently answered questions
 
 
 ## Deployment
