@@ -1,5 +1,15 @@
 # Contributing to OnSSET
 
+There are many ways in which you can contribute to OnSSET.
+
+For example, here are a list of ways you could help out:
+- Connecting potential users with OnSSET
+- Development of new functionality
+- Organising issues, bug reports and project management
+- Coordinating student studies which use OnSSET
+-
+
+
 ## Deployment
 
 OnSSET is automatically deployed to PyPI when a [PEP440](https://www.python.org/dev/peps/pep-0440/)
