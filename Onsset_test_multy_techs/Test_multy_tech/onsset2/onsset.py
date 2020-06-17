@@ -1925,7 +1925,7 @@ class SettlementProcessor:
                
                 
                 hydro_used = 'HydropowerUsed'  # the amount of the hydro potential that has been assigned
-                hydro_lcoe = self.df[SET_LCOE_MG_HYDRO + "{}".format(year)].copy()
+                hydro_lcoe = self.df[i.name + "{}".format(year)].copy()
                 hydro_df = self.df[[SET_HYDRO_FID, SET_HYDRO]].drop_duplicates(subset=SET_HYDRO_FID)
                 hydro_df[hydro_used] = 0
                 hydro_df = hydro_df.set_index(SET_HYDRO_FID)
@@ -1944,9 +1944,9 @@ class SettlementProcessor:
                         hydro_usage = hydro_usage_cumsum.loc[hydro_usage_cumsum > hydro_df[SET_HYDRO][index]]
                         hydro_lcoe[hydro_usage.index] = 99
         
-                self.df[SET_LCOE_MG_HYDRO + "{}".format(year)] = hydro_lcoe
+                self.df[i.name + "{}".format(year)] = hydro_lcoe
         
-                self.df.loc[self.df[SET_HYDRO_DIST] > max_hydro_dist, SET_LCOE_MG_HYDRO + "{}".format(year)] = 99
+                self.df.loc[self.df[SET_HYDRO_DIST] > max_hydro_dist, i.name + "{}".format(year)] = 99
         
         self.df[SET_MIN_OFFGRID + "{}".format(year)] = self.df[tech_list].T.idxmin()
 

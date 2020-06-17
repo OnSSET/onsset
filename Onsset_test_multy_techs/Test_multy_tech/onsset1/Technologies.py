@@ -44,7 +44,8 @@ def technology_creation(start_year, end_year, grid_price, specs_data, diesel_pri
                                    code = 7)
     
     technologies.append(mg_hydro_calc)
-    
+
+   
     mg_wind_calc = Technology(om_of_td_lines=0.02,
                                   distribution_losses=0.05,
                                   connection_cost_per_hh=125,
@@ -85,6 +86,7 @@ def technology_creation(start_year, end_year, grid_price, specs_data, diesel_pri
                                 code = 3)
     
     technologies.append(sa_pv_calc)
+
 
     mg_diesel_calc = Technology(om_of_td_lines=0.02,
                                     distribution_losses=0.05,

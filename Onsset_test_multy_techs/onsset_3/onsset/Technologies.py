@@ -33,27 +33,29 @@ def technology_creation(start_year, end_year, grid_price, specs_data, diesel_pri
     
     mg_hydro_calc = Technology(om_of_td_lines=0.02,
                                    distribution_losses=0.05,
-                                   connection_cost_per_hh=125,
+                                   connection_cost_per_hh=1,
                                    base_to_peak_load_ratio=1,
                                    capacity_factor=0.5,
                                    tech_life=30,
-                                   capital_cost={float("inf"): 5000},
+                                   capital_cost={float("inf"): 10},
                                    om_costs=0.02,
                                    mini_grid=True,
-                                   name = 'MG_Hydro',
+                                   name = 'MG_Hydro1',
                                    code = 7)
     
     technologies.append(mg_hydro_calc)
-    
+
+
+   
     mg_wind_calc = Technology(om_of_td_lines=0.02,
                                   distribution_losses=0.05,
-                                  connection_cost_per_hh=125,
+                                  connection_cost_per_hh=1,
                                   base_to_peak_load_ratio=0.75,
-                                  capital_cost={float("inf"): 2500},
+                                  capital_cost={float("inf"): 10},
                                   om_costs=0.02,
                                   tech_life=20,
                                   mini_grid=True,
-                                  name = 'MG_Wind',
+                                  name = 'MG_Wind1',
                                   code = 6)
     
     technologies.append(mg_wind_calc)
@@ -70,7 +72,7 @@ def technology_creation(start_year, end_year, grid_price, specs_data, diesel_pri
                                 code = 5)
 
     technologies.append(mg_pv_calc)
-    
+       
     sa_pv_calc = Technology(base_to_peak_load_ratio=0.9,
                                 tech_life=15,
                                 om_costs=0.02,

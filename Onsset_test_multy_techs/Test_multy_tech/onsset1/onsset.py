@@ -1879,7 +1879,7 @@ class SettlementProcessor:
                                       num_people_per_hh=self.df[SET_NUM_PEOPLE_PER_HH],
                                       grid_cell_area=self.df[SET_GRID_CELL_AREA],
                                       capacity_factor=self.df[SET_WINDCF])
-                self.df.loc[self.df[SET_WINDCF] <= 0.1, SET_LCOE_MG_WIND + "{}".format(year)] = 99
+                self.df.loc[self.df[SET_WINDCF] <= 0.1, i.name + "{}".format(year)] = 99
                 isolated_invesments[i.name+ "{}".format(year)] = isolated_invesments[i.name+ "{}".format(year)].fillna(99999999999999999999999999)
             elif i.code == 7:
                 

@@ -54,26 +54,26 @@ data.loc[13070, 'ElecStart'] = 0
 data.to_csv('Bolivia/Database_new_2.csv')
 # Change FinalElecCode2012
 
-codes = {7: 'MG_Hydro2012',
-         6: 'MG_Wind2012',
-         5: 'MG_PV2012',
-         4: 'MG_Diesel2012',
-         3: 'SA_PV2012',
-         2: 'SA_Diesel2012',
-         1: 'Grid2012',
-         99: 'Non'}
-
-for i in data.index:
-    tech =  codes[data.loc[i, 'FinalElecCode2012']]
-    data.loc[i, 'FinalElecCode2012'] = tech
-
-#data['FinalElecCode2012'] = np.where(data['FinalElecCode2012'] == 1, 1, 99)
-
-
- 
-    
-
-data.to_csv('Bolivia/Database_new_3.csv')
+#codes = {7: 'MG_Hydro2012',
+#         6: 'MG_Wind2012',
+#         5: 'MG_PV2012',
+#         4: 'MG_Diesel2012',
+#         3: 'SA_PV2012',
+#         2: 'SA_Diesel2012',
+#         1: 'Grid2012',
+#         99: 'Non'}
+#
+#for i in data.index:
+#    tech =  codes[data.loc[i, 'FinalElecCode2012']]
+#    data.loc[i, 'FinalElecCode2012'] = tech
+#
+##data['FinalElecCode2012'] = np.where(data['FinalElecCode2012'] == 1, 1, 99)
+#
+#
+# 
+#    
+#
+#data.to_csv('Bolivia/Database_new_3.csv')
 
 #%%
 

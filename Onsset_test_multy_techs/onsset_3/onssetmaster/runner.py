@@ -4,11 +4,11 @@ import logging
 import os
 
 import pandas as pd
-from onsset import (SET_ELEC_ORDER, SET_LCOE_GRID, SET_MIN_GRID_DIST, SET_GRID_PENALTY,
+from onssetmaster.onsset import (SET_ELEC_ORDER, SET_LCOE_GRID, SET_MIN_GRID_DIST, SET_GRID_PENALTY,
                     SET_MV_CONNECT_DIST, SET_WINDCF, SettlementProcessor, Technology)
 
 try:
-    from onsset.specs import (SPE_COUNTRY, SPE_ELEC, SPE_ELEC_MODELLED,
+    from onssetmaster.specs import (SPE_COUNTRY, SPE_ELEC, SPE_ELEC_MODELLED,
                               SPE_ELEC_RURAL, SPE_ELEC_URBAN, SPE_END_YEAR,
                               SPE_GRID_CAPACITY_INVESTMENT, SPE_GRID_LOSSES,
                               SPE_MAX_GRID_EXTENSION_DIST,
@@ -17,7 +17,7 @@ try:
                               SPE_START_YEAR, SPE_URBAN, SPE_URBAN_FUTURE,
                               SPE_URBAN_MODELLED)
 except ImportError:
-    from specs import (SPE_COUNTRY, SPE_ELEC, SPE_ELEC_MODELLED,
+    from onssetmaster.specs import (SPE_COUNTRY, SPE_ELEC, SPE_ELEC_MODELLED,
                        SPE_ELEC_RURAL, SPE_ELEC_URBAN, SPE_END_YEAR,
                        SPE_GRID_CAPACITY_INVESTMENT, SPE_GRID_LOSSES,
                        SPE_MAX_GRID_EXTENSION_DIST,
@@ -26,8 +26,6 @@ except ImportError:
                        SPE_START_YEAR, SPE_URBAN, SPE_URBAN_FUTURE,
                        SPE_URBAN_MODELLED)
 from openpyxl import load_workbook
-from Technologies import technology_creation
-
 
 logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.DEBUG)
 
@@ -119,7 +117,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
     summary_folder : str
 
     """
-
+    
     scenario_info = pd.read_excel(specs_path, sheet_name='ScenarioInfo')
     scenarios = scenario_info['Scenario']
     scenario_parameters = pd.read_excel(specs_path, sheet_name='ScenarioParameters')
@@ -166,19 +164,93 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
         start_year = specs_data.iloc[0][SPE_START_YEAR]
         end_year = specs_data.iloc[0][SPE_END_YEAR]
-        
 
-        
         num_people_per_hh_rural = float(specs_data.iloc[0][SPE_NUM_PEOPLE_PER_HH_RURAL])
         num_people_per_hh_urban = float(specs_data.iloc[0][SPE_NUM_PEOPLE_PER_HH_URBAN])
         max_grid_extension_dist = float(specs_data.iloc[0][SPE_MAX_GRID_EXTENSION_DIST])
         annual_grid_cap_gen_limit = specs_data.loc[0, 'NewGridGenerationCapacityAnnualLimitMW'] * 1000
 
         # RUN_PARAM: Fill in general and technology specific parameters (e.g. discount rate, losses etc.)
-        
-        technologies, sa_diesel_cost, mg_diesel_cost = technology_creation(start_year, end_year, 
-                                                                            grid_price, specs_data, diesel_price, 
-                                                                            pv_capital_cost_adjust)
+        Technology.set_default_values(base_year=start_year,
+                                      start_year=start_year,
+                                      end_year=end_year,
+                                      discount_rate=0.12)
+
+        grid_calc = Technology(om_of_td_lines=0.02,
+                               distribution_losses=float(specs_data.iloc[0][SPE_GRID_LOSSES]),
+                               connection_cost_per_hh=125,
+                               base_to_peak_load_ratio=float(specs_data.iloc[0]['BaseToPeak']),
+                               capacity_factor=1,
+                               tech_life=30,
+                               grid_capacity_investment=float(specs_data.iloc[0][SPE_GRID_CAPACITY_INVESTMENT]),
+                               grid_penalty_ratio=1,
+                               grid_price=grid_price)
+
+        mg_hydro_calc = Technology(om_of_td_lines=0.02,
+                                   distribution_losses=0.05,
+                                   connection_cost_per_hh=1,
+                                   base_to_peak_load_ratio=1,
+                                   capacity_factor=0.5,
+                                   tech_life=30,
+                                   capital_cost={float("inf"):10},
+                                   om_costs=0.02,
+                                   mini_grid=True)
+
+        mg_wind_calc = Technology(om_of_td_lines=0.02,
+                                  distribution_losses=0.05,
+                                  connection_cost_per_hh=1,
+                                  base_to_peak_load_ratio=0.75,
+                                  capital_cost= {float("inf"):10},
+                                  om_costs=0.02,
+                                  tech_life=20,
+                                  mini_grid=True)
+
+        mg_pv_calc = Technology(om_of_td_lines=0.03,
+                                distribution_losses=0.05,
+                                connection_cost_per_hh=125,
+                                base_to_peak_load_ratio=0.9,
+                                tech_life=20,
+                                om_costs=0.02,
+                                capital_cost={float("inf"): 3500 * pv_capital_cost_adjust},
+                                mini_grid=True)
+
+        sa_pv_calc = Technology(base_to_peak_load_ratio=0.9,
+                                tech_life=15,
+                                om_costs=0.02,
+                                capital_cost={float("inf"): 5070 * pv_capital_cost_adjust,
+                                              0.200: 5780 * pv_capital_cost_adjust,
+                                              0.100: 7660 * pv_capital_cost_adjust,
+                                              0.050: 11050 * pv_capital_cost_adjust,
+                                              0.020: 20000 * pv_capital_cost_adjust
+                                              },
+                                standalone=True)
+
+        mg_diesel_calc = Technology(om_of_td_lines=0.02,
+                                    distribution_losses=0.05,
+                                    connection_cost_per_hh=125,
+                                    base_to_peak_load_ratio=0.5,
+                                    capacity_factor=0.7,
+                                    tech_life=15,
+                                    om_costs=0.1,
+                                    capital_cost={float("inf"): 1000},
+                                    mini_grid=True)
+
+        sa_diesel_calc = Technology(base_to_peak_load_ratio=0.5,
+                                    capacity_factor=0.5,
+                                    tech_life=10,
+                                    om_costs=0.1,
+                                    capital_cost={float("inf"): 938},
+                                    standalone=True)
+
+        sa_diesel_cost = {'diesel_price': diesel_price,
+                          'efficiency': 0.28,
+                          'diesel_truck_consumption': 14,
+                          'diesel_truck_volume': 300}
+
+        mg_diesel_cost = {'diesel_price': diesel_price,
+                          'efficiency': 0.33,
+                          'diesel_truck_consumption': 33.7,
+                          'diesel_truck_volume': 15000}
 
         # RUN_PARAM: One shall define here the years of analysis (excluding start year),
         # together with access targets per interval and timestep duration
@@ -186,21 +258,22 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
         eleclimits = {2020:0.9,2030:1}
         time_steps = {2020:8,2030:10}
 
-#        elements = ["1.Population", "2.New_Connections", "3.Capacity", "4.Investment"]
-#        techs = ["Grid", "SA_Diesel", "SA_PV", "MG_Diesel", "MG_PV", "MG_Wind", "MG_Hydro", "MG_Hybrid"]
-#        sumtechs = []
-#        for element in elements:
-#            for tech in techs:
-#                sumtechs.append(element + "_" + tech)
-#        total_rows = len(sumtechs)
-        df_summary = pd.DataFrame()
+        elements = ["1.Population", "2.New_Connections", "3.Capacity", "4.Investment"]
+        techs = ["Grid", "SA_Diesel", "SA_PV", "MG_Diesel", "MG_PV", "MG_Wind", "MG_Hydro", "MG_Hybrid"]
+        sumtechs = []
+        for element in elements:
+            for tech in techs:
+                sumtechs.append(element + "_" + tech)
+        total_rows = len(sumtechs)
+        df_summary = pd.DataFrame(columns=yearsofanalysis)
+        for row in range(0, total_rows):
+            df_summary.loc[sumtechs[row]] = "Nan"
 
         onsseter.current_mv_line_dist()
 
         for year in yearsofanalysis:
             eleclimit = eleclimits[year]
             time_step = time_steps[year]
-            
 
             if year - time_step == start_year:
                 grid_cap_gen_limit = time_step * annual_grid_cap_gen_limit
@@ -210,23 +283,21 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                 grid_connect_limit = 9999999999
 
             onsseter.set_scenario_variables(year, num_people_per_hh_rural, num_people_per_hh_urban, time_step,
-                                            start_year, urban_tier, rural_tier, end_year_pop, productive_demand, technologies)
+                                            start_year, urban_tier, rural_tier, end_year_pop, productive_demand)
 
             onsseter.diesel_cost_columns(sa_diesel_cost, mg_diesel_cost, year)
 
-            invesments = onsseter.calculate_off_grid_lcoes(technologies, year, end_year, time_step)
-            
-            for i in technologies:
-                if i.code ==1:
-                    grid_calc = i
-            
-            
-            invesments['Grid'+ "{}".format(year)], grid_cap_gen_limit, grid_connect_limit = \
+            sa_diesel_investment, sa_pv_investment, mg_diesel_investment, mg_pv_investment, mg_wind_investment, \
+                mg_hydro_investment = onsseter.calculate_off_grid_lcoes(mg_hydro_calc, mg_wind_calc, mg_pv_calc,
+                                                                        sa_pv_calc, mg_diesel_calc,
+                                                                        sa_diesel_calc, year, end_year, time_step,diesel_techs=1)
+
+            grid_investment, grid_cap_gen_limit, grid_connect_limit = \
                 onsseter.pre_electrification(grid_price, year, time_step, end_year, grid_calc, grid_cap_gen_limit,
                                              grid_connect_limit)
 
             onsseter.df[SET_LCOE_GRID + "{}".format(year)], onsseter.df[SET_MIN_GRID_DIST + "{}".format(year)], \
-            onsseter.df[SET_ELEC_ORDER + "{}".format(year)], onsseter.df[SET_MV_CONNECT_DIST], invesments['Grid'+ "{}".format(year)] = \
+            onsseter.df[SET_ELEC_ORDER + "{}".format(year)], onsseter.df[SET_MV_CONNECT_DIST], grid_investment = \
                 onsseter.elec_extension(grid_calc,
                                         max_grid_extension_dist,
                                         year,
@@ -237,18 +308,20 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                                         grid_connect_limit,
                                         auto_intensification=auto_intensification,
                                         prioritization=prioritization,
-                                        new_investment=invesments['Grid'+ "{}".format(year)])
-            
-            
-            onsseter.results_columns(year, time_step, prioritization, auto_intensification, technologies)
+                                        new_investment=grid_investment)
 
-            onsseter.calculate_investments(invesments, year)
+            onsseter.results_columns(year, time_step, prioritization, auto_intensification)
+
+            onsseter.calculate_investments(sa_diesel_investment, sa_pv_investment, mg_diesel_investment,
+                                           mg_pv_investment, mg_wind_investment,
+                                           mg_hydro_investment, grid_investment, year)
 
             onsseter.apply_limitations(eleclimit, year, time_step, prioritization, auto_intensification)
 
-            onsseter.calculate_new_capacity(technologies, year)
+            onsseter.calculate_new_capacity(mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc,
+                                            sa_diesel_calc, grid_calc, year)
 
-            onsseter.calc_summaries(df_summary, technologies, year)
+            onsseter.calc_summaries(df_summary, sumtechs, year)
 
         for i in range(len(onsseter.df.columns)):
             if onsseter.df.iloc[:, i].dtype == 'float64':
@@ -256,7 +329,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
             elif onsseter.df.iloc[:, i].dtype == 'int64':
                 onsseter.df.iloc[:, i] = pd.to_numeric(onsseter.df.iloc[:, i], downcast='signed')
 
-        df_summary.to_csv(summary_csv)
+        df_summary.to_csv(summary_csv, index=sumtechs)
         onsseter.df.to_csv(settlements_out_csv, index=False)
 
         logging.info('Finished')
