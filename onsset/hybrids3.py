@@ -254,8 +254,3 @@ def pv_diesel_hybrid(
 
 logging.info('First')
 a1, b1, c1, d1, e1 = pv_diesel_hybrid(100, 2200, 10, 3, 2020, 2030, pv_no=10, diesel_no=10)
-logging.info('Second')
-a2, b2, c2, d2, e2 = pv_diesel_hybrid(100, 2200, 10, 3, 2020, 2030, pv_no=20, diesel_no=20)
-logging.info('Third')
-a3, b3, c3, d3, e3 = pv_diesel_hybrid(100, 2200, 10, 3, 2020, 2030, pv_no=50, diesel_no=50)
-logging.info('Finished')
