@@ -169,29 +169,6 @@ def pv_diesel_hybrid(
             # If State of Charge is larger than 1, that means there was excess PV/diesel generation
             soc = np.minimum(soc, 1)
 
-            ### Original
-
-            #battery_discharge = np.where(net_load - diesel_gen > 0, 1, 0)
-            #battery_charge = np.where(net_load - diesel_gen < 0, 1, 0)
-
-            # If diesel generator cannot meet load the battery is also used
-            # battery_sufficient = np.where(soc > (net_load - diesel_gen) / n_dis / battery_size, 1, 0)
-            # battery_insufficient = np.where(soc > (net_load - diesel_gen) / n_dis / battery_size, 0, 1)
-            # soc -= battery_discharge * battery_sufficient * (net_load - diesel_gen) / n_dis / battery_size
-
-            # battery_use[hour_numbers[i], :, :] += \
-            #     (net_load - diesel_gen) / n_dis / battery_size * battery_discharge * battery_sufficient
-
-            # If battery and diesel generator cannot supply load there is unmet demand
-            # unmet_demand += \
-            #     (net_load - diesel_gen - soc * n_dis * battery_size) * battery_discharge * battery_insufficient
-            # battery_use[hour_numbers[i], :, :] += battery_discharge * battery_insufficient * soc
-            # soc -= battery_discharge * battery_insufficient * soc
-
-            # If diesel generation is larger than load the excess energy is stored in battery
-            # soc += ((diesel_gen - net_load) * n_chg / battery_size) * battery_charge
-
-
             dod[hour_numbers[i], :, :] = 1 - soc  # The depth of discharge in every hour of the day is stored
             if hour_numbers[i] == 23:  # The battery wear during the last day is calculated
                 battery_used = np.where(dod.max(axis=0) > 0, 1, 0)
