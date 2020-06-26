@@ -75,16 +75,16 @@ def pv_diesel_hybrid(
 
     load_curve = load_curve(tier, energy_per_hh)
 
-    def pv_diesel_capacities(pv_capacity, battery_size, diesel_capacity, pv_no, diesel_no):
+    def pv_diesel_capacities(pv_capacity, battery_size, diesel_capacity, pv_no, diesel_no, battery_no):
         break_hour = 17
-        dod = np.zeros(shape=(24, pv_no, diesel_no))
-        battery_use = np.zeros(shape=(24, pv_no, diesel_no))  # Stores the amount of battery discharge during the day
-        fuel_result = np.zeros(shape=(pv_no, diesel_no))
-        battery_life = np.zeros(shape=(pv_no, diesel_no))
-        soc = np.ones(shape=(pv_no, diesel_no)) * 0.5
-        unmet_demand = np.zeros(shape=(pv_no, diesel_no))
-        annual_diesel_gen = np.zeros(shape=(pv_no, diesel_no))
-        dod_max = np.ones(shape=(pv_no, diesel_no)) * 0.6
+        dod = np.zeros(shape=(24, battery_no, pv_no, diesel_no))
+        battery_use = np.zeros(shape=(24, battery_no, pv_no, diesel_no))  # Stores the amount of battery discharge during the day
+        fuel_result = np.zeros(shape=(battery_no, pv_no, diesel_no))
+        battery_life = np.zeros(shape=(battery_no, pv_no, diesel_no))
+        soc = np.ones(shape=(battery_no, pv_no, diesel_no)) * 0.5
+        unmet_demand = np.zeros(shape=(battery_no, pv_no, diesel_no))
+        annual_diesel_gen = np.zeros(shape=(battery_no, pv_no, diesel_no))
+        dod_max = np.ones(shape=(battery_no, pv_no, diesel_no)) * 0.6
 
         for i in range(8760):
             # Battery self-discharge (0.02% per hour)
@@ -205,10 +205,6 @@ def pv_diesel_hybrid(
     battery_size = np.ones((len(battery_sizes), pv_no, diesel_no))
     pv_panel_size = np.zeros((len(battery_sizes), pv_no, diesel_no))
     diesel_capacity = np.zeros((len(battery_sizes), pv_no, diesel_no))
-    diesel_share = np.zeros((len(battery_sizes), pv_no, diesel_no))
-    fuel_usage = np.zeros((len(battery_sizes), pv_no, diesel_no))
-    battery_life = np.zeros((len(battery_sizes), pv_no, diesel_no))
-    lpsp = np.zeros((len(battery_sizes), pv_no, diesel_no))
 
     for j in range(len(battery_sizes)):
         battery_size[j, :, :] *= battery_sizes[j]
@@ -216,11 +212,9 @@ def pv_diesel_hybrid(
         diesel_capacity[j, :, :] = diesel_caps
 
     # For the number of diesel, pv and battery capacities the lpsp, battery lifetime, fuel usage and LPSP is calculated
-    for k in range(len(battery_sizes)):
-        diesel_share[k, :, :], battery_life[k, :, :], lpsp[k, :, :], fuel_usage[k, :, :] = \
-            pv_diesel_capacities(pv_caps, battery_sizes[k], diesel_caps, pv_no, diesel_no)
-        battery_life[k, :, :] = np.minimum(20, battery_life[k, :, :])
-        # Battery life limited to maximum 20 years
+    diesel_share, battery_life, lpsp, fuel_usage = \
+        pv_diesel_capacities(pv_panel_size, battery_size, diesel_capacity, pv_no, diesel_no, len(battery_sizes))
+    battery_life = np.minimum(20, battery_life)
 
     def calculate_hybrid_lcoe():
         # Necessary information for calculation of LCOE is defined
