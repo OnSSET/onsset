@@ -264,10 +264,8 @@ def pv_diesel_hybrid(
 
     return min_lcoe, investment[min_lcoe_combination], capacity, ren_share, ren_capacity
 
-logging.info('First')
-a1, b1, c1, d1, e1 = pv_diesel_hybrid(100, 2200, 3, 2020, 2030, pv_no=20, diesel_no=20)
-test = a1 - 0.3090854945316204
-logging.info('First')
-a1, b1, c1, d1, e1 = pv_diesel_hybrid(100, 2200, 3, 2020, 2030, pv_no=20, diesel_no=20)
-logging.info('First')
-a1, b1, c1, d1, e1 = pv_diesel_hybrid(100, 2200, 3, 2020, 2030, pv_no=20, diesel_no=20)
+for i in range(10):
+    logging.info('First')
+    a1, b1, c1, d1, e1 = pv_diesel_hybrid(100, 2200, 3, 2020, 2030, pv_no=10, diesel_no=10)
+    1+1
+
