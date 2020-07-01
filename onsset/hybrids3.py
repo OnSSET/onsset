@@ -1,13 +1,27 @@
 import numpy as np
 import logging
 import pandas as pd
+import os
 
 logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.DEBUG)
+
+
+def read_environmental_data(path):
+    ghi_curve = pd.read_csv(path, usecols=[3], skiprows=3).to_numpy() * 1000
+    temp = pd.read_csv(path, usecols=[5], skiprows=3).to_numpy()
+    #ghi_curve = pd.read_csv('Supplementary_files\Benin_data.csv', usecols=[3], skiprows=341882).as_matrix()
+    #temp = pd.read_csv('Supplementary_files\Benin_data.csv', usecols=[2], skiprows=341882).as_matrix()
+    return ghi_curve, temp
+
+
+#  ghi_curve, temp = read_environmental_data()
 
 
 def pv_diesel_hybrid(
         energy_per_hh,  # kWh/household/year as defined
         ghi,  # highest annual GHI value encountered in the GIS data
+        ghi_curve,
+        temp,
         tier,
         start_year,
         end_year,
@@ -32,11 +46,8 @@ def pv_diesel_hybrid(
     inverter_efficiency = 0.92
     charge_controller = 196
 
-    def read_environmental_data():
-        ghi = pd.read_csv('Supplementary_files\Benin_data.csv', usecols=[3], skiprows=341882).as_matrix()
-        temp = pd.read_csv('Supplementary_files\Benin_data.csv', usecols=[2], skiprows=341882).as_matrix()
-        return ghi, temp
-    ghi, temp = read_environmental_data()
+
+    ghi = ghi_curve * ghi *1000 / ghi_curve.sum()
     hour_numbers = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23) * 365
     dod_max = 0.8  # maximum depth of discharge of battery
 
@@ -86,6 +97,7 @@ def pv_diesel_hybrid(
         battery_life = np.zeros(shape=(battery_no, pv_no, diesel_no))
         soc = np.ones(shape=(battery_no, pv_no, diesel_no)) * 0.5
         unmet_demand = np.zeros(shape=(battery_no, pv_no, diesel_no))
+        excess_gen = np.zeros(shape=(battery_no, pv_no, diesel_no)) # TODO
         annual_diesel_gen = np.zeros(shape=(battery_no, pv_no, diesel_no))
         dod_max = np.ones(shape=(battery_no, pv_no, diesel_no)) * 0.6
 
@@ -168,6 +180,10 @@ def pv_diesel_hybrid(
             soc = np.maximum(soc, 0)
 
             # If State of Charge is larger than 1, that means there was excess PV/diesel generation
+            excess_gen += np.where(soc > 1,
+                                   (soc - 1) / n_chg * battery_size,
+                                   0)
+            # TODO
             soc = np.minimum(soc, 1)
 
             dod[hour_numbers[i], :, :] = 1 - soc  # The depth of discharge in every hour of the day is stored
@@ -177,10 +193,11 @@ def pv_diesel_hybrid(
                         531.52764 * np.maximum(0.1, dod.max(axis=0) * dod_max) ** -1.12297) * battery_used
 
         condition = unmet_demand / energy_per_hh  # LPSP is calculated
+        excess_gen = excess_gen / energy_per_hh
         battery_life = np.round(1 / battery_life)
         diesel_share = annual_diesel_gen / energy_per_hh
 
-        return diesel_share, battery_life, condition, fuel_result
+        return diesel_share, battery_life, condition, fuel_result, excess_gen
 
     # This section creates the range of PV capacities, diesel capacities and battery sizes to be simulated
     ref = 5 * load_curve[19]
@@ -213,7 +230,7 @@ def pv_diesel_hybrid(
         diesel_capacity[j, :, :] = diesel_caps
 
     # For the number of diesel, pv and battery capacities the lpsp, battery lifetime, fuel usage and LPSP is calculated
-    diesel_share, battery_life, lpsp, fuel_usage = \
+    diesel_share, battery_life, lpsp, fuel_usage, excess_gen = \
         pv_diesel_capacities(pv_panel_size, battery_size, diesel_capacity, pv_no, diesel_no, len(battery_sizes))
     battery_life = np.minimum(20, battery_life)
 
@@ -264,11 +281,58 @@ def pv_diesel_hybrid(
     ren_share = 1 - diesel_share[min_lcoe_combination]
     capacity = pv_panel_size[min_lcoe_combination] + diesel_capacity[min_lcoe_combination]
     ren_capacity = pv_panel_size[min_lcoe_combination] / capacity
+    excess_gen = excess_gen[min_lcoe_combination]
 
-    return min_lcoe, investment[min_lcoe_combination], capacity, ren_share, ren_capacity
+    return min_lcoe, investment[min_lcoe_combination], capacity, ren_share, ren_capacity, excess_gen
 
-for i in range(10):
-    logging.info('First')
-    a1, b1, c1, d1, e1 = pv_diesel_hybrid(100, 2200, 3, 2020, 2030, pv_no=15, diesel_no=15)
-    1+1
+
+pv_no = 50
+diesel_no = 50
+tier = 5
+ghi = 2200
+diesel_cost = 1.0
+
+logging.info('First')
+path = os.path.join('Supplementary_files', 'ninja_pv_7.0000_2.3000_uncorrected.csv')
+ghi_curve, temp = read_environmental_data(path)
+a1, b1, c1, d1, e1, f1 = pv_diesel_hybrid(100, ghi, ghi_curve, temp, tier, 2020, 2030, pv_no, diesel_no)
+
+logging.info('Second')
+path = os.path.join('Supplementary_files', 'ninja_pv_8.0000_2.3000_uncorrected.csv')
+ghi_curve, temp = read_environmental_data(path)
+a2, b2, c2, d2, e2, f2 = pv_diesel_hybrid(100, ghi, ghi_curve, temp, tier, 2020, 2030, pv_no, diesel_no)
+
+logging.info('Third')
+path = os.path.join('Supplementary_files', 'ninja_pv_9.0000_2.3000_uncorrected.csv')
+ghi_curve, temp = read_environmental_data(path)
+a3, b3, c3, d3, e3, f3 = pv_diesel_hybrid(100, ghi, ghi_curve, temp, tier, 2020, 2030, pv_no, diesel_no)
+
+logging.info('Fourth')
+path = os.path.join('Supplementary_files', 'ninja_pv_10.0000_2.3000_uncorrected.csv')
+ghi_curve, temp = read_environmental_data(path)
+a4, b4, c4, d4, e4, f4 = pv_diesel_hybrid(100, ghi, ghi_curve, temp, tier, 2020, 2030, pv_no, diesel_no)
+
+logging.info('Fifth')
+path = os.path.join('Supplementary_files', 'ninja_pv_11.0000_2.3000_uncorrected.csv')
+ghi_curve, temp = read_environmental_data(path)
+a5, b5, c5, d5, e5, f5 = pv_diesel_hybrid(100, ghi, ghi_curve, temp, tier, 2020, 2030, pv_no, diesel_no)
+
+logging.info('Sixth')
+path = os.path.join('Supplementary_files', 'South_Africa.csv')
+ghi_curve, temp = read_environmental_data(path)
+a6, b6, c6, d6, e6, f6 = pv_diesel_hybrid(100, ghi, ghi_curve, temp, tier, 2020, 2030, pv_no, diesel_no)
+
+logging.info('Seventh')
+path = os.path.join('Supplementary_files', 'Angola.csv')
+ghi_curve, temp = read_environmental_data(path)
+a7, b7, c7, d7, e7, f7 = pv_diesel_hybrid(100, ghi, ghi_curve, temp, tier, 2020, 2030, pv_no, diesel_no)
+
+logging.info('Eigth')
+path = os.path.join('Supplementary_files', 'CAF.csv')
+ghi_curve, temp = read_environmental_data(path)
+a8, b8, c8, d8, e8, f8 = pv_diesel_hybrid(100, ghi, ghi_curve, temp, tier, 2020, 2030, pv_no, diesel_no)
+
+1+1
+
+
 
