@@ -249,8 +249,8 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
         mg_diesel_cost = {'diesel_price': diesel_price,
                           'efficiency': 0.33,
-                          'diesel_truck_consumption': 33.7,
-                          'diesel_truck_volume': 15000}
+                          'diesel_truck_consumption': 14,
+                          'diesel_truck_volume': 300}
 
         # RUN_PARAM: One shall define here the years of analysis (excluding start year),
         # together with access targets per interval and timestep duration
