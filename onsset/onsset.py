@@ -667,7 +667,7 @@ class SettlementProcessor:
         numpy.ndarray
         """
         return (diesel_price + 2 * diesel_price * diesel_truck_consumption *
-                traveltime) / diesel_truck_volume / LHV_DIESEL / efficiency
+                traveltime / diesel_truck_volume) / LHV_DIESEL / efficiency
 
     def compute_diesel_cost(self,
                             dataframe: pd.DataFrame,
