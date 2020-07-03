@@ -287,6 +287,8 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
             onsseter.diesel_cost_columns(sa_diesel_cost, mg_diesel_cost, year)
 
+            onsseter.calculate_hybrids_lcoe(year, year-time_step, end_year, time_step)
+
             sa_diesel_investment, sa_pv_investment, mg_diesel_investment, mg_pv_investment, mg_wind_investment, \
                 mg_hydro_investment = onsseter.calculate_off_grid_lcoes(mg_hydro_calc, mg_wind_calc, mg_pv_calc,
                                                                         sa_pv_calc, mg_diesel_calc,

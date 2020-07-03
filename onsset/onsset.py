@@ -2,6 +2,8 @@ import logging
 from math import exp, log, pi
 from typing import Dict
 import scipy.spatial
+import os
+from hybrids3 import read_environmental_data, pv_diesel_hybrid
 
 import numpy as np
 import pandas as pd
@@ -50,6 +52,12 @@ SET_LCOE_MG_WIND = 'MG_Wind'
 SET_LCOE_MG_DIESEL = 'MG_Diesel'
 SET_LCOE_MG_PV = 'MG_PV'
 SET_LCOE_MG_HYDRO = 'MG_Hydro'
+SET_LCOE_MG_HYBRID = 'MG_Hybrid'
+SET_INVESTMENT_HYBRID = 'Hybrid_Investment'
+SET_CAPACITY_HYBRID = 'Hybrid_Capacity'
+SET_REN_HYBRID = 'Hybrid_ren_share'
+SET_REN_CAP_HYBRID = 'Hybrid_ren_cap_share'
+SET_HYBRID_EXCESS = 'HybridExcess'
 SET_MIN_OFFGRID = 'Minimum_Tech_Off_grid'  # The technology with lowest lcoe (excluding grid)
 SET_MIN_OVERALL = 'MinimumOverall'  # Same as above, but including grid
 SET_MIN_OFFGRID_LCOE = 'Minimum_LCOE_Off_grid'  # The lcoe value for minimum tech
@@ -1751,6 +1759,55 @@ class SettlementProcessor:
         self.set_residential_demand(rural_tier, urban_tier, num_people_per_hh_rural, num_people_per_hh_urban,
                                     productive_demand)
         self.calculate_total_demand_per_settlement(year)
+
+    def calculate_hybrids_lcoe(self, year, start_year, end_year, time_step):
+        path_7 = os.path.join('Supplementary_files', 'ninja_pv_7.0000_2.3000_uncorrected.csv')
+        path_8 = os.path.join('Supplementary_files', 'ninja_pv_8.0000_2.3000_uncorrected.csv')
+        path_9 = os.path.join('Supplementary_files', 'ninja_pv_9.0000_2.3000_uncorrected.csv')
+        path_10 = os.path.join('Supplementary_files', 'ninja_pv_10.0000_2.3000_uncorrected.csv')
+        path_11 = os.path.join('Supplementary_files', 'ninja_pv_11.0000_2.3000_uncorrected.csv')
+
+        ghi_curve_7, temp_7 = read_environmental_data(path_7)
+        ghi_curve_8, temp_8 = read_environmental_data(path_8)
+        ghi_curve_9, temp_9 = read_environmental_data(path_9)
+        ghi_curve_10, temp_10 = read_environmental_data(path_10)
+        ghi_curve_11, temp_11 = read_environmental_data(path_11)
+
+        # self.df[SET_LCOE_MG_HYBRID], self.df[SET_INVESTMENT_HYBRID], self.df[SET_CAPACITY_HYBRID], \
+        #     self.df[SET_REN_HYBRID], self.df[SET_REN_CAP_HYBRID], self.df[SET_HYBRID_EXCESS] = self.df.apply(
+        #         lambda row: pv_diesel_hybrid(row[SET_ENERGY_PER_CELL + "{}".format(year)],
+        #                                      row[SET_GHI],
+        #                                      ghi_curve_7,
+        #                                      temp_7,
+        #                                      row[SET_TIER],
+        #                                      start_year,
+        #                                      end_year)
+        #         if row[SET_POP + "{}".format(year)] > 10000
+        #          else 99,
+        #         axis=1,
+        #         result_type='expand')
+
+        hybrid = self.df.apply(
+            lambda row: pv_diesel_hybrid(row[SET_ENERGY_PER_CELL + "{}".format(year)],
+                                         row[SET_GHI],
+                                         ghi_curve_7,
+                                         temp_7,
+                                         row[SET_TIER],
+                                         start_year,
+                                         end_year,
+                                         diesel_price=row[SET_MG_DIESEL_FUEL + "{}".format(year)])
+            if (row[SET_POP + "{}".format(year)] > 500) and (row[SET_ELEC_FINAL_CODE + "{}".format(year-time_step) != 1])
+            else (99, 99, 99, 99, 99, 99),
+            axis=1,
+            result_type='expand')
+
+        self.df[SET_LCOE_MG_HYBRID + "{}".format(year)] = hybrid[0]
+        self.df[SET_INVESTMENT_HYBRID + "{}".format(year)] = hybrid[1]
+        self.df[SET_CAPACITY_HYBRID + "{}".format(year)] = hybrid[2]
+        self.df[SET_REN_HYBRID + "{}".format(year)] = hybrid[3]
+        self.df[SET_REN_CAP_HYBRID + "{}".format(year)] = hybrid[4]
+        self.df[SET_HYBRID_EXCESS + "{}".format(year)] = hybrid[5]
+
 
     def calculate_off_grid_lcoes(self, mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc,
                                  sa_diesel_calc, year, end_year, time_step, diesel_techs=0):

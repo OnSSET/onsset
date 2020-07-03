@@ -7,8 +7,8 @@ logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.DEBUG)
 
 
 def read_environmental_data(path):
-    ghi_curve = pd.read_csv(path, usecols=[3], skiprows=3).to_numpy() * 1000
-    temp = pd.read_csv(path, usecols=[5], skiprows=3).to_numpy()
+    ghi_curve = pd.read_csv(path, usecols=[3], skiprows=3).as_matrix() * 1000
+    temp = pd.read_csv(path, usecols=[5], skiprows=3).as_matrix()
     #ghi_curve = pd.read_csv('Supplementary_files\Benin_data.csv', usecols=[3], skiprows=341882).as_matrix()
     #temp = pd.read_csv('Supplementary_files\Benin_data.csv', usecols=[2], skiprows=341882).as_matrix()
     return ghi_curve, temp
@@ -217,7 +217,7 @@ def pv_diesel_hybrid(
     pv_caps = np.outer(np.array(pv_caps), pv_extend)
     diesel_caps = np.outer(diesel_extend, np.array(diesel_caps))
 
-    # This section creates 2d-arrays to store information on V capacities, diesel capacities, battery sizes,
+    # This section creates 2d-arrays to store information on PV capacities, diesel capacities, battery sizes,
     # fuel usage, battery life and LPSP
 
     battery_size = np.ones((len(battery_sizes), pv_no, diesel_no))
@@ -286,8 +286,8 @@ def pv_diesel_hybrid(
     return min_lcoe, investment[min_lcoe_combination], capacity, ren_share, ren_capacity, excess_gen
 
 
-pv_no = 50
-diesel_no = 50
+pv_no = 15
+diesel_no = 15
 tier = 5
 ghi = 2200
 diesel_cost = 1.0
@@ -331,8 +331,6 @@ logging.info('Eigth')
 path = os.path.join('Supplementary_files', 'CAF.csv')
 ghi_curve, temp = read_environmental_data(path)
 a8, b8, c8, d8, e8, f8 = pv_diesel_hybrid(100, ghi, ghi_curve, temp, tier, 2020, 2030, pv_no, diesel_no)
-
-1+1
 
 
 
