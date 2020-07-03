@@ -40,11 +40,27 @@ def technology_creation(start_year, end_year, grid_price, specs_data, diesel_pri
                                    capital_cost={float("inf"): 5000},
                                    om_costs=0.02,
                                    mini_grid=True,
-                                   name = 'MG_Hydro',
+                                   name = 'MG_Hydro1',
                                    code = 7)
     
     technologies.append(mg_hydro_calc)
+
+    mg_hydro_calc1 = Technology(om_of_td_lines=0.04,
+                                   distribution_losses=0.03,
+                                   connection_cost_per_hh=25,
+                                   base_to_peak_load_ratio=1,
+                                   capacity_factor=0.6,
+                                   tech_life=30,
+                                   capital_cost={float("inf"): 2000},
+                                   om_costs=0.01,
+                                   mini_grid=True,
+                                   name = 'MG_Hydro2',
+                                   code = 7)
     
+    technologies.append(mg_hydro_calc1)
+
+
+   
     mg_wind_calc = Technology(om_of_td_lines=0.02,
                                   distribution_losses=0.05,
                                   connection_cost_per_hh=125,
@@ -53,10 +69,25 @@ def technology_creation(start_year, end_year, grid_price, specs_data, diesel_pri
                                   om_costs=0.02,
                                   tech_life=20,
                                   mini_grid=True,
-                                  name = 'MG_Wind',
+                                  name = 'MG_Wind1',
                                   code = 6)
     
     technologies.append(mg_wind_calc)
+
+    mg_wind_calc1 = Technology(om_of_td_lines = 0.02,
+                                  distribution_losses = 0.05,
+                                  connection_cost_per_hh = 225,
+                                  base_to_peak_load_ratio = 0.55,
+                                  capital_cost={float("inf"): 2000},
+                                  om_costs=0.01,
+                                  tech_life=15,
+                                  mini_grid=True,
+                                  name = 'MG_Wind2',
+                                  code = 6)
+    
+    technologies.append(mg_wind_calc1)
+
+
 
     mg_pv_calc = Technology(om_of_td_lines=0.03,
                                 distribution_losses=0.05,
@@ -66,14 +97,28 @@ def technology_creation(start_year, end_year, grid_price, specs_data, diesel_pri
                                 om_costs=0.02,
                                 capital_cost={float("inf"): 3500},
                                 mini_grid=True,
-                                name = 'MG_PV',
+                                name = 'MG_PV1',
                                 code = 5)
 
     technologies.append(mg_pv_calc)
     
-    sa_pv_calc = Technology(base_to_peak_load_ratio=0.9,
-                                tech_life=15,
-                                om_costs=0.02,
+    mg_pv_calc1 = Technology(om_of_td_lines = 0.01,
+                                distribution_losses = 0.03,
+                                connection_cost_per_hh = 225,
+                                base_to_peak_load_ratio = 0.5,
+                                tech_life = 20,
+                                om_costs = 0.01,
+                                capital_cost = {float("inf"): 3000},
+                                mini_grid = True,
+                                name = 'MG_PV2',
+                                code = 5)
+
+    technologies.append(mg_pv_calc1)    
+    
+    
+    sa_pv_calc = Technology(base_to_peak_load_ratio = 0.9,
+                                tech_life = 15,
+                                om_costs = 0.02,
                                 capital_cost={float("inf"): 5070 * pv_capital_cost_adjust,
                                               0.200: 5780 * pv_capital_cost_adjust,
                                               0.100: 7660 * pv_capital_cost_adjust,
@@ -81,10 +126,25 @@ def technology_creation(start_year, end_year, grid_price, specs_data, diesel_pri
                                               0.020: 20000 * pv_capital_cost_adjust
                                               },
                                 standalone=True,
-                                name = 'SA_PV',
+                                name = 'SA_PV1',
                                 code = 3)
     
     technologies.append(sa_pv_calc)
+
+    sa_pv_calc1 = Technology(base_to_peak_load_ratio=0.8,
+                                tech_life=20,
+                                om_costs=0.01,
+                                capital_cost={float("inf"): 6070 * pv_capital_cost_adjust,
+                                              0.200: 8780 * pv_capital_cost_adjust,
+                                              0.100: 10660 * pv_capital_cost_adjust,
+                                              0.050: 12050 * pv_capital_cost_adjust,
+                                              0.020: 15000 * pv_capital_cost_adjust
+                                              },
+                                standalone=True,
+                                name = 'SA_PV2',
+                                code = 3)
+    
+    technologies.append(sa_pv_calc1)
 
     mg_diesel_calc = Technology(om_of_td_lines=0.02,
                                     distribution_losses=0.05,
@@ -95,10 +155,24 @@ def technology_creation(start_year, end_year, grid_price, specs_data, diesel_pri
                                     om_costs=0.1,
                                     capital_cost={float("inf"): 1000},
                                     mini_grid=True,
-                                    name = 'MG_Diesel',
+                                    name = 'MG_Diesel1',
                                     code = 4)
     
     technologies.append(mg_diesel_calc)
+
+    mg_diesel_calc1 = Technology(om_of_td_lines=0.03,
+                                    distribution_losses=0.07,
+                                    connection_cost_per_hh=100,
+                                    base_to_peak_load_ratio=0.5,
+                                    capacity_factor=0.8,
+                                    tech_life=20,
+                                    om_costs=0.08,
+                                    capital_cost={float("inf"): 1500},
+                                    mini_grid=True,
+                                    name = 'MG_Diesel2',
+                                    code = 4)
+    
+    technologies.append(mg_diesel_calc1)
 
     sa_diesel_calc = Technology(base_to_peak_load_ratio=0.5,
                                     capacity_factor=0.5,
@@ -106,10 +180,21 @@ def technology_creation(start_year, end_year, grid_price, specs_data, diesel_pri
                                     om_costs=0.1,
                                     capital_cost={float("inf"): 938},
                                     standalone=True,
-                                    name = 'SA_Diesel',
+                                    name = 'SA_Diesel1',
                                     code = 2)
     
     technologies.append(sa_diesel_calc)
+
+    sa_diesel_calc1 = Technology(base_to_peak_load_ratio=0.8,
+                                    capacity_factor=0.6,
+                                    tech_life=20,
+                                    om_costs=0.05,
+                                    capital_cost={float("inf"): 1200},
+                                    standalone=True,
+                                    name = 'SA_Diesel2',
+                                    code = 2)
+    
+    technologies.append(sa_diesel_calc1)
 
     sa_diesel_cost = {'diesel_price': diesel_price,
                           'efficiency': 0.28,
@@ -120,6 +205,5 @@ def technology_creation(start_year, end_year, grid_price, specs_data, diesel_pri
                           'efficiency': 0.33,
                           'diesel_truck_consumption': 33.7,
                           'diesel_truck_volume': 15000}
-    
     return technologies, sa_diesel_cost, mg_diesel_cost
     

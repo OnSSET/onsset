@@ -9,14 +9,14 @@ Created on Fri May  8 20:49:46 2020
 import pandas as pd
 
 #%%
-summary1 = pd.read_csv('Bolivia/summary_test_13.csv', index_col=0)  
+summary1 = pd.read_csv('Bolivia/Multy_Test_Summary_4.csv', index_col=0)  
 summary2 = pd.read_csv('Bolivia/bo-1-0_0_0_0_0_0_summary.csv', index_col=0)
 
-summary1 = summary1.drop(['1.Population_MG_Hybrid', '2.New_Connections_MG_Hybrid', 
-                          '3.Capacity_MG_Hybrid','4.Investment_MG_Hybrid'],axis=0)
-
-
-summary1 = summary1.reindex(summary2.index)
+#summary1 = summary1.drop(['1.Population_MG_Hybrid', '2.New_Connections_MG_Hybrid', 
+#                          '3.Capacity_MG_Hybrid','4.Investment_MG_Hybrid'],axis=0)
+#
+#
+#summary1 = summary1.reindex(summary2.index)
 
 
 
@@ -31,34 +31,35 @@ for i in summary2.columns:
 
 #%%
 
-data1 = pd.read_csv('Bolivia/Results_test_13.csv', index_col=0)  
+data1 = pd.read_csv('Bolivia/Multy_Tech_Test_4.csv', index_col=0)  
 data2 = pd.read_csv('Bolivia/bo-1-0_0_0_0_0_0.csv', index_col=0)  
 
-codes = {7: 'MG_Hydro',
-         6: 'MG_Wind',
-         5: 'MG_PV',
-         4:'MG_Diesel',
-         3:'SA_PV',
-         2:'SA_Diesel',
-         1:'Grid',
-         99:'Non'}
-
+#codes = {7: 'MG_Hydro',
+#         6: 'MG_Wind',
+#         5: 'MG_PV',
+#         4:'MG_Diesel',
+#         3:'SA_PV',
+#         2:'SA_Diesel',
+#         1:'Grid',
+#         99:'Non'}
+#
+#
+#
+#for j in year:
+#    for i in data1.index:
+#        name1 = 'FinalElecCode' + str(j)
+#        
+#        code1 = data1[name1][i]
+#        if code1 == 99:
+#            data1.loc[i,name1] = codes[code1]
+#        else:
+#            data1.loc[i,name1] = codes[code1] + str(j)
+#     
 year = [2020,2030]
 
-for j in year:
-    for i in data1.index:
-        name1 = 'FinalElecCode' + str(j)
-        
-        code1 = data1[name1][i]
-        if code1 == 99:
-            data1.loc[i,name1] = codes[code1]
-        else:
-            data1.loc[i,name1] = codes[code1] + str(j)
-     
-
-
-key_words = ['SADieselFuelCost',	'MGDieselFuelCost',	'MG_Hydro',	'MG_Wind',	
-                 'MG_PV', 'SA_PV',	'MG_Diesel',  'SA_Diesel', 
+key_words = ['SADieselFuelCost',	'MGDieselFuelCost',	'MG_Hydro1',	'MG_Wind1',	
+                 'MG_PV1', 'SA_PV1',	'MG_Diesel1',  'SA_Diesel1', 'MG_Hydro2',	'MG_Wind2',	
+                 'MG_PV2', 'SA_PV2',	'MG_Diesel2',  'SA_Diesel2',
                  'Minimum_LCOE_Off_grid', 
                  'Grid', 'MinimumOverallLCOE', 'InvestmentCost', 'NewCapacity', 'FinalElecCode']
     
