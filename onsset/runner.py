@@ -176,9 +176,9 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
         # RUN_PARAM: Fill in general and technology specific parameters (e.g. discount rate, losses etc.)
         
-        technologies, sa_diesel_cost, mg_diesel_cost = technology_creation(start_year, end_year, 
-                                                                            grid_price, specs_data, diesel_price, 
-                                                                            pv_capital_cost_adjust)
+        technologies, transportation_cost = technology_creation(start_year, end_year, 
+                                                                grid_price, specs_data, diesel_price, 
+                                                                pv_capital_cost_adjust)
 
         # RUN_PARAM: One shall define here the years of analysis (excluding start year),
         # together with access targets per interval and timestep duration
@@ -212,7 +212,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
             onsseter.set_scenario_variables(year, num_people_per_hh_rural, num_people_per_hh_urban, time_step,
                                             start_year, urban_tier, rural_tier, end_year_pop, productive_demand, technologies)
 
-            onsseter.diesel_cost_columns(sa_diesel_cost, mg_diesel_cost, year)
+            onsseter.fuel_cost_columns(transportation_cost, year)
 
             invesments = onsseter.calculate_off_grid_lcoes(technologies, year, end_year, time_step)
             

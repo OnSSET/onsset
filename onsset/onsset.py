@@ -90,7 +90,7 @@ SET_MG_DIESEL_FUEL = 'MGDieselFuelCost'
 SET_DISTRIBUTION_NETWORK = 'DistributionNetwork? '
 
 # General
-LHV_DIESEL = 9.9445485  # (kWh/l) lower heating value
+#LHV_DIESEL = 9.9445485  # (kWh/l) lower heating value
 HOURS_PER_YEAR = 8760
 
 
@@ -663,11 +663,13 @@ class SettlementProcessor:
                 raise
 
     @staticmethod
-    def _diesel_fuel_cost_calculator(diesel_price: float,
+    def fuel_cost_calculator(fuel_price: float,
+                                     diesel_price: float,
                                      diesel_truck_consumption: float,
                                      diesel_truck_volume: float,
                                      traveltime: np.ndarray,
-                                     efficiency: float):
+                                     efficiency: float,
+                                     LHV_fuel: float):
         """We apply the Szabo formula to calculate the transport cost for the diesel
 
         Formulae is::
@@ -689,13 +691,12 @@ class SettlementProcessor:
 
 #        return (diesel_price + 2 * diesel_price * diesel_truck_consumption *
 #                traveltime) / diesel_truck_volume / LHV_DIESEL / efficiency
-        return (diesel_price + 2 * diesel_price * diesel_truck_consumption *
-                traveltime/ diesel_truck_volume)  / LHV_DIESEL / efficiency
+        return (fuel_price + 2 * diesel_price * diesel_truck_consumption *
+                traveltime/ diesel_truck_volume)  / LHV_fuel / efficiency
 
-    def compute_diesel_cost(self,
+    def compute_fuel_cost(self,
                             dataframe: pd.DataFrame,
-                            sa_diesel_cost: Dict,
-                            mg_diesel_cost: Dict,
+                            transportation_cost,
                             year: int):
         """Calculate diesel fuel cost
 
@@ -712,25 +713,28 @@ class SettlementProcessor:
         """
         df = dataframe.copy(deep=True)
         travel_time = df[SET_TRAVEL_HOURS].values
+        
+        for i in transportation_cost:
 
-        df[SET_SA_DIESEL_FUEL + "{}".format(year)] = self._diesel_fuel_cost_calculator(
-            diesel_price=sa_diesel_cost['diesel_price'],
-            diesel_truck_volume=sa_diesel_cost['diesel_truck_volume'],
-            diesel_truck_consumption=sa_diesel_cost['diesel_truck_consumption'],
-            efficiency=sa_diesel_cost['efficiency'],
-            traveltime=travel_time)
+            df[i['tech_name']+ 'FuelCost' +  "{}".format(year)] = self.fuel_cost_calculator(
+                
+                fuel_price = i['fuel_price'],
+                diesel_price = i['diesel_price'],
+                diesel_truck_volume = i['diesel_truck_volume'],
+                diesel_truck_consumption = i['diesel_truck_consumption'],
+                efficiency = i['efficiency'],
+                LHV_fuel = i['fuel_LHV'],
+                traveltime=travel_time
+                )
 
-        df[SET_MG_DIESEL_FUEL + "{}".format(year)] = self._diesel_fuel_cost_calculator(
-            diesel_price=mg_diesel_cost['diesel_price'],
-            diesel_truck_volume=mg_diesel_cost['diesel_truck_volume'],
-            diesel_truck_consumption=mg_diesel_cost['diesel_truck_consumption'],
-            efficiency=mg_diesel_cost['efficiency'],
-            traveltime=travel_time)
 
+        
+        
+        
+        
         return df.drop(columns=SET_TRAVEL_HOURS)
 
-    def diesel_cost_columns(self, sa_diesel_cost: Dict[str, float],
-                            mg_diesel_cost: Dict[str, float], year: int):
+    def fuel_cost_columns(self, transportation_cost, year: int):
         """Calculate diesel fuel cost based on TravelHours column
 
         Arguments
@@ -742,10 +746,10 @@ class SettlementProcessor:
         Returns
         -------
         """
-        diesel_cost = self.compute_diesel_cost(self.df[[SET_TRAVEL_HOURS]],
-                                               sa_diesel_cost, mg_diesel_cost, year)
+        fuel_cost = self.compute_fuel_cost(self.df[[SET_TRAVEL_HOURS]],
+                                               transportation_cost, year)
 
-        self.df = self.df.join(diesel_cost)
+        self.df = self.df.join(fuel_cost)
 
     def condition_df(self):
         """
@@ -1815,7 +1819,7 @@ class SettlementProcessor:
                                             prev_code=self.df[SET_DISTRIBUTION_NETWORK + "{}".format(year - time_step)],
                                             num_people_per_hh=self.df[SET_NUM_PEOPLE_PER_HH],
                                             grid_cell_area=self.df[SET_GRID_CELL_AREA],
-                                            fuel_cost=self.df[SET_SA_DIESEL_FUEL + "{}".format(year)],
+                                            fuel_cost=self.df[i.name+ 'FuelCost' +  "{}".format(year)],
                                             )
                 
             elif i.code == 3:
@@ -1847,7 +1851,7 @@ class SettlementProcessor:
                                             prev_code=self.df[SET_DISTRIBUTION_NETWORK + "{}".format(year - time_step)],
                                             num_people_per_hh=self.df[SET_NUM_PEOPLE_PER_HH],
                                             grid_cell_area=self.df[SET_GRID_CELL_AREA],
-                                            fuel_cost=self.df[SET_MG_DIESEL_FUEL + "{}".format(year)],
+                                            fuel_cost=self.df[i.name+ 'FuelCost' +  "{}".format(year)],
                                             )
             elif i.code == 5:
                 

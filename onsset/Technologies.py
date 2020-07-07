@@ -196,14 +196,42 @@ def technology_creation(start_year, end_year, grid_price, specs_data, diesel_pri
     
     technologies.append(sa_diesel_calc1)
 
-    sa_diesel_cost = {'diesel_price': diesel_price,
-                          'efficiency': 0.28,
-                          'diesel_truck_consumption': 14,
-                          'diesel_truck_volume': 300}
-
-    mg_diesel_cost = {'diesel_price': diesel_price,
-                          'efficiency': 0.33,
-                          'diesel_truck_consumption': 33.7,
-                          'diesel_truck_volume': 15000}
-    return technologies, sa_diesel_cost, mg_diesel_cost
+    
+    
+    transportation_cost = []
+    
+    transportation_cost.append({'diesel_price': diesel_price,
+                                'fuel_price': diesel_price,
+                                'tech_name': 'MG_Diesel1',
+                                'efficiency': 0.33,
+                                'fuel_LHV': 9.9445485,
+                                'diesel_truck_consumption': 33.7,
+                                'diesel_truck_volume': 15000})
+        
+    transportation_cost.append({'diesel_price': diesel_price,
+                                'fuel_price': diesel_price,
+                                'tech_name': 'MG_Diesel2',
+                                'efficiency': 0.33,
+                                'fuel_LHV': 9.9445485,
+                                'diesel_truck_consumption': 33.7,
+                                'diesel_truck_volume': 15000})
+    
+    transportation_cost.append({'diesel_price': diesel_price,
+                                'fuel_price': diesel_price,
+                                'tech_name' : 'SA_Diesel1',
+                                'efficiency': 0.28,
+                                'fuel_LHV': 9.9445485,
+                                'diesel_truck_consumption': 14,
+                                'diesel_truck_volume': 300})
+    
+    transportation_cost.append({'diesel_price': diesel_price,
+                                'fuel_price': diesel_price,
+                                'tech_name' : 'SA_Diesel2',
+                                'efficiency': 0.28,
+                                'fuel_LHV': 9.9445485,
+                                'diesel_truck_consumption': 14,
+                                'diesel_truck_volume': 300})    
+        
+    
+    return technologies, transportation_cost
     
