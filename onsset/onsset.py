@@ -1260,12 +1260,11 @@ class SettlementProcessor:
             rural_elec_ratio = self.df.loc[(self.df[SET_ELEC_CURRENT] == 1) & (
                     self.df[SET_URBAN] <= 1), SET_ELEC_POP_CALIB].sum() / rural_pop
 
-            print('The modelled electrification rate differ by {0:.2f}. '
-                  'Urban elec. rate differ by {1:.2f} and Rural elec. rate differ by {2:.2f}. \n'
-                  'If this is not acceptable please revise this '
-                  'part of the algorithm'.format(elec_modelled - elec_actual,
-                                                 urban_elec_ratio - elec_actual_urban,
-                                                 rural_elec_ratio - elec_actual_rural))
+            print('Le taux délectrification modélisé est {0:.2f}. '
+                  'Le taux délectrification urbain modélisé est {1:.2f} '
+                  'Le taux délectrification rural modélisé est {2:.2f}'.format(elec_modelled,
+                                                                              urban_elec_ratio,
+                                                                              rural_elec_ratio))
             condition = 1
 
         self.df[SET_ELEC_FINAL_CODE + "{}".format(start_year)] = \
@@ -2076,7 +2075,7 @@ class SettlementProcessor:
         self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] = self.df[SET_MIN_OVERALL_CODE + "{}".format(year)]
         self.df.loc[(self.df[SET_LIMIT + "{}".format(year)] == 0), SET_ELEC_FINAL_CODE + "{}".format(year)] = 99
 
-        print("The electrification rate achieved in {} is {:.1f} %".format(year, elecrate * 100))
+        print("Le taux d'électrification atteint en {} est {:.1f} %".format(year, elecrate * 100))
 
     def calculate_new_capacity(self, mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc,
                                sa_diesel_calc, grid_calc, year):
