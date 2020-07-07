@@ -6,7 +6,7 @@ import scipy.spatial
 import numpy as np
 import pandas as pd
 
-logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.DEBUG)
+logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.WARNING)
 logger = logging.getLogger(__name__)
 
 # Columns in settlements file must match these exactly
@@ -639,7 +639,7 @@ class SettlementProcessor:
             try:
                 self.df[SET_GHI]
             except ValueError:
-                print('Column "GHI" not found, check column names in calibrated csv-file')
+                print('Colonne "GHI" introuvable, vérifiez les noms des colonnes dans le fichier csv calibré')
                 raise
 
     @staticmethod
@@ -968,8 +968,11 @@ class SettlementProcessor:
         self.df[SET_POP_CALIB] = self.df.apply(lambda row: row[SET_POP] * pop_ratio, axis=1)
         pop_modelled = self.df[SET_POP_CALIB].sum()
         pop_diff = abs(pop_modelled - pop_actual)
-        print('The calibrated population differs by {:.2f}. '
-              'In case this is not acceptable please revise this part of the code'.format(pop_diff))
+        if abs(pop_modelled - pop_actual) < 0.03:
+            print('La population a été calibrée avec succès')
+        else:
+            print('La population calibrée diffère par {:.2f}. '
+                  'Au cas où cela ne serait pas acceptable, veuillez réviser cette partie du code'.format(pop_diff))
 
         # TODO Why do we apply the ratio to elec_pop? Shouldn't the calibration take place before defining elec_pop?
         self.df[SET_ELEC_POP_CALIB] = self.df[SET_ELEC_POP] * pop_ratio
@@ -1004,9 +1007,9 @@ class SettlementProcessor:
         pop_urb = self.df.loc[self.df[SET_URBAN] > 1, SET_POP_CALIB].sum()
         urban_modelled = pop_urb / pop_actual
 
-        if abs(urban_modelled - urban_current) > 0.01:
-            print('The modelled urban ratio is {:.2f}. '
-                  'In case this is not acceptable please revise this part of the code'.format(urban_modelled))
+        if abs(urban_modelled - urban_current) > 0.05:
+            print('Le ratio urbain modélisé est {:.2f}. '
+                  'Au cas où cela ne serait pas acceptable, veuillez réviser cette partie du code'.format(urban_modelled))
 
         return pop_modelled, urban_modelled
 
@@ -1112,9 +1115,9 @@ class SettlementProcessor:
             rural_electrified = rural_pop * rural_elec_ratio
             # RUN_PARAM: Calibration parameters if MV lines or transformer location is available
             if priority == 1:
-                print(
-                    'We have identified the existence of transformers or MV lines as input data; '
-                    'therefore we proceed using those for the calibration')
+                # print(
+                #     'We have identified the existence of transformers or MV lines as input data; '
+                #     'therefore we proceed using those for the calibration')
                 self.df.loc[
                     (self.df[SET_CALIB_GRID_DIST] < dist_limit) & (self.df[SET_NIGHT_LIGHTS] > min_night_lights) & (
                             self.df[SET_POP_CALIB] > min_pop), SET_ELEC_CURRENT] = 1
@@ -1196,9 +1199,9 @@ class SettlementProcessor:
 
             # RUN_PARAM: Calibration parameters if only HV lines are available
             else:
-                print(
-                    'No transformers or MV lines were identified as input data; '
-                    'therefore we proceed to the calibration with HV line info')
+                # print(
+                #     'No transformers or MV lines were identified as input data; '
+                #     'therefore we proceed to the calibration with HV line info')
                 self.df.loc[
                     (self.df[SET_CALIB_GRID_DIST] < dist_limit) & (self.df[SET_NIGHT_LIGHTS] > min_night_lights) & (
                             self.df[SET_POP_CALIB] > min_pop), SET_ELEC_CURRENT] = 1
