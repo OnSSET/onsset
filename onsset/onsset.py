@@ -252,7 +252,8 @@ class Technology:
                                                                                   additional_transformer,
                                                                                   productive_nodes,
                                                                                   elec_loop,
-                                                                                  penalty)
+                                                                                  penalty,
+                                                                                  compatability)
         generation_per_year = pd.Series(generation_per_year)
         peak_load = pd.Series(peak_load)
         td_investment_cost = pd.Series(td_investment_cost)
@@ -1302,8 +1303,8 @@ class SettlementProcessor:
 
         return elec_modelled, rural_elec_ratio, urban_elec_ratio
 
-    def pre_electrification(self, grid_price, year, time_step, end_year, grid_calc, grid_capacity_limit,
-                            grid_connect_limit):
+    def pre_electrification(self, year, time_step, end_year, grid_calc, grid_capacity_limit,
+                            grid_connect_limit, compatability=0):
 
         """" ... """
 
@@ -1312,7 +1313,7 @@ class SettlementProcessor:
         prev_code = self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)].copy(deep=True)
 
         # Grid-electrified settlements
-        electrified_loce, electrified_investment = self.get_grid_lcoe(0, 0, 0, year, time_step, end_year, grid_calc)
+        electrified_loce, electrified_investment = self.get_grid_lcoe(0, 0, 0, year, time_step, end_year, grid_calc, compatability=compatability)
         electrified_investment = electrified_investment[0]
         electrified_loce = electrified_loce[0]
         grid_investment = np.where(self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] == 1,
@@ -1344,7 +1345,7 @@ class SettlementProcessor:
         self.df[SET_MIN_TD_DIST] = self.df[[SET_MV_DIST_PLANNED, SET_HV_DIST_PLANNED]].min(axis=1)
 
     def elec_extension(self, grid_calc, max_dist, year, start_year, end_year, time_step, grid_capacity_limit,
-                       grid_connect_limit, new_investment, auto_intensification=0, prioritization=0):
+                       grid_connect_limit, new_investment, auto_intensification=0, prioritization=0, compatability=0):
         """
         Iterate through all electrified settlements and find which settlements can be economically connected to the grid
         Repeat with newly electrified settlements until no more are added
@@ -1363,23 +1364,27 @@ class SettlementProcessor:
         cell_path_real = self.df[SET_MV_CONNECT_DIST].copy(deep=True)
         cell_path_adjusted = list(np.zeros(len(prev_code)).tolist())
         mv_planned = self.df[SET_MV_DIST_PLANNED].copy(deep=True)
+        pop = self.df[SET_POP + "{}".format(year)].copy(deep=True)
 
         # Start by identifying which settlements are grid-connected already
         electrified = np.where(prev_code == 1, 1, 0)
 
         # The grid may be forced to expand around existing MV lines if this option has been selected, regardless
         # off-grid alternatives are less costly. The following section implements that
-        if (prio == 2) or (prio == 4):  # TODO how to deal with grid cap?
+        if (prio == 5) or (prio == 6):  # TODO how to deal with grid cap?
             mv_dist_adjusted = np.nan_to_num(grid_penalty_ratio * mv_planned)
 
             intensification_lcoe, intensification_investment = \
                 self.get_grid_lcoe(dist_adjusted=mv_dist_adjusted, elecorder=0, additional_transformer=0, year=year,
-                                   time_step=time_step, end_year=end_year, grid_calc=grid_calc)
+                                   time_step=time_step, end_year=end_year, grid_calc=grid_calc, compatability=compatability)
             intensification_lcoe = intensification_lcoe[0]
 
             placeholder_lcoe = np.ones(len(prev_code)) * 99
             placeholder_lcoe = pd.DataFrame(placeholder_lcoe)
-            placeholder_lcoe.loc[(mv_planned < auto_intensification) & (prev_code != 1)] = 0.01
+            if prio == 5:
+                placeholder_lcoe.loc[(mv_planned < auto_intensification) & (prev_code != 1)] = 0.01
+            elif prio == 6:
+                placeholder_lcoe.loc[(pop < 1000) & (prev_code != 1)] = 0.01
 
             grid_capacity_limit, grid_connect_limit, cell_path_real, cell_path_adjusted, elecorder, electrified, \
                 new_lcoes, new_investment \
@@ -1396,7 +1401,7 @@ class SettlementProcessor:
             new_lcoes = np.where(new_lcoes == 0.01, intensification_lcoe, new_lcoes)
 
         # Find the unelectrified settlements where grid can be less costly than off-grid
-        filter_lcoe, filter_investment = self.get_grid_lcoe(0, 0, 0, year, time_step, end_year, grid_calc)
+        filter_lcoe, filter_investment = self.get_grid_lcoe(0, 0, 0, year, time_step, end_year, grid_calc, compatability=compatability)
         filter_lcoe = filter_lcoe[0]
         filter_lcoe.loc[electrified == 1] = 99
         unelectrified = np.where(filter_lcoe < min_code_lcoes)
@@ -1410,7 +1415,8 @@ class SettlementProcessor:
 
         grid_lcoe, grid_investment = self.get_grid_lcoe(dist_adjusted=mv_dist_adjusted, elecorder=0,
                                                         additional_transformer=0, year=year, time_step=time_step,
-                                                        end_year=end_year, grid_calc=grid_calc)
+                                                        end_year=end_year, grid_calc=grid_calc,
+                                                        compatability=compatability)
 
         grid_capacity_limit, grid_connect_limit, cell_path_real, cell_path_adjusted, elecorder, electrified, \
             new_lcoes, new_investment \
@@ -1428,7 +1434,8 @@ class SettlementProcessor:
 
         grid_lcoe, grid_investment = self.get_grid_lcoe(dist_adjusted=hv_dist_adjusted, elecorder=0,
                                                         additional_transformer=1, year=year, time_step=time_step,
-                                                        end_year=end_year, grid_calc=grid_calc)
+                                                        end_year=end_year, grid_calc=grid_calc,
+                                                        compatability=compatability)
 
         grid_capacity_limit, grid_connect_limit, cell_path_real, cell_path_adjusted, elecorder, electrified, \
             new_lcoes, new_investment \
@@ -1466,7 +1473,8 @@ class SettlementProcessor:
                                                                 elecorder=nearest_elec_order,
                                                                 additional_transformer=0, year=year,
                                                                 time_step=time_step,
-                                                                end_year=end_year, grid_calc=grid_calc)
+                                                                end_year=end_year, grid_calc=grid_calc,
+                                                                compatability=compatability)
 
                 grid_capacity_limit, grid_connect_limit, cell_path_real, cell_path_adjusted, elecorder, electrified, \
                     new_lcoes, new_investment = \
@@ -1483,7 +1491,7 @@ class SettlementProcessor:
 
         return new_lcoes, cell_path_adjusted, elecorder, cell_path_real, pd.DataFrame(new_investment)
 
-    def get_grid_lcoe(self, dist_adjusted, elecorder, additional_transformer, year, time_step, end_year, grid_calc):
+    def get_grid_lcoe(self, dist_adjusted, elecorder, additional_transformer, year, time_step, end_year, grid_calc, compatability):
         grid_lcoe, grid_investment = \
             grid_calc.get_lcoe(energy_per_cell=self.df[SET_ENERGY_PER_CELL + "{}".format(year)],
                                start_year=year - time_step,
@@ -1496,7 +1504,8 @@ class SettlementProcessor:
                                grid_cell_area=self.df[SET_GRID_CELL_AREA],
                                additional_mv_line_length=dist_adjusted,
                                elec_loop=elecorder,
-                               additional_transformer=additional_transformer)
+                               additional_transformer=additional_transformer,
+                               compatability=compatability)
         return grid_lcoe, grid_investment
 
     def closest_electrified_settlement(self, new_electrified, unelectrified, cell_path_real, grid_penalty_ratio,
@@ -2001,8 +2010,13 @@ class SettlementProcessor:
         self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] == 1,
                     SET_MIN_OVERALL + "{}".format(year)] = 'Grid' + "{}".format(year)
 
-        if (prio == 2) or (prio == 4):
+        if prio == 5:
             self.df.loc[(self.df[SET_MV_DIST_PLANNED] < auto_intensification) &
+                        (self.df[SET_LCOE_GRID + "{}".format(year)] != 99),
+                        SET_MIN_OVERALL + "{}".format(year)] = 'Grid' + "{}".format(year)
+
+        if prio == 6:
+            self.df.loc[(self.df[SET_POP + "{}".format(year)] > 1000) &
                         (self.df[SET_LCOE_GRID + "{}".format(year)] != 99),
                         SET_MIN_OVERALL + "{}".format(year)] = 'Grid' + "{}".format(year)
 
@@ -2086,7 +2100,8 @@ class SettlementProcessor:
 
             self.df.sort_values(by=[SET_ELEC_FINAL_CODE + "{}".format(year - time_step),
                                     'Intensification',
-                                    SET_INVEST_PER_CAPITA + "{}".format(year)], inplace=True)
+                                    SET_TRAVEL_HOURS], inplace=True)
+                                    # SET_INVEST_PER_CAPITA + "{}".format(year)], inplace=True)
 
             cumulative_pop = self.df[SET_POP + "{}".format(year)].cumsum()
 
@@ -2100,10 +2115,11 @@ class SettlementProcessor:
             self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] < 99),
                         SET_LIMIT + "{}".format(year)] = 1
 
-        elif choice == 5:
+        elif (choice == 5) or (choice == 6):
             # Prioritize already electrified settlements first, then lowest investment per capita
             self.df.sort_values(by=[SET_ELEC_FINAL_CODE + "{}".format(year - time_step),
-                                    SET_MIN_OVERALL_LCOE + "{}".format(year)], inplace=True)
+                                    SET_TRAVEL_HOURS], inplace=True)
+                                    #SET_MIN_OVERALL_LCOE + "{}".format(year)], inplace=True)
 
             cumulative_pop = self.df[SET_POP + "{}".format(year)].cumsum()
 
