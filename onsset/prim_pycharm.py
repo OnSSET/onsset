@@ -9,13 +9,13 @@ df = pd.DataFrame(columns = ["grid_cap", "demand", "discount rate", "grid gen co
 
 country = 'bf'
 
-population = [0, 1, 2]
-pv_cost = [2]
-grid_cost = [2]
-discount_rate = [1]
-demand = [1]
+population = [0, 1]
+pv_cost = [0, 2, 4] # ToDo
+grid_cost = [0, 2, 4]
+discount_rate = [0, 1, 2]
+demand = [0]
 grid_options = [0, 1, 2]
-distribution = [0, 1, 2]
+distribution = [1, 2]
 
 lcoe = []
 investment = []
@@ -31,7 +31,7 @@ for pop in population:
 
                             df = df.append({"grid_cap": pop, "demand": dem, "discount rate": discount, "grid gen cost": grid, "pv cost": pv, "grid strategy": option, "mini grid compatability": dist},
                                            ignore_index=True)
-                            result_path = os.path.join('C:/Users/asahl/Documents/Scenario_discovery/{}_July'.format(country),
+                            result_path = os.path.join('C:/Users/asahl/Documents/Scenario_discovery/{}'.format(country),
                                                        '{}-1-{}_{}_{}_{}_{}_{}_{}_summary.csv'.format(country, pop, dem, discount, grid,
                                                                                                    pv, option, dist))
                             result = pd.read_csv(result_path)
@@ -46,10 +46,10 @@ for pop in population:
                                               + result['2030'].iloc[30] + result['2030'].iloc[31])
 
 lcoe = pd.Series(investment)  # ToDo
-sorted_lcoe = pd.Series(sorted(lcoe))
+sorted_lcoe = pd.Series(sorted(lcoe))/1000000
 sorted_lcoe.plot()
 
-thres = lcoe.quantile(q=0.8)
+thres = lcoe.quantile(q=0.9)
 
 p = prim.Prim(df, lcoe, threshold=thres, threshold_type=">")
 
