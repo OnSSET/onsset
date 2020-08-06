@@ -841,14 +841,14 @@ class SettlementProcessor:
 
         Notes
         -----
-        0, 11 = 1
+        11, 17 = 1
         6, 8 = 2
         1, 3, 5, 12, 13, 15 = 3
         2, 4 = 4
         7, 9, 10, 14, 16 = 5
         """
 
-        land_cover_labels = [1, 3, 4, 3, 4, 3, 2, 5, 2, 5, 5, 1, 3, 3, 5, 3, 5]
+        land_cover_labels = [3, 4, 3, 4, 3, 2, 5, 2, 5, 5, 1, 3, 3, 5, 3, 5, 1]
         return column.apply(lambda x: land_cover_labels[int(x)])
 
     def grid_penalties(self, data_frame):
