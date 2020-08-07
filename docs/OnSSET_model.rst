@@ -9,7 +9,7 @@ The least-cost technology mix and investments required to fully electrify a coun
 
 2)  The current status and plans of the national electricity grid along with its associated costs.
 
-3)  Local energy resources availability and off-grid power systems costs.
+3)  Local energy resource availability and off-grid power systems costs.
 
 The following paragraphs describe in brief how an electrification anaysis with OnSSET works.
 
@@ -136,13 +136,13 @@ The electrification algorithm procedure is based on two separate, yet complement
 analysis is required to obtain a settlement table referencing each settlement’s position –i.e., its x and y coordinates
 – and information related to demand, resource availability, infrastructure and economic activities. Night-time light
 datasets are used in combination with population density and electricity related infrastructure (transformers, transmission lines and distribution lines) in
-order to identify the presently electrified populations. The initial electrification status is listed as either 1
+order to identify the presently electrified population. The initial electrification status is listed as either 1
 (electrified) or 0 (non-electrified).
 
 The algorithm calculates the cost of generating electricity at each cell for different electrification configurations
 based on the local specificities and cost related parameters. Depending on the electricity demand, transmission and distribution
 network requirements, energy resource availability etc. the LCoE for each of the seven technology configurations is
-calculated in each settlement. The LCoE of a specific technology option represents the final cost of electricity required for
+calculated in each settlement. The LCoE of a specific technology configuration represents the final cost of electricity required for
 the overall system to break even over the project lifetime.
 
 .. note::
@@ -157,7 +157,7 @@ non-electrified cells to test if the conditions for their connection to the elec
 These conditions include: a) lower cost of generating, transmitting and distributing electricity as compared to the off-grid
 technologies and b) not causing the total additional MV grid length to exceed 50 km if it is connected.
 
-If these conditions are verified, the settlement status is set to electrified (by the national grid). At the same time, the algorithm
+If these conditions are fulfilled, the settlement status is set to electrified (by the national grid). At the same time, the algorithm
 stores the length of the additional MV lines that have been built thus far by the model to connect this new settlement.
 This is required to ensure all newly electrified cells comply with the 50 km limit for the length of MV lines. Further,
 this is also used to consider cost increases for each additional MV extension, due to the requirement to strengthen the
