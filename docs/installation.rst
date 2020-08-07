@@ -19,6 +19,8 @@ Historically OnSSET has relied on ArcGIS, but recently the process has been move
 to open source GIS environments. OnSSET in it's current form relies on QGIS
 (together with in QGIS included tools from SAGA, GDAL and GRASS)
 
+.. note:: In order to assure that the QGIS section of OnSSET functions correctly make sure to donwload the lastest long-term release of QGIS (version 3.10 as of the 7th of August 2020)
+
 Download QGIS for free from the official `QGIS website <http://www.qgis.org/en/site/>`_.
 
 **Python - Anaconda package**
