@@ -6,6 +6,8 @@ Since its development, OnSSET has been employed for a high number of studies pre
 Publications
 **************
 
+`The Role of Open Access Data in Geospatial Electrification Planning and the Achievement of SDG7. An OnSSET-Based Case Study for Malawi <https://www.mdpi.com/1996-1073/12/7/1395>`_
+
 `A GIS-based approach for electrification planning—A case study on Nigeria <http://www.sciencedirect.com/science/article/pii/S0973082615000952>`_
 
 `The benefits of geospatial planning in energy access – A case study on Ethiopia <http://www.sciencedirect.com/science/article/pii/S0143622816300522>`_
