@@ -33,7 +33,7 @@ Here follows a few important key aspects:
 **Step 3. Generate population clusters**
 ---------------------------------------------------
 
-Once the previous steps are finished we can generate our population clusters. These clusters represents settlements and will set the base of your OnSSET analysis. To generate the clusters you the three following dataset: Administratvie boundaries (polygon vector), Population (raster) and night-time lights (raster). In order to facilitate the cluster generation there KTH-dES has developed QGIS based plugins available `here <https://github.com/OnSSET/PopCluster>`_
+Once the previous steps are finished we can generate our population clusters. These clusters represents settlements and will set the base of your OnSSET analysis. To generate the clusters you need the three following dataset: Administratvie boundaries (polygon vector), Population (raster) and night-time lights (raster). In order to facilitate the cluster generation KTH-dES has developed QGIS based plugins available `here <https://github.com/OnSSET/PopCluster>`_
 
 In the repository go to the **Plugin** folder and select the option that you wish to use. Currently there are four options to choose from:
 
@@ -42,7 +42,7 @@ In the repository go to the **Plugin** folder and select the option that you wis
     * Option 3. Plugin developed for QGIS 3.2 and works with HRSL
     * Option 4. Plugin developed for QGIS 3.2 and works with GHS
 
-Once you have selected the option download the file named hrsl_clustering.zip. In order to install and use the plugin please refer to the instructions published in its `repository <https://github.com/OnSSET/PopCluster>`_. 
+Once you have selected the option you wish to use, download the file named hrsl_clustering.zip. In order to install and use the plugin please refer to the instructions published in its `repository <https://github.com/OnSSET/PopCluster>`_. 
 
 **Step 4. Generate the OnSSET input file**
 ---------------------------------------------------
@@ -52,7 +52,7 @@ Every row in this table represents a population settlement. Then, we will adhere
 into this table so that every row (settlement) acquires its specific characteristics based on its location.
 One can perform the process manually by identifying the tools in the GIS environment of his/her preference.
 
-In order to facilitate the process KTH-dES has prepared a set of plugins that can be used. The plugin is available in the **Plugin** folder in the following `repository <https://github.com/OnSSET/ClusterbasedExtraction>`_. 
+In order to facilitate the process KTH-dES has prepared a set of QGIS plugins that can be used. The plugin is available in the **Plugin** folder in the following `repository <https://github.com/OnSSET/ClusterbasedExtraction>`_. 
 
 There are three options: 
 
@@ -60,7 +60,7 @@ There are three options:
     * Option 2. Works for QGIS 3.4
     * Option 3. Works for QGIS 3.2
     
-Choose the one that suits you, download the corresponding file .zip-file named gep_onsset and follow the instructions in its `repository <https://github.com/OnSSET/ClusterbasedExtraction>`_ in order to intall and run the plugin. 
+Choose the one that suits you, download the corresponding .zip-file named gep_onsset and follow the instructions in its `repository <https://github.com/OnSSET/ClusterbasedExtraction>`_ in order to intall and run the plugin. 
 
 GIS country file
 ------------------------------
