@@ -71,7 +71,7 @@ The following table presents a list of libraries and directories that provide ac
 +-----------------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
 | EDEnextdata                       | World per region    | https://www.edenextdata.com/?q=content/global-gis-datasets-links-0#Population%20Infrastructure%20Topography%20and%20Administration%20Data |
 +-----------------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
-| Stanford                          | World per region    | https://library.stanford.edu/research/stanford-geospatial-center/data                                                                                                        |
+| Stanford                          | World per region    | https://library.stanford.edu/research/stanford-geospatial-center/data                                                                     |
 +-----------------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
 | GIS Lounge                        | Finding GIS data    | http://www.gislounge.com/data-and-gis-resources/                                                                                          |
 +-----------------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
@@ -92,10 +92,9 @@ The following table presents a list of libraries and directories that provide ac
 | Spatial Hydrology                 | Different types     | http://www.spatialhydrology.com/datawarehouse.html                                                                                        |
 +-----------------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
 | Africa Information Highway        | Different types     | http://dataportal.opendataforafrica.org/                                                                                                  |  
-+-----------------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+     
++-----------------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+   
 | The Humanitarian Data Exchange    | Different types     | https://data.humdata.org/                                                                                                                 |
 +-----------------------------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------+
-| 
 
 Country specific databases
 +++++++++++++++++++++++++++
@@ -141,92 +140,96 @@ economic and industrial activity, and local renewable energy flows. The table be
 |    |                           |                 |                                                                                 |
 |    |                           |                 |                                                                                 |
 +----+---------------------------+-----------------+---------------------------------------------------------------------------------+
-| 3  | Existing grid network     | Line shapefile  | Used to identify and spatially calibrate the currently                          |
-|    |                           |                 | electrified/non-electrified population.                                         |
-|    |                           |                 |                                                                                 |
+| 3  | Existing HV network       | Line shapefile  | Used to identify and spatially calibrate the currently                          |
+|    | **(Optional)**            |                 | electrified/non-electrified population.                                         |
+|    |                           |                 | This is layer is optional.                                                      |
 +----+---------------------------+-----------------+---------------------------------------------------------------------------------+
 | 4  | Power Substations         | Point shapefile | Current Substation infrastructure used to identify                              |
-|    |                           |                 | and spatially calibrate the currently electrified/non-electrified               |
+|    | **(Optional)**            |                 | and spatially calibrate the currently electrified/non-electrified               |
 |    |                           |                 | population. It is also used in order to specify grid extension suitability.     |
-|    |                           |                 |                                                                                 |
+|    |                           |                 | This is layer is optional.                                                      |
 +----+---------------------------+-----------------+---------------------------------------------------------------------------------+
 | 5  | Roads                     | Line shapefile  | Current Road infrastructure                                                     |
-|    |                           |                 | used                                                                            |
+|    | **(Optional)**            |                 | used                                                                            |
 |    |                           |                 | to,identify and spatially calibrate the                                         |
 |    |                           |                 | currently electrified/non-electrified population. It is also used in order to   |
 |    |                           |                 | specify grid extension suitability.                                             |
-|    |                           |                 |                                                                                 |
+|    |                           |                 | This is layer is optional.                                                      |
 +----+---------------------------+-----------------+---------------------------------------------------------------------------------+
-| 6  | Planned grid network      | Point shapefile | Represents the future plans for the                                             |
-|    |                           |                 | extension of the national electric grid. It also includes extension to          |
+| 6  | Planned HV network      	 | Point shapefile | Represents the future plans for the                                             |
+|    | **(Optional)**            |                 | extension of the national electric grid. It also includes extension to          |
 |    |                           |                 | current/future substations, power plants, mines and queries.                    |
+|    |                           |                 | This is layer is optional.                                                      |
++----+---------------------------+-----------------+---------------------------------------------------------------------------------+
+| 7  | Existing MV network       | Line shapefile  | Used to identify and spatially calibrate the currently                          |
+|    | **(Optional)**            |                 | electrified/non-electrified population.                                         |
+|    |                           |                 | This is layer is optional.                                                      |
++----+---------------------------+-----------------+---------------------------------------------------------------------------------+
+| 8  | Planned MV network      	 | Point shapefile | Represents the future plans for the                                             |
+|    | **(Optional)**            |                 | extension of the national electric grid. 				             |
+|    |                           |                 | This is layer is optional.					                     |
 |    |                           |                 |                                                                                 |
 +----+---------------------------+-----------------+---------------------------------------------------------------------------------+
-| 7  | Nighttime lights          | Raster          | Dataset used to,identify and spatially calibrate the                            |
+| 9  | Nighttime lights          | Raster          | Dataset used to,identify and spatially calibrate the                            |
 |    |                           |                 | currently electrified/non-electrified population.                               |
 |    |                           |                 |                                                                                 |
 +----+---------------------------+-----------------+---------------------------------------------------------------------------------+
-| 8  | GHI                       | Raster          | Provide information                                                             |
+| 10 | GHI                       | Raster          | Provide information                                                             |
 |    |                           |                 | about                                                                           |
 |    |                           |                 | the Global Horizontal Irradiation (kWh/m2/year)                                 |
 |    |                           |                 | over an area. This is later used to identify the availability/suitability of    |
 |    |                           |                 | Photovoltaic systems.                                                           |
 |    |                           |                 |                                                                                 |
 +----+---------------------------+-----------------+---------------------------------------------------------------------------------+
-| 9  | Wind speed                | Raster          | Provide information                                                             |
+| 11 | Wind speed                | Raster          | Provide information                                                             |
 |    |                           |                 | about                                                                           |
 |    |                           |                 | the wind velocity (m/sec) over an area. This is later used to identify the      |
 |    |                           |                 | availability/suitability of wind power (using Capacity factors).                |
 |    |                           |                 |                                                                                 |
 +----+---------------------------+-----------------+---------------------------------------------------------------------------------+
-| 10 | Hydro power potential     | Point shapefile | Points showing potential mini/small                                             |
-|    |                           |                 | hydropower potential. Dataset developed by KTH dESA                             |
+| 12 | Hydro power potential     | Point shapefile | Points showing potential mini/small                                             |
+|    | **(Optional)**            |                 | hydropower potential. Dataset developed by KTH dESA                             |
 |    |                           |                 | including environmental, social and topological restrictions                    |
 |    |                           |                 | and provides                                                                    |
 |    |                           |                 | power availability in each identified point. Other sources can be used but      |
 |    |                           |                 | should also provide such information to reassure the proper model function.     |
-|    |                           |                 |                                                                                 |
+|    |                           |                 | This is layer is optional.                                                      |
 +----+---------------------------+-----------------+---------------------------------------------------------------------------------+
-| 11 | Travel time               | Raster          | Visualizes spatially the travel                                                 |
+| 13 | Travel time               | Raster          | Visualizes spatially the travel                                                 |
 |    |                           |                 | time required to reach from any individual cell to the closest town with        |
 |    |                           |                 | population more than 50,000 people.                                             |
 |    |                           |                 |                                                                                 |
 +----+---------------------------+-----------------+---------------------------------------------------------------------------------+
-| 12 | Elevation Map             | Raster          | Filled DEM maps are use in a number                                             |
+| 14 | Elevation Map             | Raster          | Filled DEM maps are use in a number                                             |
 |    |                           |                 | of processes                                                                    |
 |    |                           |                 | in                                                                              |
 |    |                           |                 | the analysis (Energy potentials, restriction zones, grid extension suitability  |
 |    |                           |                 | map etc.).                                                                      |
 |    |                           |                 |                                                                                 |
 +----+---------------------------+-----------------+---------------------------------------------------------------------------------+
-| 13 | Slope                     | Raster          | A sub product of DEM, used in                                                   |
-|    |                           |                 | forming restriction zones and to specify grid extension suitability.            |
-|    |                           |                 |                                                                                 |
-+----+---------------------------+-----------------+---------------------------------------------------------------------------------+
-| 14 | Land Cover                | Raster          | Land cover maps are use in a number                                             |
+| 15 | Land Cover                | Raster          | Land cover maps are use in a number                                             |
 |    |                           |                 | of processes                                                                    |
 |    |                           |                 | in                                                                              |
 |    |                           |                 | the analysis (Energy potentials, restriction zones, grid extension suitability  |
 |    |                           |                 | map etc.).                                                                      |
 |    |                           |                 |                                                                                 |
 +----+---------------------------+-----------------+---------------------------------------------------------------------------------+
-| 15 | Service transformers      | Point shapefile | Current Transformer infrastructure used to identify                             |
-|    |                           |                 | and spatially calibrate the currently electrified/non-electrified               |
-|    |                           |                 | population. It is also used in order to specify grid extension suitability      |
+| 16 | Service transformers      | Point shapefile | Current Transformer infrastructure used to identify                             |
+|    | **(Optional)**            |                 | and spatially calibrate the currently electrified/non-electrified               |
+|    |                           |                 | population. This is layer is optional.				             |
++----+---------------------------+-----------------+---------------------------------------------------------------------------------+
+| 17 | Custom demand             | Raster          | User defined electricity demand in the end year in each setltement.             |
+|    | **(Optional)**            |                 | This is layer is optional.							     |
+|    |                           |                 | 									             |
 +----+---------------------------+-----------------+---------------------------------------------------------------------------------+
 
 .. note::
 
    * Before a model can be built, one must acquire the layers of data outlined above.
+   * You are recommended to use all the layers listed in the table above, but some of the are optional and can be omited (see table above) 
    More often than not, each layer must be acquired on its own.
-   The final outcome is a multilayer map conveying all the information necessary
+   The final outcome is a .csv-file conveying all the information necessary
    to initiate an OnSSET electrification analysis.
-
-   * The spatial resolution of the final map depends on the availability of input data and on the targeted level of accuracy.
-   OnSSET can handle various levels of input data, with typical resolutions ranging from 1x1 kilometers (km) to 10x10 km.
-   The selection of inputs usually involves a trade-off between the time needed for computation and the desired level of detail.
-   The modeler has to decide which resolution best fits the purpose of the analysis.
-
 
 GIS basic datasets
 +++++++++++++++++++
@@ -246,24 +249,23 @@ Administrative boundaries
 
 Population data
 ----------------
-
-+-----------------------------------------------+--------------------------+---------------------------+------------------------+------------+-----------------------------------------------------------------------------------+
-| Coverage                                      | Type                     | Resolution                | Year                   | Source     | Link                                                                              |
-+===============================================+==========================+===========================+========================+============+===================================================================================+
-| World                                         | Various                  | 1 arc-second              | (depending on country) | HDX        | https://data.humdata.org/organization/facebook                                |
-+-----------------------------------------------+--------------------------+---------------------------+------------------------+------------+-----------------------------------------------------------------------------------+
-| Africa, Asia, America                         | Raster                   | 100 m grid cells          | (depending on country) | Worldpop   | https://www.worldpop.org/geodata/listing?id=29                                   |
-+-----------------------------------------------+--------------------------+---------------------------+------------------------+------------+-----------------------------------------------------------------------------------+
-| World                                         | grid                     | 2.5 arc-minute grid cells | 90/95/00               | SEDAC      | http://sedac.ciesin.columbia.edu/data/set/gpw-v3-population-density/data-download |
-+-----------------------------------------------+--------------------------+---------------------------+------------------------+------------+-----------------------------------------------------------------------------------+
-| World                                         | shapefile, raster (grid) | 2.5 arc-minute grid cells | 2000                   | UNEP       | http://geodata.grid.unep.ch/results.php                                           |
-+-----------------------------------------------+--------------------------+---------------------------+------------------------+------------+-----------------------------------------------------------------------------------+
-| Europe                                        | shapefile, csv           | 1 km grid cells           | 2006, 2011             | GEOSTAT    | http://ec.europa.eu/eurostat/c/portal/layout?p_l_id=6033090&p_v_l_s_g_id=0        |
-+-----------------------------------------------+--------------------------+---------------------------+------------------------+------------+-----------------------------------------------------------------------------------+
-| Ghana, Haiti, Malawi, South Africa, Sri Lanka | raster (grid)            | 1 arc-second              | 2015                   | CIESIN     | https://ciesin.columbia.edu/data/hrsl/                                            |
-+-----------------------------------------------+--------------------------+---------------------------+------------------------+------------+-----------------------------------------------------------------------------------+
-| World                                         | Various                  | Various                   | 2016                   | dhsprogram | http://spatialdata.dhsprogram.com/home/                                           |
-+-----------------------------------------------+--------------------------+---------------------------+------------------------+------------+-----------------------------------------------------------------------------------+
++-----------------------------------------------+--------------------------+---------------------------+------------------------+-------------------------------+-----------------------------------------------------------------------------------+
+| Coverage                                      | Type                     | Resolution                | Year                   | Source    			|	 Link                                                                       |
++===============================================+==========================+===========================+========================+===============================+===================================================================================+
+| World                                         | Various                  | 1 arc-second              | (depending on country) | HDX                           | https://data.humdata.org/organization/facebook                                    |
++-----------------------------------------------+--------------------------+---------------------------+------------------------+-------------------------------+-----------------------------------------------------------------------------------+
+| World                                         | raster                   | 250 meter and 1 km        | 1975, 1990, 2000, 2015 | Global Human Settlement Layer | https://ghsl.jrc.ec.europa.eu/						    |
++-----------------------------------------------+--------------------------+---------------------------+------------------------+-------------------------------+-----------------------------------------------------------------------------------+
+| Africa, Asia, America                         | Raster                   | 100 m grid cells          | (depending on country) | Worldpop   			| https://www.worldpop.org/geodata/listing?id=29                                    |
++-----------------------------------------------+--------------------------+---------------------------+------------------------+-------------------------------+-----------------------------------------------------------------------------------+
+| World                                         | grid                     | 2.5 arc-minute grid cells | 90/95/00               | SEDAC      			| http://sedac.ciesin.columbia.edu/data/set/gpw-v3-population-density/data-download |
++-----------------------------------------------+--------------------------+---------------------------+------------------------+-------------------------------+-----------------------------------------------------------------------------------+
+| World                                         | shapefile, raster (grid) | 2.5 arc-minute grid cells | 2000                   | UNEP       			| http://geodata.grid.unep.ch/results.php                                           |
++-----------------------------------------------+--------------------------+---------------------------+------------------------+-------------------------------+-----------------------------------------------------------------------------------+
+| Ghana, Haiti, Malawi, South Africa, Sri Lanka | raster (grid)            | 1 arc-second              | 2015                   | CIESIN     			| https://ciesin.columbia.edu/data/hrsl/                                            |
++-----------------------------------------------+--------------------------+---------------------------+------------------------+-------------------------------+-----------------------------------------------------------------------------------+
+| World                                         | Various                  | Various                   | 2016                   | dhsprogram 			| http://spatialdata.dhsprogram.com/home/                                           |
++-----------------------------------------------+--------------------------+---------------------------+------------------------+-------------------------------+-----------------------------------------------------------------------------------+
 
 Transmission lines data
 ----------------------------
@@ -286,8 +288,6 @@ Power plants location data
 +======================+======================+====================================+====================+==============+========================================================================================+
 | World                | shapefile (4 levels) | Generators, substations,masts      | 2009               | Vmap level 0 | http://gis-lab.info/qa/vmap0-eng.html                                                  |
 +----------------------+----------------------+------------------------------------+--------------------+--------------+----------------------------------------------------------------------------------------+
-| World                | shapefile            | Generators (power source included) | 2015               | Geofabrik    | Available from KTH-dES upon request                                                   |
-+----------------------+----------------------+------------------------------------+--------------------+--------------+----------------------------------------------------------------------------------------+
 
 Elevation
 --------------
@@ -299,7 +299,7 @@ Elevation
 +-----------------------+------------------+-------------------------------------+------------+----------------------------+---------------------------------------------------------------------------------+
 | World                 | geoTIFF          | 30 m posting, 1x1 degree tiles      | 2009, 2011 | METI Japan, NASA           | https://asterweb.jpl.nasa.gov/gdem.asp                                          |
 +-----------------------+------------------+-------------------------------------+------------+----------------------------+---------------------------------------------------------------------------------+
-| World                 | .bil and/or .tif | 15 arcseconds/30arcseconds          | various    | ISCGM                      | https://globalmaps.github.io/                                                     |
+| World                 | .bil and/or .tif | 15 arcseconds/30arcseconds          | various    | ISCGM                      | https://globalmaps.github.io/                                                   |
 +-----------------------+------------------+-------------------------------------+------------+----------------------------+---------------------------------------------------------------------------------+
 | World                 | GeoTIFF          | 16 arcseconds/30arcseconds          | various    | NOOA                       | http://www.ngdc.noaa.gov/mgg/topo/gltiles.html                                  |
 +-----------------------+------------------+-------------------------------------+------------+----------------------------+---------------------------------------------------------------------------------+
@@ -316,7 +316,7 @@ Travel time to major cities
 +======================+=================================+============+=======================+==========================+==================================================================================+
 | World                | ESRI grid                       | 30 arc sec | 2008 (data from 2000) | Joint Research Center EU | http://forobs.jrc.ec.europa.eu/products/gam/download.php                         |
 +----------------------+---------------------------------+------------+-----------------------+--------------------------+----------------------------------------------------------------------------------+
-| Africa (sub-Saharan) | csv, ESRI ASCII raster, GeoTIFF | 5 arc sec  | 2010                  | Harvest Choice           | https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/YKDWJD  |                 |
+| Africa (sub-Saharan) | csv, ESRI ASCII raster, GeoTIFF | 5 arc sec  | 2010                  | Harvest Choice           | https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/YKDWJD  |                 
 +----------------------+---------------------------------+------------+-----------------------+--------------------------+----------------------------------------------------------------------------------+
 | World                | Raster, GeoTIFF                 | 5 arc sec  | 2015                  | Univeristy of Oxford     | https://map.ox.ac.uk/explorer/#/explorer                                         |
 +----------------------+---------------------------------+------------+-----------------------+--------------------------+----------------------------------------------------------------------------------+
@@ -343,17 +343,17 @@ Solar
 +----------+----------------------------------------------------+-------------------------------------------+------+-------------+--------------------------------------------------------------------------------------------------------------------------------------------------+
 | Coverage | Type                                               | Resolution                                | Year | Source      | Link                                                                                                                                             |
 +==========+====================================================+===========================================+======+=============+==================================================================================================================================================+
-| World     | ESRI ASCII GRID, GeoTIFF                          | 9 arc sec                                 | 2017 | SolarGIS    | https://globalsolaratlas.info/                                                                                                                   |
+| World    | ESRI ASCII GRID, GeoTIFF                           | 250 m                                     | 2017 | SolarGIS    | https://globalsolaratlas.info/                                                                                                                   |
 +----------+----------------------------------------------------+-------------------------------------------+------+-------------+--------------------------------------------------------------------------------------------------------------------------------------------------+
 
 
 Wind
 ------
-+-----------+---------------------------------------------------+-------------------------------------------+------+------------------------------------+--------------------------------------------------------------------------------------------------------------------------+
-| Coverage  | Type                                              | Resolution                                | Year | Source                             | Link                                                                                                                     |
-+===========+===================================================+===========================================+======+====================================+==========================================================================================================================+
-| World     | GeoTIFF                                           | 250m                                      | 2018 | Technology University of Denmark   | https://globalwindatlas.info/                                                                                            |
-+-----------+---------------------------------------------------+-------------------------------------------+------+------------------------------------+--------------------------------------------------------------------------------------------------------------------------+
++-----------+---------------------------------------------------+-------------------------------------------+------+---------------------------------------+--------------------------------------------------------------------------------------------------------------------------+
+| Coverage  | Type                                              | Resolution                                | Year | Source                                | Link                                                                                                                     |
++===========+===================================================+===========================================+======+=======================================+==========================================================================================================================+
+| World     | GeoTIFF                                           | 250m                                      | 2018 | Technological University of Denmark   | https://globalwindatlas.info/                                                                                            |
++-----------+---------------------------------------------------+-------------------------------------------+------+---------------------------------------+--------------------------------------------------------------------------------------------------------------------------+
 
 Land cover
 --------------
@@ -361,13 +361,11 @@ Land cover
 +-----------------------+----------------------------------------------------------------------------------------------+-------------------------+-------------------------------+----------------------------+--------------------------------------------------------------------------------+
 | Coverage              | Type                                                                                         | Resolution              | Year                          | Source                     | Link                                                                           |
 +=======================+==============================================================================================+=========================+===============================+============================+================================================================================+
-| World                 | Bioenergy potential                                                                          | 1 km                    | na                            | IRENA                      | http://irena.masdar.ac.ae/bioenergy/                                           |
+| World                 | HDF-EOS                                                                                      | 500 m                   | 2001-2018                     | NASA-MODIS                 | https://lpdaac.usgs.gov/products/mcd12q1v006/  				       |
 +-----------------------+----------------------------------------------------------------------------------------------+-------------------------+-------------------------------+----------------------------+--------------------------------------------------------------------------------+
 | World                 | CI Land cover - raster                                                                       | 300 m                   | time series from 1992 to 2015 | ESA                        | http://maps.elie.ucl.ac.be/CCI/viewer/                                         |
 +-----------------------+----------------------------------------------------------------------------------------------+-------------------------+-------------------------------+----------------------------+--------------------------------------------------------------------------------+
 | World                 | GeoTiff, Google earth, jpeg,png                                                              | 1-0.1 degrees           | 2001-2010                     | NASA-NEO                   | http://neo.sci.gsfc.nasa.gov/view.php?datasetId=MCD12C1_T1                     |
-+-----------------------+----------------------------------------------------------------------------------------------+-------------------------+-------------------------------+----------------------------+--------------------------------------------------------------------------------+
-| World                 | HDF-EOS                                                                                      | 0.5 degrees             | 2001-2012                     | NASA-MODIS                 | https://lpdaac.usgs.gov/dataset_discovery/modis/modis_products_table/mcd12c1   |
 +-----------------------+----------------------------------------------------------------------------------------------+-------------------------+-------------------------------+----------------------------+--------------------------------------------------------------------------------+
 | World                 | Raster, csv                                                                                  | 0.0028 - 0.0083 degrees | 2000, 2005, 2010              | ESA-ENVISAT                | http://maps.elie.ucl.ac.be/CCI/viewer/index.php                                |
 +-----------------------+----------------------------------------------------------------------------------------------+-------------------------+-------------------------------+----------------------------+--------------------------------------------------------------------------------+
@@ -387,15 +385,13 @@ Land cover
 +-----------------------+----------------------------------------------------------------------------------------------+-------------------------+-------------------------------+----------------------------+--------------------------------------------------------------------------------+
 
 The model classifies the land cover in order to calculate the grid extension penalties. The default classification values
-are based on the MODIS dataset found `here <http://glcf.umd.edu/data/lc/>`_, where the legend ranges from 0-16 with the values and corresponding land
+are based on the MODIS dataset found `here <https://lpdaac.usgs.gov/products/mcd12q1v006/>`_, where the legend ranges from 1-17 with the values and corresponding land
 cover type can be seen below. If land cover data is retrieved from other data sources with different classification
-values they should be reclassified in GIS (using the Reclassify tool in ArcGIS or r.reclass in QGIS) to match those below. Alternatively changes can be madein the Python code instead. If this reclassification is not performed it may lead to an incorrect grid penalty factor or, if the highest values are above 16, an error message while running the code.
+values they should be reclassified in GIS (using the Reclassify tool in ArcGIS or r.reclass in QGIS) to match those below. Alternatively changes can be made in the Python code instead. If this reclassification is not performed it may lead to an incorrect grid penalty factor or, if the highest values are above 17, an error message while running the code.
 
 
 +-------+------------------------------------+
 | Value | Label                              |
-+-------+------------------------------------+
-| 0     | Water                              |
 +-------+------------------------------------+
 | 1     | Evergreen Needleleaf forest        |
 +-------+------------------------------------+
@@ -425,9 +421,11 @@ values they should be reclassified in GIS (using the Reclassify tool in ArcGIS o
 +-------+------------------------------------+
 | 14    | Cropland/Natural vegetation mosaic |
 +-------+------------------------------------+
-| 15    | Snow and ice                       |
+| 15    | Permanent snow and ice             |
 +-------+------------------------------------+
-| 16    | Barren or sparsely vegetated       |
+| 16    | Barren                             |
++-------+------------------------------------+
+| 17    | Water bodies                       |
 +-------+------------------------------------+
 
 
@@ -447,7 +445,7 @@ Others
 +---------------------------------+------------------------------+---------------------------------------------------------------------+------------+--------------------------------+--------------------------------------------------------------+
 | Open Street Map (OSM) - Osmosis | osm.pbf                      | depending on mirror source                                          | up to date | NOAA                           | http://ngdc.noaa.gov/eog/dmsp/downloadV4composites.html      |
 +---------------------------------+------------------------------+---------------------------------------------------------------------+------------+--------------------------------+--------------------------------------------------------------+
-| Nighttime lights                | Raster file                  | 0.0083 degrees                                                      | 1992-2013  | na                             | https://www.ngdc.noaa.gov/eog/dmsp/downloadV4composites.html |
+| Nighttime lights                | Raster file                  | 0.0042 degrees                                                      | 2012-2020  | na                             | https://eogdata.mines.edu/download_dnb_composites.html       |
 +---------------------------------+------------------------------+---------------------------------------------------------------------+------------+--------------------------------+--------------------------------------------------------------+
 | Africa information Highway      | various                      | vectors                                                             | various    | AfDB                           | http://dataportal.opendataforafrica.org/                     |
 +---------------------------------+------------------------------+---------------------------------------------------------------------+------------+--------------------------------+--------------------------------------------------------------+
@@ -463,15 +461,13 @@ Methodology for Open Street Map data and Osmosis
 
     * To begin with, bulk download of updated OSM data can be performed through the Planet OSM: http://planet.osm.org/.
 
-    * The files can be downloaded as .xml and .pbf format. However, due to the large volume of data there are various mirrors/extracts that provide access to masked data for different regions of the planet. More information can be found here: http://wiki.openstreetmap.org/wiki/Planet.osm#Downloading. In previous cases Geofabrik.de and bbbike.org where used successfully.
+    * The files can be downloaded as .xml and .pbf format. However, due to the large volume of data there are various mirrors/extracts that provide access to masked data for different regions of the planet. More information can be found here: http://wiki.openstreetmap.org/wiki/Planet.osm#Downloading. In previous cases Geofabrik.de where used successfully (https://download.geofabrik.de/africa.html).
 
-    * It should be mentioned at this point that an interesting tool is the Overpass API. More specifically, using quarry and convert forms and redirecting to Overpass Turbo it is possible to utilize the wizard function and obtain required data for a defined area. The area is delineated by the map shown in the screen while data types include nodes, ways and relations. The data can be exported in various formats with .kml (amongst others) being compatible with the latest versions of QGIS. (As an example use the word: power in the wizard function and you will get the power related information depicted on the map). A disadvantage of this method is that the restrictions in the area size, which is limited to 100 square km.
+    * From Geofabrik, data can be downloaded per region in .pbf format. In the latest version of QGIS it is possible to insert this data directly by simply dragging the file onto the QGIS window. However, since the files are usually very large it is recommended to transform the .pbf into a spatialite database.
 
-    * Coming back to the other sources (Geofabrik, BBBike), data can be downloaded per region in .pbf format. In the latest version of QGIS it is possible to insert this data directly by simply dragging the file onto the QGIS window. However, since the files are usually very large it is recommended to transform the .pbf into a spatialite database.
+    * To do this transformation open up the OSGeo shell following with your installation, navigate to the folder in which you have your .pbf file (by typing cd [folder path]) and enter the following line: **ogr2ogr -f SQLite X.sqlite Y.pbf** (**Note!** change **X** to the name you want to use for your spatialite database and **Y** to the name of your downloaded .pbf file)
 
-    * To do this transformation open up the OSGeo shell follwoing with your installation, navigate to the folder in which you have your .pbf file (by typing cd [folder path]) and enter the following line: **ogr2ogr -f SQLite X.sqlite Y.pbf** (note change **X** to the name you want to use for your spatialite database and **Y** to the name of your downloaded .pbf file)
-
-    * Once This transformation is finished (it may take some time) drag this new file into QGIS and work with it instead of the .pbf file.
+    * Once This transformation is finished (it may take some time) drag the resulting .sqlite file into QGIS and work with it instead of the .pbf file.
 
     * OSM data provide access to a tremendous amount of information of various types. Feel free to explore the potential and share the results with an enthusiastic community.
 
