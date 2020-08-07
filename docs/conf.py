@@ -97,8 +97,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'OnSSET'
-copyright = '2019 Andreas Sahlberg, Alexandros Korkovelos, Dimitrios Mentis, Christopher Arderne, Babak Khavari'
-author = 'Andreas Sahlberg, Alexandros Korkovelos, Dimitrios Mentis, Christopher Arderne, Babak Khavari'
+copyright = '2020 Andreas Sahlberg, Alexandros Korkovelos, Babak Khavari, Oluchi Monwe, Dimitrios Mentis, Christopher Arderne'
+author = 'Andreas Sahlberg, Alexandros Korkovelos, Babak Khavari, Oluchi Monwe, Dimitrios Mentis, Christopher Arderne'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
