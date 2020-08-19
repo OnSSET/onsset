@@ -256,7 +256,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
         # together with access targets per interval and timestep duration
         yearsofanalysis = [2025, 2030]
         eleclimits = {2025: five_year_target, 2030: 1}
-        time_steps = {2025: 7, 2030: 5}
+        time_steps = {2025: 5, 2030: 5}
 
         elements = ["1.Population", "2.New_Connections", "3.Capacity", "4.Investment"]
         techs = ["Grid", "SA_Diesel", "SA_PV", "MG_Diesel", "MG_PV", "MG_Wind", "MG_Hydro", "MG_Hybrid"]
