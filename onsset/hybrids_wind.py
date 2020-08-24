@@ -1,13 +1,13 @@
 import numpy as np
-import logging
+#import logging
 import pandas as pd
 import os
 
-logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.DEBUG)
+#logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.DEBUG)
 
 
 def read_wind_environmental_data():
-    wind_curve = pd.read_csv('Supplementary_files\Wind_4_15.csv', usecols=[3], skiprows=3).as_matrix()
+    wind_curve = pd.read_csv('Supplementary_files\Wind_4_15.csv', usecols=[3], skiprows=3).values
     return wind_curve
 
 
@@ -293,4 +293,4 @@ def wind_diesel_hybrid(
 
     return min_lcoe, investment[min_lcoe_combination], capacity # , ren_share, ren_capacity, excess_gen
 
-# wind_diesel_hybrid(1, 5, wind_curve, 1, 2018, 2030, diesel_price=0.3)
+#wind_diesel_hybrid(1, 5, wind_curve, 1, 2018, 2030, diesel_price=0.3)

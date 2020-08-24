@@ -102,7 +102,7 @@ def calibration(specs_path, csv_path, specs_path_calib, calibrated_csv_path):
     writer.save()
     writer.close()
 
-    logging.info('Calibration finished. Results are transferred to the csv file')
+    #logging.info('Calibration finished. Results are transferred to the csv file')
     onsseter.df.to_csv(settlements_out_csv, index=False)
 
 
@@ -295,7 +295,10 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
             if year - time_step == start_year:
                 grid_cap_gen_limit = time_step * annual_grid_cap_gen_limit
-                grid_connect_limit = time_step * annual_new_grid_connections_limit
+                if five_year_index == 1:
+                    grid_connect_limit = time_step * annual_new_grid_connections_limit
+                else:
+                    grid_connect_limit = 999999999999
             else:
                 grid_cap_gen_limit = 9999999999
                 grid_connect_limit = 9999999999
@@ -307,7 +310,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
             mg_wind_hybrid_investment, mg_wind_hybrid_capacity = onsseter.calculate_wind_hybrids_lcoe(year, year - time_step, end_year, time_step, mg_wind_hybrid_calc)
 
-            mg_pv_hybrid_investment, mg_pv_hybrid_capacity = onsseter.calculate_pv_hybrids_lcoe(year, year-time_step, end_year, time_step, mg_pv_hybrid_calc)
+            mg_pv_hybrid_investment, mg_pv_hybrid_capacity = onsseter.calculate_pv_hybrids_lcoe(year, year-time_step, end_year, time_step, mg_pv_hybrid_calc, pv_capital_cost_adjust)
 
             sa_diesel_investment, sa_pv_investment, mg_diesel_investment, mg_pv_investment, mg_wind_investment, \
                 mg_hydro_investment = onsseter.calculate_off_grid_lcoes(mg_hydro_calc, mg_wind_calc, mg_pv_calc,

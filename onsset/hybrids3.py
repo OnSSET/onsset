@@ -1,14 +1,14 @@
 import numpy as np
-import logging
+#import logging
 import pandas as pd
 import os
 
-logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.DEBUG)
+#logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.DEBUG)
 
 
 def read_environmental_data(path):
-    ghi_curve = pd.read_csv(path, usecols=[3], skiprows=3).as_matrix() * 1000
-    temp = pd.read_csv(path, usecols=[5], skiprows=3).as_matrix()
+    ghi_curve = pd.read_csv(path, usecols=[3], skiprows=3).values * 1000
+    temp = pd.read_csv(path, usecols=[5], skiprows=3).values
     #ghi_curve = pd.read_csv('Supplementary_files\Benin_data.csv', usecols=[3], skiprows=341882).as_matrix()
     #temp = pd.read_csv('Supplementary_files\Benin_data.csv', usecols=[2], skiprows=341882).as_matrix()
     return ghi_curve, temp
@@ -28,13 +28,14 @@ def pv_diesel_hybrid(
         pv_no=15,  # number of PV panel sizes simulated
         diesel_no=15,  # number of diesel generators simulated
         discount_rate=0.08,
-        diesel_price=0.7
+        diesel_price=0.7,
+        pv_adjustment_factor=1
 ):
     n_chg = 0.92  # charge efficiency of battery
     n_dis = 0.92  # discharge efficiency of battery
     lpsp_max = 0.05  # maximum loss of load allowed over the year, in share of kWh
     battery_cost = 164  # battery capital capital cost, USD/kWh of storage capacity
-    pv_cost = 796  # PV panel capital cost, USD/kW peak power
+    pv_cost = 796 * pv_adjustment_factor  # PV panel capital cost, USD/kW peak power
     diesel_cost = 261  # diesel generator capital cost, USD/kW rated power
     pv_life = 20  # PV panel expected lifetime, years
     diesel_life = 15  # diesel generator expected lifetime, years
