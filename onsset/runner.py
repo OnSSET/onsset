@@ -178,7 +178,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
         grid_calc = Technology(om_of_td_lines=0.02,
                                distribution_losses=float(specs_data.iloc[0][SPE_GRID_LOSSES]),
-                               connection_cost_per_hh=125,
+                               connection_cost_per_hh=170,
                                base_to_peak_load_ratio=0.8,
                                capacity_factor=1,
                                tech_life=30,
