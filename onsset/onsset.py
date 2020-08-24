@@ -1446,7 +1446,7 @@ class SettlementProcessor:
             #logging.info('Electrification loop {} with {} electrified'.format(loops, int(sum(new_electrified))))
             loops += 1
 
-            if sum(new_electrified) > 1:
+            if sum(new_electrified) > 1 and len(unelectrified) > 0:
                 # Calculating the distance and adjusted distance from each unelectrified settelement to the closest
                 # electrified settlement, as well as the electrification order an total MV distance to that electrified
                 # settlement
@@ -1787,10 +1787,10 @@ class SettlementProcessor:
         path_11 = os.path.join('Supplementary_files', 'ninja_pv_11.0000_2.3000_uncorrected.csv')
 
         ghi_curve_7, temp_7 = read_environmental_data(path_7)
-        ghi_curve_8, temp_8 = read_environmental_data(path_8)
-        ghi_curve_9, temp_9 = read_environmental_data(path_9)
-        ghi_curve_10, temp_10 = read_environmental_data(path_10)
-        ghi_curve_11, temp_11 = read_environmental_data(path_11)
+        # ghi_curve_8, temp_8 = read_environmental_data(path_8)
+        # ghi_curve_9, temp_9 = read_environmental_data(path_9)
+        # ghi_curve_10, temp_10 = read_environmental_data(path_10)
+        # ghi_curve_11, temp_11 = read_environmental_data(path_11)
 
         ghi_min = round(min(self.df[SET_GHI]), -2)
         ghi_max = round(max(self.df[SET_GHI]), -2)
