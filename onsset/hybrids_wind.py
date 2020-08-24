@@ -6,20 +6,17 @@ import os
 logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.DEBUG)
 
 
-def read_environmental_data(wind_speed):
-    #wind_curve = pd.read_csv(path, usecols=[3], skiprows=3).as_matrix() * 1000
-    #temp = pd.read_csv(path, usecols=[5], skiprows=3).as_matrix()
+def read_wind_environmental_data():
     wind_curve = pd.read_csv('Supplementary_files\Wind_4_15.csv', usecols=[3], skiprows=3).as_matrix()
-    temp = pd.read_csv('Supplementary_files\Benin_data.csv', usecols=[2], skiprows=341882).as_matrix()
-    wind_curve = wind_curve * wind_speed / np.average(wind_curve)
-    return wind_curve, temp
+    return wind_curve
 
 
-wind_curve, temp = read_environmental_data(6)
+wind_curve = read_wind_environmental_data()
 
 
 def wind_diesel_hybrid(
         energy_per_hh,  # kWh/household/year as defined
+        wind_speed, # annual average wind speed
         wind_curve,
         tier,
         start_year,
@@ -44,6 +41,8 @@ def wind_diesel_hybrid(
     inverter_life = 10
     inverter_efficiency = 0.92
     charge_controller = 196
+
+    wind_curve = wind_curve * wind_speed / np.average(wind_curve)
 
     hour_numbers = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23) * 365
     dod_max = 0.8  # maximum depth of discharge of battery
@@ -106,8 +105,10 @@ def wind_diesel_hybrid(
         wind_power = np.zeros(8760)
         wind_curve = np.round(wind_curve)
         for i in range(len(p_curve)):
-            wind_power = np.where(wind_curve == i, p_curve[i], wind_power)
-        wind_power = wind_power[:, 0]
+            #  wind_power = np.where(wind_curve == i, p_curve[i], wind_power)
+            wind_curve = np.where(wind_curve == i, p_curve[i], wind_curve)
+        # wind_power = wind_power[:, 0]
+        wind_power = wind_curve
 
         for i in range(8760):
 
@@ -278,7 +279,7 @@ def wind_diesel_hybrid(
 
         return sum_costs / sum_el_gen, investment
 
-    diesel_limit = 0.25
+    diesel_limit = 0.5
     lcoe, investment = calculate_hybrid_lcoe()
     lcoe = np.where(lpsp > lpsp_max, 99, lcoe)
     lcoe = np.where(diesel_share > diesel_limit, 99, lcoe)
@@ -291,3 +292,5 @@ def wind_diesel_hybrid(
     excess_gen = excess_gen[min_lcoe_combination]
 
     return min_lcoe, investment[min_lcoe_combination], capacity # , ren_share, ren_capacity, excess_gen
+
+# wind_diesel_hybrid(1, 5, wind_curve, 1, 2018, 2030, diesel_price=0.3)

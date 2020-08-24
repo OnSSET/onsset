@@ -4,6 +4,7 @@ from typing import Dict
 import scipy.spatial
 import os
 from hybrids3 import read_environmental_data, pv_diesel_hybrid
+from  hybrids_wind import read_wind_environmental_data, wind_diesel_hybrid
 
 import numpy as np
 import pandas as pd
@@ -52,9 +53,12 @@ SET_LCOE_MG_WIND = 'MG_Wind'
 SET_LCOE_MG_DIESEL = 'MG_Diesel'
 SET_LCOE_MG_PV = 'MG_PV'
 SET_LCOE_MG_HYDRO = 'MG_Hydro'
-SET_LCOE_MG_HYBRID = 'MG_Hybrid'
-SET_INVESTMENT_HYBRID = 'Hybrid_Investment'
-SET_CAPACITY_HYBRID = 'Hybrid_Capacity'
+SET_LCOE_MG_PV_HYBRID = 'MG_PV_Hybrid'
+SET_INVESTMENT_PV_HYBRID = 'Hybrid_PV_Investment'
+SET_INVESTMENT_PV_HYBRID = 'Hybrid_PV_Capacity'
+SET_LCOE_MG_WIND_HYBRID = 'MG_Wind_Hybrid'
+SET_INVESTMENT_WIND_HYBRID = 'Hybrid_Wind_Investment'
+SET_INVESTMENT_WIND_HYBRID = 'Hybrid_Wind_Capacity'
 SET_REN_HYBRID = 'Hybrid_ren_share'
 SET_REN_CAP_HYBRID = 'Hybrid_ren_cap_share'
 SET_HYBRID_EXCESS = 'HybridExcess'
@@ -1775,7 +1779,7 @@ class SettlementProcessor:
                                     productive_demand)
         self.calculate_total_demand_per_settlement(year)
 
-    def calculate_hybrids_lcoe(self, year, start_year, end_year, time_step, mg_pv_hybrid_calc):
+    def calculate_pv_hybrids_lcoe(self, year, start_year, end_year, time_step, mg_pv_hybrid_calc):
         path_7 = os.path.join('Supplementary_files', 'ninja_pv_7.0000_2.3000_uncorrected.csv')
         path_8 = os.path.join('Supplementary_files', 'ninja_pv_8.0000_2.3000_uncorrected.csv')
         path_9 = os.path.join('Supplementary_files', 'ninja_pv_9.0000_2.3000_uncorrected.csv')
@@ -1895,7 +1899,7 @@ class SettlementProcessor:
         logging.info('Stop 2')
 
         logging.info('Calculate minigrid PV hybrid LCOE')
-        self.df[SET_LCOE_MG_HYBRID + "{}".format(year)], pv_hybrid_investment = \
+        self.df[SET_LCOE_MG_PV_HYBRID + "{}".format(year)], pv_hybrid_investment = \
             mg_pv_hybrid_calc.get_lcoe(energy_per_cell=self.df[SET_ENERGY_PER_CELL + "{}".format(year)],
                                        start_year=year - time_step,
                                        end_year=end_year,
@@ -1910,9 +1914,130 @@ class SettlementProcessor:
 
         return pv_hybrid_investment, pv_hybrid_capacity
 
+    def calculate_wind_hybrids_lcoe(self, year, start_year, end_year, time_step, mg_wind_hybrid_calc):
+
+        wind_curve = read_wind_environmental_data()
+
+        wind_min = round(min(self.df[SET_WINDVEL]))
+        wind_max = round(max(self.df[SET_WINDVEL]))
+        diesel_min = round(min(self.df[SET_MG_DIESEL_FUEL + "{}".format(year)]), 1)
+        diesel_max = round(max(self.df[SET_MG_DIESEL_FUEL + "{}".format(year)]), 1)
+        wind_range = np.round(np.arange(wind_min, wind_max + 1))
+        diesel_range = np.round(np.arange(diesel_min, diesel_max + 0.1, 0.1), 1)
+
+        wind_hybrid_lcoe_1 = pd.DataFrame(np.outer(np.zeros(len(diesel_range)), np.zeros(len(wind_range))),
+                                        columns=wind_range, index=diesel_range)
+        wind_hybrid_lcoe_2 = pd.DataFrame(np.outer(np.zeros(len(diesel_range)), np.zeros(len(wind_range))),
+                                        columns=wind_range, index=diesel_range)
+        wind_hybrid_lcoe_3 = pd.DataFrame(np.outer(np.zeros(len(diesel_range)), np.zeros(len(wind_range))),
+                                        columns=wind_range, index=diesel_range)
+        wind_hybrid_lcoe_4 = pd.DataFrame(np.outer(np.zeros(len(diesel_range)), np.zeros(len(wind_range))),
+                                        columns=wind_range, index=diesel_range)
+        wind_hybrid_lcoe_5 = pd.DataFrame(np.outer(np.zeros(len(diesel_range)), np.zeros(len(wind_range))),
+                                        columns=wind_range, index=diesel_range)
+
+        wind_hybrid_investment_1 = pd.DataFrame(np.outer(np.zeros(len(diesel_range)), np.zeros(len(wind_range))),
+                                        columns=wind_range, index=diesel_range)
+        wind_hybrid_investment_2 = pd.DataFrame(np.outer(np.zeros(len(diesel_range)), np.zeros(len(wind_range))),
+                                        columns=wind_range, index=diesel_range)
+        wind_hybrid_investment_3 = pd.DataFrame(np.outer(np.zeros(len(diesel_range)), np.zeros(len(wind_range))),
+                                        columns=wind_range, index=diesel_range)
+        wind_hybrid_investment_4 = pd.DataFrame(np.outer(np.zeros(len(diesel_range)), np.zeros(len(wind_range))),
+                                        columns=wind_range, index=diesel_range)
+        wind_hybrid_investment_5 = pd.DataFrame(np.outer(np.zeros(len(diesel_range)), np.zeros(len(wind_range))),
+                                        columns=wind_range, index=diesel_range)
+
+        wind_hybrid_capacity_1 = pd.DataFrame(np.outer(np.zeros(len(diesel_range)), np.zeros(len(wind_range))),
+                                        columns=wind_range, index=diesel_range)
+        wind_hybrid_capacity_2 = pd.DataFrame(np.outer(np.zeros(len(diesel_range)), np.zeros(len(wind_range))),
+                                        columns=wind_range, index=diesel_range)
+        wind_hybrid_capacity_3 = pd.DataFrame(np.outer(np.zeros(len(diesel_range)), np.zeros(len(wind_range))),
+                                        columns=wind_range, index=diesel_range)
+        wind_hybrid_capacity_4 = pd.DataFrame(np.outer(np.zeros(len(diesel_range)), np.zeros(len(wind_range))),
+                                        columns=wind_range, index=diesel_range)
+        wind_hybrid_capacity_5 = pd.DataFrame(np.outer(np.zeros(len(diesel_range)), np.zeros(len(wind_range))),
+                                        columns=wind_range, index=diesel_range)
+
+        tiers = [1, 2, 3, 4, 5]
+
+        logging.info('Start')
+
+        for w in wind_range:
+            for d in diesel_range:
+
+                wind_hybrid_lcoe_1[w][d], \
+                wind_hybrid_investment_1[w][d], \
+                wind_hybrid_capacity_1[w][d] = wind_diesel_hybrid(1, w, wind_curve, 1, start_year, end_year, diesel_price=d)
+
+                wind_hybrid_lcoe_2[w][d], \
+                wind_hybrid_investment_2[w][d], \
+                wind_hybrid_capacity_2[w][d] = wind_diesel_hybrid(1, w, wind_curve, 2, start_year, end_year, diesel_price=d)
+
+                wind_hybrid_lcoe_3[w][d], \
+                wind_hybrid_investment_3[w][d], \
+                wind_hybrid_capacity_3[w][d] = wind_diesel_hybrid(1, w, wind_curve, 3, start_year, end_year, diesel_price=d)
+
+                wind_hybrid_lcoe_4[w][d], \
+                wind_hybrid_investment_4[w][d], \
+                wind_hybrid_capacity_4[w][d] = wind_diesel_hybrid(1, w, wind_curve, 4, start_year, end_year, diesel_price=d)
+
+                wind_hybrid_lcoe_5[w][d], \
+                wind_hybrid_investment_5[w][d], \
+                wind_hybrid_capacity_5[w][d] = wind_diesel_hybrid(1, w, wind_curve, 5, start_year, end_year, diesel_price=d)
+
+        logging.info('Stop')
+
+        def local_hybrid(wind_vel, diesel, tier):
+            wind_vel = round(wind_vel)
+            diesel = round(diesel, 1)
+
+            if tier == 1:
+                hybrid_lcoe = wind_hybrid_lcoe_1[wind_vel][diesel]
+                hybrid_investment = wind_hybrid_investment_1[wind_vel][diesel]
+                hybrid_capacity = wind_hybrid_capacity_1[wind_vel][diesel]
+            elif tier == 2:
+                hybrid_lcoe = wind_hybrid_lcoe_2[wind_vel][diesel]
+                hybrid_investment = wind_hybrid_investment_2[wind_vel][diesel]
+                hybrid_capacity = wind_hybrid_capacity_2[wind_vel][diesel]
+            elif tier == 3:
+                hybrid_lcoe = wind_hybrid_lcoe_3[wind_vel][diesel]
+                hybrid_investment = wind_hybrid_investment_3[wind_vel][diesel]
+                hybrid_capacity = wind_hybrid_capacity_3[wind_vel][diesel]
+            elif tier == 4:
+                hybrid_lcoe = wind_hybrid_lcoe_4[wind_vel][diesel]
+                hybrid_investment = wind_hybrid_investment_4[wind_vel][diesel]
+                hybrid_capacity = wind_hybrid_capacity_4[wind_vel][diesel]
+            elif tier == 5:
+                hybrid_lcoe = wind_hybrid_lcoe_5[wind_vel][diesel]
+                hybrid_investment = wind_hybrid_investment_5[wind_vel][diesel]
+                hybrid_capacity = wind_hybrid_capacity_5[wind_vel][diesel]
+
+            return hybrid_lcoe, hybrid_investment, hybrid_capacity
+
+        hybrid_series = self.df.apply(lambda row: local_hybrid(row[SET_WINDVEL], row[SET_MG_DIESEL_FUEL + "{}".format(year)], row[SET_TIER]), axis=1, result_type='expand')
+
+        wind_hybrid_capacity = hybrid_series[2]
+
+        logging.info('Stop 2')
+
+        logging.info('Calculate minigrid Wind hybrid LCOE')
+        self.df[SET_LCOE_MG_WIND_HYBRID + "{}".format(year)], wind_hybrid_investment = \
+            mg_wind_hybrid_calc.get_lcoe(energy_per_cell=self.df[SET_ENERGY_PER_CELL + "{}".format(year)],
+                                       start_year=year - time_step,
+                                       end_year=end_year,
+                                       people=self.df[SET_POP + "{}".format(year)],
+                                       new_connections=self.df[SET_NEW_CONNECTIONS + "{}".format(year)],
+                                       total_energy_per_cell=self.df[SET_TOTAL_ENERGY_PER_CELL],
+                                       prev_code=self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
+                                       num_people_per_hh=self.df[SET_NUM_PEOPLE_PER_HH],
+                                       grid_cell_area=self.df[SET_GRID_CELL_AREA],
+                                       hybrid_lcoe=hybrid_series[0],
+                                       hybrid_investment=hybrid_series[1])
+
+        return wind_hybrid_investment, wind_hybrid_capacity
 
     def calculate_off_grid_lcoes(self, mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc,
-                                 sa_diesel_calc, year, end_year, time_step, diesel_techs=0):
+                                 sa_diesel_calc, year, end_year, time_step, diesel_techs=1):
         """
         Calculate the LCOEs for all off-grid technologies
 
@@ -2031,7 +2156,7 @@ class SettlementProcessor:
                                                                 SET_LCOE_MG_HYDRO + "{}".format(year),
                                                                 SET_LCOE_MG_DIESEL + "{}".format(year),
                                                                 SET_LCOE_SA_DIESEL + "{}".format(year),
-                                                                SET_LCOE_MG_HYBRID + "{}".format(year)]].T.idxmin()
+                                                                SET_LCOE_MG_PV_HYBRID + "{}".format(year)]].T.idxmin()
 
         # A df with all hydro-power sites, to ensure that they aren't assigned more capacity than is available
         hydro_used = 'HydropowerUsed'  # the amount of the hydro potential that has been assigned
@@ -2064,7 +2189,7 @@ class SettlementProcessor:
                                                                 SET_LCOE_MG_HYDRO + "{}".format(year),
                                                                 SET_LCOE_MG_DIESEL + "{}".format(year),
                                                                 SET_LCOE_SA_DIESEL + "{}".format(year),
-                                                                SET_LCOE_MG_HYBRID + "{}".format(year)]].T.idxmin()
+                                                                SET_LCOE_MG_PV_HYBRID + "{}".format(year)]].T.idxmin()
 
         logging.info('Determine minimum tech LCOE')
         self.df[SET_MIN_OFFGRID_LCOE + "{}".format(year)] = self.df[[SET_LCOE_SA_PV + "{}".format(year),
@@ -2073,7 +2198,7 @@ class SettlementProcessor:
                                                                      SET_LCOE_MG_HYDRO + "{}".format(year),
                                                                      SET_LCOE_MG_DIESEL + "{}".format(year),
                                                                      SET_LCOE_SA_DIESEL + "{}".format(year),
-                                                                     SET_LCOE_MG_HYBRID + "{}".format(year)]].T.min()
+                                                                     SET_LCOE_MG_PV_HYBRID + "{}".format(year)]].T.min()
 
         codes = {SET_LCOE_MG_HYDRO + "{}".format(year): 7,
                  SET_LCOE_MG_WIND + "{}".format(year): 6,
@@ -2081,7 +2206,7 @@ class SettlementProcessor:
                  SET_LCOE_MG_DIESEL + "{}".format(year): 4,
                  SET_LCOE_SA_DIESEL + "{}".format(year): 2,
                  SET_LCOE_SA_PV + "{}".format(year): 3,
-                 SET_LCOE_MG_HYBRID + "{}".format(year): 8}
+                 SET_LCOE_MG_PV_HYBRID + "{}".format(year): 8}
 
         self.df.loc[self.df[SET_MIN_OFFGRID + "{}".format(year)] == SET_LCOE_MG_HYDRO + "{}".format(
             year), SET_MIN_OFFGRID_CODE + "{}".format(year)] = codes[SET_LCOE_MG_HYDRO + "{}".format(year)]
@@ -2095,8 +2220,8 @@ class SettlementProcessor:
             year), SET_MIN_OFFGRID_CODE + "{}".format(year)] = codes[SET_LCOE_MG_DIESEL + "{}".format(year)]
         self.df.loc[self.df[SET_MIN_OFFGRID + "{}".format(year)] == SET_LCOE_SA_DIESEL + "{}".format(
             year), SET_MIN_OFFGRID_CODE + "{}".format(year)] = codes[SET_LCOE_SA_DIESEL + "{}".format(year)]
-        self.df.loc[self.df[SET_MIN_OFFGRID + "{}".format(year)] == SET_LCOE_MG_HYBRID + "{}".format(
-            year), SET_MIN_OFFGRID_CODE + "{}".format(year)] = codes[SET_LCOE_MG_HYBRID + "{}".format(year)]
+        self.df.loc[self.df[SET_MIN_OFFGRID + "{}".format(year)] == SET_LCOE_MG_PV_HYBRID + "{}".format(
+            year), SET_MIN_OFFGRID_CODE + "{}".format(year)] = codes[SET_LCOE_MG_PV_HYBRID + "{}".format(year)]
 
     def results_columns(self, year, time_step, prio, auto_intensification):
         """Calculate the capacity and investment requirements for each settlement
@@ -2118,7 +2243,8 @@ class SettlementProcessor:
                                                                 SET_LCOE_MG_HYDRO + "{}".format(year),
                                                                 SET_LCOE_MG_DIESEL + "{}".format(year),
                                                                 SET_LCOE_SA_DIESEL + "{}".format(year),
-                                                                SET_LCOE_MG_HYBRID + "{}".format(year)]].T.idxmin()
+                                                                SET_LCOE_MG_PV_HYBRID + "{}".format(year),
+                                                                SET_LCOE_MG_WIND_HYBRID + "{}".format(year)]].T.idxmin()
 
         self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] == 1,
                     SET_MIN_OVERALL + "{}".format(year)] = 'Grid' + "{}".format(year)
@@ -2136,7 +2262,8 @@ class SettlementProcessor:
                                                                      SET_LCOE_MG_HYDRO + "{}".format(year),
                                                                      SET_LCOE_MG_DIESEL + "{}".format(year),
                                                                      SET_LCOE_SA_DIESEL + "{}".format(year),
-                                                                     SET_LCOE_MG_HYBRID + "{}".format(year)]].T.min()
+                                                                     SET_LCOE_MG_PV_HYBRID + "{}".format(year),
+                                                                     SET_LCOE_MG_WIND_HYBRID + "{}".format(year)]].T.min()
 
         self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] == 1,
                     SET_MIN_OVERALL_LCOE + "{}".format(year)] = self.df[SET_LCOE_GRID + "{}".format(year)]
@@ -2154,14 +2281,16 @@ class SettlementProcessor:
                  SET_LCOE_MG_DIESEL + "{}".format(year): 4,
                  SET_LCOE_SA_DIESEL + "{}".format(year): 2,
                  SET_LCOE_SA_PV + "{}".format(year): 3,
-                 SET_LCOE_MG_HYBRID + "{}".format(year): 8}
+                 SET_LCOE_MG_PV_HYBRID + "{}".format(year): 8,
+                 SET_LCOE_MG_WIND_HYBRID + "{}".format(year): 9}
 
         for key in codes.keys():
             self.df.loc[self.df[SET_MIN_OVERALL + "{}".format(year)] == key,
                         SET_MIN_OVERALL_CODE + "{}".format(year)] = codes[key]
 
     def calculate_investments(self, sa_diesel_investment, sa_pv_investment, mg_diesel_investment, mg_pv_investment,
-                              mg_wind_investment, mg_hydro_investment, mg_pv_hybrid_investment, grid_investment, year):
+                              mg_wind_investment, mg_hydro_investment, mg_pv_hybrid_investment,
+                              mg_wind_hybrid_investment, grid_investment, year):
 
         logging.info('Calculate investment cost')
 
@@ -2175,10 +2304,12 @@ class SettlementProcessor:
         mg_wind = pd.DataFrame(np.where(self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 6, 1, 0))
         mg_hydro = pd.DataFrame(np.where(self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 7, 1, 0))
         mg_pv_hybrid = pd.DataFrame(np.where(self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 8, 1, 0))
+        mg_wind_hybrid = pd.DataFrame(np.where(self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 9, 1, 0))
 
         self.df[SET_INVESTMENT_COST + "{}".format(year)] = grid * grid_investment + sa_diesel * sa_diesel_investment + \
             sa_pv * sa_pv_investment + mg_diesel * mg_diesel_investment + mg_pv * mg_pv_investment + \
-            mg_wind * mg_wind_investment + mg_hydro * mg_hydro_investment + mg_pv_hybrid * mg_pv_hybrid_investment
+            mg_wind * mg_wind_investment + mg_hydro * mg_hydro_investment + mg_pv_hybrid * mg_pv_hybrid_investment + \
+            mg_wind_hybrid * mg_wind_hybrid_investment
 
     def apply_limitations(self, eleclimit, year, time_step, prioritization, auto_densification=0):
 
@@ -2249,8 +2380,8 @@ class SettlementProcessor:
 
         print("Le taux d'électrification atteint en {} est {:.1f} %".format(year, elecrate * 100))
 
-    def calculate_new_capacity(self, mg_pv_hybrid_capacity, mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc,
-                               mg_diesel_calc, sa_diesel_calc, grid_calc, year):
+    def calculate_new_capacity(self, mg_pv_hybrid_capacity, mg_wind_hybrid_capacity, mg_hydro_calc, mg_wind_calc,
+                               mg_pv_calc, sa_pv_calc, mg_diesel_calc, sa_diesel_calc, grid_calc, year):
 
         logging.info('Calculate new capacity')
         self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 99, SET_NEW_CAPACITY + "{}".format(year)] = 0
@@ -2293,7 +2424,8 @@ class SettlementProcessor:
         self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 8, SET_NEW_CAPACITY + "{}".format(year)] = \
             (self.df[SET_ENERGY_PER_CELL + "{}".format(year)] * mg_pv_hybrid_capacity)
 
-        a = 1 + 1
+        self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 9, SET_NEW_CAPACITY + "{}".format(year)] = \
+            (self.df[SET_ENERGY_PER_CELL + "{}".format(year)] * mg_wind_hybrid_capacity)
 
     def calc_summaries(self, df_summary, sumtechs, year):
 
@@ -2336,104 +2468,120 @@ class SettlementProcessor:
                                                         (self.df[SET_LIMIT + "{}".format(year)] == 1)]
                                             [SET_POP + "{}".format(year)])
 
+        df_summary[year][sumtechs[8]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 9) &
+                                                        (self.df[SET_LIMIT + "{}".format(year)] == 1)]
+                                            [SET_POP + "{}".format(year)])
+
         # New_Connection Summaries
-        df_summary[year][sumtechs[8]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 1) &
+        df_summary[year][sumtechs[9]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 1) &
                                                         (self.df[SET_LIMIT + "{}".format(year)] == 1)]
                                             [SET_NEW_CONNECTIONS + "{}".format(year)])
 
-        df_summary[year][sumtechs[9]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 2) &
+        df_summary[year][sumtechs[10]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 2) &
                                                         (self.df[SET_LIMIT + "{}".format(year)] == 1)]
                                             [SET_NEW_CONNECTIONS + "{}".format(year)])
 
-        df_summary[year][sumtechs[10]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 3) &
+        df_summary[year][sumtechs[11]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 3) &
                                                          (self.df[SET_LIMIT + "{}".format(year)] == 1) & (
                                                                  self.df[SET_POP + "{}".format(year)] > 0)]
                                              [SET_NEW_CONNECTIONS + "{}".format(year)])
 
-        df_summary[year][sumtechs[11]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 4) &
+        df_summary[year][sumtechs[12]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 4) &
                                                          (self.df[SET_LIMIT + "{}".format(year)] == 1)]
                                              [SET_NEW_CONNECTIONS + "{}".format(year)])
 
-        df_summary[year][sumtechs[12]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 5) &
+        df_summary[year][sumtechs[13]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 5) &
                                                          (self.df[SET_LIMIT + "{}".format(year)] == 1)]
                                              [SET_NEW_CONNECTIONS + "{}".format(year)])
 
-        df_summary[year][sumtechs[13]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 6) &
+        df_summary[year][sumtechs[14]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 6) &
                                                          (self.df[SET_LIMIT + "{}".format(year)] == 1)]
                                              [SET_NEW_CONNECTIONS + "{}".format(year)])
 
-        df_summary[year][sumtechs[14]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 7) &
+        df_summary[year][sumtechs[15]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 7) &
                                                          (self.df[SET_LIMIT + "{}".format(year)] == 1)]
                                              [SET_NEW_CONNECTIONS + "{}".format(year)])
 
-        df_summary[year][sumtechs[15]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 8) &
+        df_summary[year][sumtechs[16]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 8) &
+                                                         (self.df[SET_LIMIT + "{}".format(year)] == 1)]
+                                             [SET_NEW_CONNECTIONS + "{}".format(year)])
+
+        df_summary[year][sumtechs[17]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 9) &
                                                          (self.df[SET_LIMIT + "{}".format(year)] == 1)]
                                              [SET_NEW_CONNECTIONS + "{}".format(year)])
 
         # Capacity Summaries
-        df_summary[year][sumtechs[16]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 1) &
+        df_summary[year][sumtechs[18]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 1) &
                                                          (self.df[SET_LIMIT + "{}".format(year)] == 1)]
                                              [SET_NEW_CAPACITY + "{}".format(year)])
 
-        df_summary[year][sumtechs[17]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 2) &
+        df_summary[year][sumtechs[19]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 2) &
                                                          (self.df[SET_LIMIT + "{}".format(year)] == 1)]
                                              [SET_NEW_CAPACITY + "{}".format(year)])
 
-        df_summary[year][sumtechs[18]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 3) &
+        df_summary[year][sumtechs[20]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 3) &
                                                          (self.df[SET_LIMIT + "{}".format(year)] == 1) & (
                                                                  self.df[SET_POP + "{}".format(year)] > 0)]
                                              [SET_NEW_CAPACITY + "{}".format(year)])
 
-        df_summary[year][sumtechs[19]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 4) &
+        df_summary[year][sumtechs[21]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 4) &
                                                          (self.df[SET_LIMIT + "{}".format(year)] == 1)]
                                              [SET_NEW_CAPACITY + "{}".format(year)])
 
-        df_summary[year][sumtechs[20]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 5) &
+        df_summary[year][sumtechs[22]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 5) &
                                                          (self.df[SET_LIMIT + "{}".format(year)] == 1)]
                                              [SET_NEW_CAPACITY + "{}".format(year)])
 
-        df_summary[year][sumtechs[21]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 6) &
+        df_summary[year][sumtechs[23]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 6) &
                                                          (self.df[SET_LIMIT + "{}".format(year)] == 1)]
                                              [SET_NEW_CAPACITY + "{}".format(year)])
 
-        df_summary[year][sumtechs[22]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 7) &
+        df_summary[year][sumtechs[24]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 7) &
                                                          (self.df[SET_LIMIT + "{}".format(year)] == 1)]
                                              [SET_NEW_CAPACITY + "{}".format(year)])
 
-        df_summary[year][sumtechs[23]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 8) &
+        df_summary[year][sumtechs[25]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 8) &
+                                                         (self.df[SET_LIMIT + "{}".format(year)] == 1)]
+                                             [SET_NEW_CAPACITY + "{}".format(year)])
+
+        df_summary[year][sumtechs[26]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 9) &
                                                          (self.df[SET_LIMIT + "{}".format(year)] == 1)]
                                              [SET_NEW_CAPACITY + "{}".format(year)])
 
         # Investment Summaries
-        df_summary[year][sumtechs[24]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 1) &
+        df_summary[year][sumtechs[27]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 1) &
                                                          (self.df[SET_LIMIT + "{}".format(year)] == 1)]
                                              [SET_INVESTMENT_COST + "{}".format(year)])
 
-        df_summary[year][sumtechs[25]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 2) &
+        df_summary[year][sumtechs[28]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 2) &
                                                          (self.df[SET_LIMIT + "{}".format(year)] == 1)]
                                              [SET_INVESTMENT_COST + "{}".format(year)])
 
-        df_summary[year][sumtechs[26]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 3) &
+        df_summary[year][sumtechs[29]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 3) &
                                                          (self.df[SET_LIMIT + "{}".format(year)] == 1) & (
                                                                  self.df[SET_POP + "{}".format(year)] > 0)]
                                              [SET_INVESTMENT_COST + "{}".format(year)])
 
-        df_summary[year][sumtechs[27]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 4) &
+        df_summary[year][sumtechs[30]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 4) &
                                                          (self.df[SET_LIMIT + "{}".format(year)] == 1)]
                                              [SET_INVESTMENT_COST + "{}".format(year)])
 
-        df_summary[year][sumtechs[28]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 5) &
+        df_summary[year][sumtechs[31]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 5) &
                                                          (self.df[SET_LIMIT + "{}".format(year)] == 1)]
                                              [SET_INVESTMENT_COST + "{}".format(year)])
 
-        df_summary[year][sumtechs[29]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 6) &
+        df_summary[year][sumtechs[32]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 6) &
                                                          (self.df[SET_LIMIT + "{}".format(year)] == 1)]
                                              [SET_INVESTMENT_COST + "{}".format(year)])
 
-        df_summary[year][sumtechs[30]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 7) &
+        df_summary[year][sumtechs[33]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 7) &
                                                          (self.df[SET_LIMIT + "{}".format(year)] == 1)]
                                              [SET_INVESTMENT_COST + "{}".format(year)])
 
-        df_summary[year][sumtechs[31]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 8) &
+        df_summary[year][sumtechs[34]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 8) &
+                                                         (self.df[SET_LIMIT + "{}".format(year)] == 1)]
+                                             [SET_INVESTMENT_COST + "{}".format(year)])
+
+        df_summary[year][sumtechs[35]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 9) &
                                                          (self.df[SET_LIMIT + "{}".format(year)] == 1)]
                                              [SET_INVESTMENT_COST + "{}".format(year)])
