@@ -188,7 +188,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
         mg_hydro_calc = Technology(om_of_td_lines=0.02,
                                    distribution_losses=0.05,
-                                   connection_cost_per_hh=100,
+                                   connection_cost_per_hh=92,
                                    base_to_peak_load_ratio=0.85,
                                    capacity_factor=0.5,
                                    tech_life=30,
@@ -198,7 +198,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
         mg_wind_calc = Technology(om_of_td_lines=0.02,
                                   distribution_losses=0.05,
-                                  connection_cost_per_hh=100,
+                                  connection_cost_per_hh=92,
                                   base_to_peak_load_ratio=0.85,
                                   capital_cost={float("inf"): 3750},
                                   om_costs=0.02,
@@ -207,7 +207,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
         mg_pv_calc = Technology(om_of_td_lines=0.02,
                                 distribution_losses=0.05,
-                                connection_cost_per_hh=100,
+                                connection_cost_per_hh=92,
                                 base_to_peak_load_ratio=0.85,
                                 tech_life=20,
                                 om_costs=0.015,
@@ -227,7 +227,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
         mg_diesel_calc = Technology(om_of_td_lines=0.02,
                                     distribution_losses=0.05,
-                                    connection_cost_per_hh=100,
+                                    connection_cost_per_hh=92,
                                     base_to_peak_load_ratio=0.85,
                                     capacity_factor=0.7,
                                     tech_life=15,
