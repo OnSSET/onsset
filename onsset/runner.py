@@ -156,7 +156,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                                                                                five_year_index, grid_index, pv_index,
                                                                                prio_index, productive_index, diesel_index))
         summary_csv = os.path.join(summary_folder,
-                                   '{}-1-{}_{}_{}_{}_{}_{}_{}_{]_summary.csv'.format(country_id, pop_index, tier_index,
+                                   '{}-1-{}_{}_{}_{}_{}_{}_{}_{}_summary.csv'.format(country_id, pop_index, tier_index,
                                                                                five_year_index, grid_index, pv_index,
                                                                                prio_index, productive_index, diesel_index))
 
