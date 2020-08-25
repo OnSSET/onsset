@@ -1440,7 +1440,7 @@ class SettlementProcessor:
         # electrified settlements up until this point, then from the newly electrified settlements in each round
         prev_electrified = np.zeros(len(prev_code))
         loops = 1
-        test = 1
+        test = [1, 2]
         while sum(electrified) > sum(prev_electrified) and len(test) > 0:
             new_electrified = electrified - prev_electrified
             prev_electrified = electrified
@@ -1451,7 +1451,7 @@ class SettlementProcessor:
             extension_nodes = extension_nodes[0].tolist()
             test = np.setdiff1d(unelectrified, extension_nodes).tolist()
 
-            if sum(new_electrified) > 1 and len(test) > 0:
+            if sum(new_electrified) > 1 and len(test) > 1:
                 # Calculating the distance and adjusted distance from each unelectrified settelement to the closest
                 # electrified settlement, as well as the electrification order an total MV distance to that electrified
                 # settlement
