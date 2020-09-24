@@ -9,13 +9,13 @@ df = pd.DataFrame(columns = ["grid_cap", "demand", "discount rate", "grid gen co
 
 country = 'bf'
 
-population = [0, 1]
-pv_cost = [0, 2, 4] # ToDo
+population = [0, 1, 2]
+pv_cost = [0, 2, 4]  # ToDo
 grid_cost = [0, 2, 4]
 discount_rate = [0, 1, 2]
 demand = [0]
 grid_options = [0, 1, 2]
-distribution = [1, 2]
+distribution = [0, 1, 2]
 
 lcoe = []
 investment = []
@@ -49,7 +49,7 @@ lcoe = pd.Series(investment)  # ToDo
 sorted_lcoe = pd.Series(sorted(lcoe))/1000000
 sorted_lcoe.plot()
 
-thres = lcoe.quantile(q=0.9)
+thres = lcoe.quantile(q=0.85)
 
 p = prim.Prim(df, lcoe, threshold=thres, threshold_type=">")
 

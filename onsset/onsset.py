@@ -1384,7 +1384,7 @@ class SettlementProcessor:
             if prio == 5:
                 placeholder_lcoe.loc[(mv_planned < auto_intensification) & (prev_code != 1)] = 0.01
             elif prio == 6:
-                placeholder_lcoe.loc[(pop < 1000) & (prev_code != 1)] = 0.01
+                placeholder_lcoe.loc[(pop > 1500) & (prev_code != 1) & (mv_planned < 25)] = 0.01
 
             grid_capacity_limit, grid_connect_limit, cell_path_real, cell_path_adjusted, elecorder, electrified, \
                 new_lcoes, new_investment \
@@ -1564,8 +1564,8 @@ class SettlementProcessor:
         grid_lcoe = grid_lcoe[0]
         grid_investment = grid_investment[0]
         grid_lcoe.loc[electrified == 1] = 99
-        grid_lcoe.loc[prev_dist + dist_adjusted > max_dist] = 99
-        grid_lcoe.loc[grid_lcoe > new_lcoes] = 99
+        #grid_lcoe.loc[prev_dist + dist_adjusted > max_dist] = 99
+        #grid_lcoe.loc[grid_lcoe > new_lcoes] = 99
         consumption = self.df[SET_ENERGY_PER_CELL + "{}".format(year)]  # kWh/year
         average_load = consumption / (1 - grid_calc.distribution_losses) / HOURS_PER_YEAR  # kW
         peak_load = average_load / grid_calc.base_to_peak_load_ratio  # kW
@@ -1708,11 +1708,11 @@ class SettlementProcessor:
             # self.df.loc[self.df[SET_URBAN] == 2, SET_CAPITA_DEMAND] = self.df[
             #     SET_RESIDENTIAL_TIER + str(wb_tier_urban_centers)]
 
-            self.df.loc[self.df[SET_POP_CALIB] > 1000, SET_CAPITA_DEMAND] = self.df[
+            self.df.loc[self.df[SET_POP_CALIB] > 1500, SET_CAPITA_DEMAND] = self.df[
                 SET_RESIDENTIAL_TIER + str(wb_tier_urban_clusters)]
             self.df.loc[self.df[SET_POP_CALIB] > 50000, SET_CAPITA_DEMAND] = self.df[
                 SET_RESIDENTIAL_TIER + str(wb_tier_urban_centers)]
-            self.df.loc[self.df[SET_POP_CALIB] <= 1000, SET_CAPITA_DEMAND] = self.df[
+            self.df.loc[self.df[SET_POP_CALIB] <= 1500, SET_CAPITA_DEMAND] = self.df[
                 SET_RESIDENTIAL_TIER + str(wb_tier_rural)]
 
             # TODO: REVIEW, added Tier column
@@ -2015,10 +2015,13 @@ class SettlementProcessor:
                         (self.df[SET_LCOE_GRID + "{}".format(year)] != 99),
                         SET_MIN_OVERALL + "{}".format(year)] = 'Grid' + "{}".format(year)
 
-        if prio == 6:
-            self.df.loc[(self.df[SET_POP + "{}".format(year)] > 1000) &
-                        (self.df[SET_LCOE_GRID + "{}".format(year)] != 99),
+        if prio == 6:  # ToDo
+            self.df.loc[(self.df[SET_POP + "{}".format(year)] > 1500) &
+                        (self.df[SET_LCOE_GRID + "{}".format(year)] != 99) &
+                        (self.df[SET_MV_DIST_PLANNED] < 25),
                         SET_MIN_OVERALL + "{}".format(year)] = 'Grid' + "{}".format(year)
+
+        # self.df[SET_MIN_OVERALL + "{}".format(year)] = self.df[SET_MIN_OVERALL + "{}".format(year)].astype('float64')
 
         #logging.info('Determine minimum overall LCOE')
         self.df[SET_MIN_OVERALL_LCOE + "{}".format(year)] = self.df[[SET_LCOE_GRID + "{}".format(year),
@@ -2032,9 +2035,15 @@ class SettlementProcessor:
         self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] == 1,
                     SET_MIN_OVERALL_LCOE + "{}".format(year)] = self.df[SET_LCOE_GRID + "{}".format(year)]
 
-        if (prio == 2) or (prio == 4):
+        if prio == 5:
             self.df.loc[(self.df[SET_MV_DIST_PLANNED] < auto_intensification) &
                         (self.df[SET_LCOE_GRID + "{}".format(year)] != 99),
+                        SET_MIN_OVERALL_LCOE + "{}".format(year)] = self.df[SET_LCOE_GRID + "{}".format(year)]
+
+        if prio == 6:  # ToDo
+            self.df.loc[(self.df[SET_POP + "{}".format(year)] > 1500) &
+                        (self.df[SET_LCOE_GRID + "{}".format(year)] != 99) &
+                        (self.df[SET_MV_DIST_PLANNED] < 25),
                         SET_MIN_OVERALL_LCOE + "{}".format(year)] = self.df[SET_LCOE_GRID + "{}".format(year)]
 
         #logging.info('Add technology codes')
