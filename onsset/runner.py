@@ -123,13 +123,13 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder, ge
     specs_data = pd.read_excel(specs_path, sheet_name='SpecsDataCalib')
     logging.info(specs_data.loc[0, SPE_COUNTRY])
 
-    grid_cap = [0] #[0, 1, 2]
-    pv_cost = [2] # [0, 2, 4]
-    grid_cost = [2] #[0, 2, 4]
-    discount_rate = [1] # [0, 1, 2]
-    demand = [0] # [0, 1]
-    grid_options = [2]
-    compatability = [0] # [0, 1, 2]  # TODO
+    grid_cap = [0, 1, 2]
+    pv_cost = [1, 2, 3]
+    grid_cost = [1, 2, 3]
+    discount_rate = [0, 1, 2]
+    demand = [0, 1]
+    grid_options = [0, 1, 2, 3]
+    compatability = [0, 1, 2]  # TODO
 
     for cap in grid_cap:
         for pv in pv_cost:
@@ -353,6 +353,6 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder, ge
                                         onsseter.df.iloc[:, i] = pd.to_numeric(onsseter.df.iloc[:, i], downcast='signed')
 
                                 df_summary.to_csv(summary_csv, index=sumtechs)
-                                onsseter.df.to_csv(settlements_out_csv, index=False)
+                                # onsseter.df.to_csv(settlements_out_csv, index=False)
 
                                 #logging.info('Finished')

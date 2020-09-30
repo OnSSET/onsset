@@ -1371,34 +1371,6 @@ class SettlementProcessor:
 
         # The grid may be forced to expand around existing MV lines if this option has been selected, regardless
         # off-grid alternatives are less costly. The following section implements that
-        if (prio == 5) or (prio == 6):  # TODO how to deal with grid cap?
-            mv_dist_adjusted = np.nan_to_num(grid_penalty_ratio * mv_planned)
-
-            intensification_lcoe, intensification_investment = \
-                self.get_grid_lcoe(dist_adjusted=mv_dist_adjusted, elecorder=0, additional_transformer=0, year=year,
-                                   time_step=time_step, end_year=end_year, grid_calc=grid_calc, compatability=compatability)
-            intensification_lcoe = intensification_lcoe[0]
-
-            placeholder_lcoe = np.ones(len(prev_code)) * 99
-            placeholder_lcoe = pd.DataFrame(placeholder_lcoe)
-            if prio == 5:
-                placeholder_lcoe.loc[(mv_planned < auto_intensification) & (prev_code != 1)] = 0.01
-            elif prio == 6:
-                placeholder_lcoe.loc[(pop > 1500) & (prev_code != 1) & (mv_planned < 25)] = 0.01
-
-            grid_capacity_limit, grid_connect_limit, cell_path_real, cell_path_adjusted, elecorder, electrified, \
-                new_lcoes, new_investment \
-                = self.update_grid_extension_info(grid_lcoe=placeholder_lcoe, dist=mv_planned,
-                                                  dist_adjusted=mv_dist_adjusted, prev_dist=0, elecorder=elecorder,
-                                                  new_elec_order=1, max_dist=max_dist, new_lcoes=new_lcoes,
-                                                  grid_capacity_limit=grid_capacity_limit,
-                                                  grid_connect_limit=grid_connect_limit, cell_path_real=cell_path_real,
-                                                  cell_path_adjusted=cell_path_adjusted, electrified=electrified,
-                                                  year=year, grid_calc=grid_calc,
-                                                  grid_investment=intensification_investment,
-                                                  new_investment=new_investment)
-
-            new_lcoes = np.where(new_lcoes == 0.01, intensification_lcoe, new_lcoes)
 
         # Find the unelectrified settlements where grid can be less costly than off-grid
         filter_lcoe, filter_investment = self.get_grid_lcoe(0, 0, 0, year, time_step, end_year, grid_calc, compatability=compatability)
@@ -1488,6 +1460,36 @@ class SettlementProcessor:
                                                     cell_path_adjusted=cell_path_adjusted, electrified=electrified,
                                                     year=year, grid_calc=grid_calc, grid_investment=grid_investment,
                                                     new_investment=new_investment)
+
+        if (prio == 5) or (prio == 6):  # TODO how to deal with grid cap?
+            mv_dist_adjusted = np.nan_to_num(grid_penalty_ratio * mv_planned)
+
+            intensification_lcoe, intensification_investment = \
+                self.get_grid_lcoe(dist_adjusted=mv_dist_adjusted, elecorder=0, additional_transformer=0, year=year,
+                                   time_step=time_step, end_year=end_year, grid_calc=grid_calc, compatability=compatability)
+            intensification_lcoe = intensification_lcoe[0]
+
+            placeholder_lcoe = np.ones(len(prev_code)) * 99
+            placeholder_lcoe = pd.DataFrame(placeholder_lcoe)
+            if prio == 5:
+                placeholder_lcoe.loc[(mv_planned < auto_intensification) & (prev_code != 1) & (new_lcoes == 99)] = 0.01
+            elif prio == 6:
+                placeholder_lcoe.loc[(pop > 1500) & (prev_code != 1) & (mv_planned < 25) & (new_lcoes == 99)] = 0.01
+
+            grid_capacity_limit, grid_connect_limit, cell_path_real, cell_path_adjusted, elecorder, electrified, \
+                new_lcoes, new_investment \
+                = self.update_grid_extension_info(grid_lcoe=placeholder_lcoe, dist=mv_planned,
+                                                  dist_adjusted=mv_dist_adjusted, prev_dist=0, elecorder=elecorder,
+                                                  new_elec_order=1, max_dist=max_dist, new_lcoes=new_lcoes,
+                                                  grid_capacity_limit=grid_capacity_limit,
+                                                  grid_connect_limit=grid_connect_limit, cell_path_real=cell_path_real,
+                                                  cell_path_adjusted=cell_path_adjusted, electrified=electrified,
+                                                  year=year, grid_calc=grid_calc,
+                                                  grid_investment=intensification_investment,
+                                                  new_investment=new_investment)
+
+            new_lcoes = np.where(new_lcoes == 0.01, intensification_lcoe, new_lcoes)
+
 
         return new_lcoes, cell_path_adjusted, elecorder, cell_path_real, pd.DataFrame(new_investment)
 
