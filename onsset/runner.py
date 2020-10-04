@@ -128,7 +128,6 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
         print('Scenario: ' + str(scenario + 1))
         country_id = specs_data.iloc[0]['CountryCode']
 
-        pop_index = scenario_info.iloc[scenario]['Population_Growth']
         tier_index = scenario_info.iloc[scenario]['Target_electricity_consumption_level']
         five_year_index = scenario_info.iloc[scenario]['Electrification_target_5_years']
         grid_index = scenario_info.iloc[scenario]['Grid_electricity_generation_cost']
@@ -137,7 +136,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
         productive_index = scenario_info.iloc[scenario]['Productive_uses_demand']
         prio_index = scenario_info.iloc[scenario]['Prioritization_algorithm']
 
-        end_year_pop = scenario_parameters.iloc[pop_index]['PopEndYear']
+        end_year_pop = scenario_parameters.iloc[0]['PopEndYear']
         rural_tier = scenario_parameters.iloc[tier_index]['RuralTargetTier']
         urban_tier = scenario_parameters.iloc[tier_index]['UrbanTargetTier']
         five_year_target = scenario_parameters.iloc[five_year_index]['5YearTarget']
@@ -152,13 +151,13 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
         settlements_in_csv = calibrated_csv_path
         settlements_out_csv = os.path.join(results_folder,
-                                           '{}-1-{}_{}_{}_{}_{}_{}_{}_{}.csv'.format(country_id, pop_index, tier_index,
-                                                                               five_year_index, grid_index, pv_index,
-                                                                               prio_index, productive_index, diesel_index))
+                                           '{}-1-_{}_{}_{}_{}_{}_{}.csv'.format(country_id, prio_index, tier_index,
+                                                                                five_year_index, grid_index,
+                                                                                pv_index, diesel_index))
         summary_csv = os.path.join(summary_folder,
-                                   '{}-1-{}_{}_{}_{}_{}_{}_{}_{}_summary.csv'.format(country_id, pop_index, tier_index,
-                                                                               five_year_index, grid_index, pv_index,
-                                                                               prio_index, productive_index, diesel_index))
+                                   '{}-1-_{}_{}_{}_{}_{}_{}_summary.csv'.format(country_id, prio_index, tier_index,
+                                                                                five_year_index, grid_index,
+                                                                                pv_index, diesel_index))
 
         onsseter = SettlementProcessor(settlements_in_csv)
 
