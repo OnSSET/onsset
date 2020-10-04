@@ -3,7 +3,7 @@ from math import exp, log, pi
 from typing import Dict
 import scipy.spatial
 import os
-from hybrids3 import read_environmental_data, pv_diesel_hybrid
+from hybrids_pv import read_environmental_data, pv_diesel_hybrid
 from  hybrids_wind import read_wind_environmental_data, wind_diesel_hybrid
 
 import numpy as np
