@@ -1369,11 +1369,26 @@ class SettlementProcessor:
         # The grid may be forced to expand around existing MV lines if this option has been selected, regardless
         # off-grid alternatives are less costly. The following section implements that
         if (prio == 2) or (prio == 4):
-            # for i in range(int(auto_intensification)):
             mv_dist_adjusted = np.nan_to_num(grid_penalty_ratio * mv_planned)
+            intensification_dist = mv_planned * 1
+            intensification_dist_adjusted = mv_dist_adjusted * 1
+
+            for i in range(int(auto_intensification + 1)):
+                if i > 1:
+                    closer_nodes = np.where(mv_planned < i, 1, 0)
+                    closer_nodes = np.array(closer_nodes)
+                    further_nodes = np.where((i + 1 > mv_planned) & (mv_planned > i) & (prev_code != 1))
+                    further_nodes = further_nodes[0].tolist()
+                    nearest_dist, nearest_elec_order, nearest_prev_dist, nearest_dist = \
+                        self.closest_electrified_settlement(closer_nodes, further_nodes, cell_path_real,
+                                                            grid_penalty_ratio, elecorder)
+
+                    nearest_dist_adjusted = nearest_dist * grid_penalty_ratio
+                    intensification_dist_adjusted = np.where((nearest_dist_adjusted < intensification_dist_adjusted) & (nearest_dist_adjusted != 0), nearest_dist_adjusted, intensification_dist_adjusted)
+                    intensification_dist = np.where((nearest_dist_adjusted < intensification_dist_adjusted) & (nearest_dist_adjusted != 0), nearest_dist, intensification_dist)
 
             intensification_lcoe, intensification_investment = \
-                self.get_grid_lcoe(dist_adjusted=mv_dist_adjusted, elecorder=0, additional_transformer=0, year=year,
+                self.get_grid_lcoe(dist_adjusted=intensification_dist_adjusted, elecorder=0, additional_transformer=0, year=year,
                                    time_step=time_step, end_year=end_year, grid_calc=grid_calc)
             intensification_lcoe = new_lcoes.copy(deep=True)
             intensification_lcoe.loc[(mv_planned < auto_intensification) & (prev_code != 1)] = 0.01
@@ -1382,8 +1397,9 @@ class SettlementProcessor:
 
             grid_capacity_limit, grid_connect_limit, cell_path_real, cell_path_adjusted, elecorder, electrified, \
             new_lcoes, new_investment \
-                = self.update_grid_extension_info(grid_lcoe=intensification_lcoe, dist=mv_planned,
-                                                  dist_adjusted=mv_dist_adjusted, prev_dist=0, elecorder=elecorder,
+                = self.update_grid_extension_info(grid_lcoe=intensification_lcoe, dist=intensification_dist,
+                                                  dist_adjusted=intensification_dist_adjusted, prev_dist=nearest_prev_dist,
+                                                  elecorder=elecorder,
                                                   new_elec_order=1, max_dist=max_dist, new_lcoes=new_lcoes,
                                                   grid_capacity_limit=grid_capacity_limit,
                                                   grid_connect_limit=grid_connect_limit, cell_path_real=cell_path_real,
