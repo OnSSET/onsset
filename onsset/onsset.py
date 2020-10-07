@@ -1386,6 +1386,8 @@ class SettlementProcessor:
                     nearest_dist_adjusted = nearest_dist * grid_penalty_ratio
                     intensification_dist_adjusted = np.where((nearest_dist_adjusted < intensification_dist_adjusted) & (nearest_dist_adjusted != 0), nearest_dist_adjusted, intensification_dist_adjusted)
                     intensification_dist = np.where((nearest_dist_adjusted < intensification_dist_adjusted) & (nearest_dist_adjusted != 0), nearest_dist, intensification_dist)
+                else:
+                    nearest_prev_dist = 0
 
             intensification_lcoe, intensification_investment = \
                 self.get_grid_lcoe(dist_adjusted=intensification_dist_adjusted, elecorder=0, additional_transformer=0, year=year,
