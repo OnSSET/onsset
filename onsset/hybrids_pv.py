@@ -44,7 +44,7 @@ def pv_diesel_hybrid(
     k_t = 0.005  # temperature factor of PV panels
     inverter_cost = 567
     inverter_life = 10
-    inverter_efficiency = 0.92
+    inv_eff = 0.92  # inverter_efficiency
     charge_controller = 196
 
 
@@ -98,7 +98,7 @@ def pv_diesel_hybrid(
         battery_life = np.zeros(shape=(battery_no, pv_no, diesel_no))
         soc = np.ones(shape=(battery_no, pv_no, diesel_no)) * 0.5
         unmet_demand = np.zeros(shape=(battery_no, pv_no, diesel_no))
-        excess_gen = np.zeros(shape=(battery_no, pv_no, diesel_no)) # TODO
+        excess_gen = np.zeros(shape=(battery_no, pv_no, diesel_no))  # TODO
         annual_diesel_gen = np.zeros(shape=(battery_no, pv_no, diesel_no))
         dod_max = np.ones(shape=(battery_no, pv_no, diesel_no)) * 0.6
 
@@ -111,12 +111,12 @@ def pv_diesel_hybrid(
             # Calculation of PV gen and net load
             t_cell = temp[i] + 0.0256 * ghi[i]  # PV cell temperature
             pv_gen = pv_capacity * 0.9 * ghi[i] / 1000 * (1 - k_t * (t_cell - 25))  # PV generation in the hour
-            net_load = load_curve[hour_numbers[i]] - pv_gen  # remaining load not met by PV panels
+            net_load = load_curve[hour_numbers[i]] - pv_gen * inv_eff  # remaining load not met by PV panels
 
             # Dispatchable energy from battery available to meet load
-            battery_dispatchable = soc * battery_size * n_dis
+            battery_dispatchable = soc * battery_size * n_dis * inv_eff
             # Energy required to fully charge battery
-            battery_chargeable = (1 - soc) * battery_size / n_chg
+            battery_chargeable = (1 - soc) * battery_size / n_chg / inv_eff
 
             # Below is the dispatch strategy for the diesel generator as described in word document
 
@@ -161,11 +161,26 @@ def pv_diesel_hybrid(
             # Reamining load after diesel generator
             net_load = net_load - diesel_gen
 
-            # If diesel generation is larger than load, battery is charged
-            # If diesel generation is smaller than load, battery is discharged
-            soc -= np.where(net_load > 0,
+            # If diesel generation is used, but is smaller than load, battery is discharged
+            soc -= np.where((net_load > 0) & (diesel_gen > 0),
+                            net_load / n_dis / inv_eff / battery_size,
+                            0)
+
+            # If diesel generation is used, and is larger than load, battery is charged
+            soc -= np.where((net_load < 0) & (diesel_gen > 0),
+                            net_load * n_chg * inv_eff / battery_size,
+                            0)
+
+            # If net load is positive and no diesel is used, battery is discharged
+            soc -= np.where((net_load > 0) & (diesel_gen == 0),
                             net_load / n_dis / battery_size,
-                            net_load * n_chg / battery_size)
+                            0)
+
+            # If net load is negative, and no diesel has been used, excess PV gen is used to charge battery
+            soc -= np.where((net_load < 0) & (diesel_gen == 0),
+                            net_load * n_chg / battery_size,
+                            0)
+
 
             # The amount of battery discharge in the hour is stored (measured in State Of Charge)
             battery_use[hour_numbers[i], :, :] = \
@@ -250,17 +265,17 @@ def pv_diesel_hybrid(
             salvage = np.zeros((len(battery_sizes), pv_no, diesel_no))
 
             fuel_costs = fuel_usage * diesel_price
-            om_costs = (pv_panel_size * pv_cost * pv_om + diesel_capacity * diesel_cost * diesel_om)
+            om_costs = (pv_panel_size * (pv_cost + charge_controller) * pv_om + diesel_capacity * diesel_cost * diesel_om)
 
             inverter_investment = np.where(year % inverter_life == 0, max(load_curve) * inverter_cost, 0)
             diesel_investment = np.where(year % diesel_life == 0, diesel_capacity * diesel_cost, 0)
-            pv_investment = np.where(year % pv_life == 0, pv_panel_size * pv_cost, 0)
+            pv_investment = np.where(year % pv_life == 0, pv_panel_size * (pv_cost + charge_controller), 0)
             battery_investment = np.where(year % battery_life == 0, battery_size * battery_cost / dod_max, 0)  # TODO Include dod_max here?
 
             if year == project_life:
                 salvage = (1 - (project_life % battery_life) / battery_life) * battery_cost * battery_size / dod_max + \
                           (1 - (project_life % diesel_life) / diesel_life) * diesel_capacity * diesel_cost + \
-                          (1 - (project_life % pv_life) / pv_life) * pv_panel_size * pv_cost + \
+                          (1 - (project_life % pv_life) / pv_life) * pv_panel_size * (pv_cost + charge_controller) + \
                           (1 - (project_life % inverter_life) / inverter_life) * max(load_curve) * inverter_cost
 
             investment += diesel_investment + pv_investment + battery_investment + inverter_investment - salvage
