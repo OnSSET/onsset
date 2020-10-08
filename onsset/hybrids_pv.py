@@ -28,7 +28,7 @@ def pv_diesel_hybrid(
         pv_no=15,  # number of PV panel sizes simulated
         diesel_no=15,  # number of diesel generators simulated
         discount_rate=0.08,
-        diesel_price=0.7,
+        diesel_range=[0.7],
         pv_adjustment_factor=1
 ):
     n_chg = 0.92  # charge efficiency of battery
@@ -250,7 +250,7 @@ def pv_diesel_hybrid(
         pv_diesel_capacities(pv_panel_size, battery_size, diesel_capacity, pv_no, diesel_no, len(battery_sizes))
     battery_life = np.minimum(20, battery_life)
 
-    def calculate_hybrid_lcoe():
+    def calculate_hybrid_lcoe(diesel_price):
         # Necessary information for calculation of LCOE is defined
         project_life = end_year - start_year
         generation = np.ones(project_life) * energy_per_hh
@@ -287,16 +287,29 @@ def pv_diesel_hybrid(
 
         return sum_costs / sum_el_gen, investment
 
-    diesel_limit = 0.25
-    lcoe, investment = calculate_hybrid_lcoe()
-    lcoe = np.where(lpsp > lpsp_max, 99, lcoe)
-    lcoe = np.where(diesel_share > diesel_limit, 99, lcoe)
+    diesel_limit = 0.5
 
-    min_lcoe = np.min(lcoe)
-    min_lcoe_combination = np.unravel_index(np.argmin(lcoe, axis=None), lcoe.shape)
-    ren_share = 1 - diesel_share[min_lcoe_combination]
-    capacity = pv_panel_size[min_lcoe_combination] + diesel_capacity[min_lcoe_combination]
-    ren_capacity = pv_panel_size[min_lcoe_combination] / capacity
-    excess_gen = excess_gen[min_lcoe_combination]
+    min_lcoe_range = []
+    investment_range = []
+    capacity_range = []
+    ren_share_range = []
 
-    return min_lcoe, investment[min_lcoe_combination], capacity # , ren_share, ren_capacity, excess_gen
+    for d in diesel_range:
+
+        lcoe, investment = calculate_hybrid_lcoe(d)
+        lcoe = np.where(lpsp > lpsp_max, 99, lcoe)
+        lcoe = np.where(diesel_share > diesel_limit, 99, lcoe)
+
+        min_lcoe = np.min(lcoe)
+        min_lcoe_combination = np.unravel_index(np.argmin(lcoe, axis=None), lcoe.shape)
+        ren_share = 1 - diesel_share[min_lcoe_combination]
+        capacity = pv_panel_size[min_lcoe_combination] + diesel_capacity[min_lcoe_combination]
+        ren_capacity = pv_panel_size[min_lcoe_combination] / capacity
+        # excess_gen = excess_gen[min_lcoe_combination]
+
+        min_lcoe_range.append(min_lcoe)
+        investment_range.append(investment[min_lcoe_combination])
+        capacity_range.append(capacity)
+        ren_share_range.append(ren_share)
+
+    return min_lcoe_range, investment_range, capacity_range, ren_share_range  # , ren_capacity, excess_gen

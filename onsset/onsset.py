@@ -1,4 +1,4 @@
-#import logging
+import logging
 from math import exp, log, pi
 from typing import Dict
 import scipy.spatial
@@ -9,7 +9,7 @@ from  hybrids_wind import read_wind_environmental_data, wind_diesel_hybrid
 import numpy as np
 import pandas as pd
 
-#logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.WARNING)
+logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.DEBUG)
 #logger = logging.getLogger(__name__)
 
 # Columns in settlements file must match these exactly
@@ -671,13 +671,13 @@ class SettlementProcessor:
 
     @staticmethod
     def _diesel_fuel_cost_calculator(diesel_price: float,
-                                     diesel_truck_consumption: float,
+                                     diesel_truck_consumption: float, #
                                      diesel_truck_volume: float,
                                      traveltime: np.ndarray,
                                      efficiency: float):
         """We apply the Szabo formula to calculate the transport cost for the diesel
 
-        Formulae is::
+        Formula is::
 
             p = (p_d + 2*p_d*consumption*time/volume)*(1/mu)*(1/LHVd)
 
@@ -694,7 +694,7 @@ class SettlementProcessor:
         numpy.ndarray
         """
         return (diesel_price + 2 * diesel_price * diesel_truck_consumption *
-                traveltime / diesel_truck_volume) / LHV_DIESEL / efficiency
+                traveltime / diesel_truck_volume)  # / LHV_DIESEL / efficiency
 
     def compute_diesel_cost(self,
                             dataframe: pd.DataFrame,
@@ -1885,38 +1885,58 @@ class SettlementProcessor:
         pv_hybrid_capacity_5 = pd.DataFrame(np.outer(np.zeros(len(diesel_range)), np.zeros(len(ghi_range))),
                                         columns=ghi_range, index=diesel_range)
 
+        pv_hybrid_ren_share_1 = pd.DataFrame(np.outer(np.zeros(len(diesel_range)), np.zeros(len(ghi_range))),
+                                            columns=ghi_range, index=diesel_range)
+        pv_hybrid_ren_share_2 = pd.DataFrame(np.outer(np.zeros(len(diesel_range)), np.zeros(len(ghi_range))),
+                                            columns=ghi_range, index=diesel_range)
+        pv_hybrid_ren_share_3 = pd.DataFrame(np.outer(np.zeros(len(diesel_range)), np.zeros(len(ghi_range))),
+                                            columns=ghi_range, index=diesel_range)
+        pv_hybrid_ren_share_4 = pd.DataFrame(np.outer(np.zeros(len(diesel_range)), np.zeros(len(ghi_range))),
+                                            columns=ghi_range, index=diesel_range)
+        pv_hybrid_ren_share_5 = pd.DataFrame(np.outer(np.zeros(len(diesel_range)), np.zeros(len(ghi_range))),
+                                            columns=ghi_range, index=diesel_range)
+
         tiers = [1, 2, 3, 4, 5]
 
-        #logging.info('Start')
+        logging.info('Start')
 
         for g in ghi_range:
-            for d in diesel_range:
+            pv_hybrid_lcoe_1[g][:], \
+            pv_hybrid_investment_1[g][:], \
+            pv_hybrid_capacity_1[g][:], \
+            pv_hybrid_ren_share_1[g][:] = pv_diesel_hybrid(1, g, ghi_curve_7, temp_7, 1, start_year, end_year,
+                                                           diesel_range=diesel_range,
+                                                           pv_adjustment_factor=pv_adjustment_factor)
 
-                pv_hybrid_lcoe_1[g][d], \
-                pv_hybrid_investment_1[g][d], \
-                pv_hybrid_capacity_1[g][d] = pv_diesel_hybrid(1, g, ghi_curve_7, temp_7, 1, start_year, end_year, diesel_price=d, pv_adjustment_factor=pv_adjustment_factor)
+            pv_hybrid_lcoe_2[g][:], \
+            pv_hybrid_investment_2[g][:], \
+            pv_hybrid_capacity_2[g][:], \
+            pv_hybrid_ren_share_2[g][:] = pv_diesel_hybrid(1, g, ghi_curve_7, temp_7, 2, start_year, end_year,
+                                                           diesel_range=diesel_range,
+                                                           pv_adjustment_factor=pv_adjustment_factor)
 
-                pv_hybrid_lcoe_2[g][d], \
-                pv_hybrid_investment_2[g][d], \
-                pv_hybrid_capacity_2[g][d] = pv_diesel_hybrid(1, g, ghi_curve_7, temp_7, 2, start_year, end_year,
-                                                              diesel_price=d, pv_adjustment_factor=pv_adjustment_factor)
+            pv_hybrid_lcoe_3[g][:], \
+            pv_hybrid_investment_3[g][:], \
+            pv_hybrid_capacity_3[g][:], \
+            pv_hybrid_ren_share_3[g][:] = pv_diesel_hybrid(1, g, ghi_curve_7, temp_7, 3, start_year, end_year,
+                                                           diesel_range=diesel_range,
+                                                           pv_adjustment_factor=pv_adjustment_factor)
 
-                pv_hybrid_lcoe_3[g][d], \
-                pv_hybrid_investment_3[g][d], \
-                pv_hybrid_capacity_3[g][d] = pv_diesel_hybrid(1, g, ghi_curve_7, temp_7, 3, start_year, end_year,
-                                                              diesel_price=d, pv_adjustment_factor=pv_adjustment_factor)
+            pv_hybrid_lcoe_4[g][:], \
+            pv_hybrid_investment_4[g][:], \
+            pv_hybrid_capacity_4[g][:], \
+            pv_hybrid_ren_share_4[g][:] = pv_diesel_hybrid(1, g, ghi_curve_7, temp_7, 4, start_year, end_year,
+                                                           diesel_range=diesel_range,
+                                                           pv_adjustment_factor=pv_adjustment_factor)
 
-                pv_hybrid_lcoe_4[g][d], \
-                pv_hybrid_investment_4[g][d], \
-                pv_hybrid_capacity_4[g][d] = pv_diesel_hybrid(1, g, ghi_curve_7, temp_7, 4, start_year, end_year,
-                                                              diesel_price=d, pv_adjustment_factor=pv_adjustment_factor)
+            pv_hybrid_lcoe_5[g][:], \
+            pv_hybrid_investment_5[g][:], \
+            pv_hybrid_capacity_5[g][:], \
+            pv_hybrid_ren_share_5[g][:] = pv_diesel_hybrid(1, g, ghi_curve_7, temp_7, 5, start_year, end_year,
+                                                           diesel_range=diesel_range,
+                                                           pv_adjustment_factor=pv_adjustment_factor)
 
-                pv_hybrid_lcoe_5[g][d], \
-                pv_hybrid_investment_5[g][d], \
-                pv_hybrid_capacity_5[g][d] = pv_diesel_hybrid(1, g, ghi_curve_7, temp_7, 5, start_year, end_year,
-                                                              diesel_price=d, pv_adjustment_factor=pv_adjustment_factor)
-
-        #logging.info('Stop')
+        logging.info('Stop')
 
         def local_hybrid(ghi, diesel, tier):
             ghi = round(ghi, -2)
@@ -1926,30 +1946,36 @@ class SettlementProcessor:
                 hybrid_lcoe = pv_hybrid_lcoe_1[ghi][diesel]
                 hybrid_investment = pv_hybrid_investment_1[ghi][diesel]
                 hybrid_capacity = pv_hybrid_capacity_1[ghi][diesel]
+                hybrid_renewable = pv_hybrid_ren_share_1[ghi][diesel]
             elif tier == 2:
                 hybrid_lcoe = pv_hybrid_lcoe_2[ghi][diesel]
                 hybrid_investment = pv_hybrid_investment_2[ghi][diesel]
                 hybrid_capacity = pv_hybrid_capacity_2[ghi][diesel]
+                hybrid_renewable = pv_hybrid_ren_share_2[ghi][diesel]
             elif tier == 3:
                 hybrid_lcoe = pv_hybrid_lcoe_3[ghi][diesel]
                 hybrid_investment = pv_hybrid_investment_3[ghi][diesel]
                 hybrid_capacity = pv_hybrid_capacity_3[ghi][diesel]
+                hybrid_renewable = pv_hybrid_ren_share_3[ghi][diesel]
             elif tier == 4:
                 hybrid_lcoe = pv_hybrid_lcoe_4[ghi][diesel]
                 hybrid_investment = pv_hybrid_investment_4[ghi][diesel]
                 hybrid_capacity = pv_hybrid_capacity_4[ghi][diesel]
+                hybrid_renewable = pv_hybrid_ren_share_4[ghi][diesel]
             elif tier == 5:
                 hybrid_lcoe = pv_hybrid_lcoe_5[ghi][diesel]
                 hybrid_investment = pv_hybrid_investment_5[ghi][diesel]
                 hybrid_capacity = pv_hybrid_capacity_5[ghi][diesel]
+                hybrid_renewable = pv_hybrid_ren_share_5[ghi][diesel]
 
-            return hybrid_lcoe, hybrid_investment, hybrid_capacity
+            return hybrid_lcoe, hybrid_investment, hybrid_capacity, hybrid_renewable
 
         hybrid_series = self.df.apply(lambda row: local_hybrid(row[SET_GHI], row[SET_MG_DIESEL_FUEL + "{}".format(year)], row[SET_TIER]), axis=1, result_type='expand')
 
         pv_hybrid_capacity = hybrid_series[2]
+        self.df['RenewableShare' + "{}".format(year)] = hybrid_series[3]
 
-        #logging.info('Stop 2')
+        logging.info('Stop 2')
 
         #logging.info('Calculate minigrid PV hybrid LCOE')
         self.df[SET_LCOE_MG_PV_HYBRID + "{}".format(year)], pv_hybrid_investment = \
