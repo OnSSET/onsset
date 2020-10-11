@@ -310,11 +310,9 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
             onsseter.diesel_cost_columns(sa_diesel_cost, mg_diesel_cost, year)
 
-            # mg_wind_hybrid_investment, mg_wind_hybrid_capacity = onsseter.calculate_wind_hybrids_lcoe(year, year - time_step, end_year, time_step, mg_wind_hybrid_calc)
+            mg_pv_hybrid_investment, mg_pv_hybrid_capacity, mg_pv_investment = onsseter.calculate_pv_hybrids_lcoe(year, year-time_step, end_year, time_step, mg_pv_hybrid_calc, pv_capital_cost_adjust)
 
-            mg_pv_hybrid_investment, mg_pv_hybrid_capacity = onsseter.calculate_pv_hybrids_lcoe(year, year-time_step, end_year, time_step, mg_pv_hybrid_calc, pv_capital_cost_adjust)
-
-            sa_diesel_investment, sa_pv_investment, mg_diesel_investment, mg_pv_investment, mg_wind_investment, \
+            sa_diesel_investment, sa_pv_investment, mg_diesel_investment, mg_wind_investment, \
                 mg_hydro_investment = onsseter.calculate_off_grid_lcoes(mg_hydro_calc, mg_wind_calc, mg_pv_calc,
                                                                         sa_pv_calc, mg_diesel_calc,
                                                                         sa_diesel_calc, year, end_year, time_step)

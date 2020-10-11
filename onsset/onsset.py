@@ -1722,18 +1722,6 @@ class SettlementProcessor:
             self.df.loc[self.df[SET_URBAN] == 2, SET_CAPITA_DEMAND] = self.df[
                 SET_RESIDENTIAL_TIER + str(wb_tier_urban_centers)] * demand_factor
 
-            # TODO: REVIEW, added Tier column
-            tier_1 = 38.7  # 38.7 refers to kWh/household/year. It is the mean value between Tier 1 and Tier 2
-            tier_2 = 219
-            tier_3 = 803
-            tier_4 = 2117
-
-            self.df[SET_TIER] = 5
-            self.df.loc[self.df[SET_CAPITA_DEMAND] * self.df[SET_NUM_PEOPLE_PER_HH] < tier_4, SET_TIER] = 4
-            self.df.loc[self.df[SET_CAPITA_DEMAND] * self.df[SET_NUM_PEOPLE_PER_HH] < tier_3, SET_TIER] = 3
-            self.df.loc[self.df[SET_CAPITA_DEMAND] * self.df[SET_NUM_PEOPLE_PER_HH] < tier_2, SET_TIER] = 2
-            self.df.loc[self.df[SET_CAPITA_DEMAND] * self.df[SET_NUM_PEOPLE_PER_HH] < tier_1, SET_TIER] = 1
-
     def calculate_total_demand_per_settlement(self, year, productive_demand, time_step):
         """this method calculates total demand for each settlement per year
 
@@ -1832,6 +1820,18 @@ class SettlementProcessor:
         self.set_residential_demand(rural_tier, urban_tier, num_people_per_hh_rural, num_people_per_hh_urban, demand_factor)
         self.calculate_total_demand_per_settlement(year, productive_demand, time_step)
 
+        # TODO: REVIEW, added Tier column
+        tier_1 = 38.7  # 38.7 refers to kWh/household/year. It is the mean value between Tier 1 and Tier 2
+        tier_2 = 219
+        tier_3 = 803
+        tier_4 = 2117
+
+        self.df[SET_TIER] = 5
+        self.df.loc[(self.df[SET_TOTAL_ENERGY_PER_CELL] / self.df[SET_POP + "{}".format(year)]) * self.df[SET_NUM_PEOPLE_PER_HH] < tier_4, SET_TIER] = 4
+        self.df.loc[(self.df[SET_TOTAL_ENERGY_PER_CELL] / self.df[SET_POP + "{}".format(year)]) * self.df[SET_NUM_PEOPLE_PER_HH] < tier_3, SET_TIER] = 3
+        self.df.loc[(self.df[SET_TOTAL_ENERGY_PER_CELL] / self.df[SET_POP + "{}".format(year)]) * self.df[SET_NUM_PEOPLE_PER_HH] < tier_2, SET_TIER] = 2
+        self.df.loc[(self.df[SET_TOTAL_ENERGY_PER_CELL] / self.df[SET_POP + "{}".format(year)]) * self.df[SET_NUM_PEOPLE_PER_HH] < tier_1, SET_TIER] = 1
+
     def calculate_pv_hybrids_lcoe(self, year, start_year, end_year, time_step, mg_pv_hybrid_calc, pv_adjustment_factor):
         path_7 = os.path.join('Supplementary_files', 'ninja_pv_7.0000_2.3000_uncorrected.csv')
         path_8 = os.path.join('Supplementary_files', 'ninja_pv_8.0000_2.3000_uncorrected.csv')
@@ -1898,8 +1898,6 @@ class SettlementProcessor:
 
         tiers = [1, 2, 3, 4, 5]
 
-        logging.info('Start')
-
         for g in ghi_range:
             pv_hybrid_lcoe_1[g][:], \
             pv_hybrid_investment_1[g][:], \
@@ -1935,8 +1933,6 @@ class SettlementProcessor:
             pv_hybrid_ren_share_5[g][:] = pv_diesel_hybrid(1, g, ghi_curve_7, temp_7, 5, start_year, end_year,
                                                            diesel_range=diesel_range,
                                                            pv_adjustment_factor=pv_adjustment_factor)
-
-        logging.info('Stop')
 
         def local_hybrid(ghi, diesel, tier):
             ghi = round(ghi, -2)
@@ -1975,8 +1971,6 @@ class SettlementProcessor:
         pv_hybrid_capacity = hybrid_series[2]
         self.df['RenewableShare' + "{}".format(year)] = hybrid_series[3]
 
-        logging.info('Stop 2')
-
         #logging.info('Calculate minigrid PV hybrid LCOE')
         self.df[SET_LCOE_MG_PV_HYBRID + "{}".format(year)], pv_hybrid_investment = \
             mg_pv_hybrid_calc.get_lcoe(energy_per_cell=self.df[SET_ENERGY_PER_CELL + "{}".format(year)],
@@ -1995,7 +1989,12 @@ class SettlementProcessor:
             self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] != 8), SET_LCOE_MG_PV_HYBRID + "{}".format(
             year)] = 99
 
-        return pv_hybrid_investment, pv_hybrid_capacity
+        self.df[SET_LCOE_MG_PV + "{}".format(year)] = 99
+        self.df.loc[self.df['RenewableShare' + "{}".format(year)] > 0.99, SET_LCOE_MG_PV + "{}".format(year)] = self.df[SET_LCOE_MG_PV_HYBRID + "{}".format(year)]
+        mg_pv_investment = pv_hybrid_investment
+        self.df.loc[self.df['RenewableShare' + "{}".format(year)] > 0.99] = 99
+
+        return pv_hybrid_investment, pv_hybrid_capacity, mg_pv_investment
 
     def calculate_wind_hybrids_lcoe(self, year, start_year, end_year, time_step, mg_wind_hybrid_calc):
 
@@ -2146,25 +2145,25 @@ class SettlementProcessor:
         self.df.loc[(self.df[SET_POP_CALIB] < 50) & (
         self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] != 7), SET_LCOE_MG_HYDRO + "{}".format(year)] = 99
 
-        #logging.info('Calculate minigrid PV LCOE')
-        self.df[SET_LCOE_MG_PV + "{}".format(year)], mg_pv_investment = \
-            mg_pv_calc.get_lcoe(energy_per_cell=self.df[SET_ENERGY_PER_CELL + "{}".format(year)],
-                                start_year=year - time_step,
-                                end_year=end_year,
-                                people=self.df[SET_POP + "{}".format(year)],
-                                new_connections=self.df[SET_NEW_CONNECTIONS + "{}".format(year)],
-                                total_energy_per_cell=self.df[SET_TOTAL_ENERGY_PER_CELL],
-                                prev_code=self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
-                                num_people_per_hh=self.df[SET_NUM_PEOPLE_PER_HH],
-                                grid_cell_area=self.df[SET_GRID_CELL_AREA],
-                                capacity_factor=self.df[SET_GHI] / HOURS_PER_YEAR)
-        self.df.loc[self.df[SET_GHI] <= 1000, SET_LCOE_MG_PV + "{}".format(year)] = 99
+        # #logging.info('Calculate minigrid PV LCOE')
+        # self.df[SET_LCOE_MG_PV + "{}".format(year)], mg_pv_investment = \
+        #     mg_pv_calc.get_lcoe(energy_per_cell=self.df[SET_ENERGY_PER_CELL + "{}".format(year)],
+        #                         start_year=year - time_step,
+        #                         end_year=end_year,
+        #                         people=self.df[SET_POP + "{}".format(year)],
+        #                         new_connections=self.df[SET_NEW_CONNECTIONS + "{}".format(year)],
+        #                         total_energy_per_cell=self.df[SET_TOTAL_ENERGY_PER_CELL],
+        #                         prev_code=self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
+        #                         num_people_per_hh=self.df[SET_NUM_PEOPLE_PER_HH],
+        #                         grid_cell_area=self.df[SET_GRID_CELL_AREA],
+        #                         capacity_factor=self.df[SET_GHI] / HOURS_PER_YEAR)
+        # self.df.loc[self.df[SET_GHI] <= 1000, SET_LCOE_MG_PV + "{}".format(year)] = 99
 
         self.df.loc[(self.df[SET_POP_CALIB] < 50) & (
         self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] != 5), SET_LCOE_MG_PV + "{}".format(year)] = 99
 
         self.df[SET_LCOE_MG_WIND + "{}".format(year)] = 99
-        mg_wind_investment = mg_pv_investment * 0
+        mg_wind_investment = mg_hydro_investment * 0
         #logging.info('Calculate minigrid wind LCOE')
         # self.df[SET_LCOE_MG_WIND + "{}".format(year)], mg_wind_investment = \
         #     mg_wind_calc.get_lcoe(energy_per_cell=self.df[SET_ENERGY_PER_CELL + "{}".format(year)],
@@ -2185,8 +2184,8 @@ class SettlementProcessor:
         if diesel_techs == 0:
             self.df[SET_LCOE_MG_DIESEL + "{}".format(year)] = 99
             self.df[SET_LCOE_SA_DIESEL + "{}".format(year)] = 99
-            sa_diesel_investment = mg_pv_investment * 0
-            mg_diesel_investment = mg_pv_investment * 0
+            sa_diesel_investment = mg_hydro_investment * 0
+            mg_diesel_investment = mg_hydro_investment * 0
         else:
             #logging.info('Calculate minigrid diesel LCOE')
             self.df[SET_LCOE_MG_DIESEL + "{}".format(year)], mg_diesel_investment = \
@@ -2221,7 +2220,7 @@ class SettlementProcessor:
                                         )
 
             self.df[SET_LCOE_SA_DIESEL + "{}".format(year)] = 99 # ToDo
-            sa_diesel_investment = mg_pv_investment * 0
+            sa_diesel_investment = mg_hydro_investment * 0
 
         #logging.info('Calculate standalone PV LCOE')
         self.df[SET_LCOE_SA_PV + "{}".format(year)], sa_pv_investment = \
@@ -2242,7 +2241,7 @@ class SettlementProcessor:
 
         self.choose_minimum_off_grid_tech(year, mg_hydro_calc)
 
-        return sa_diesel_investment, sa_pv_investment, mg_diesel_investment, mg_pv_investment, mg_wind_investment, \
+        return sa_diesel_investment, sa_pv_investment, mg_diesel_investment, mg_wind_investment, \
             mg_hydro_investment
 
     def choose_minimum_off_grid_tech(self, year, mg_hydro_calc):
