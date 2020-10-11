@@ -296,7 +296,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
             if year - time_step == start_year:
                 grid_cap_gen_limit = time_step * annual_grid_cap_gen_limit
-                if five_year_index == 1:
+                if five_year_index == 0:
                     grid_connect_limit = time_step * annual_new_grid_connections_limit
                 else:
                     grid_connect_limit = 999999999999
