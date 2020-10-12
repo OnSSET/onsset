@@ -2445,7 +2445,6 @@ class SettlementProcessor:
             self.df['Intensification'] = np.where(self.df[SET_MV_DIST_PLANNED] < auto_densification, 1, 0)
 
             self.df.sort_values(by=[SET_ELEC_FINAL_CODE + "{}".format(year - time_step),
-                                    'Intensification',
                                     SET_TRAVEL_HOURS], inplace=True)
 
             cumulative_pop = self.df[SET_POP + "{}".format(year)].cumsum()
