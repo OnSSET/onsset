@@ -1827,10 +1827,10 @@ class SettlementProcessor:
         tier_4 = 2117
 
         self.df[SET_TIER] = 5
-        self.df.loc[(self.df[SET_TOTAL_ENERGY_PER_CELL] / self.df[SET_POP + "{}".format(year)]) * self.df[SET_NUM_PEOPLE_PER_HH] < tier_4, SET_TIER] = 4
-        self.df.loc[(self.df[SET_TOTAL_ENERGY_PER_CELL] / self.df[SET_POP + "{}".format(year)]) * self.df[SET_NUM_PEOPLE_PER_HH] < tier_3, SET_TIER] = 3
-        self.df.loc[(self.df[SET_TOTAL_ENERGY_PER_CELL] / self.df[SET_POP + "{}".format(year)]) * self.df[SET_NUM_PEOPLE_PER_HH] < tier_2, SET_TIER] = 2
-        self.df.loc[(self.df[SET_TOTAL_ENERGY_PER_CELL] / self.df[SET_POP + "{}".format(year)]) * self.df[SET_NUM_PEOPLE_PER_HH] < tier_1, SET_TIER] = 1
+        self.df.loc[(self.df[SET_TOTAL_ENERGY_PER_CELL] / self.df[SET_POP + "{}".format(year)]) * self.df[SET_NUM_PEOPLE_PER_HH] < 2993, SET_TIER] = 4
+        self.df.loc[(self.df[SET_TOTAL_ENERGY_PER_CELL] / self.df[SET_POP + "{}".format(year)]) * self.df[SET_NUM_PEOPLE_PER_HH] < 1241, SET_TIER] = 3
+        self.df.loc[(self.df[SET_TOTAL_ENERGY_PER_CELL] / self.df[SET_POP + "{}".format(year)]) * self.df[SET_NUM_PEOPLE_PER_HH] < 365, SET_TIER] = 2
+        self.df.loc[(self.df[SET_TOTAL_ENERGY_PER_CELL] / self.df[SET_POP + "{}".format(year)]) * self.df[SET_NUM_PEOPLE_PER_HH] < 73, SET_TIER] = 1
 
     def calculate_pv_hybrids_lcoe(self, year, start_year, end_year, time_step, mg_pv_hybrid_calc, pv_adjustment_factor):
         path_7 = os.path.join('Supplementary_files', 'ninja_pv_7.0000_2.3000_uncorrected.csv')
