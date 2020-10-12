@@ -235,7 +235,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
         sa_pv_calc = Technology(base_to_peak_load_ratio=0.9,
                                 tech_life=25,
-                                om_costs=0.02,
+                                om_costs=0.05,
                                 capital_cost={float("inf"): 6950 * pv_capital_cost_adjust,
                                               1: 4470 * pv_capital_cost_adjust,
                                               0.100: 6380 * pv_capital_cost_adjust,

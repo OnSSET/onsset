@@ -37,8 +37,8 @@ def pv_diesel_hybrid(
     battery_cost = 139  # 164  # battery capital capital cost, USD/kWh of storage capacity
     pv_cost = (220 + 283) * pv_adjustment_factor  # 796 * pv_adjustment_factor  # PV panel capital cost, USD/kW peak power
     diesel_cost = 261  # diesel generator capital cost, USD/kW rated power
-    pv_life = 20  # PV panel expected lifetime, years
-    diesel_life = 15  # diesel generator expected lifetime, years
+    pv_life = 25  # PV panel expected lifetime, years
+    diesel_life = 20  # diesel generator expected lifetime, years
     pv_om = 0.015  # annual OM cost of PV panels
     diesel_om = 0.1  # annual OM cost of diesel generator
     k_t = 0.005  # temperature factor of PV panels
