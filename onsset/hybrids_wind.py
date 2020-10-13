@@ -7,7 +7,7 @@ import os
 
 
 def read_wind_environmental_data():
-    wind_curve = pd.read_csv('Supplementary_files\Wind_4_15.csv', usecols=[3], skiprows=3).values
+    wind_curve = pd.read_csv('Supplementary_files\Somalia_Wind.csv', usecols=[3], skiprows=3).values
     return wind_curve
 
 

@@ -1833,11 +1833,11 @@ class SettlementProcessor:
         self.df.loc[(self.df[SET_TOTAL_ENERGY_PER_CELL] / self.df[SET_POP + "{}".format(year)]) * self.df[SET_NUM_PEOPLE_PER_HH] < 73, SET_TIER] = 1
 
     def calculate_pv_hybrids_lcoe(self, year, start_year, end_year, time_step, mg_pv_hybrid_calc, pv_adjustment_factor):
-        path_7 = os.path.join('Supplementary_files', 'ninja_pv_7.0000_2.3000_uncorrected.csv')
-        path_8 = os.path.join('Supplementary_files', 'ninja_pv_8.0000_2.3000_uncorrected.csv')
-        path_9 = os.path.join('Supplementary_files', 'ninja_pv_9.0000_2.3000_uncorrected.csv')
-        path_10 = os.path.join('Supplementary_files', 'ninja_pv_10.0000_2.3000_uncorrected.csv')
-        path_11 = os.path.join('Supplementary_files', 'ninja_pv_11.0000_2.3000_uncorrected.csv')
+        path_7 = os.path.join('Supplementary_files', 'Somalia_PV.csv')
+        # path_8 = os.path.join('Supplementary_files', 'ninja_pv_8.0000_2.3000_uncorrected.csv')
+        # path_9 = os.path.join('Supplementary_files', 'ninja_pv_9.0000_2.3000_uncorrected.csv')
+        # path_10 = os.path.join('Supplementary_files', 'ninja_pv_10.0000_2.3000_uncorrected.csv')
+        # path_11 = os.path.join('Supplementary_files', 'ninja_pv_11.0000_2.3000_uncorrected.csv')
 
         ghi_curve_7, temp_7 = read_environmental_data(path_7)
         # ghi_curve_8, temp_8 = read_environmental_data(path_8)
