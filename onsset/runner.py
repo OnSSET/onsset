@@ -128,7 +128,6 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
         print('Scenario: ' + str(scenario + 1))
         country_id = specs_data.iloc[0]['CountryCode']
 
-        pop_index = scenario_info.iloc[scenario]['Population_Growth']
         tier_index = scenario_info.iloc[scenario]['Target_electricity_consumption_level']
         five_year_index = scenario_info.iloc[scenario]['Electrification_target_5_years']
         grid_index = scenario_info.iloc[scenario]['Grid_electricity_generation_cost']
@@ -136,10 +135,12 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
         diesel_index = scenario_info.iloc[scenario]['Diesel_price']
         productive_index = scenario_info.iloc[scenario]['Productive_uses_demand']
         prio_index = scenario_info.iloc[scenario]['Prioritization_algorithm']
+        cap_index = scenario_info.iloc[scenario]['GridConnectionCap']
 
-        end_year_pop = scenario_parameters.iloc[pop_index]['PopEndYear']
+        end_year_pop = scenario_parameters.iloc[0]['PopEndYear']
         rural_tier = scenario_parameters.iloc[tier_index]['RuralTargetTier']
         urban_tier = scenario_parameters.iloc[tier_index]['UrbanTargetTier']
+        demand_factor = scenario_parameters.iloc[tier_index]['DemandRatio']
         five_year_target = scenario_parameters.iloc[five_year_index]['5YearTarget']
         annual_new_grid_connections_limit = scenario_parameters.iloc[five_year_index][
                                                 'GridConnectionsLimitThousands'] * 1000
@@ -149,16 +150,17 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
         productive_demand = scenario_parameters.iloc[productive_index]['ProductiveDemand']
         prioritization = scenario_parameters.iloc[prio_index]['PrioritizationAlgorithm']
         auto_intensification = scenario_parameters.iloc[prio_index]['AutoIntensificationKM']
+        threshold = scenario_parameters.iloc[cap_index]['Threshold']
 
         settlements_in_csv = calibrated_csv_path
         settlements_out_csv = os.path.join(results_folder,
-                                           '{}-1-{}_{}_{}_{}_{}_{}_{}_{}.csv'.format(country_id, pop_index, tier_index,
-                                                                               five_year_index, grid_index, pv_index,
-                                                                               prio_index, productive_index, diesel_index))
+                                           '{}-1-{}_{}_{}_{}_{}_{}_{}.csv'.format(country_id, prio_index, cap_index,
+                                                                                  tier_index, five_year_index,
+                                                                                  grid_index, pv_index, diesel_index))
         summary_csv = os.path.join(summary_folder,
-                                   '{}-1-{}_{}_{}_{}_{}_{}_{}_{}_summary.csv'.format(country_id, pop_index, tier_index,
-                                                                               five_year_index, grid_index, pv_index,
-                                                                               prio_index, productive_index, diesel_index))
+                                   '{}-1-{}_{}_{}_{}_{}_{}_{}_summary.csv'.format(country_id, prio_index, cap_index,
+                                                                                  tier_index, five_year_index,
+                                                                                  grid_index, pv_index, diesel_index))
 
         onsseter = SettlementProcessor(settlements_in_csv)
 
@@ -234,7 +236,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
         sa_pv_calc = Technology(base_to_peak_load_ratio=0.9,
                                 tech_life=25,
-                                om_costs=0.02,
+                                om_costs=0.05,
                                 capital_cost={float("inf"): 6950 * pv_capital_cost_adjust,
                                               1: 4470 * pv_capital_cost_adjust,
                                               0.100: 6380 * pv_capital_cost_adjust,
@@ -295,7 +297,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
             if year - time_step == start_year:
                 grid_cap_gen_limit = time_step * annual_grid_cap_gen_limit
-                if five_year_index == 1:
+                if five_year_index == 0:
                     grid_connect_limit = time_step * annual_new_grid_connections_limit
                 else:
                     grid_connect_limit = 999999999999
@@ -304,15 +306,14 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                 grid_connect_limit = 9999999999
 
             onsseter.set_scenario_variables(year, num_people_per_hh_rural, num_people_per_hh_urban, time_step,
-                                            start_year, urban_tier, rural_tier, end_year_pop, productive_demand)
+                                            start_year, urban_tier, rural_tier, end_year_pop, productive_demand,
+                                            demand_factor)
 
             onsseter.diesel_cost_columns(sa_diesel_cost, mg_diesel_cost, year)
 
-            mg_wind_hybrid_investment, mg_wind_hybrid_capacity = onsseter.calculate_wind_hybrids_lcoe(year, year - time_step, end_year, time_step, mg_wind_hybrid_calc)
+            mg_pv_hybrid_investment, mg_pv_hybrid_capacity, mg_pv_investment = onsseter.calculate_pv_hybrids_lcoe(year, year-time_step, end_year, time_step, mg_pv_hybrid_calc, pv_capital_cost_adjust)
 
-            mg_pv_hybrid_investment, mg_pv_hybrid_capacity = onsseter.calculate_pv_hybrids_lcoe(year, year-time_step, end_year, time_step, mg_pv_hybrid_calc, pv_capital_cost_adjust)
-
-            sa_diesel_investment, sa_pv_investment, mg_diesel_investment, mg_pv_investment, mg_wind_investment, \
+            sa_diesel_investment, sa_pv_investment, mg_diesel_investment, mg_wind_investment, \
                 mg_hydro_investment = onsseter.calculate_off_grid_lcoes(mg_hydro_calc, mg_wind_calc, mg_pv_calc,
                                                                         sa_pv_calc, mg_diesel_calc,
                                                                         sa_diesel_calc, year, end_year, time_step)
@@ -333,18 +334,19 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                                         grid_connect_limit,
                                         auto_intensification=auto_intensification,
                                         prioritization=prioritization,
-                                        new_investment=grid_investment)
+                                        new_investment=grid_investment,
+                                        threshold=threshold)
 
             onsseter.results_columns(year, time_step, prioritization, auto_intensification)
 
             onsseter.calculate_investments(sa_diesel_investment, sa_pv_investment, mg_diesel_investment,
                                            mg_pv_investment, mg_wind_investment,
                                            mg_hydro_investment, mg_pv_hybrid_investment,
-                                           mg_wind_hybrid_investment, grid_investment, year)
+                                           grid_investment, year)
 
             onsseter.apply_limitations(eleclimit, year, time_step, prioritization, auto_intensification)
 
-            onsseter.calculate_new_capacity(mg_pv_hybrid_capacity, mg_wind_hybrid_capacity, mg_hydro_calc, mg_wind_calc,
+            onsseter.calculate_new_capacity(mg_pv_hybrid_capacity, mg_hydro_calc, mg_wind_calc,
                                             mg_pv_calc, sa_pv_calc, mg_diesel_calc, sa_diesel_calc, grid_calc, year)
 
             onsseter.calc_summaries(df_summary, sumtechs, year)

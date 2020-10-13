@@ -28,24 +28,24 @@ def pv_diesel_hybrid(
         pv_no=15,  # number of PV panel sizes simulated
         diesel_no=15,  # number of diesel generators simulated
         discount_rate=0.08,
-        diesel_price=0.7,
+        diesel_range=[0.7],
         pv_adjustment_factor=1
 ):
     n_chg = 0.92  # charge efficiency of battery
     n_dis = 0.92  # discharge efficiency of battery
     lpsp_max = 0.05  # maximum loss of load allowed over the year, in share of kWh
-    battery_cost = 164  # battery capital capital cost, USD/kWh of storage capacity
-    pv_cost = 796 * pv_adjustment_factor  # PV panel capital cost, USD/kW peak power
+    battery_cost = 139  # 164  # battery capital capital cost, USD/kWh of storage capacity
+    pv_cost = (220 + 283) * pv_adjustment_factor  # 796 * pv_adjustment_factor  # PV panel capital cost, USD/kW peak power
     diesel_cost = 261  # diesel generator capital cost, USD/kW rated power
-    pv_life = 20  # PV panel expected lifetime, years
-    diesel_life = 15  # diesel generator expected lifetime, years
+    pv_life = 25  # PV panel expected lifetime, years
+    diesel_life = 20  # diesel generator expected lifetime, years
     pv_om = 0.015  # annual OM cost of PV panels
     diesel_om = 0.1  # annual OM cost of diesel generator
     k_t = 0.005  # temperature factor of PV panels
-    inverter_cost = 567
+    inverter_cost = 80  # 567
     inverter_life = 10
-    inverter_efficiency = 0.92
-    charge_controller = 196
+    inv_eff = 0.92  # inverter_efficiency
+    charge_controller = 142  # 196
 
 
     ghi = ghi_curve * ghi *1000 / ghi_curve.sum()
@@ -98,7 +98,7 @@ def pv_diesel_hybrid(
         battery_life = np.zeros(shape=(battery_no, pv_no, diesel_no))
         soc = np.ones(shape=(battery_no, pv_no, diesel_no)) * 0.5
         unmet_demand = np.zeros(shape=(battery_no, pv_no, diesel_no))
-        excess_gen = np.zeros(shape=(battery_no, pv_no, diesel_no)) # TODO
+        excess_gen = np.zeros(shape=(battery_no, pv_no, diesel_no))  # TODO
         annual_diesel_gen = np.zeros(shape=(battery_no, pv_no, diesel_no))
         dod_max = np.ones(shape=(battery_no, pv_no, diesel_no)) * 0.6
 
@@ -111,12 +111,12 @@ def pv_diesel_hybrid(
             # Calculation of PV gen and net load
             t_cell = temp[i] + 0.0256 * ghi[i]  # PV cell temperature
             pv_gen = pv_capacity * 0.9 * ghi[i] / 1000 * (1 - k_t * (t_cell - 25))  # PV generation in the hour
-            net_load = load_curve[hour_numbers[i]] - pv_gen  # remaining load not met by PV panels
+            net_load = load_curve[hour_numbers[i]] - pv_gen * inv_eff  # remaining load not met by PV panels
 
             # Dispatchable energy from battery available to meet load
-            battery_dispatchable = soc * battery_size * n_dis
+            battery_dispatchable = soc * battery_size * n_dis * inv_eff
             # Energy required to fully charge battery
-            battery_chargeable = (1 - soc) * battery_size / n_chg
+            battery_chargeable = (1 - soc) * battery_size / n_chg / inv_eff
 
             # Below is the dispatch strategy for the diesel generator as described in word document
 
@@ -161,11 +161,26 @@ def pv_diesel_hybrid(
             # Reamining load after diesel generator
             net_load = net_load - diesel_gen
 
-            # If diesel generation is larger than load, battery is charged
-            # If diesel generation is smaller than load, battery is discharged
-            soc -= np.where(net_load > 0,
+            # If diesel generation is used, but is smaller than load, battery is discharged
+            soc -= np.where((net_load > 0) & (diesel_gen > 0),
+                            net_load / n_dis / inv_eff / battery_size,
+                            0)
+
+            # If diesel generation is used, and is larger than load, battery is charged
+            soc -= np.where((net_load < 0) & (diesel_gen > 0),
+                            net_load * n_chg * inv_eff / battery_size,
+                            0)
+
+            # If net load is positive and no diesel is used, battery is discharged
+            soc -= np.where((net_load > 0) & (diesel_gen == 0),
                             net_load / n_dis / battery_size,
-                            net_load * n_chg / battery_size)
+                            0)
+
+            # If net load is negative, and no diesel has been used, excess PV gen is used to charge battery
+            soc -= np.where((net_load < 0) & (diesel_gen == 0),
+                            net_load * n_chg / battery_size,
+                            0)
+
 
             # The amount of battery discharge in the hour is stored (measured in State Of Charge)
             battery_use[hour_numbers[i], :, :] = \
@@ -235,7 +250,7 @@ def pv_diesel_hybrid(
         pv_diesel_capacities(pv_panel_size, battery_size, diesel_capacity, pv_no, diesel_no, len(battery_sizes))
     battery_life = np.minimum(20, battery_life)
 
-    def calculate_hybrid_lcoe():
+    def calculate_hybrid_lcoe(diesel_price):
         # Necessary information for calculation of LCOE is defined
         project_life = end_year - start_year
         generation = np.ones(project_life) * energy_per_hh
@@ -250,17 +265,17 @@ def pv_diesel_hybrid(
             salvage = np.zeros((len(battery_sizes), pv_no, diesel_no))
 
             fuel_costs = fuel_usage * diesel_price
-            om_costs = (pv_panel_size * pv_cost * pv_om + diesel_capacity * diesel_cost * diesel_om)
+            om_costs = (pv_panel_size * (pv_cost + charge_controller) * pv_om + diesel_capacity * diesel_cost * diesel_om)
 
             inverter_investment = np.where(year % inverter_life == 0, max(load_curve) * inverter_cost, 0)
             diesel_investment = np.where(year % diesel_life == 0, diesel_capacity * diesel_cost, 0)
-            pv_investment = np.where(year % pv_life == 0, pv_panel_size * pv_cost, 0)
+            pv_investment = np.where(year % pv_life == 0, pv_panel_size * (pv_cost + charge_controller), 0)
             battery_investment = np.where(year % battery_life == 0, battery_size * battery_cost / dod_max, 0)  # TODO Include dod_max here?
 
             if year == project_life:
                 salvage = (1 - (project_life % battery_life) / battery_life) * battery_cost * battery_size / dod_max + \
                           (1 - (project_life % diesel_life) / diesel_life) * diesel_capacity * diesel_cost + \
-                          (1 - (project_life % pv_life) / pv_life) * pv_panel_size * pv_cost + \
+                          (1 - (project_life % pv_life) / pv_life) * pv_panel_size * (pv_cost + charge_controller) + \
                           (1 - (project_life % inverter_life) / inverter_life) * max(load_curve) * inverter_cost
 
             investment += diesel_investment + pv_investment + battery_investment + inverter_investment - salvage
@@ -272,16 +287,29 @@ def pv_diesel_hybrid(
 
         return sum_costs / sum_el_gen, investment
 
-    diesel_limit = 0.25
-    lcoe, investment = calculate_hybrid_lcoe()
-    lcoe = np.where(lpsp > lpsp_max, 99, lcoe)
-    lcoe = np.where(diesel_share > diesel_limit, 99, lcoe)
+    diesel_limit = 0.5
 
-    min_lcoe = np.min(lcoe)
-    min_lcoe_combination = np.unravel_index(np.argmin(lcoe, axis=None), lcoe.shape)
-    ren_share = 1 - diesel_share[min_lcoe_combination]
-    capacity = pv_panel_size[min_lcoe_combination] + diesel_capacity[min_lcoe_combination]
-    ren_capacity = pv_panel_size[min_lcoe_combination] / capacity
-    excess_gen = excess_gen[min_lcoe_combination]
+    min_lcoe_range = []
+    investment_range = []
+    capacity_range = []
+    ren_share_range = []
 
-    return min_lcoe, investment[min_lcoe_combination], capacity # , ren_share, ren_capacity, excess_gen
+    for d in diesel_range:
+
+        lcoe, investment = calculate_hybrid_lcoe(d)
+        lcoe = np.where(lpsp > lpsp_max, 99, lcoe)
+        lcoe = np.where(diesel_share > diesel_limit, 99, lcoe)
+
+        min_lcoe = np.min(lcoe)
+        min_lcoe_combination = np.unravel_index(np.argmin(lcoe, axis=None), lcoe.shape)
+        ren_share = 1 - diesel_share[min_lcoe_combination]
+        capacity = pv_panel_size[min_lcoe_combination] + diesel_capacity[min_lcoe_combination]
+        ren_capacity = pv_panel_size[min_lcoe_combination] / capacity
+        # excess_gen = excess_gen[min_lcoe_combination]
+
+        min_lcoe_range.append(min_lcoe)
+        investment_range.append(investment[min_lcoe_combination])
+        capacity_range.append(capacity)
+        ren_share_range.append(ren_share)
+
+    return min_lcoe_range, investment_range, capacity_range, ren_share_range  # , ren_capacity, excess_gen
