@@ -1992,9 +1992,9 @@ class SettlementProcessor:
             year)] = 99
 
         self.df[SET_LCOE_MG_PV + "{}".format(year)] = 99
-        self.df.loc[self.df['RenewableShare' + "{}".format(year)] > 0.99, SET_LCOE_MG_PV + "{}".format(year)] = self.df[SET_LCOE_MG_PV_HYBRID + "{}".format(year)]
+        # self.df.loc[self.df['RenewableShare' + "{}".format(year)] > 0.99, SET_LCOE_MG_PV + "{}".format(year)] = self.df[SET_LCOE_MG_PV_HYBRID + "{}".format(year)]
         mg_pv_investment = pv_hybrid_investment
-        self.df.loc[self.df['RenewableShare' + "{}".format(year)] > 0.99, SET_LCOE_MG_PV_HYBRID + "{}".format(year)] = 99
+        # self.df.loc[self.df['RenewableShare' + "{}".format(year)] > 0.99, SET_LCOE_MG_PV_HYBRID + "{}".format(year)] = 99
 
         return pv_hybrid_investment, pv_hybrid_capacity, mg_pv_investment
 
@@ -2353,14 +2353,6 @@ class SettlementProcessor:
                                                                 SET_LCOE_MG_DIESEL + "{}".format(year),
                                                                 SET_LCOE_SA_DIESEL + "{}".format(year),
                                                                 SET_LCOE_MG_PV_HYBRID + "{}".format(year)]].T.idxmin()
-
-        self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] == 1,
-                    SET_MIN_OVERALL + "{}".format(year)] = 'Grid' + "{}".format(year)
-
-        if (prio == 2) or (prio == 4):
-            self.df.loc[(self.df[SET_MV_DIST_PLANNED] < auto_intensification) &
-                        (self.df[SET_LCOE_GRID + "{}".format(year)] != 99),
-                        SET_MIN_OVERALL + "{}".format(year)] = 'Grid' + "{}".format(year)
 
         # #logging.info('Determine minimum overall LCOE')
         self.df[SET_MIN_OVERALL_LCOE + "{}".format(year)] = self.df[[SET_LCOE_GRID + "{}".format(year),
