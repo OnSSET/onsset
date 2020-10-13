@@ -142,8 +142,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
         urban_tier = scenario_parameters.iloc[tier_index]['UrbanTargetTier']
         demand_factor = scenario_parameters.iloc[tier_index]['DemandRatio']
         five_year_target = scenario_parameters.iloc[five_year_index]['5YearTarget']
-        annual_new_grid_connections_limit = scenario_parameters.iloc[five_year_index][
-                                                'GridConnectionsLimitThousands'] * 1000
+        annual_new_grid_connections_limit = scenario_parameters.iloc[prio_index]['GridConnectionsLimitThousands'] * 1000
         grid_price = scenario_parameters.iloc[grid_index]['GridGenerationCost']
         pv_capital_cost_adjust = scenario_parameters.iloc[pv_index]['PV_Cost_adjust']
         diesel_price = scenario_parameters.iloc[diesel_index]['DieselPrice']
@@ -154,13 +153,11 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
         settlements_in_csv = calibrated_csv_path
         settlements_out_csv = os.path.join(results_folder,
-                                           '{}-1-{}_{}_{}_{}_{}_{}_{}.csv'.format(country_id, prio_index, cap_index,
-                                                                                  tier_index, five_year_index,
-                                                                                  grid_index, pv_index, diesel_index))
+                                           '{}-1-{}_{}_{}_{}_{}.csv'.format(country_id, prio_index, tier_index,
+                                                                            productive_index, pv_index, diesel_index))
         summary_csv = os.path.join(summary_folder,
-                                   '{}-1-{}_{}_{}_{}_{}_{}_{}_summary.csv'.format(country_id, prio_index, cap_index,
-                                                                                  tier_index, five_year_index,
-                                                                                  grid_index, pv_index, diesel_index))
+                                   '{}-1-{}_{}_{}_{}_{}_summary.csv'.format(country_id, prio_index, tier_index,
+                                                                            productive_index, pv_index, diesel_index))
 
         onsseter = SettlementProcessor(settlements_in_csv)
 
@@ -296,14 +293,11 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
             time_step = time_steps[year]
 
             if year - time_step == start_year:
-                grid_cap_gen_limit = time_step * annual_grid_cap_gen_limit
-                if five_year_index == 0:
-                    grid_connect_limit = time_step * annual_new_grid_connections_limit
-                else:
-                    grid_connect_limit = 999999999999
+                grid_cap_gen_limit = 0
+                grid_connect_limit = 0
             else:
-                grid_cap_gen_limit = 9999999999
-                grid_connect_limit = 9999999999
+                grid_cap_gen_limit = 999999999
+                grid_connect_limit = time_step * annual_new_grid_connections_limit
 
             onsseter.set_scenario_variables(year, num_people_per_hh_rural, num_people_per_hh_urban, time_step,
                                             start_year, urban_tier, rural_tier, end_year_pop, productive_demand,
