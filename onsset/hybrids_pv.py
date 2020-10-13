@@ -7,8 +7,8 @@ import os
 
 
 def read_environmental_data(path):
-    ghi_curve = pd.read_csv(path, usecols=[3], skiprows=3).values * 1000
-    temp = pd.read_csv(path, usecols=[5], skiprows=3).values
+    ghi_curve = pd.read_csv(path, usecols=[3], skiprows=3).values  # * 1000
+    temp = pd.read_csv(path, usecols=[2], skiprows=3).values
     #ghi_curve = pd.read_csv('Supplementary_files\Benin_data.csv', usecols=[3], skiprows=341882).as_matrix()
     #temp = pd.read_csv('Supplementary_files\Benin_data.csv', usecols=[2], skiprows=341882).as_matrix()
     return ghi_curve, temp
@@ -48,7 +48,7 @@ def pv_diesel_hybrid(
     charge_controller = 142  # 196
 
 
-    ghi = ghi_curve * ghi *1000 / ghi_curve.sum()
+    ghi = ghi_curve * ghi * 1000 / ghi_curve.sum()
     hour_numbers = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23) * 365
     dod_max = 0.8  # maximum depth of discharge of battery
 

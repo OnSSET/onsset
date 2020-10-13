@@ -1721,6 +1721,8 @@ class SettlementProcessor:
                 SET_RESIDENTIAL_TIER + str(wb_tier_urban_clusters)] * demand_factor
             self.df.loc[self.df[SET_URBAN] == 2, SET_CAPITA_DEMAND] = self.df[
                 SET_RESIDENTIAL_TIER + str(wb_tier_urban_centers)] * demand_factor
+            self.df.loc[self.df['Admin_1'] == 'Nomad', SET_CAPITA_DEMAND] = self.df[
+                SET_RESIDENTIAL_TIER + str(1)] * demand_factor
 
     def calculate_total_demand_per_settlement(self, year, productive_demand, time_step):
         """this method calculates total demand for each settlement per year
@@ -1992,7 +1994,7 @@ class SettlementProcessor:
         self.df[SET_LCOE_MG_PV + "{}".format(year)] = 99
         self.df.loc[self.df['RenewableShare' + "{}".format(year)] > 0.99, SET_LCOE_MG_PV + "{}".format(year)] = self.df[SET_LCOE_MG_PV_HYBRID + "{}".format(year)]
         mg_pv_investment = pv_hybrid_investment
-        self.df.loc[self.df['RenewableShare' + "{}".format(year)] > 0.99] = 99
+        self.df.loc[self.df['RenewableShare' + "{}".format(year)] > 0.99, SET_LCOE_MG_PV_HYBRID + "{}".format(year)] = 99
 
         return pv_hybrid_investment, pv_hybrid_capacity, mg_pv_investment
 
