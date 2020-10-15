@@ -1704,7 +1704,7 @@ class SettlementProcessor:
         if max(self.df[SET_CAPITA_DEMAND]) == 0:
             # RUN_PARAM: This shall be changed if different urban/rural categorization is decided
             wb_tier_rural = int(rural_tier)
-            wb_tier_urban_clusters = int(rural_tier)
+            wb_tier_urban_clusters = int(urban_tier)
             wb_tier_urban_centers = int(urban_tier)
 
             if wb_tier_urban_centers == 6:
@@ -1728,7 +1728,7 @@ class SettlementProcessor:
                                                                               wb_tier_rural)] * demand_factor
             self.df.loc[self.df[SET_URBAN] == 1, SET_CAPITA_DEMAND] = self.df[
                                                                           SET_RESIDENTIAL_TIER + str(
-                                                                              wb_tier_urban_clusters)] * demand_factor
+                                                                              wb_tier_urban_clusters)] * demand_factor * 0.75
             self.df.loc[self.df[SET_URBAN] == 2, SET_CAPITA_DEMAND] = self.df[
                                                                           SET_RESIDENTIAL_TIER + str(
                                                                               wb_tier_urban_centers)] * demand_factor

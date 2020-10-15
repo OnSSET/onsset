@@ -130,7 +130,6 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
         tier_index = scenario_info.iloc[scenario]['Target_electricity_consumption_level']
         five_year_index = scenario_info.iloc[scenario]['Electrification_target_5_years']
-        grid_index = scenario_info.iloc[scenario]['Grid_electricity_generation_cost']
         pv_index = scenario_info.iloc[scenario]['PV_cost_adjust']
         diesel_index = scenario_info.iloc[scenario]['Diesel_price']
         productive_index = scenario_info.iloc[scenario]['Productive_uses_demand']
