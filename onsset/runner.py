@@ -143,13 +143,14 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
         demand_factor = scenario_parameters.iloc[tier_index]['DemandRatio']
         five_year_target = scenario_parameters.iloc[five_year_index]['5YearTarget']
         annual_new_grid_connections_limit = scenario_parameters.iloc[prio_index]['GridConnectionsLimitThousands'] * 1000
-        grid_price = scenario_parameters.iloc[grid_index]['GridGenerationCost']
+        grid_price = scenario_parameters.iloc[prio_index]['GridGenerationCost']
         pv_capital_cost_adjust = scenario_parameters.iloc[pv_index]['PV_Cost_adjust']
         diesel_price = scenario_parameters.iloc[diesel_index]['DieselPrice']
         productive_demand = scenario_parameters.iloc[productive_index]['ProductiveDemand']
         prioritization = scenario_parameters.iloc[prio_index]['PrioritizationAlgorithm']
         auto_intensification = scenario_parameters.iloc[prio_index]['AutoIntensificationKM']
         threshold = scenario_parameters.iloc[cap_index]['Threshold']
+        grid_option = scenario_parameters.iloc[prio_index]['GridOption']
 
         settlements_in_csv = calibrated_csv_path
         settlements_out_csv = os.path.join(results_folder,
@@ -276,7 +277,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
         time_steps = {2025: 5, 2030: 5}
 
         elements = ["1.Population", "2.New_Connections", "3.Capacity", "4.Investment"]
-        techs = ["Grid", "SA_Diesel", "SA_PV", "MG_Diesel", "MG_PV", "MG_Wind", "MG_Hydro", "MG_PV_Hybrid","MG_Wind_Hybrid"]
+        techs = ["Grid", "SA_PV_mobile", "SA_PV", "MG_Diesel", "MG_PV", "MG_Wind", "MG_Hydro", "MG_PV_Hybrid","MG_Wind_Hybrid"]
         sumtechs = []
         for element in elements:
             for tech in techs:
@@ -343,7 +344,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
             onsseter.calculate_new_capacity(mg_pv_hybrid_capacity, mg_hydro_calc, mg_wind_calc,
                                             mg_pv_calc, sa_pv_calc, mg_diesel_calc, sa_diesel_calc, grid_calc, year)
 
-            onsseter.calc_summaries(df_summary, sumtechs, year)
+            onsseter.calc_summaries(df_summary, sumtechs, year, grid_option)
 
         for i in range(len(onsseter.df.columns)):
             if onsseter.df.iloc[:, i].dtype == 'float64':

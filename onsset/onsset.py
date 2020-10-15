@@ -2364,14 +2364,6 @@ class SettlementProcessor:
                                                                      SET_LCOE_SA_DIESEL + "{}".format(year),
                                                                      SET_LCOE_MG_PV_HYBRID + "{}".format(year)]].T.min()
 
-        self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] == 1,
-                    SET_MIN_OVERALL_LCOE + "{}".format(year)] = self.df[SET_LCOE_GRID + "{}".format(year)]
-
-        if (prio == 2) or (prio == 4):
-            self.df.loc[(self.df[SET_MV_DIST_PLANNED] < auto_intensification) &
-                        (self.df[SET_LCOE_GRID + "{}".format(year)] != 99),
-                        SET_MIN_OVERALL_LCOE + "{}".format(year)] = self.df[SET_LCOE_GRID + "{}".format(year)]
-
         # #logging.info('Add technology codes')
         codes = {SET_LCOE_GRID + "{}".format(year): 1,
                  SET_LCOE_MG_HYDRO + "{}".format(year): 7,
@@ -2521,7 +2513,18 @@ class SettlementProcessor:
         self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 8, SET_NEW_CAPACITY + "{}".format(year)] = \
             (self.df[SET_ENERGY_PER_CELL + "{}".format(year)] * mg_pv_hybrid_capacity)
 
-    def calc_summaries(self, df_summary, sumtechs, year):
+    def calc_summaries(self, df_summary, sumtechs, year, grid_option):
+
+        self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 3) & (
+                    self.df['Admin_1'] == 'Nomad'), SET_ELEC_FINAL_CODE + "{}".format(year)] = 2
+
+        if (grid_option == 2) & (year == 2030):
+            self.df.loc[(self.df['Admin_1'] == 'Transmission_lines'), SET_ELEC_FINAL_CODE + "{}".format(year)] = 1
+            self.df.loc[(self.df['Admin_1'] == 'Transmission_lines'), SET_INVESTMENT_COST + "{}".format(year)] = 760 * 1000000
+        elif (grid_option == 3) & (year == 2030):
+            self.df.loc[(self.df['Admin_1'] == 'Transmission_lines'), SET_ELEC_FINAL_CODE + "{}".format(year)] = 1
+            self.df.loc[(self.df['Admin_1'] == 'Transmission_lines'), SET_INVESTMENT_COST + "{}".format(year)] = 1280 * 1000000
+
 
         """The next section calculates the summaries for technology split,
         consumption added and total investment cost"""
