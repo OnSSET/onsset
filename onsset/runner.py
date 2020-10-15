@@ -306,6 +306,12 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
             onsseter.diesel_cost_columns(sa_diesel_cost, mg_diesel_cost, year)
 
+            mg_wind_hybrid_investment, mg_wind_hybrid_capacity = onsseter.calculate_wind_hybrids_lcoe(year,
+                                                                                                      year - time_step,
+                                                                                                      end_year,
+                                                                                                      time_step,
+                                                                                                      mg_wind_hybrid_calc)
+
             mg_pv_hybrid_investment, mg_pv_hybrid_capacity, mg_pv_investment = onsseter.calculate_pv_hybrids_lcoe(year, year-time_step, end_year, time_step, mg_pv_hybrid_calc, pv_capital_cost_adjust)
 
             sa_diesel_investment, sa_pv_investment, mg_diesel_investment, mg_wind_investment, \
@@ -336,12 +342,12 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
             onsseter.calculate_investments(sa_diesel_investment, sa_pv_investment, mg_diesel_investment,
                                            mg_pv_investment, mg_wind_investment,
-                                           mg_hydro_investment, mg_pv_hybrid_investment,
+                                           mg_hydro_investment, mg_pv_hybrid_investment, mg_wind_hybrid_investment,
                                            grid_investment, year)
 
             onsseter.apply_limitations(eleclimit, year, time_step, prioritization, auto_intensification)
 
-            onsseter.calculate_new_capacity(mg_pv_hybrid_capacity, mg_hydro_calc, mg_wind_calc,
+            onsseter.calculate_new_capacity(mg_pv_hybrid_capacity, mg_wind_hybrid_capacity, mg_hydro_calc, mg_wind_calc,
                                             mg_pv_calc, sa_pv_calc, mg_diesel_calc, sa_diesel_calc, grid_calc, year)
 
             onsseter.calc_summaries(df_summary, sumtechs, year, grid_option)

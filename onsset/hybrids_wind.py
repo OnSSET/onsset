@@ -24,23 +24,23 @@ def wind_diesel_hybrid(
         wind_no=15,  # number of wind panel sizes simulated
         diesel_no=15,  # number of diesel generators simulated
         discount_rate=0.08,
-        diesel_price=0.7
+        diesel_range=[0.7]
 ):
     n_chg = 0.92  # charge efficiency of battery
     n_dis = 0.92  # discharge efficiency of battery
     lpsp_max = 0.05  # maximum loss of load allowed over the year, in share of kWh
-    battery_cost = 164  # battery capital capital cost, USD/kWh of storage capacity
+    battery_cost = 139  # battery capital capital cost, USD/kWh of storage capacity
     wind_cost = 2800  # Wind turbine capital cost, USD/kW peak power
     diesel_cost = 261  # diesel generator capital cost, USD/kW rated power
     wind_life = 20  # wind panel expected lifetime, years
-    diesel_life = 15  # diesel generator expected lifetime, years
+    diesel_life = 20  # diesel generator expected lifetime, years
     wind_om = 0.015  # annual OM cost of wind panels
     diesel_om = 0.1  # annual OM cost of diesel generator
     k_t = 0.005  # temperature factor of wind panels
-    inverter_cost = 567
+    inverter_cost = 80
     inverter_life = 10
     inverter_efficiency = 0.92
-    charge_controller = 196
+    charge_controller = 142
 
     wind_curve = wind_curve * wind_speed / np.average(wind_curve)
 
@@ -242,7 +242,7 @@ def wind_diesel_hybrid(
         wind_diesel_capacities(wind_panel_size, battery_size, diesel_capacity, wind_no, diesel_no, len(battery_sizes), wind_curve)
     battery_life = np.minimum(20, battery_life)
 
-    def calculate_hybrid_lcoe():
+    def calculate_hybrid_lcoe(diesel_price):
         # Necessary information for calculation of LCOE is defined
         project_life = end_year - start_year
         generation = np.ones(project_life) * energy_per_hh
@@ -280,17 +280,29 @@ def wind_diesel_hybrid(
         return sum_costs / sum_el_gen, investment
 
     diesel_limit = 0.5
-    lcoe, investment = calculate_hybrid_lcoe()
-    lcoe = np.where(lpsp > lpsp_max, 99, lcoe)
-    lcoe = np.where(diesel_share > diesel_limit, 99, lcoe)
 
-    min_lcoe = np.min(lcoe)
-    min_lcoe_combination = np.unravel_index(np.argmin(lcoe, axis=None), lcoe.shape)
-    ren_share = 1 - diesel_share[min_lcoe_combination]
-    capacity = wind_panel_size[min_lcoe_combination] + diesel_capacity[min_lcoe_combination]
-    ren_capacity = wind_panel_size[min_lcoe_combination] / capacity
-    excess_gen = excess_gen[min_lcoe_combination]
+    min_lcoe_range = []
+    investment_range = []
+    capacity_range = []
+    ren_share_range = []
 
-    return min_lcoe, investment[min_lcoe_combination], capacity # , ren_share, ren_capacity, excess_gen
+    for d in diesel_range:
+        lcoe, investment = calculate_hybrid_lcoe(d)
+        lcoe = np.where(lpsp > lpsp_max, 99, lcoe)
+        lcoe = np.where(diesel_share > diesel_limit, 99, lcoe)
+
+        min_lcoe = np.min(lcoe)
+        min_lcoe_combination = np.unravel_index(np.argmin(lcoe, axis=None), lcoe.shape)
+        ren_share = 1 - diesel_share[min_lcoe_combination]
+        capacity = wind_panel_size[min_lcoe_combination] + diesel_capacity[min_lcoe_combination]
+        ren_capacity = wind_panel_size[min_lcoe_combination] / capacity
+        # excess_gen = excess_gen[min_lcoe_combination]
+
+        min_lcoe_range.append(min_lcoe)
+        investment_range.append(investment[min_lcoe_combination])
+        capacity_range.append(capacity)
+        ren_share_range.append(ren_share)
+
+    return min_lcoe_range, investment_range, capacity_range #, ren_share_range  # , ren_capacity, excess_gen
 
 #wind_diesel_hybrid(1, 5, wind_curve, 1, 2018, 2030, diesel_price=0.3)
