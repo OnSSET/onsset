@@ -597,10 +597,10 @@ class Technology:
         mv_lines_distribution_length = np.where((people != new_connections) & ((prev_code < 2) | (prev_code > 3)),
                                                 mv_lines_distribution_length_additional,
                                                 mv_lines_distribution_length_new)
-        hv_lines_total_length = np.where((people != new_connections) & ((prev_code < 2) | (prev_code > 3)),
+        hv_lines_total_length = np.where((people != new_connections) & (prev_code < 2),
                                          hv_lines_total_length_additional,
                                          hv_lines_total_length_new)
-        mv_lines_connection_length = np.where((people != new_connections) & ((prev_code < 2) | (prev_code > 3)),
+        mv_lines_connection_length = np.where((people != new_connections) & (prev_code < 2),
                                               mv_lines_connection_length_additional,
                                               mv_lines_connection_length_new)
         total_lv_lines_length = np.where((people != new_connections) & ((prev_code < 2) | (prev_code > 3)),
