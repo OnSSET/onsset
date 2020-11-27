@@ -128,7 +128,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder, ge
     grid_cost = [1, 2, 3]
     discount_rate = [0, 1, 2]
     demand = [0, 1]
-    grid_options = [0, 1, 2, 3]
+    grid_options = [3]
     compatability = [0, 1, 2]  # TODO
 
     for cap in grid_cap:

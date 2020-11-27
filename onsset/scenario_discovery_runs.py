@@ -17,7 +17,7 @@ for country in countries:
     csv_path = os.path.join(
         'C:/Users/asahl/Box Sync/EGI Energy Systems/06 Projects/2017-11 WB Electrification Platform/Paper/Input files/{}_inputs'.format(country),
         '{}-1-country-inputs_SEPTEMBER.csv'.format(country))
-    summary_folder = os.path.join('C:/Users/asahl/Documents/Scenario_discovery', '{}'.format(country))
+    summary_folder = os.path.join('C:/Users/asahl/Documents/Scenario_discovery', '{}_November'.format(country))
     results_folder = os.path.join('C:/Users/asahl/Documents/Scenario_discovery', '{}'.format(country))
     scenario(specs_path, csv_path, results_folder, summary_folder, general_specs)
 
