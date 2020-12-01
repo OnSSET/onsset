@@ -1364,6 +1364,8 @@ class SettlementProcessor:
         cell_path_real = self.df[SET_MV_CONNECT_DIST].copy(deep=True)
         cell_path_adjusted = list(np.zeros(len(prev_code)).tolist())
         mv_planned = self.df[SET_MV_DIST_PLANNED].copy(deep=True)
+        hv_planned = self.df[SET_HV_DIST_PLANNED].copy(deep=True)
+        mv_planned = np.minimum(mv_planned, hv_planned)
 
         # Start by identifying which settlements are grid-connected already
         electrified = np.where(prev_code == 1, 1, 0)
@@ -2394,6 +2396,14 @@ class SettlementProcessor:
                                                                 SET_LCOE_SA_DIESEL + "{}".format(year),
                                                                 SET_LCOE_MG_PV_HYBRID + "{}".format(year),
                                                                 SET_LCOE_MG_WIND_HYBRID + "{}".format(year)]].T.idxmin()
+
+        self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] == 1,
+                    SET_MIN_OVERALL + "{}".format(year)] = 'Grid' + "{}".format(year)
+
+        if (prio == 2) or (prio == 4):
+            self.df.loc[(self.df[SET_MV_DIST_PLANNED] < auto_intensification) &
+                        (self.df[SET_LCOE_GRID + "{}".format(year)] != 99),
+                        SET_MIN_OVERALL + "{}".format(year)] = 'Grid' + "{}".format(year)
 
         # #logging.info('Determine minimum overall LCOE')
         self.df[SET_MIN_OVERALL_LCOE + "{}".format(year)] = self.df[[SET_LCOE_GRID + "{}".format(year),
