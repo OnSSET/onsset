@@ -139,7 +139,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
         end_year_pop = scenario_parameters.iloc[0]['PopEndYear']
         rural_tier = scenario_parameters.iloc[tier_index]['RuralTargetTier']
         urban_tier = scenario_parameters.iloc[tier_index]['UrbanTargetTier']
-        demand_factor = scenario_parameters.iloc[tier_index]['DemandRatio']
+        demand_factor = 1 # scenario_parameters.iloc[tier_index]['DemandRatio']
         five_year_target = scenario_parameters.iloc[five_year_index]['5YearTarget']
         annual_new_grid_connections_limit = scenario_parameters.iloc[prio_index]['GridConnectionsLimitThousands'] * 1000
         grid_price = scenario_parameters.iloc[prio_index]['GridGenerationCost']
