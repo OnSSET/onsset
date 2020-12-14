@@ -129,30 +129,38 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
         country_id = specs_data.iloc[0]['CountryCode']
 
         tier_index = scenario_info.iloc[scenario]['Target_electricity_consumption_level']
-        five_year_index = 0 # scenario_info.iloc[scenario]['Electrification_target_5_years']
+        five_year_index = 0
         pv_index = scenario_info.iloc[scenario]['PV_cost_adjust']
         diesel_index = scenario_info.iloc[scenario]['Diesel_price']
-        # productive_index = scenario_info.iloc[scenario]['Productive_uses_demand']
         prio_index = scenario_info.iloc[scenario]['Prioritization_algorithm']
         cap_index = scenario_info.iloc[scenario]['GridConnectionCap']
         expanding_MGs = scenario_info.iloc[scenario]['Expanding_MGs']
 
-        end_year_pop = 0 # scenario_parameters.iloc[0]['PopEndYear']
+        end_year_pop = 0
+        demand_factor = 1
+        pv_capital_cost_adjust = 1
+        productive_demand = 1  # scenario_parameters.iloc[productive_index]['ProductiveDemand']
+        prioritization = 2 #  scenario_parameters.iloc[prio_index]['PrioritizationAlgorithm']
+        diesel_gen_investment = 145
+        five_year_target = scenario_parameters.iloc[0]['5YearTarget']
+
+        grid_price = scenario_parameters.iloc[prio_index]['GridGenerationCost']
+        grid_option = scenario_parameters.iloc[prio_index]['HVCost']
+
+        threshold = scenario_parameters.iloc[cap_index]['Threshold']
+        auto_intensification = scenario_parameters.iloc[cap_index]['AutoIntensificationKM']
+
         rural_tier = scenario_parameters.iloc[tier_index]['RuralTargetTier']
         urban_tier = scenario_parameters.iloc[tier_index]['UrbanTargetTier']
-        demand_factor = 1 # scenario_parameters.iloc[tier_index]['DemandRatio']
-        five_year_target = scenario_parameters.iloc[five_year_index]['5YearTarget']
-        annual_new_grid_connections_limit = 1800 # scenario_parameters.iloc[prio_index]['GridConnectionsLimitThousands'] * 1000
-        grid_price = scenario_parameters.iloc[prio_index]['GridGenerationCost']
-        pv_capital_cost_adjust = 1 #
+
         pv_panel_cost = scenario_parameters.iloc[pv_index]['PV_Cost_adjust'] # ToDo
+
         diesel_price = scenario_parameters.iloc[diesel_index]['DieselPrice']
-        productive_demand = 1  # scenario_parameters.iloc[productive_index]['ProductiveDemand']
-        prioritization = 2 # scenario_parameters.iloc[prio_index]['PrioritizationAlgorithm']
-        auto_intensification = scenario_parameters.iloc[cap_index]['AutoIntensificationKM']
-        threshold = 999999999999 # scenario_parameters.iloc[cap_index]['Threshold']
-        grid_option = scenario_parameters.iloc[prio_index]['HVCost']
-        diesel_gen_investment = 145
+
+
+        annual_new_grid_connections_limit_2025 = scenario_parameters.iloc[0]['GridConnectionsLimitThousands2025'] * 1000
+        annual_new_grid_connections_limit_2030 = scenario_parameters.iloc[0]['GridConnectionsLimitThousands2030'] * 1000
+
 
         settlements_in_csv = calibrated_csv_path
         settlements_out_csv = os.path.join(results_folder,
@@ -183,7 +191,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
         grid_calc = Technology(om_of_td_lines=0.02,
                                distribution_losses=float(specs_data.iloc[0][SPE_GRID_LOSSES]),
                                connection_cost_per_hh=20,
-                               base_to_peak_load_ratio=0.8,
+                               base_to_peak_load_ratio=0.5,
                                capacity_factor=1,
                                tech_life=20,
                                grid_capacity_investment=float(specs_data.iloc[0][SPE_GRID_CAPACITY_INVESTMENT]),
@@ -236,7 +244,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                                 capital_cost={float("inf"): 6327 * pv_capital_cost_adjust},
                                 mini_grid=True)
 
-        sa_pv_calc = Technology(base_to_peak_load_ratio=0.9,
+        sa_pv_calc = Technology(base_to_peak_load_ratio=0.8,
                                 tech_life=20,
                                 om_costs=0.05,
                                 capital_cost={float("inf"): 6950 * pv_capital_cost_adjust,
@@ -299,11 +307,11 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
             time_step = time_steps[year]
 
             if year - time_step == start_year:
-                grid_cap_gen_limit = 0
-                grid_connect_limit = 0
+                grid_cap_gen_limit = 999999999
+                grid_connect_limit = time_step * annual_new_grid_connections_limit_2025
             else:
                 grid_cap_gen_limit = 999999999
-                grid_connect_limit = time_step * annual_new_grid_connections_limit
+                grid_connect_limit = time_step * annual_new_grid_connections_limit_2030
 
             onsseter.set_scenario_variables(year, num_people_per_hh_rural, num_people_per_hh_urban, time_step,
                                             start_year, urban_tier, rural_tier, end_year_pop, productive_demand,
