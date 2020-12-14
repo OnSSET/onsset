@@ -141,7 +141,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
         urban_tier = scenario_parameters.iloc[tier_index]['UrbanTargetTier']
         demand_factor = 1 # scenario_parameters.iloc[tier_index]['DemandRatio']
         five_year_target = scenario_parameters.iloc[five_year_index]['5YearTarget']
-        annual_new_grid_connections_limit = 999999999999 # scenario_parameters.iloc[prio_index]['GridConnectionsLimitThousands'] * 1000
+        annual_new_grid_connections_limit = 1800 # scenario_parameters.iloc[prio_index]['GridConnectionsLimitThousands'] * 1000
         grid_price = scenario_parameters.iloc[prio_index]['GridGenerationCost']
         pv_capital_cost_adjust = 1 #
         pv_panel_cost = scenario_parameters.iloc[pv_index]['PV_Cost_adjust'] # ToDo
@@ -149,7 +149,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
         productive_demand = 1  # scenario_parameters.iloc[productive_index]['ProductiveDemand']
         prioritization = 2 # scenario_parameters.iloc[prio_index]['PrioritizationAlgorithm']
         auto_intensification = scenario_parameters.iloc[cap_index]['AutoIntensificationKM']
-        threshold = 1800 # scenario_parameters.iloc[cap_index]['Threshold']
+        threshold = 999999999999 # scenario_parameters.iloc[cap_index]['Threshold']
         grid_option = scenario_parameters.iloc[prio_index]['HVCost']
         diesel_gen_investment = 145
 
