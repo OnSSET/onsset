@@ -135,6 +135,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
         # productive_index = scenario_info.iloc[scenario]['Productive_uses_demand']
         prio_index = scenario_info.iloc[scenario]['Prioritization_algorithm']
         cap_index = scenario_info.iloc[scenario]['GridConnectionCap']
+        expanding_MGs = scenario_info.iloc[scenario]['Expanding_MGs']
 
         end_year_pop = 0 # scenario_parameters.iloc[0]['PopEndYear']
         rural_tier = scenario_parameters.iloc[tier_index]['RuralTargetTier']
@@ -280,7 +281,8 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
         time_steps = {2025: 5, 2030: 5}
 
         elements = ["1.Population", "2.New_Connections", "3.Capacity", "4.Investment"]
-        techs = ["Grid", "SA_PV_mobile", "SA_PV", "MG_Diesel", "MG_PV", "MG_Wind", "MG_Hydro", "MG_PV_Hybrid","MG_Wind_Hybrid"]
+        techs = ["Grid", "SA_PV_mobile", "SA_PV", "MG_Diesel", "MG_PV", "MG_Wind", "MG_Hydro", "MG_PV_Hybrid",
+                 "MG_Wind_Hybrid"]
         sumtechs = []
         for element in elements:
             for tech in techs:
@@ -355,7 +357,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
             onsseter.calculate_new_capacity(mg_pv_hybrid_capacity, mg_wind_hybrid_capacity, mg_hydro_calc, mg_wind_calc,
                                             mg_pv_calc, sa_pv_calc, mg_diesel_calc, sa_diesel_calc, grid_calc, year)
 
-            onsseter.calc_summaries(df_summary, sumtechs, year, grid_option)
+            onsseter.calc_summaries(df_summary, sumtechs, year, grid_option, expanding_MGs)
 
         for i in range(len(onsseter.df.columns)):
             if onsseter.df.iloc[:, i].dtype == 'float64':

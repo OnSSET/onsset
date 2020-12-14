@@ -2597,7 +2597,7 @@ class SettlementProcessor:
         self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 9, SET_NEW_CAPACITY + "{}".format(year)] = \
             (self.df[SET_ENERGY_PER_CELL + "{}".format(year)] * mg_wind_hybrid_capacity)
 
-    def calc_summaries(self, df_summary, sumtechs, year, grid_option):
+    def calc_summaries(self, df_summary, sumtechs, year, grid_option, expanding_MGs):
 
         self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 3) & (
                 self.df['Admin_1'] == 'Nomad'), SET_ELEC_FINAL_CODE + "{}".format(year)] = 2
@@ -2610,6 +2610,10 @@ class SettlementProcessor:
             self.df.loc[(self.df['Admin_1'] == 'Transmission_lines'), SET_ELEC_FINAL_CODE + "{}".format(year)] = 1
             self.df.loc[
                 (self.df['Admin_1'] == 'Transmission_lines'), SET_INVESTMENT_COST + "{}".format(year)] = 1280 * 1000000
+
+        if (expanding_MGs == 1) & (year == 2030):
+            self.df.loc[self.df[SET_ELEC_FINAL_CODE + "2025"] == 1, SET_ELEC_FINAL_CODE + "2025"] = 10
+            self.df.loc[self.df[SET_ELEC_FINAL_CODE + "2030"] == 1, SET_ELEC_FINAL_CODE + "2030"] = 10
 
         """The next section calculates the summaries for technology split,
         consumption added and total investment cost"""
