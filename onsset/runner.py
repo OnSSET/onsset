@@ -139,13 +139,15 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
         end_year_pop = 0
         demand_factor = 1
         pv_capital_cost_adjust = 1
-        productive_demand = 1  # scenario_parameters.iloc[productive_index]['ProductiveDemand']
-        prioritization = 2 #  scenario_parameters.iloc[prio_index]['PrioritizationAlgorithm']
+        productive_demand = 1
+        prioritization = 2
         diesel_gen_investment = 145
         five_year_target = scenario_parameters.iloc[0]['5YearTarget']
 
         grid_price = scenario_parameters.iloc[prio_index]['GridGenerationCost']
         grid_option = scenario_parameters.iloc[prio_index]['HVCost']
+        lv_cost = scenario_parameters.iloc[prio_index]['LVCost']
+        mv_cost = scenario_parameters.iloc[prio_index]['MVCost']
 
         threshold = scenario_parameters.iloc[cap_index]['Threshold']
         auto_intensification = scenario_parameters.iloc[cap_index]['AutoIntensificationKM']
@@ -186,7 +188,9 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
         Technology.set_default_values(base_year=start_year,
                                       start_year=start_year,
                                       end_year=end_year,
-                                      discount_rate=0.08)
+                                      discount_rate=0.08,
+                                      lv_line_cost=lv_cost,
+                                      mv_line_cost=mv_cost)
 
         grid_calc = Technology(om_of_td_lines=0.02,
                                distribution_losses=float(specs_data.iloc[0][SPE_GRID_LOSSES]),
