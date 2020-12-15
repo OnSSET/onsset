@@ -92,6 +92,7 @@ SET_ELEC_POP = 'ElecPop'
 SET_ELEC_POP_CALIB = 'ElecPopCalib'
 SET_WTFtier = "ResidentialDemandTier"
 SET_TIER = 'Tier'
+SET_BASE_TO_PEAK = 'AverageToPeak'
 SET_INVEST_PER_CAPITA = "InvestmentCapita"
 SET_CALIB_GRID_DIST = 'GridDistCalibElec'
 SET_CAPITA_DEMAND = 'PerCapitaDemand'
@@ -188,7 +189,7 @@ class Technology:
         cls.load_moment = load_moment  # for 50mm aluminum conductor under 5% voltage drop (kW m)
 
     def get_lcoe(self, energy_per_cell, people, num_people_per_hh, start_year, end_year, new_connections,
-                 total_energy_per_cell, prev_code, grid_cell_area, additional_mv_line_length=0.0,
+                 total_energy_per_cell, prev_code, grid_cell_area, base_to_peak, additional_mv_line_length=0.0,
                  capacity_factor=0.9, grid_penalty_ratio=1, fuel_cost=0, elec_loop=0, productive_nodes=0,
                  additional_transformer=0, penalty=1,
                  hybrid_lcoe=0, hybrid_investment=0,
@@ -264,6 +265,7 @@ class Technology:
                                                                                   energy_per_cell,
                                                                                   num_people_per_hh,
                                                                                   grid_cell_area,
+                                                                                  base_to_peak,
                                                                                   additional_mv_line_length,
                                                                                   additional_transformer,
                                                                                   productive_nodes,
@@ -437,7 +439,7 @@ class Technology:
 
         return hv_km, mv_km, no_of_hv_mv_subs, no_of_mv_mv_subs, no_of_hv_lv_subs, no_of_mv_lv_subs
 
-    def distribution_network(self, people, energy_per_cell, num_people_per_hh, grid_cell_area,
+    def distribution_network(self, people, energy_per_cell, num_people_per_hh, grid_cell_area, base_to_peak,
                              productive_nodes=0):
         """This method calculates the required components for the distribution network
         This includes potentially MV lines, LV lines and service transformers
@@ -462,7 +464,7 @@ class Technology:
 
         consumption = energy_per_cell  # kWh/year
         average_load = consumption / (1 - self.distribution_losses) / HOURS_PER_YEAR  # kW
-        peak_load = average_load / self.base_to_peak_load_ratio  # kW
+        peak_load = average_load / base_to_peak  # kW
 
         if self.standalone:
             cluster_mv_lines_length = 0
@@ -501,7 +503,7 @@ class Technology:
         return cluster_mv_lines_length, lv_km, no_of_service_transf, consumption, peak_load, total_nodes
 
     def td_network_cost(self, people, new_connections, prev_code, total_energy_per_cell, energy_per_cell,
-                        num_people_per_hh, grid_cell_area, additional_mv_line_length=0, additional_transformer=0,
+                        num_people_per_hh, grid_cell_area, base_to_peak, additional_mv_line_length=0, additional_transformer=0,
                         productive_nodes=0, elec_loop=0, penalty=1):
         """Calculates all the transmission and distribution network components
 
@@ -536,7 +538,7 @@ class Technology:
         # Start by calculating the distribution network required to meet all of the demand
         cluster_mv_lines_length_total, cluster_lv_lines_length_total, no_of_service_transf_total, \
         generation_per_year_total, peak_load_total, total_nodes_total = \
-            self.distribution_network(people, total_energy_per_cell, num_people_per_hh, grid_cell_area,
+            self.distribution_network(people, total_energy_per_cell, num_people_per_hh, grid_cell_area, base_to_peak,
                                       productive_nodes)
 
         # Next calculate the network that is already there
@@ -544,7 +546,7 @@ class Technology:
         generation_per_year_existing, peak_load_existing, total_nodes_existing = \
             self.distribution_network(np.maximum((people - new_connections), 1),
                                       (total_energy_per_cell - energy_per_cell),
-                                      num_people_per_hh, grid_cell_area, productive_nodes)
+                                      num_people_per_hh, grid_cell_area, base_to_peak, productive_nodes)
 
         # Then calculate the difference between the two
         mv_lines_distribution_length_additional = \
@@ -585,7 +587,7 @@ class Technology:
         # If no distribution network is present, perform the calculations only once
         mv_lines_distribution_length_new, total_lv_lines_length_new, num_transformers_new, generation_per_year_new, \
         peak_load_new, total_nodes_new = self.distribution_network(people, energy_per_cell, num_people_per_hh,
-                                                                   grid_cell_area, productive_nodes)
+                                                                   grid_cell_area, base_to_peak, productive_nodes)
 
         mv_distribution = np.where(mv_lines_distribution_length_new > 0, True, False)
 
@@ -1329,7 +1331,7 @@ class SettlementProcessor:
         # to demand (population) growth in already electrified settlements
         consumption = sum(self.df.loc[prev_code == 1][SET_ENERGY_PER_CELL + "{}".format(year)])
         average_load = consumption / (1 - grid_calc.distribution_losses) / HOURS_PER_YEAR  # kW
-        peak_load = average_load / grid_calc.base_to_peak_load_ratio  # kW
+        peak_load = average_load / self.df[SET_BASE_TO_PEAK]  # kW
         grid_capacity_limit -= peak_load
 
         self.df['Densification_connections'] = self.df[SET_NEW_CONNECTIONS + "{}".format(year)] / self.df[
@@ -1523,6 +1525,7 @@ class SettlementProcessor:
                                prev_code=self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
                                num_people_per_hh=self.df[SET_NUM_PEOPLE_PER_HH],
                                grid_cell_area=self.df[SET_GRID_CELL_AREA],
+                               base_to_peak=self.df[SET_BASE_TO_PEAK],
                                additional_mv_line_length=dist_adjusted,
                                elec_loop=elecorder,
                                additional_transformer=additional_transformer)
@@ -1594,7 +1597,7 @@ class SettlementProcessor:
 
         consumption = self.df[SET_ENERGY_PER_CELL + "{}".format(year)]  # kWh/year
         average_load = consumption / (1 - grid_calc.distribution_losses) / HOURS_PER_YEAR  # kW
-        peak_load = average_load / grid_calc.base_to_peak_load_ratio  # kW
+        peak_load = average_load / self.df[SET_BASE_TO_PEAK]  # kW
         peak_load.loc[grid_lcoe >= min_code_lcoes] = 0
         peak_load_cum_sum = np.cumsum(peak_load)
         grid_lcoe.loc[peak_load_cum_sum > grid_capacity_limit] = 99
@@ -1864,14 +1867,27 @@ class SettlementProcessor:
         tier_4 = 2117
 
         self.df[SET_TIER] = 5
+        self.df[SET_BASE_TO_PEAK] = 0.5
+
         self.df.loc[(self.df[SET_TOTAL_ENERGY_PER_CELL] / self.df[SET_POP + "{}".format(year)]) * self.df[
             SET_NUM_PEOPLE_PER_HH] < 2993, SET_TIER] = 4
         self.df.loc[(self.df[SET_TOTAL_ENERGY_PER_CELL] / self.df[SET_POP + "{}".format(year)]) * self.df[
+            SET_NUM_PEOPLE_PER_HH] < 2993, SET_BASE_TO_PEAK] = 0.5
+
+        self.df.loc[(self.df[SET_TOTAL_ENERGY_PER_CELL] / self.df[SET_POP + "{}".format(year)]) * self.df[
             SET_NUM_PEOPLE_PER_HH] < 1241, SET_TIER] = 3
+        self.df.loc[(self.df[SET_TOTAL_ENERGY_PER_CELL] / self.df[SET_POP + "{}".format(year)]) * self.df[
+            SET_NUM_PEOPLE_PER_HH] < 1241, SET_BASE_TO_PEAK] = 0.5
+
         self.df.loc[(self.df[SET_TOTAL_ENERGY_PER_CELL] / self.df[SET_POP + "{}".format(year)]) * self.df[
             SET_NUM_PEOPLE_PER_HH] < 365, SET_TIER] = 2
         self.df.loc[(self.df[SET_TOTAL_ENERGY_PER_CELL] / self.df[SET_POP + "{}".format(year)]) * self.df[
+            SET_NUM_PEOPLE_PER_HH] < 365, SET_BASE_TO_PEAK] = 0.4
+
+        self.df.loc[(self.df[SET_TOTAL_ENERGY_PER_CELL] / self.df[SET_POP + "{}".format(year)]) * self.df[
             SET_NUM_PEOPLE_PER_HH] < 73, SET_TIER] = 1
+        self.df.loc[(self.df[SET_TOTAL_ENERGY_PER_CELL] / self.df[SET_POP + "{}".format(year)]) * self.df[
+            SET_NUM_PEOPLE_PER_HH] < 73, SET_BASE_TO_PEAK] = 0.3
 
     def calculate_pv_hybrids_lcoe(self, year, start_year, end_year, time_step, mg_pv_hybrid_calc, pv_adjustment_factor,
                                   pv_panel_investment, diesel_gen_investment):
@@ -2036,6 +2052,7 @@ class SettlementProcessor:
                                        prev_code=self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
                                        num_people_per_hh=self.df[SET_NUM_PEOPLE_PER_HH],
                                        grid_cell_area=self.df[SET_GRID_CELL_AREA],
+                                       base_to_peak=self.df[SET_BASE_TO_PEAK],
                                        hybrid_lcoe=hybrid_series[0],
                                        hybrid_investment=hybrid_series[1])
 
@@ -2172,6 +2189,7 @@ class SettlementProcessor:
                                          prev_code=self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
                                          num_people_per_hh=self.df[SET_NUM_PEOPLE_PER_HH],
                                          grid_cell_area=self.df[SET_GRID_CELL_AREA],
+                                         base_to_peak=self.df[SET_BASE_TO_PEAK],
                                          hybrid_lcoe=hybrid_series[0],
                                          hybrid_investment=hybrid_series[1])
 
@@ -2200,6 +2218,7 @@ class SettlementProcessor:
                                    prev_code=self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
                                    num_people_per_hh=self.df[SET_NUM_PEOPLE_PER_HH],
                                    grid_cell_area=self.df[SET_GRID_CELL_AREA],
+                                   base_to_peak=self.df[SET_BASE_TO_PEAK],
                                    additional_mv_line_length=self.df[SET_HYDRO_DIST])
 
         self.df.loc[(self.df[SET_POP_CALIB] < 50) & (
@@ -2260,6 +2279,7 @@ class SettlementProcessor:
                                         prev_code=self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
                                         num_people_per_hh=self.df[SET_NUM_PEOPLE_PER_HH],
                                         grid_cell_area=self.df[SET_GRID_CELL_AREA],
+                                        base_to_peak=self.df[SET_BASE_TO_PEAK],
                                         fuel_cost=self.df[SET_MG_DIESEL_FUEL + "{}".format(year)],
                                         )
 
@@ -2279,6 +2299,7 @@ class SettlementProcessor:
                                         prev_code=self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
                                         num_people_per_hh=self.df[SET_NUM_PEOPLE_PER_HH],
                                         grid_cell_area=self.df[SET_GRID_CELL_AREA],
+                                        base_to_peak=self.df[SET_BASE_TO_PEAK],
                                         fuel_cost=self.df[SET_SA_DIESEL_FUEL + "{}".format(year)],
                                         )
 
@@ -2296,6 +2317,7 @@ class SettlementProcessor:
                                 prev_code=self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
                                 num_people_per_hh=self.df[SET_NUM_PEOPLE_PER_HH],
                                 grid_cell_area=self.df[SET_GRID_CELL_AREA],
+                                base_to_peak=sa_pv_calc.base_to_peak_load_ratio,
                                 capacity_factor=self.df[SET_GHI] / HOURS_PER_YEAR)
         self.df.loc[self.df[SET_GHI] <= 1000, SET_LCOE_SA_PV + "{}".format(year)] = 99
 
@@ -2339,7 +2361,7 @@ class SettlementProcessor:
         max_hydro_dist = 5  # the max distance in km to consider hydropower viable
         additional_capacity = (
                 (self.df[SET_ENERGY_PER_CELL + "{}".format(year)]) /
-                (HOURS_PER_YEAR * mg_hydro_calc.capacity_factor * mg_hydro_calc.base_to_peak_load_ratio *
+                (HOURS_PER_YEAR * mg_hydro_calc.capacity_factor * self.df[SET_BASE_TO_PEAK] *
                  (1 - mg_hydro_calc.distribution_losses)))
 
         for index, row in hydro_df.iterrows():
@@ -2558,32 +2580,32 @@ class SettlementProcessor:
 
         self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 1, SET_NEW_CAPACITY + "{}".format(year)] = (
                 (self.df[SET_ENERGY_PER_CELL + "{}".format(year)]) /
-                (HOURS_PER_YEAR * grid_calc.capacity_factor * grid_calc.base_to_peak_load_ratio *
+                (HOURS_PER_YEAR * grid_calc.capacity_factor * self.df[SET_BASE_TO_PEAK] *
                  (1 - grid_calc.distribution_losses)))
 
         self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 7, SET_NEW_CAPACITY + "{}".format(year)] = (
                 (self.df[SET_ENERGY_PER_CELL + "{}".format(year)]) /
-                (HOURS_PER_YEAR * mg_hydro_calc.capacity_factor * mg_hydro_calc.base_to_peak_load_ratio *
+                (HOURS_PER_YEAR * mg_hydro_calc.capacity_factor * self.df[SET_BASE_TO_PEAK] *
                  (1 - mg_hydro_calc.distribution_losses)))
 
         self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 5, SET_NEW_CAPACITY + "{}".format(year)] = (
                 (self.df[SET_ENERGY_PER_CELL + "{}".format(year)]) /
-                (HOURS_PER_YEAR * (self.df[SET_GHI] / HOURS_PER_YEAR) * mg_pv_calc.base_to_peak_load_ratio *
+                (HOURS_PER_YEAR * (self.df[SET_GHI] / HOURS_PER_YEAR) * self.df[SET_BASE_TO_PEAK] *
                  (1 - mg_pv_calc.distribution_losses)))
 
         self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 6, SET_NEW_CAPACITY + "{}".format(year)] = (
                 (self.df[SET_ENERGY_PER_CELL + "{}".format(year)]) /
-                (HOURS_PER_YEAR * self.df[SET_WINDCF] * mg_wind_calc.base_to_peak_load_ratio *
+                (HOURS_PER_YEAR * self.df[SET_WINDCF] * self.df[SET_BASE_TO_PEAK] *
                  (1 - mg_wind_calc.distribution_losses)))
 
         self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 4, SET_NEW_CAPACITY + "{}".format(year)] = (
                 (self.df[SET_ENERGY_PER_CELL + "{}".format(year)]) /
-                (HOURS_PER_YEAR * mg_diesel_calc.capacity_factor * mg_diesel_calc.base_to_peak_load_ratio *
+                (HOURS_PER_YEAR * mg_diesel_calc.capacity_factor * self.df[SET_BASE_TO_PEAK] *
                  (1 - mg_diesel_calc.distribution_losses)))
 
         self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 2, SET_NEW_CAPACITY + "{}".format(year)] = (
                 (self.df[SET_ENERGY_PER_CELL + "{}".format(year)]) /
-                (HOURS_PER_YEAR * sa_diesel_calc.capacity_factor * sa_diesel_calc.base_to_peak_load_ratio *
+                (HOURS_PER_YEAR * sa_diesel_calc.capacity_factor * self.df[SET_BASE_TO_PEAK] *
                  (1 - sa_diesel_calc.distribution_losses)))
 
         self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 3, SET_NEW_CAPACITY + "{}".format(year)] = (
