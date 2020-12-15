@@ -1752,7 +1752,7 @@ class SettlementProcessor:
                                                                               wb_tier_urban_clusters)]
             self.df.loc[self.df[SET_URBAN] == 2, SET_CAPITA_DEMAND] = self.df[
                                                                           SET_RESIDENTIAL_TIER + str(
-                                                                              wb_tier_urban_centers)] * demand_factor * 2
+                                                                              wb_tier_urban_centers)] * demand_factor * 1.22
             self.df.loc[self.df['Admin_1'] == 'Nomad', SET_CAPITA_DEMAND] = self.df[
                                                                                 SET_RESIDENTIAL_TIER + str(
                                                                                     1)] * demand_factor
