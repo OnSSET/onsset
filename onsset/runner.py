@@ -185,6 +185,8 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
         max_grid_extension_dist = float(specs_data.iloc[0][SPE_MAX_GRID_EXTENSION_DIST])
         annual_grid_cap_gen_limit = specs_data.loc[0, 'NewGridGenerationCapacityAnnualLimitMW'] * 1000
 
+        #
+
         # RUN_PARAM: Fill in general and technology specific parameters (e.g. discount rate, losses etc.)
         Technology.set_default_values(base_year=start_year,
                                       start_year=start_year,
