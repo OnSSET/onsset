@@ -570,10 +570,10 @@ class Technology:
         mv_lines_distribution_length = np.where((people != new_connections) & ((prev_code < 2) | (prev_code > 3)),
                                                 mv_lines_distribution_length_additional,
                                                 mv_lines_distribution_length_new)
-        hv_lines_total_length = np.where((people != new_connections) & ((prev_code < 2) | (prev_code > 3)),
+        hv_lines_total_length = np.where((people != new_connections) & (prev_code < 2),
                                          hv_lines_total_length_additional,
                                          hv_lines_total_length_new)
-        mv_lines_connection_length = np.where((people != new_connections) & ((prev_code < 2) | (prev_code > 3)),
+        mv_lines_connection_length = np.where((people != new_connections) & (prev_code < 2),
                                               mv_lines_connection_length_additional,
                                               mv_lines_connection_length_new)
         total_lv_lines_length = np.where((people != new_connections) & ((prev_code < 2) | (prev_code > 3)),
@@ -1412,14 +1412,19 @@ class SettlementProcessor:
         # Third to last round of extension loops from electrified settlements. First considering all
         # electrified settlements up until this point, then from the newly electrified settlements in each round
         prev_electrified = np.zeros(len(prev_code))
+        test = [1, 2]
         loops = 1
-        while sum(electrified) > sum(prev_electrified):
+        while sum(electrified) > sum(prev_electrified) and len(test) > 0:
             new_electrified = electrified - prev_electrified
             prev_electrified = electrified
             logging.info('Electrification loop {} with {} electrified'.format(loops, int(sum(new_electrified))))
             loops += 1
 
-            if sum(new_electrified) > 1:
+            extension_nodes = np.where(new_electrified == 1)
+            extension_nodes = extension_nodes[0].tolist()
+            test = np.setdiff1d(unelectrified, extension_nodes).tolist()
+
+            if sum(new_electrified) > 1 and len(test) > 1:
                 # Calculating the distance and adjusted distance from each unelectrified settelement to the closest
                 # electrified settlement, as well as the electrification order an total MV distance to that electrified
                 # settlement
