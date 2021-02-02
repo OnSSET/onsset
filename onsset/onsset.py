@@ -988,28 +988,33 @@ class SettlementProcessor:
         # The model uses 0, 1, 2 as GHS population layer does.
         # As of this version, urban are only self.dfs with value equal to 2
         if calibrate:
-            urban_modelled = 2
-            factor = 1
-            while abs(urban_modelled - urban_current) > 0.01:
-                self.df[SET_URBAN] = 0
-                self.df.loc[(self.df[SET_POP_CALIB] > 5000 * factor) & (
-                        self.df[SET_POP_CALIB] / self.df[SET_GRID_CELL_AREA] > 350 * factor), SET_URBAN] = 1
-                self.df.loc[(self.df[SET_POP_CALIB] > 50000 * factor) & (
-                        self.df[SET_POP_CALIB] / self.df[SET_GRID_CELL_AREA] > 1500 * factor), SET_URBAN] = 2
-                pop_urb = self.df.loc[self.df[SET_URBAN] > 1, SET_POP_CALIB].sum()
-                urban_modelled = pop_urb / pop_actual
-                if urban_modelled > urban_current:
-                    factor *= 1.1
-                else:
-                    factor *= 0.9
+            self.df.sort_values(by=[SET_POP_CALIB], inplace=True)
+            cumulative_urban_pop = self.df[SET_POP_CALIB].cumsum()
+            self.df[SET_URBAN] = np.where(cumulative_urban_pop < (urban_current * self.df[SET_POP_CALIB].sum()), 2, 0)
+            self.df.sort_index(inplace=True)
+
+            # urban_modelled = 2
+            # factor = 1
+            # while abs(urban_modelled - urban_current) > 0.01:
+            #     self.df[SET_URBAN] = 0
+            #     self.df.loc[(self.df[SET_POP_CALIB] > 5000 * factor) & (
+            #             self.df[SET_POP_CALIB] / self.df[SET_GRID_CELL_AREA] > 350 * factor), SET_URBAN] = 1
+            #     self.df.loc[(self.df[SET_POP_CALIB] > 50000 * factor) & (
+            #             self.df[SET_POP_CALIB] / self.df[SET_GRID_CELL_AREA] > 1500 * factor), SET_URBAN] = 2
+            #     pop_urb = self.df.loc[self.df[SET_URBAN] > 1, SET_POP_CALIB].sum()
+            #     urban_modelled = pop_urb / pop_actual
+            #     if urban_modelled > urban_current:
+            #         factor *= 1.1
+            #     else:
+            #         factor *= 0.9
 
         # Get the calculated urban ratio, and limit it to within reasonable boundaries
         pop_urb = self.df.loc[self.df[SET_URBAN] > 1, SET_POP_CALIB].sum()
         urban_modelled = pop_urb / pop_actual
 
-        if abs(urban_modelled - urban_current) > 0.05:
-            print('Le ratio urbain modélisé est {:.2f}. '
-                  'Au cas où cela ne serait pas acceptable, veuillez réviser cette partie du code'.format(urban_modelled))
+
+        print('Le ratio urbain modélisé est {:.2f}. '
+              'Au cas où cela ne serait pas acceptable, veuillez réviser cette partie du code'.format(urban_modelled))
 
         return pop_modelled, urban_modelled
 
