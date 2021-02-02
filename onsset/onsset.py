@@ -1094,18 +1094,21 @@ class SettlementProcessor:
 
         # This if function here skims through T&D columns to identify if any non 0 values exist;
         # Then it defines calibration method accordingly.
-        if min(self.df[SET_DIST_TO_TRANS]) >= 9999:
+        if min(self.df[SET_DIST_TO_TRANS]) < 9999:
             self.df[SET_CALIB_GRID_DIST] = self.df[SET_DIST_TO_TRANS]
             priority = 1
             dist_limit = max_transformer_dist
-        elif min(self.df[SET_MV_DIST_CURRENT]) >= 9999:
+            print('Calibrating using distribution transformers')
+        elif min(self.df[SET_MV_DIST_CURRENT]) < 9999:
             self.df[SET_CALIB_GRID_DIST] = self.df[SET_MV_DIST_CURRENT]
             priority = 1
             dist_limit = max_mv_dist
+            print('Calibrating using MV lines')
         else:
             self.df[SET_CALIB_GRID_DIST] = self.df[SET_HV_DIST_CURRENT]
             priority = 2
             dist_limit = max_hv_dist
+            print('Calibrating using HV lines')
 
         condition = 0
 
