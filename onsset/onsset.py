@@ -988,7 +988,7 @@ class SettlementProcessor:
         # The model uses 0, 1, 2 as GHS population layer does.
         # As of this version, urban are only self.dfs with value equal to 2
         if calibrate:
-            self.df.sort_values(by=[SET_POP_CALIB], inplace=True)
+            self.df.sort_values(by=[SET_POP_CALIB], inplace=True, ascending=False)
             cumulative_urban_pop = self.df[SET_POP_CALIB].cumsum()
             self.df[SET_URBAN] = np.where(cumulative_urban_pop < (urban_current * self.df[SET_POP_CALIB].sum()), 2, 0)
             self.df.sort_index(inplace=True)
