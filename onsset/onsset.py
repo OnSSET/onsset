@@ -1450,7 +1450,7 @@ class SettlementProcessor:
                                               grid_connect_limit=grid_connect_limit, cell_path_real=cell_path_real,
                                               cell_path_adjusted=cell_path_adjusted, electrified=electrified, year=year,
                                               grid_calc=grid_calc, grid_investment=grid_investment,
-                                              new_investment=new_investment, threshold=threshold)
+                                              new_investment=new_investment, threshold=999999999)
 
         #  Second round of extension from HV lines
         hv_dist = np.nan_to_num(self.df[SET_HV_DIST_PLANNED])
@@ -1468,7 +1468,7 @@ class SettlementProcessor:
                                               grid_connect_limit=grid_connect_limit, cell_path_real=cell_path_real,
                                               cell_path_adjusted=cell_path_adjusted, electrified=electrified,
                                               year=year, grid_calc=grid_calc, grid_investment=grid_investment,
-                                              new_investment=new_investment, threshold=threshold)
+                                              new_investment=new_investment, threshold=999999999)
 
         # Third to last round of extension loops from electrified settlements. First considering all
         # electrified settlements up until this point, then from the newly electrified settlements in each round
@@ -1510,7 +1510,7 @@ class SettlementProcessor:
                                                     cell_path_real=cell_path_real,
                                                     cell_path_adjusted=cell_path_adjusted, electrified=electrified,
                                                     year=year, grid_calc=grid_calc, grid_investment=grid_investment,
-                                                    new_investment=new_investment, threshold=threshold)
+                                                    new_investment=new_investment, threshold=999999999)
 
         return new_lcoes, cell_path_adjusted, elecorder, cell_path_real, pd.DataFrame(new_investment)
 
@@ -1715,11 +1715,47 @@ class SettlementProcessor:
             wb_tier_urban_centers = int(urban_tier)
 
             if wb_tier_urban_centers == 6:
-                self.df['ResidentialDemandTierUrbanCustom'] = self.df['urban_low']
+                self.df['ResidentialDemandTierUrbanCustom'] = 702 / 6.1
+                # Jubaland
+                self.df.loc[self.df['Admin_1'] == 'Gedo', 'ResidentialDemandTierUrbanCustom'] = 283 / 6.1
+                self.df.loc[self.df['Admin_1'] == 'Jubbada Dhexe', 'ResidentialDemandTierUrbanCustom'] = 283 / 6.1
+                self.df.loc[self.df['Admin_1'] == 'Jubbada Hoose', 'ResidentialDemandTierUrbanCustom'] = 283 / 6.1
+                # mogadishu
+                self.df.loc[self.df['Admin_1'] == 'Banaadir', 'ResidentialDemandTierUrbanCustom'] = 430 / 6.1
+                # Southwest
+                self.df.loc[self.df['Admin_1'] == 'Bay', 'ResidentialDemandTierUrbanCustom'] = 326 / 6.1
+                self.df.loc[self.df['Admin_1'] == 'Shabeellaha Hoose', 'ResidentialDemandTierUrbanCustom'] = 326 / 6.1
+                self.df.loc[self.df['Admin_1'] == 'Bakool', 'ResidentialDemandTierUrbanCustom'] = 326 / 6.1
+                # Shabelle
+                self.df.loc[self.df['Admin_1'] == 'Shabeellaha Dhexe', 'ResidentialDemandTierUrbanCustom'] = 277 / 6.1
+                self.df.loc[self.df['Admin_1'] == 'Hiiraan', 'ResidentialDemandTierUrbanCustom'] = 277 / 6.1
+                # Galmudug
+                self.df.loc[self.df['Admin_1'] == 'Galguduud', 'ResidentialDemandTierUrbanCustom'] = 505 / 6.1
+                self.df.loc[self.df['Admin_1'] == 'Mudug', 'ResidentialDemandTierUrbanCustom'] = 505 / 6.1
+
+
+
             if wb_tier_urban_centers == 7:
-                self.df['ResidentialDemandTierUrbanCustom'] = self.df['urban_mid']
+                self.df['ResidentialDemandTierUrbanCustom'] = 810 / 6.1
+                # Jubaland
+                self.df.loc[self.df['Admin_1'] == 'Gedo', 'ResidentialDemandTierUrbanCustom'] = 337 / 6.1
+                self.df.loc[self.df['Admin_1'] == 'Jubbada Dhexe', 'ResidentialDemandTierUrbanCustom'] = 337 / 6.1
+                self.df.loc[self.df['Admin_1'] == 'Jubbada Hoose', 'ResidentialDemandTierUrbanCustom'] = 337 / 6.1
+                # mogadishu
+                self.df.loc[self.df['Admin_1'] == 'Banaadir', 'ResidentialDemandTierUrbanCustom'] = 505 / 6.1
+                # Southwest
+                self.df.loc[self.df['Admin_1'] == 'Bay', 'ResidentialDemandTierUrbanCustom'] = 389 / 6.1
+                self.df.loc[self.df['Admin_1'] == 'Shabeellaha Hoose', 'ResidentialDemandTierUrbanCustom'] = 389 / 6.1
+                self.df.loc[self.df['Admin_1'] == 'Bakool', 'ResidentialDemandTierUrbanCustom'] = 389 / 6.1
+                # Shabelle
+                self.df.loc[self.df['Admin_1'] == 'Shabeellaha Dhexe', 'ResidentialDemandTierUrbanCustom'] = 330 / 6.1
+                self.df.loc[self.df['Admin_1'] == 'Hiiraan', 'ResidentialDemandTierUrbanCustom'] = 330 / 6.1
+                # Galmudug
+                self.df.loc[self.df['Admin_1'] == 'Galguduud', 'ResidentialDemandTierUrbanCustom'] = 533 / 6.1
+                self.df.loc[self.df['Admin_1'] == 'Mudug', 'ResidentialDemandTierUrbanCustom'] = 533 / 6.1
+
             if wb_tier_urban_centers == 8:
-                self.df['ResidentialDemandTierUrbanCustom'] = self.df['urban_high']
+                self.df['ResidentialDemandTierUrbanCustom'] = 1368 / 6.1
 
             if wb_tier_rural == 6:
                 self.df['ResidentialDemandTierRuralCustom'] = self.df['rural_low']
@@ -2040,6 +2076,8 @@ class SettlementProcessor:
 
         pv_hybrid_capacity = hybrid_series[2]
         self.df['RenewableShare' + "{}".format(year)] = hybrid_series[3]
+        self.df['PVHybridGenCost' + "{}".format(year)] = hybrid_series[1]
+        self.df['PVHybridGenCap' + "{}".format(year)] = hybrid_series[2]
 
         # logging.info('Calculate minigrid PV hybrid LCOE')
         self.df[SET_LCOE_MG_PV_HYBRID + "{}".format(year)], pv_hybrid_investment = \
@@ -2483,7 +2521,7 @@ class SettlementProcessor:
 
     def calculate_investments(self, sa_diesel_investment, sa_pv_investment, mg_diesel_investment, mg_pv_investment,
                               mg_wind_investment, mg_hydro_investment, mg_pv_hybrid_investment,
-                              mg_wind_hybrid_investment, grid_investment, year):
+                              mg_wind_hybrid_investment, grid_investment, year, expanding_MGs):
 
         # logging.info('Calculate investment cost')
 
@@ -2499,10 +2537,17 @@ class SettlementProcessor:
         mg_pv_hybrid = pd.DataFrame(np.where(self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 8, 1, 0))
         mg_wind_hybrid = pd.DataFrame(np.where(self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 9, 1, 0))
 
-        self.df[SET_INVESTMENT_COST + "{}".format(year)] = grid * grid_investment + sa_diesel * sa_diesel_investment + \
+        if expanding_MGs == 1:
+            self.df[
+                SET_INVESTMENT_COST + "{}".format(year)] = grid * mg_pv_hybrid_investment + sa_diesel * sa_diesel_investment + \
                                                            sa_pv * sa_pv_investment + mg_diesel * mg_diesel_investment + mg_pv * mg_pv_investment + \
                                                            mg_wind * mg_wind_investment + mg_hydro * mg_hydro_investment + mg_pv_hybrid * mg_pv_hybrid_investment + \
                                                            mg_wind_hybrid * mg_wind_hybrid_investment
+        else:
+            self.df[SET_INVESTMENT_COST + "{}".format(year)] = grid * grid_investment + sa_diesel * sa_diesel_investment + \
+                                                               sa_pv * sa_pv_investment + mg_diesel * mg_diesel_investment + mg_pv * mg_pv_investment + \
+                                                               mg_wind * mg_wind_investment + mg_hydro * mg_hydro_investment + mg_pv_hybrid * mg_pv_hybrid_investment + \
+                                                               mg_wind_hybrid * mg_wind_hybrid_investment
 
     def apply_limitations(self, eleclimit, year, time_step, prioritization, auto_densification=0):
 
@@ -2573,15 +2618,19 @@ class SettlementProcessor:
         print("Le taux d'électrification atteint en {} est {:.1f} %".format(year, elecrate * 100))
 
     def calculate_new_capacity(self, mg_pv_hybrid_capacity, mg_wind_hybrid_capacity, mg_hydro_calc, mg_wind_calc,
-                               mg_pv_calc, sa_pv_calc, mg_diesel_calc, sa_diesel_calc, grid_calc, year):
+                               mg_pv_calc, sa_pv_calc, mg_diesel_calc, sa_diesel_calc, grid_calc, year, expanding_MGs):
 
         # logging.info('Calculate new capacity')
         self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 99, SET_NEW_CAPACITY + "{}".format(year)] = 0
 
-        self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 1, SET_NEW_CAPACITY + "{}".format(year)] = (
-                (self.df[SET_ENERGY_PER_CELL + "{}".format(year)]) /
-                (HOURS_PER_YEAR * grid_calc.capacity_factor * self.df[SET_BASE_TO_PEAK] *
-                 (1 - grid_calc.distribution_losses)))
+        if expanding_MGs == 1:
+            self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 1, SET_NEW_CAPACITY + "{}".format(year)] = \
+                (self.df[SET_ENERGY_PER_CELL + "{}".format(year)] * mg_pv_hybrid_capacity)
+        else:
+            self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 1, SET_NEW_CAPACITY + "{}".format(year)] = (
+                    (self.df[SET_ENERGY_PER_CELL + "{}".format(year)]) /
+                    (HOURS_PER_YEAR * grid_calc.capacity_factor * self.df[SET_BASE_TO_PEAK] *
+                     (1 - grid_calc.distribution_losses)))
 
         self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 7, SET_NEW_CAPACITY + "{}".format(year)] = (
                 (self.df[SET_ENERGY_PER_CELL + "{}".format(year)]) /
@@ -2793,3 +2842,11 @@ class SettlementProcessor:
         if (expanding_MGs == 1) & (year == 2030):
             self.df.loc[self.df[SET_ELEC_FINAL_CODE + "2025"] == 1, SET_ELEC_FINAL_CODE + "2025"] = 10
             self.df.loc[self.df[SET_ELEC_FINAL_CODE + "2030"] == 1, SET_ELEC_FINAL_CODE + "2030"] = 10
+            self.df.loc[self.df[SET_ELEC_FINAL_CODE + "2020"] == 1, SET_ELEC_FINAL_CODE + "2020"] = 10
+
+        if year == 2030:
+            self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "2025"] == 2), SET_ELEC_FINAL_CODE + "2025"] = 13
+            self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "2025"] == 3), SET_ELEC_FINAL_CODE + "2025"] = 12
+
+            self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "2030"] == 2), SET_ELEC_FINAL_CODE + "2030"] = 13
+            self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "2030"] == 3), SET_ELEC_FINAL_CODE + "2030"] = 12
