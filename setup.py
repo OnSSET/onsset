@@ -33,7 +33,8 @@ setuptools.setup(
         'seaborn',
         'scipy',
         'matplotlib',
-        'kepler'
+        'keplergl'
+        'tk'
     ],
     classifiers=[
         'Programming Language :: Python :: 3',
