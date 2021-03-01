@@ -35,6 +35,7 @@ setuptools.setup(
         'matplotlib',
         'keplergl'
         'tk'
+        'geopandas'
     ],
     classifiers=[
         'Programming Language :: Python :: 3',
