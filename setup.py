@@ -33,8 +33,8 @@ setuptools.setup(
         'seaborn',
         'scipy',
         'matplotlib',
-        'keplergl'
-        'tk'
+        'keplergl',
+        'tk',
         'geopandas'
     ],
     classifiers=[
