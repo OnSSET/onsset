@@ -34,7 +34,7 @@ setuptools.setup(
         'scipy',
         'matplotlib',
         'tk',
-        'folium'
+        'folium',
         'branca'
 
     ],
