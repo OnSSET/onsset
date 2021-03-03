@@ -28,10 +28,10 @@ def wind_diesel_hybrid(
 ):
     n_chg = 0.92  # charge efficiency of battery
     n_dis = 0.92  # discharge efficiency of battery
-    lpsp_max = 0.05  # maximum loss of load allowed over the year, in share of kWh
+    lpsp_max = 0.10  # maximum loss of load allowed over the year, in share of kWh
     battery_cost = 139  # battery capital capital cost, USD/kWh of storage capacity
     wind_cost = 2800  # Wind turbine capital cost, USD/kW peak power
-    diesel_cost = 145  # diesel generator capital cost, USD/kW rated power
+    diesel_cost = 261  # diesel generator capital cost, USD/kW rated power
     wind_life = 20  # wind panel expected lifetime, years
     diesel_life = 10  # diesel generator expected lifetime, years
     wind_om = 0.015  # annual OM cost of wind panels

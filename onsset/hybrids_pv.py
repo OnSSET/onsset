@@ -1,16 +1,16 @@
 import numpy as np
-#import logging
+# import logging
 import pandas as pd
 import os
 
-#logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.DEBUG)
+# logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.DEBUG)
 
 
 def read_environmental_data(path):
     ghi_curve = pd.read_csv(path, usecols=[3], skiprows=3).values  # * 1000
     temp = pd.read_csv(path, usecols=[2], skiprows=3).values
-    #ghi_curve = pd.read_csv('Supplementary_files\Benin_data.csv', usecols=[3], skiprows=341882).as_matrix()
-    #temp = pd.read_csv('Supplementary_files\Benin_data.csv', usecols=[2], skiprows=341882).as_matrix()
+    # ghi_curve = pd.read_csv('Supplementary_files\Benin_data.csv', usecols=[3], skiprows=341882).as_matrix()
+    # temp = pd.read_csv('Supplementary_files\Benin_data.csv', usecols=[2], skiprows=341882).as_matrix()
     return ghi_curve, temp
 
 
@@ -25,30 +25,27 @@ def pv_diesel_hybrid(
         tier,
         start_year,
         end_year,
-        pv_cost,
-        diesel_cost,
+        pv_cost_factor,
+        diesel_cost=261,  # diesel generator capital cost, USD/kW rated power
         pv_no=15,  # number of PV panel sizes simulated
         diesel_no=15,  # number of diesel generators simulated
         discount_rate=0.08,
         diesel_range=[0.7]
-        # pv_cost = (220 + 283)
 ):
     n_chg = 0.92  # charge efficiency of battery
     n_dis = 0.92  # discharge efficiency of battery
-    lpsp_max = 0.05  # maximum loss of load allowed over the year, in share of kWh
-    battery_cost = 139  # 164  # battery capital capital cost, USD/kWh of storage capacity
-    # 796 * pv_adjustment_factor  # PV panel capital cost, USD/kW peak power
-    # diesel_cost = 261  # diesel generator capital cost, USD/kW rated power
+    lpsp_max = 0.10  # maximum loss of load allowed over the year, in share of kWh
+    battery_cost = 139  # battery capital capital cost, USD/kWh of storage capacity
+    pv_cost = 503 * pv_cost_factor  # PV panel capital cost, USD/kW peak power
     pv_life = 25  # PV panel expected lifetime, years
     diesel_life = 10  # diesel generator expected lifetime, years
     pv_om = 0.015  # annual OM cost of PV panels
     diesel_om = 0.1  # annual OM cost of diesel generator
     k_t = 0.005  # temperature factor of PV panels
-    inverter_cost = 80  # 567
+    inverter_cost = 80
     inverter_life = 10
     inv_eff = 0.92  # inverter_efficiency
-    charge_controller = 142  # 196
-
+    charge_controller = 142
 
     ghi = ghi_curve * ghi * 1000 / ghi_curve.sum()
     hour_numbers = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23) * 365
