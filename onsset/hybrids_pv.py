@@ -25,17 +25,17 @@ def pv_diesel_hybrid(
         tier,
         start_year,
         end_year,
-        pv_cost,
-        diesel_cost,
+        pv_cost=534,
+        diesel_cost=150,
         pv_no=15,  # number of PV panel sizes simulated
         diesel_no=15,  # number of diesel generators simulated
-        discount_rate=0.08,
+        discount_rate=0.10,
         diesel_range=[0.7]
         # pv_cost = (220 + 283)
 ):
     n_chg = 0.92  # charge efficiency of battery
     n_dis = 0.92  # discharge efficiency of battery
-    lpsp_max = 0.05  # maximum loss of load allowed over the year, in share of kWh
+    lpsp_max = 0.10  # maximum loss of load allowed over the year, in share of kWh
     battery_cost = 139  # 164  # battery capital capital cost, USD/kWh of storage capacity
     # 796 * pv_adjustment_factor  # PV panel capital cost, USD/kW peak power
     # diesel_cost = 261  # diesel generator capital cost, USD/kW rated power
@@ -44,11 +44,10 @@ def pv_diesel_hybrid(
     pv_om = 0.015  # annual OM cost of PV panels
     diesel_om = 0.1  # annual OM cost of diesel generator
     k_t = 0.005  # temperature factor of PV panels
-    inverter_cost = 80  # 567
+    inverter_cost = 80 + 142 # 567
     inverter_life = 10
     inv_eff = 0.92  # inverter_efficiency
     charge_controller = 142  # 196
-
 
     ghi = ghi_curve * ghi * 1000 / ghi_curve.sum()
     hour_numbers = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23) * 365

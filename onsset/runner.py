@@ -2,6 +2,7 @@
 
 import logging
 import os
+import numpy as np
 
 import pandas as pd
 from onsset import (SET_ELEC_ORDER, SET_LCOE_GRID, SET_MIN_GRID_DIST, SET_GRID_PENALTY,
@@ -142,7 +143,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
         pv_capital_cost_adjust = 1
         productive_demand = 1
         prioritization = 2
-        diesel_gen_investment = 145
+        diesel_gen_investment = 150
         five_year_target = scenario_parameters.iloc[0]['5YearTarget']
 
         grid_price = scenario_parameters.iloc[prio_index]['GridGenerationCost']
@@ -167,11 +168,11 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
         settlements_in_csv = calibrated_csv_path
         settlements_out_csv = os.path.join(results_folder,
-                                           '{}-1-{}_{}_{}_{}_{}_{}.csv'.format(country_id, prio_index, intensification_index,
+                                           '{}-1-{}_{}_{}_{}_{}_{}.csv'.format(country_id, prio_index-1, intensification_index,
                                                                             tier_index, dist_costs,
                                                                             pv_index, diesel_index, ))
         summary_csv = os.path.join(summary_folder,
-                                   '{}-1-{}_{}_{}_{}_{}_{}_summary.csv'.format(country_id, prio_index, intensification_index,
+                                   '{}-1-{}_{}_{}_{}_{}_{}_summary.csv'.format(country_id, prio_index-1, intensification_index,
                                                                             tier_index, dist_costs,
                                                                             pv_index, diesel_index))
 
@@ -180,24 +181,17 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
         start_year = specs_data.iloc[0][SPE_START_YEAR]
         end_year = specs_data.iloc[0][SPE_END_YEAR]
 
-        num_people_per_hh_rural = float(specs_data.iloc[0][SPE_NUM_PEOPLE_PER_HH_RURAL])
-        num_people_per_hh_urban = float(specs_data.iloc[0][SPE_NUM_PEOPLE_PER_HH_URBAN])
-        max_grid_extension_dist = float(specs_data.iloc[0][SPE_MAX_GRID_EXTENSION_DIST])
+        num_people_per_hh_rural = 5.7  # float(specs_data.iloc[0][SPE_NUM_PEOPLE_PER_HH_RURAL])
+        num_people_per_hh_urban = 6.6  # float(specs_data.iloc[0][SPE_NUM_PEOPLE_PER_HH_URBAN])
+        max_grid_extension_dist = 10  # float(specs_data.iloc[0][SPE_MAX_GRID_EXTENSION_DIST])
         annual_grid_cap_gen_limit = specs_data.loc[0, 'NewGridGenerationCapacityAnnualLimitMW'] * 1000
 
-        # ToDo remove
-        onsseter.df['Pop2020'] *= 1.029
-        onsseter.df['ElecPopCalib'] *= 1.029
-        onsseter.df['Pop2025Low'] *= 1.029
-        onsseter.df['Pop2025High'] *= 1.029
-        onsseter.df['Pop2030Low'] *= 1.029
-        onsseter.df['Pop2030High'] *= 1.029
 
         # RUN_PARAM: Fill in general and technology specific parameters (e.g. discount rate, losses etc.)
         Technology.set_default_values(base_year=start_year,
                                       start_year=start_year,
                                       end_year=end_year,
-                                      discount_rate=0.08,
+                                      discount_rate=0.10,
                                       lv_line_cost=lv_cost,
                                       mv_line_cost=mv_cost)
 
@@ -252,13 +246,14 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                                 mini_grid=True)
 
         sa_pv_calc = Technology(base_to_peak_load_ratio=0.8,
-                                tech_life=20,
-                                om_costs=0.05,
-                                capital_cost={float("inf"): 6950 * pv_capital_cost_adjust,
-                                              1: 4470 * pv_capital_cost_adjust,
-                                              0.100: 6380 * pv_capital_cost_adjust,
-                                              0.050: 8780 * pv_capital_cost_adjust,
-                                              0.020: 9620 * pv_capital_cost_adjust
+                                tech_life=15,
+                                om_costs=0.075,
+                                capital_cost={float("inf"): 2700,
+                                              1: 2700,
+                                              0.200: 2700,
+                                              0.080: 2625,
+                                              0.030: 2200,
+                                              0.006: 9200
                                               },
                                 standalone=True)
 
@@ -307,6 +302,8 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
         onsseter.current_mv_line_dist()
 
+
+
         for year in yearsofanalysis:
             eleclimit = eleclimits[year]
             time_step = time_steps[year]
@@ -324,6 +321,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
             onsseter.diesel_cost_columns(sa_diesel_cost, mg_diesel_cost, year)
 
+
             mg_wind_hybrid_investment, mg_wind_hybrid_capacity = onsseter.calculate_wind_hybrids_lcoe(year,
                                                                                                       year - time_step,
                                                                                                       end_year,
@@ -331,8 +329,8 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                                                                                                       mg_wind_hybrid_calc)
 
             mg_pv_hybrid_investment, mg_pv_hybrid_capacity, mg_pv_investment = \
-                onsseter.calculate_pv_hybrids_lcoe(year, year-time_step, end_year, time_step, mg_pv_hybrid_calc,
-                                                   pv_capital_cost_adjust, pv_panel_cost, diesel_gen_investment)
+                    onsseter.calculate_pv_hybrids_lcoe(year, year-time_step, end_year, time_step, mg_pv_hybrid_calc,
+                                                       pv_capital_cost_adjust, pv_panel_cost, diesel_gen_investment)
 
             sa_diesel_investment, sa_pv_investment, mg_diesel_investment, mg_wind_investment, \
                 mg_hydro_investment = onsseter.calculate_off_grid_lcoes(mg_hydro_calc, mg_wind_calc, mg_pv_calc,
@@ -377,6 +375,9 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                 onsseter.df.iloc[:, i] = pd.to_numeric(onsseter.df.iloc[:, i], downcast='float')
             elif onsseter.df.iloc[:, i].dtype == 'int64':
                 onsseter.df.iloc[:, i] = pd.to_numeric(onsseter.df.iloc[:, i], downcast='signed')
+
+        onsseter.df.replace([np.inf, -np.inf], 1, inplace=True)
+        onsseter.df.fillna(1, inplace=True)
 
         df_summary.to_csv(summary_csv, index=sumtechs)
         onsseter.df.to_csv(settlements_out_csv, index=False)
