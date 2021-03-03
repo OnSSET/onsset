@@ -64,8 +64,7 @@ def calibration(specs_path, csv_path, specs_path_calib, calibrated_csv_path):
     onsseter.df[SET_WINDCF] = onsseter.calc_wind_cfs()
 
     pop_actual = specs_data.loc[0, SPE_POP]
-    pop_future_high = specs_data.loc[0, SPE_POP_FUTURE + 'High']
-    pop_future_low = specs_data.loc[0, SPE_POP_FUTURE + 'Low']
+    pop_future = specs_data.loc[0, SPE_POP_FUTURE]
     urban_current = specs_data.loc[0, SPE_URBAN]
     urban_future = specs_data.loc[0, SPE_URBAN_FUTURE]
     start_year = int(specs_data.loc[0, SPE_START_YEAR])
@@ -78,15 +77,11 @@ def calibration(specs_path, csv_path, specs_path_calib, calibrated_csv_path):
 
     pop_modelled, urban_modelled = onsseter.calibrate_current_pop_and_urban(pop_actual, urban_current)
 
-    onsseter.project_pop_and_urban(pop_modelled, pop_future_high, pop_future_low, urban_modelled,
+    onsseter.project_pop_and_urban(pop_modelled, pop_future, urban_modelled,
                                    urban_future, start_year, end_year, intermediate_year)
 
     elec_modelled, rural_elec_ratio, urban_elec_ratio = \
         onsseter.elec_current_and_future(elec_actual, elec_actual_urban, elec_actual_rural, start_year)
-
-    # In case there are limitations in the way grid expansion is moving in a country, 
-    # this can be reflected through gridspeed.
-    # In this case the parameter is set to a very high value therefore is not taken into account.
 
     specs_data.loc[0, SPE_URBAN_MODELLED] = urban_modelled
     specs_data.loc[0, SPE_ELEC_MODELLED] = elec_modelled
@@ -96,8 +91,7 @@ def calibration(specs_path, csv_path, specs_path_calib, calibrated_csv_path):
     book = load_workbook(specs_path)
     writer = pd.ExcelWriter(specs_path_calib, engine='openpyxl')
     writer.book = book
-    # RUN_PARAM: Here the calibrated "specs" data are copied to a new tab called "SpecsDataCalib". 
-    # This is what will later on be used to feed the model
+    # RUN_PARAM: Here the calibrated "specs" data are copied to a new tab called "SpecsDataCalib".
     specs_data.to_excel(writer, sheet_name='SpecsDataCalib', index=False)
     writer.save()
     writer.close()

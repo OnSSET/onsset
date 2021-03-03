@@ -13,7 +13,7 @@ root = tk.Tk()
 root.withdraw()
 root.attributes("-topmost", True)
 
-choice = 2 # int(input('Enter 1 to prepare/calibrate the GIS input file, 2 to run scenario(s): '))
+choice = int(input('Enter 1 to prepare/calibrate the GIS input file, 2 to run scenario(s): '))
 
 messagebox.showinfo('OnSSET', 'Open the specs file')
 specs_path = filedialog.askopenfilename()

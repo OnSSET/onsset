@@ -996,56 +996,28 @@ class SettlementProcessor:
         pop_ratio = pop_actual / self.df[SET_POP].sum()
 
         # Use above ratio to calibrate the population in a new column
-        self.df[SET_POP_CALIB] = self.df.apply(lambda row: row[SET_POP] * pop_ratio, axis=1)
+        self.df[SET_POP_CALIB] = self.df[SET_POP] * pop_ratio
         pop_modelled = self.df[SET_POP_CALIB].sum()
-        pop_diff = abs(pop_modelled - pop_actual)
-        if abs(pop_modelled - pop_actual) < 0.03:
-            print('La population a été calibrée avec succès')
-        else:
-            print('La population calibrée diffère par {:.2f}. '
-                  'Au cas où cela ne serait pas acceptable, veuillez réviser cette partie du code'.format(pop_diff))
-
-        # TODO Why do we apply the ratio to elec_pop? Shouldn't the calibration take place before defining elec_pop?
         self.df[SET_ELEC_POP_CALIB] = self.df[SET_ELEC_POP] * pop_ratio
 
-        # logging.info('Urban/rural calibration process')
-        # TODO As indicated below, HRSL classifies in 0, 1 and 2; I don't get why if statement uses 3 here.
-        if max(self.df[SET_URBAN]) == 3:  # THIS OPTION IS CURRENTLY DISABLED
-            calibrate = True if 'n' in input(
-                'Use urban definition from GIS layer <y/n> (n=model calibration):') else False
-        else:
-            calibrate = True
-        # RUN_PARAM: This is where manual calibration of urban/rural population takes place.
-        # The model uses 0, 1, 2 as GHS population layer does.
-        # As of this version, urban are only self.dfs with value equal to 2
-        if calibrate:
-            urban_modelled = 2
-            factor = 1
-            while abs(urban_modelled - urban_current) > 0.01:
-                self.df[SET_URBAN] = 0
-                self.df.loc[(self.df[SET_POP_CALIB] > 5000 * factor) & (
-                        self.df[SET_POP_CALIB] / self.df[SET_GRID_CELL_AREA] > 350 * factor), SET_URBAN] = 1
-                self.df.loc[(self.df[SET_POP_CALIB] > 50000 * factor) & (
-                        self.df[SET_POP_CALIB] / self.df[SET_GRID_CELL_AREA] > 1500 * factor), SET_URBAN] = 2
-                pop_urb = self.df.loc[self.df[SET_URBAN] > 1, SET_POP_CALIB].sum()
-                urban_modelled = pop_urb / pop_actual
-                if urban_modelled > urban_current:
-                    factor *= 1.1
-                else:
-                    factor *= 0.9
+        # # logging.info('Urban/rural calibration process')
+
+        self.df.sort_values(by=[SET_POP_CALIB], inplace=True, ascending=False)
+        cumulative_urban_pop = self.df[SET_POP_CALIB].cumsum()
+        self.df[SET_URBAN] = np.where(cumulative_urban_pop < (urban_current * self.df[SET_POP_CALIB].sum()), 2, 0)
+        self.df.sort_index(inplace=True)
 
         # Get the calculated urban ratio, and limit it to within reasonable boundaries
         pop_urb = self.df.loc[self.df[SET_URBAN] > 1, SET_POP_CALIB].sum()
         urban_modelled = pop_urb / pop_actual
-
         if abs(urban_modelled - urban_current) > 0.05:
-            print('Le ratio urbain modélisé est {:.2f}. '
-                  'Au cas où cela ne serait pas acceptable, veuillez réviser cette partie du code'.format(
+            print('The calibrated urban ratio is {:.2f}. '
+                  'If this is not acceptable, revisit this part of the code'.format(
                 urban_modelled))
 
         return pop_modelled, urban_modelled
 
-    def project_pop_and_urban(self, pop_modelled, pop_future_high, pop_future_low, urban_modelled,
+    def project_pop_and_urban(self, pop_modelled, pop_future_low, urban_modelled,
                               urban_future, start_year, end_year, intermediate_year):
         """
         This function projects population and urban/rural ratio for the different years of the analysis
@@ -1055,50 +1027,22 @@ class SettlementProcessor:
         # Project future population, with separate growth rates for urban and rural
         # logging.info('Population projection process')
 
-        # TODO this is a residual of the previous process;
-        # shall we delete? Is there any scenario where we don't apply projections?
-        calibrate = True
+        urban_growth = (urban_future * pop_future_low) / (urban_modelled * pop_modelled)
+        rural_growth = ((1 - urban_future) * pop_future_low) / ((1 - urban_modelled) * pop_modelled)
 
-        if calibrate:
-            urban_growth_high = (urban_future * pop_future_high) / (urban_modelled * pop_modelled)
-            rural_growth_high = ((1 - urban_future) * pop_future_high) / ((1 - urban_modelled) * pop_modelled)
-
-            yearly_urban_growth_rate_high = urban_growth_high ** (1 / project_life)
-            yearly_rural_growth_rate_high = rural_growth_high ** (1 / project_life)
-
-            urban_growth_low = (urban_future * pop_future_low) / (urban_modelled * pop_modelled)
-            rural_growth_low = ((1 - urban_future) * pop_future_low) / ((1 - urban_modelled) * pop_modelled)
-
-            yearly_urban_growth_rate_low = urban_growth_low ** (1 / project_life)
-            yearly_rural_growth_rate_low = rural_growth_low ** (1 / project_life)
-        else:
-            urban_growth_high = pop_future_high / pop_modelled
-            rural_growth_high = pop_future_high / pop_modelled
-
-            yearly_urban_growth_rate_high = urban_growth_high ** (1 / project_life)
-            yearly_rural_growth_rate_high = rural_growth_high ** (1 / project_life)
-
-            urban_growth_low = pop_future_low / pop_modelled
-            rural_growth_low = pop_future_low / pop_modelled
-
-            yearly_urban_growth_rate_low = urban_growth_low ** (1 / project_life)
-            yearly_rural_growth_rate_low = rural_growth_low ** (1 / project_life)
+        yearly_urban_growth_rate = urban_growth ** (1 / project_life)
+        yearly_rural_growth_rate = rural_growth ** (1 / project_life)
 
         # RUN_PARAM: Define here the years for which results should be provided in the output file.
         years_of_analysis = [intermediate_year, end_year]
 
         for year in years_of_analysis:
-            self.df[SET_POP + "{}".format(year) + 'High'] = \
-                self.df.apply(lambda row: row[SET_POP_CALIB] * (yearly_urban_growth_rate_high ** (year - start_year))
+            self.df[SET_POP + "{}".format(year)] = \
+                self.df.apply(lambda row: row[SET_POP_CALIB] * (yearly_urban_growth_rate ** (year - start_year))
                 if row[SET_URBAN] > 1
-                else row[SET_POP_CALIB] * (yearly_rural_growth_rate_high ** (year - start_year)), axis=1)
+                else row[SET_POP_CALIB] * (yearly_rural_growth_rate ** (year - start_year)), axis=1)
 
-            self.df[SET_POP + "{}".format(year) + 'Low'] = \
-                self.df.apply(lambda row: row[SET_POP_CALIB] * (yearly_urban_growth_rate_low ** (year - start_year))
-                if row[SET_URBAN] > 1
-                else row[SET_POP_CALIB] * (yearly_rural_growth_rate_low ** (year - start_year)), axis=1)
-
-        self.df[SET_POP + "{}".format(start_year)] = self.df.apply(lambda row: row[SET_POP_CALIB], axis=1)
+        self.df[SET_POP + "{}".format(start_year)] = self.df[SET_POP_CALIB]
 
     def elec_current_and_future(self, elec_actual, elec_actual_urban, elec_actual_rural, start_year,
                                 min_night_lights=0, min_pop=50, max_transformer_dist=2, max_mv_dist=2, max_hv_dist=5):
@@ -1126,18 +1070,21 @@ class SettlementProcessor:
 
         # This if function here skims through T&D columns to identify if any non 0 values exist;
         # Then it defines calibration method accordingly.
-        if max(self.df[SET_DIST_TO_TRANS]) > 0:
+        if min(self.df[SET_DIST_TO_TRANS]) < 9999:
             self.df[SET_CALIB_GRID_DIST] = self.df[SET_DIST_TO_TRANS]
             priority = 1
             dist_limit = max_transformer_dist
-        elif max(self.df[SET_MV_DIST_CURRENT]) > 0:
+            print('Calibrating using distribution transformers')
+        elif min(self.df[SET_MV_DIST_CURRENT]) < 9999:
             self.df[SET_CALIB_GRID_DIST] = self.df[SET_MV_DIST_CURRENT]
             priority = 1
             dist_limit = max_mv_dist
+            print('Calibrating using MV lines')
         else:
             self.df[SET_CALIB_GRID_DIST] = self.df[SET_HV_DIST_CURRENT]
             priority = 2
             dist_limit = max_hv_dist
+            print('Calibrating using HV lines')
 
         condition = 0
 
