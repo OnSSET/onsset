@@ -1694,7 +1694,7 @@ class SettlementProcessor:
                                                                           SET_RESIDENTIAL_TIER + str(
                                                                               wb_tier_urban_centers)]
 
-            self.df.loc[self.df[SET_POP_CALIB] > 100, SET_CAPITA_DEMAND] *= (1 + self.df['Commercial_Multiplier'])
+
 
 
     def calculate_total_demand_per_settlement(self, year, productive_demand):
@@ -1705,6 +1705,9 @@ class SettlementProcessor:
         year : int
 
         """
+
+        if int(productive_demand) == 1:
+            self.df.loc[self.df[SET_POP_CALIB] > 100, SET_CAPITA_DEMAND] *= (1 + self.df['Commercial_Multiplier'])
 
         self.df.loc[self.df[SET_URBAN] == 0, SET_ENERGY_PER_CELL + "{}".format(year)] = \
             self.df[SET_CAPITA_DEMAND] * self.df[SET_NEW_CONNECTIONS + "{}".format(year)]
