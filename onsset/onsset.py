@@ -284,7 +284,7 @@ class Technology:
         cost_dict_list = sorted(cost_dict_list)
         for key in cost_dict_list:
             if self.standalone:
-                cap_cost.loc[((installed_capacity / (people / num_people_per_hh)) < key) & (cap_cost == 0)] = \
+                cap_cost.loc[((installed_capacity / (new_connections / num_people_per_hh)) < key) & (cap_cost == 0)] = \
                     self.capital_cost[key]
             else:
                 cap_cost.loc[(installed_capacity < key) & (cap_cost == 0)] = self.capital_cost[key]
