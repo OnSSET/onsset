@@ -7,7 +7,7 @@ import os
 
 
 def read_environmental_data(path):
-    ghi_curve = pd.read_csv(path, usecols=[3], skiprows=3).values  # * 1000
+    ghi_curve = pd.read_csv(path, usecols=[3], skiprows=3).values * 1000
     temp = pd.read_csv(path, usecols=[2], skiprows=3).values
     # ghi_curve = pd.read_csv('Supplementary_files\Benin_data.csv', usecols=[3], skiprows=341882).as_matrix()
     # temp = pd.read_csv('Supplementary_files\Benin_data.csv', usecols=[2], skiprows=341882).as_matrix()
