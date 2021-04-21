@@ -1112,7 +1112,7 @@ class SettlementProcessor:
                 else:
                     i = 0
                     while urban_elec_factor <= 1:
-                        if i < 10:
+                        if i < 50:
                             self.df.loc[
                                 (self.df[SET_ELEC_CURRENT] == 1) & (self.df[SET_URBAN] == 2), SET_ELEC_POP_CALIB] *= 1.1
                             self.df[SET_ELEC_POP_CALIB] = np.minimum(self.df[SET_ELEC_POP_CALIB],
@@ -1130,7 +1130,7 @@ class SettlementProcessor:
                 else:
                     i = 0
                     while rural_elec_factor <= 1:
-                        if i < 10:
+                        if i < 50:
                             self.df.loc[
                                 (self.df[SET_ELEC_CURRENT] == 1) & (self.df[SET_URBAN] < 2), SET_ELEC_POP_CALIB] *= 1.1
                             self.df[SET_ELEC_POP_CALIB] = np.minimum(self.df[SET_ELEC_POP_CALIB],
@@ -1145,31 +1145,31 @@ class SettlementProcessor:
                 pop_elec = self.df.loc[self.df[SET_ELEC_CURRENT] == 1, SET_ELEC_POP_CALIB].sum()
                 elec_modelled = pop_elec / total_pop
 
-                # REVIEW. Added new calibration step for pop not meeting original steps, if prev elec pop is too small
-                i = 0
-                td_dist_2 = 0.1
-                while elec_actual - elec_modelled > 0.01:
-                    pop_elec_2 = self.df.loc[(self.df[SET_ELEC_CURRENT] == 0) & (self.df[SET_POP_CALIB] > min_pop) &
-                                             (self.df[SET_CALIB_GRID_DIST] < td_dist_2), SET_POP_CALIB].sum()
-                    if i < 50:
-                        if (pop_elec + pop_elec_2) / total_pop > elec_actual:
-                            elec_modelled = (pop_elec + pop_elec_2) / total_pop
-                            self.df.loc[(self.df[SET_ELEC_CURRENT] == 0) & (self.df[SET_POP_CALIB] > min_pop) &
-                                        (self.df[SET_CALIB_GRID_DIST] < td_dist_2), SET_ELEC_POP_CALIB] = self.df[
-                                SET_POP_CALIB]
-                            self.df.loc[(self.df[SET_ELEC_CURRENT] == 0) & (self.df[SET_POP_CALIB] > min_pop) &
-                                        (self.df[SET_CALIB_GRID_DIST] < td_dist_2), SET_ELEC_CURRENT] = 1
-                        else:
-                            i += 1
-                            td_dist_2 += 0.1
-                    else:
-                        self.df.loc[(self.df[SET_ELEC_CURRENT] == 0) & (self.df[SET_POP_CALIB] > min_pop) &
-                                    (self.df[SET_CALIB_GRID_DIST] < td_dist_2), SET_ELEC_POP_CALIB] = self.df[
-                            SET_POP_CALIB]
-                        self.df.loc[(self.df[SET_ELEC_CURRENT] == 0) & (self.df[SET_POP_CALIB] > min_pop) &
-                                    (self.df[SET_CALIB_GRID_DIST] < td_dist_2), SET_ELEC_CURRENT] = 1
-                        elec_modelled = (pop_elec + pop_elec_2) / total_pop
-                        break
+                # # REVIEW. Added new calibration step for pop not meeting original steps, if prev elec pop is too small
+                # i = 0
+                # td_dist_2 = 0.1
+                # while elec_actual - elec_modelled > 0.01:
+                #     pop_elec_2 = self.df.loc[(self.df[SET_ELEC_CURRENT] == 0) & (self.df[SET_POP_CALIB] > min_pop) &
+                #                              (self.df[SET_CALIB_GRID_DIST] < td_dist_2), SET_POP_CALIB].sum()
+                #     if i < 50:
+                #         if (pop_elec + pop_elec_2) / total_pop > elec_actual:
+                #             elec_modelled = (pop_elec + pop_elec_2) / total_pop
+                #             self.df.loc[(self.df[SET_ELEC_CURRENT] == 0) & (self.df[SET_POP_CALIB] > min_pop) &
+                #                         (self.df[SET_CALIB_GRID_DIST] < td_dist_2), SET_ELEC_POP_CALIB] = self.df[
+                #                 SET_POP_CALIB]
+                #             self.df.loc[(self.df[SET_ELEC_CURRENT] == 0) & (self.df[SET_POP_CALIB] > min_pop) &
+                #                         (self.df[SET_CALIB_GRID_DIST] < td_dist_2), SET_ELEC_CURRENT] = 1
+                #         else:
+                #             i += 1
+                #             td_dist_2 += 0.1
+                #     else:
+                #         self.df.loc[(self.df[SET_ELEC_CURRENT] == 0) & (self.df[SET_POP_CALIB] > min_pop) &
+                #                     (self.df[SET_CALIB_GRID_DIST] < td_dist_2), SET_ELEC_POP_CALIB] = self.df[
+                #             SET_POP_CALIB]
+                #         self.df.loc[(self.df[SET_ELEC_CURRENT] == 0) & (self.df[SET_POP_CALIB] > min_pop) &
+                #                     (self.df[SET_CALIB_GRID_DIST] < td_dist_2), SET_ELEC_CURRENT] = 1
+                #         elec_modelled = (pop_elec + pop_elec_2) / total_pop
+                #         break
 
                 if elec_modelled > elec_actual:
                     self.df[SET_ELEC_POP_CALIB] *= elec_actual / elec_modelled
@@ -1244,9 +1244,9 @@ class SettlementProcessor:
 
             print('Le taux délectrification modélisé est {0:.2f}. '
                   'Le taux délectrification urbain modélisé est {1:.2f} '
-                  'Le taux délectrification rural modélisé est {2:.2f}'.format(elec_modelled,
-                                                                               urban_elec_ratio,
-                                                                               rural_elec_ratio))
+                  'Le taux délectrification rural modélisé est {2:.2f}'.format(elec_modelled - elec_actual,
+                                                                               urban_elec_ratio - elec_actual_urban,
+                                                                               rural_elec_ratio - elec_actual_rural))
             condition = 1
 
         self.df[SET_ELEC_FINAL_CODE + "{}".format(start_year)] = \
@@ -1785,18 +1785,9 @@ class SettlementProcessor:
             SET_NUM_PEOPLE_PER_HH] < 73, SET_BASE_TO_PEAK] = 0.3
 
     def calculate_pv_hybrids_lcoe(self, year, start_year, end_year, time_step, mg_pv_hybrid_calc,
-                                  pv_panel_investment):
-        path_7 = os.path.join('Supplementary_files', 'Somalia_PV.csv')
-        # path_8 = os.path.join('Supplementary_files', 'ninja_pv_8.0000_2.3000_uncorrected.csv')
-        # path_9 = os.path.join('Supplementary_files', 'ninja_pv_9.0000_2.3000_uncorrected.csv')
-        # path_10 = os.path.join('Supplementary_files', 'ninja_pv_10.0000_2.3000_uncorrected.csv')
-        # path_11 = os.path.join('Supplementary_files', 'ninja_pv_11.0000_2.3000_uncorrected.csv')
+                                  pv_panel_investment, pv_path):
 
-        ghi_curve_7, temp_7 = read_environmental_data(path_7)
-        # ghi_curve_8, temp_8 = read_environmental_data(path_8)
-        # ghi_curve_9, temp_9 = read_environmental_data(path_9)
-        # ghi_curve_10, temp_10 = read_environmental_data(path_10)
-        # ghi_curve_11, temp_11 = read_environmental_data(path_11)
+        ghi_curve, temp = read_environmental_data(pv_path)
 
         ghi_min = round(min(self.df[SET_GHI]), -2)
         ghi_max = round(max(self.df[SET_GHI]), -2)
@@ -1855,35 +1846,35 @@ class SettlementProcessor:
             pv_hybrid_lcoe_1[g][:], \
             pv_hybrid_investment_1[g][:], \
             pv_hybrid_capacity_1[g][:], \
-            pv_hybrid_ren_share_1[g][:] = pv_diesel_hybrid(1, g, ghi_curve_7, temp_7, 1, start_year, end_year,
+            pv_hybrid_ren_share_1[g][:] = pv_diesel_hybrid(1, g, ghi_curve, temp, 1, start_year, end_year,
                                                            diesel_range=diesel_range,
                                                            pv_cost_factor=pv_panel_investment)
 
             pv_hybrid_lcoe_2[g][:], \
             pv_hybrid_investment_2[g][:], \
             pv_hybrid_capacity_2[g][:], \
-            pv_hybrid_ren_share_2[g][:] = pv_diesel_hybrid(1, g, ghi_curve_7, temp_7, 2, start_year, end_year,
+            pv_hybrid_ren_share_2[g][:] = pv_diesel_hybrid(1, g, ghi_curve, temp, 2, start_year, end_year,
                                                            diesel_range=diesel_range,
                                                            pv_cost_factor=pv_panel_investment)
 
             pv_hybrid_lcoe_3[g][:], \
             pv_hybrid_investment_3[g][:], \
             pv_hybrid_capacity_3[g][:], \
-            pv_hybrid_ren_share_3[g][:] = pv_diesel_hybrid(1, g, ghi_curve_7, temp_7, 3, start_year, end_year,
+            pv_hybrid_ren_share_3[g][:] = pv_diesel_hybrid(1, g, ghi_curve, temp, 3, start_year, end_year,
                                                            diesel_range=diesel_range,
                                                            pv_cost_factor=pv_panel_investment)
 
             pv_hybrid_lcoe_4[g][:], \
             pv_hybrid_investment_4[g][:], \
             pv_hybrid_capacity_4[g][:], \
-            pv_hybrid_ren_share_4[g][:] = pv_diesel_hybrid(1, g, ghi_curve_7, temp_7, 4, start_year, end_year,
+            pv_hybrid_ren_share_4[g][:] = pv_diesel_hybrid(1, g, ghi_curve, temp, 4, start_year, end_year,
                                                            diesel_range=diesel_range,
                                                            pv_cost_factor=pv_panel_investment)
 
             pv_hybrid_lcoe_5[g][:], \
             pv_hybrid_investment_5[g][:], \
             pv_hybrid_capacity_5[g][:], \
-            pv_hybrid_ren_share_5[g][:] = pv_diesel_hybrid(1, g, ghi_curve_7, temp_7, 5, start_year, end_year,
+            pv_hybrid_ren_share_5[g][:] = pv_diesel_hybrid(1, g, ghi_curve, temp, 5, start_year, end_year,
                                                            diesel_range=diesel_range,
                                                            pv_cost_factor=pv_panel_investment)
 
@@ -1943,18 +1934,14 @@ class SettlementProcessor:
                                        hybrid_lcoe=hybrid_series[0],
                                        hybrid_investment=hybrid_series[1])
 
-        self.df.loc[(self.df[SET_POP_CALIB] < 100) & (
-                self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] != 8), SET_LCOE_MG_PV_HYBRID + "{}".format(
-            year)] = 99
-
         self.df[SET_LCOE_MG_PV + "{}".format(year)] = 99
         mg_pv_investment = pv_hybrid_investment
 
         return pv_hybrid_investment, pv_hybrid_capacity, mg_pv_investment
 
-    def calculate_wind_hybrids_lcoe(self, year, start_year, end_year, time_step, mg_wind_hybrid_calc):
+    def calculate_wind_hybrids_lcoe(self, year, start_year, end_year, time_step, mg_wind_hybrid_calc, wind_path):
 
-        wind_curve = read_wind_environmental_data()
+        wind_curve = read_wind_environmental_data(wind_path)
 
         wind_min = round(min(self.df[SET_WINDVEL]))
         wind_max = round(max(self.df[SET_WINDVEL]))
@@ -2075,11 +2062,6 @@ class SettlementProcessor:
                                          base_to_peak=self.df[SET_BASE_TO_PEAK],
                                          hybrid_lcoe=hybrid_series[0],
                                          hybrid_investment=hybrid_series[1])
-
-        self.df.loc[(self.df[SET_POP_CALIB] < 100) & (
-                self.df[
-                    SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] != 9), SET_LCOE_MG_WIND_HYBRID + "{}".format(
-            year)] = 99
 
         return wind_hybrid_investment, wind_hybrid_capacity
 
@@ -2635,3 +2617,31 @@ class SettlementProcessor:
         df_summary[year][sumtechs[35]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 9) &
                                                          (self.df[SET_LIMIT + "{}".format(year)] == 1)]
                                              [SET_INVESTMENT_COST + "{}".format(year)])
+
+    def commercial_demand(self):
+        self.df['TravelReclass'] = 1
+        self.df.loc[self.df[SET_TRAVEL_HOURS] < 4, 'TravelReclass'] = 2
+        self.df.loc[self.df[SET_TRAVEL_HOURS] < 3, 'TravelReclass'] = 3
+        self.df.loc[self.df[SET_TRAVEL_HOURS] < 2, 'TravelReclass'] = 4
+        self.df.loc[self.df[SET_TRAVEL_HOURS] < 1, 'TravelReclass'] = 5
+
+        self.df['CommercialReclassified'] = self.df['GDP'] +  self.df['TravelReclass'] -2
+        self.df['Commercial_Multiplier'] = 0.3 + 0.3 * self.df['CommercialReclassified'] / 8
+
+        del self.df['TravelReclass']
+        del self.df['CommercialReclassified']
+
+    def tech_code_update(self, year):
+        self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 1) & (self.df[SET_ELEC_CURRENT] == 1),
+                    SET_ELEC_FINAL_CODE + "{}".format(year)] = 98
+
+        self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 8),
+                    SET_ELEC_FINAL_CODE + "{}".format(year)] = 5
+
+        self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 9),
+                    SET_ELEC_FINAL_CODE + "{}".format(year)] = 6
+
+    def update_transformer_dist(self):
+        if max(self.df[SET_DIST_TO_TRANS] == 0):
+            self.df[SET_DIST_TO_TRANS] = 9999
+

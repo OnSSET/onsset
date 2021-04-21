@@ -6,12 +6,12 @@ import os
 #logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.DEBUG)
 
 
-def read_wind_environmental_data():
-    wind_curve = pd.read_csv('Supplementary_files\Somalia_Wind.csv', usecols=[3], skiprows=3).values
+def read_wind_environmental_data(wind_path):
+    wind_curve = pd.read_csv(wind_path, usecols=[3], skiprows=3).values
     return wind_curve
 
 
-wind_curve = read_wind_environmental_data()
+# wind_curve = read_wind_environmental_data()
 
 
 def wind_diesel_hybrid(
