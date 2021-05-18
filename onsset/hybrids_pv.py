@@ -7,10 +7,11 @@ import os
 
 
 def read_environmental_data(path):
-    ghi_curve = pd.read_csv(path, usecols=[3], skiprows=3).values * 1000
-    temp = pd.read_csv(path, usecols=[2], skiprows=3).values
-    # ghi_curve = pd.read_csv('Supplementary_files\Benin_data.csv', usecols=[3], skiprows=341882).as_matrix()
-    # temp = pd.read_csv('Supplementary_files\Benin_data.csv', usecols=[2], skiprows=341882).as_matrix()
+    ghi_curve = pd.read_csv(path, usecols=[3], skiprows=341882).values
+    temp = pd.read_csv(path, usecols=[2], skiprows=341882).values
+
+    # ghi_curve = pd.read_csv(path, usecols=[3], skiprows=3).values * 1000
+    # temp = pd.read_csv(path, usecols=[5], skiprows=3).values
     return ghi_curve, temp
 
 
@@ -187,6 +188,7 @@ def pv_diesel_hybrid(
                                     net_load / n_dis / battery_size,
                                     0),
                            soc)
+                           # 0) # soc)
 
             # If State of charge is negative, that means there's demand that could not be met.
             unmet_demand += np.where(soc < 0,
@@ -198,7 +200,7 @@ def pv_diesel_hybrid(
             excess_gen += np.where(soc > 1,
                                    (soc - 1) / n_chg * battery_size,
                                    0)
-            # TODO
+
             soc = np.minimum(soc, 1)
 
             dod[hour_numbers[i], :, :] = 1 - soc  # The depth of discharge in every hour of the day is stored

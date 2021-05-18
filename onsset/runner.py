@@ -92,7 +92,7 @@ def calibration(specs_path, csv_path, specs_path_calib, calibrated_csv_path):
     specs_data.loc[0, 'rural_elec_ratio_modelled'] = rural_elec_ratio
     specs_data.loc[0, 'urban_elec_ratio_modelled'] = urban_elec_ratio
 
-    del onsseter.df['Unnamed: 0']
+    # del onsseter.df['Unnamed: 0']
 
     book = load_workbook(specs_path)
     writer = pd.ExcelWriter(specs_path_calib, engine='openpyxl')
@@ -201,7 +201,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                                        distribution_losses=0.05,
                                        connection_cost_per_hh=100,
                                        capacity_factor=0.5,
-                                       tech_life=30,
+                                       tech_life=20,
                                        mini_grid=True,
                                        hybrid=True)
 
@@ -209,7 +209,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                                          distribution_losses=0.05,
                                          connection_cost_per_hh=100,
                                          capacity_factor=0.5,
-                                         tech_life=30,
+                                         tech_life=20,
                                          mini_grid=True,
                                          hybrid=True)
 
@@ -240,7 +240,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
         sa_pv_calc = Technology(base_to_peak_load_ratio=0.9,
                                 tech_life=15,
-                                om_costs=0.05,
+                                om_costs=0.02,
                                 capital_cost={float("inf"): 6950 *  pv_panel_cost_factor,
                                               1: 4470 * pv_panel_cost_factor,
                                               0.100: 6380 * pv_panel_cost_factor,
@@ -310,6 +310,10 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
             onsseter.diesel_cost_columns(sa_diesel_cost, mg_diesel_cost, year)
 
+            mg_pv_hybrid_investment, mg_pv_hybrid_capacity = \
+                onsseter.calculate_pv_hybrids_lcoe(year, year - time_step, end_year, time_step, mg_pv_hybrid_calc,
+                                                   pv_panel_cost_factor, pv_path)
+
             mg_wind_hybrid_investment, mg_wind_hybrid_capacity = onsseter.calculate_wind_hybrids_lcoe(year,
                                                                                                       year - time_step,
                                                                                                       end_year,
@@ -317,14 +321,10 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                                                                                                       mg_wind_hybrid_calc,
                                                                                                       wind_path)
 
-            mg_pv_hybrid_investment, mg_pv_hybrid_capacity, mg_pv_investment = \
-                onsseter.calculate_pv_hybrids_lcoe(year, year-time_step, end_year, time_step, mg_pv_hybrid_calc,
-                                                   pv_panel_cost_factor, pv_path)
-
             sa_diesel_investment, sa_pv_investment, mg_diesel_investment, mg_wind_investment, \
-                mg_hydro_investment = onsseter.calculate_off_grid_lcoes(mg_hydro_calc, mg_wind_calc, mg_pv_calc,
-                                                                        sa_pv_calc, mg_diesel_calc,
-                                                                        sa_diesel_calc, year, end_year, time_step)
+                mg_hydro_investment, mg_pv_investment = \
+                onsseter.calculate_off_grid_lcoes(mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc,
+                                                  sa_diesel_calc, year, end_year, time_step)
 
             grid_investment, grid_cap_gen_limit, grid_connect_limit = \
                 onsseter.pre_electrification(grid_price, year, time_step, end_year, grid_calc, grid_cap_gen_limit,
@@ -359,8 +359,39 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
             onsseter.calc_summaries(df_summary, sumtechs, year)
 
+
+        del onsseter.df['Conflict']
+        del onsseter.df['ElecPop']
+        del onsseter.df['ElectrificationOrder']
+        del onsseter.df['Elevation']
+        del onsseter.df['Hydropower']
+        del onsseter.df['LandCover']
+        del onsseter.df['ResidentialDemandTier1']
+        del onsseter.df['ResidentialDemandTier2']
+        del onsseter.df['ResidentialDemandTier3']
+        del onsseter.df['ResidentialDemandTier4']
+        del onsseter.df['ResidentialDemandTier5']
+        del onsseter.df['Slope']
+        del onsseter.df['Intensification']
+        del onsseter.df['AverageToPeak']
+        del onsseter.df['GDP']
+        del onsseter.df['WindVel']
+        del onsseter.df['HydropowerFID']
+
         for year in yearsofanalysis:
             onsseter.tech_code_update(year)
+            del onsseter.df['PVHybridGenCost' + "{}".format(year)]
+            del onsseter.df['PVHybridGenCap' + "{}".format(year)]
+            del onsseter.df['MG_PV' + "{}".format(year)]
+            del onsseter.df['MG_Wind' + "{}".format(year)]
+            del onsseter.df['MG_Diesel' + "{}".format(year)]
+            del onsseter.df['SA_Diesel' + "{}".format(year)]
+            del onsseter.df['Minimum_LCOE_Off_grid' + "{}".format(year)]
+            del onsseter.df['Minimum_Tech_Off_grid' + "{}".format(year)]
+            del onsseter.df['Off_Grid_Code' + "{}".format(year)]
+            del onsseter.df['RenewableShare' + "{}".format(year)]
+            del onsseter.df['SADieselFuelCost' + "{}".format(year)]
+            del onsseter.df['MGDieselFuelCost' + "{}".format(year)]
 
         for i in range(len(onsseter.df.columns)):
             if onsseter.df.iloc[:, i].dtype == 'float64':
