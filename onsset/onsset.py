@@ -2412,6 +2412,8 @@ class SettlementProcessor:
         self.df[SET_INVEST_PER_CAPITA + "{}".format(year)] = \
             self.df[SET_INVESTMENT_COST + "{}".format(year)] / self.df[SET_NEW_CONNECTIONS + "{}".format(year)]
 
+        self.df.loc[self.df[SET_NEW_CONNECTIONS  + "{}".format(year)] == 0, SET_INVEST_PER_CAPITA + "{}".format(year)] = 0
+
         self.df.loc[self.df[SET_INVESTMENT_COST + "{}".format(year)] < 0.00001, SET_INVEST_PER_CAPITA + "{}".format(year)] = 0
 
         if eleclimit == 1:

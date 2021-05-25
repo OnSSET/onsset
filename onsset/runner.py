@@ -46,6 +46,8 @@ def calibration(specs_path, csv_path, specs_path_calib, calibrated_csv_path):
 
     onsseter = SettlementProcessor(settlements_in_csv)
 
+    onsseter.df.drop_duplicates(subset=['id'], inplace=True)
+
     num_people_per_hh_rural = float(specs_data.iloc[0][SPE_NUM_PEOPLE_PER_HH_RURAL])
     num_people_per_hh_urban = float(specs_data.iloc[0][SPE_NUM_PEOPLE_PER_HH_URBAN])
 
@@ -92,7 +94,7 @@ def calibration(specs_path, csv_path, specs_path_calib, calibrated_csv_path):
     specs_data.loc[0, 'rural_elec_ratio_modelled'] = rural_elec_ratio
     specs_data.loc[0, 'urban_elec_ratio_modelled'] = urban_elec_ratio
 
-    # del onsseter.df['Unnamed: 0']
+    del onsseter.df['Unnamed: 0']
 
     book = load_workbook(specs_path)
     writer = pd.ExcelWriter(specs_path_calib, engine='openpyxl')
