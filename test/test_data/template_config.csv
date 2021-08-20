@@ -1,0 +1,37 @@
+parameter;value;description
+Country;Benin;Name of country
+CountryCode;bj;ISO-2 code of country
+StartYear;2020;Start year of analysis
+EndYEar;2030;End year of analysis
+PopStartYear;12123000;Population in start year
+UrbanRatioStartYear;0.484;Urban ratio in start year (0 = all rural, 1 = all urban)
+UrbanCutOff;;Cut-off value for urban settlements, all settlements with higher population are urban, else rural.
+UrbanRatioModelled;;Urban ratio modelled based on input
+PopEndYearHigh;15672000;Population in 2030 (high variant)
+PopEndYearLow;15672000;Population in 2030 (low variant)
+UrbanRatioEndYear;0.541;Urban ratio in end year (0 = all rural, 1 = all urban)
+NumPeoplePerHHRural;3.6;Number of people per housheold in rural setttlements
+NumPeoplePerHHUrban;3.1;Number of people per housheold in urban setttlements
+GridCapacityInvestmentCost;1982;grid capacity investments costs USD/kW. Weighted average of additions to the grid
+GridLosses;0.143;Losses in transmission and distrbution network (%)
+DiscountRate;0.08;Discount rate (%)
+BaseToPeak;0.8;Base to peak ratio (%)
+ExistingGridCostRatio;0.1;
+MaxGridExtensionDist;50;Max limit for how far the grid can extend
+NewGridGenerationCapacityAnnualLimitMW;70;Annual added capacity limit (MW/year) between start year and the intermediate year (no limit between intermediate and end yaer)
+ElecActual;0.42;National electrification rate as reported by country
+Rural_elec_ratio;0.18;Rural electrification rate as repoterd by country
+Urban_elec_ratio;0.67;Urban electrification rate as repoterd by country
+ElecModelled;;National electrification rate modelled by OnSSET
+urban_elec_ratio_modelled;;Rural electrification rate modelled by OnSSET
+rural_elec_ratio_modelled;;Urban electrification rate modelled by OnSSET
+UrbanTargetTier;5;Electricity demand in urban settlements in the end year (1-5 are MTF tiers, 6 is custom demand)
+RuralTargetTier;4;Electricity demand in rural settlements in the end year (1-5 are MTF tiers, 6 is custom demand)
+5YearTarget;0.71;Electrification rate 5 years from start year of analysis
+GridConnectionsLimitThousands;9999;Limit for how many people that can be connected to the grid
+GridGenerationCost;0.16;Cost of generating electricity for the centralised grid
+PV_Cost_adjust;1.25;Development of PV price
+DieselPrice;9999;Diesel price
+ProductiveDemand;0;
+PrioritizationAlgorithm;2;Determines which settlements to prioritize first (for electrification in the intermediate year). 
+AutoIntensificationKM;0;
