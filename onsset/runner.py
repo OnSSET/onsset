@@ -2,10 +2,13 @@
 
 import logging
 import os
+from csv import DictReader
 
 import pandas as pd
-from onsset import (SET_ELEC_ORDER, SET_LCOE_GRID, SET_MIN_GRID_DIST, SET_GRID_PENALTY,
-                    SET_MV_CONNECT_DIST, SET_WINDCF, SettlementProcessor, Technology)
+from onsset import (SET_ELEC_ORDER, SET_GRID_PENALTY, SET_LCOE_GRID,
+                    SET_MIN_GRID_DIST, SET_MV_CONNECT_DIST, SET_WINDCF,
+                    SettlementProcessor, Technology)
+from openpyxl import load_workbook
 
 try:
     from onsset.specs import (SPE_COUNTRY, SPE_ELEC, SPE_ELEC_MODELLED,
@@ -25,12 +28,26 @@ except ImportError:
                        SPE_NUM_PEOPLE_PER_HH_URBAN, SPE_POP, SPE_POP_FUTURE,
                        SPE_START_YEAR, SPE_URBAN, SPE_URBAN_FUTURE,
                        SPE_URBAN_MODELLED)
-from openpyxl import load_workbook
 
 logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.DEBUG)
 
 
-def calibration(specs_path, csv_path, specs_path_calib, calibrated_csv_path):
+def read_scenario_data(path_to_config: str) -> pd.DataFrame:
+    config = {}
+    with open(path_to_config, 'r') as csvfile:
+        reader = DictReader(csvfile)
+        config_file = list(reader)
+        for row in config_file:
+            if row['value']:
+                try:
+                    config[row['parameter']] = float(row['value'])
+                except ValueError:
+                    config[row['parameter']] = row['value']
+
+    return config
+
+
+def calibration(specs_path: str, csv_path, specs_path_calib, calibrated_csv_path):
     """
 
     Arguments
@@ -40,7 +57,7 @@ def calibration(specs_path, csv_path, specs_path_calib, calibrated_csv_path):
     specs_path_calib
     calibrated_csv_path
     """
-    specs_data = pd.read_excel(specs_path, sheet_name='SpecsData')
+    specs_data = read_scenario_data(specs_path)
     settlements_in_csv = csv_path
     settlements_out_csv = calibrated_csv_path
 
@@ -84,7 +101,7 @@ def calibration(specs_path, csv_path, specs_path_calib, calibrated_csv_path):
     elec_modelled, rural_elec_ratio, urban_elec_ratio = \
         onsseter.elec_current_and_future(elec_actual, elec_actual_urban, elec_actual_rural, start_year)
 
-    # In case there are limitations in the way grid expansion is moving in a country, 
+    # In case there are limitations in the way grid expansion is moving in a country,
     # this can be reflected through gridspeed.
     # In this case the parameter is set to a very high value therefore is not taken into account.
 
@@ -96,7 +113,7 @@ def calibration(specs_path, csv_path, specs_path_calib, calibrated_csv_path):
     book = load_workbook(specs_path)
     writer = pd.ExcelWriter(specs_path_calib, engine='openpyxl')
     writer.book = book
-    # RUN_PARAM: Here the calibrated "specs" data are copied to a new tab called "SpecsDataCalib". 
+    # RUN_PARAM: Here the calibrated "specs" data are copied to a new tab called "SpecsDataCalib".
     # This is what will later on be used to feed the model
     specs_data.to_excel(writer, sheet_name='SpecsDataCalib', index=False)
     writer.save()
@@ -297,7 +314,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                                              grid_connect_limit)
 
             onsseter.df[SET_LCOE_GRID + "{}".format(year)], onsseter.df[SET_MIN_GRID_DIST + "{}".format(year)], \
-            onsseter.df[SET_ELEC_ORDER + "{}".format(year)], onsseter.df[SET_MV_CONNECT_DIST], grid_investment = \
+                onsseter.df[SET_ELEC_ORDER + "{}".format(year)], onsseter.df[SET_MV_CONNECT_DIST], grid_investment = \
                 onsseter.elec_extension(grid_calc,
                                         max_grid_extension_dist,
                                         year,
