@@ -2,14 +2,13 @@
 
 import logging
 import os
-from csv import DictReader
+from csv import DictReader, DictWriter
 from typing import Dict
 
 import pandas as pd
 from onsset import (SET_ELEC_ORDER, SET_GRID_PENALTY, SET_LCOE_GRID,
                     SET_MIN_GRID_DIST, SET_MV_CONNECT_DIST, SET_WINDCF,
                     SettlementProcessor, Technology)
-from openpyxl import load_workbook
 
 try:
     from onsset.specs import (SPE_COUNTRY, SPE_ELEC, SPE_ELEC_MODELLED,
@@ -48,6 +47,13 @@ def read_scenario_data(path_to_config: str) -> Dict:
                     config[row['parameter']] = row['value']
 
     return config
+
+
+def write_data_to_csv(calibration_data: Dict, calibration_path: str):
+    with open(calibration_path, 'w') as csv_file:
+        writer = DictWriter(csv_file, fieldnames=['parameter', 'value'])
+        for key, value in calibration_data.items():
+            writer.writerow({'parameter': key, 'value': value})
 
 
 def calibration(specs_path: str, csv_path, specs_path_calib, calibrated_csv_path):
@@ -113,14 +119,7 @@ def calibration(specs_path: str, csv_path, specs_path_calib, calibrated_csv_path
     specs_data['rural_elec_ratio_modelled'] = rural_elec_ratio
     specs_data['urban_elec_ratio_modelled'] = urban_elec_ratio
 
-    book = load_workbook(specs_path)
-    writer = pd.ExcelWriter(specs_path_calib, engine='openpyxl')
-    writer.book = book
-    # RUN_PARAM: Here the calibrated "specs" data are copied to a new tab called "SpecsDataCalib".
-    # This is what will later on be used to feed the model
-    specs_data.to_excel(writer, sheet_name='SpecsDataCalib', index=False)
-    writer.save()
-    writer.close()
+    write_data_to_csv(specs_data, specs_path_calib)
 
     logging.info('Calibration finished. Results are transferred to the csv file')
     onsseter.df.to_csv(settlements_out_csv, index=False)
