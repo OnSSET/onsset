@@ -3,6 +3,7 @@
 import logging
 import os
 from csv import DictReader
+from typing import Dict
 
 import pandas as pd
 from onsset import (SET_ELEC_ORDER, SET_GRID_PENALTY, SET_LCOE_GRID,
@@ -32,7 +33,9 @@ except ImportError:
 logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.DEBUG)
 
 
-def read_scenario_data(path_to_config: str) -> pd.DataFrame:
+def read_scenario_data(path_to_config: str) -> Dict:
+    """Reads the scenario data into a dictionary
+    """
     config = {}
     with open(path_to_config, 'r') as csvfile:
         reader = DictReader(csvfile)
@@ -61,10 +64,8 @@ def calibration(specs_path: str, csv_path, specs_path_calib, calibrated_csv_path
     settlements_in_csv = csv_path
     settlements_out_csv = calibrated_csv_path
 
-    onsseter = SettlementProcessor(settlements_in_csv)
-
-    num_people_per_hh_rural = float(specs_data.iloc[0][SPE_NUM_PEOPLE_PER_HH_RURAL])
-    num_people_per_hh_urban = float(specs_data.iloc[0][SPE_NUM_PEOPLE_PER_HH_URBAN])
+    num_people_per_hh_rural = specs_data['NumPeoplePerHHRural']
+    num_people_per_hh_urban = specs_data['NumPeoplePerHHUrban']
 
     # RUN_PARAM: these are the annual household electricity targets
     tier_1 = 38.7  # 38.7 refers to kWh/household/year. It is the mean value between Tier 1 and Tier 2
@@ -73,6 +74,8 @@ def calibration(specs_path: str, csv_path, specs_path_calib, calibrated_csv_path
     tier_4 = 2117
     tier_5 = 2993
 
+    onsseter = SettlementProcessor(settlements_in_csv)
+
     onsseter.prepare_wtf_tier_columns(num_people_per_hh_rural, num_people_per_hh_urban,
                                       tier_1, tier_2, tier_3, tier_4, tier_5)
     onsseter.condition_df()
@@ -80,18 +83,18 @@ def calibration(specs_path: str, csv_path, specs_path_calib, calibrated_csv_path
 
     onsseter.df[SET_WINDCF] = onsseter.calc_wind_cfs()
 
-    pop_actual = specs_data.loc[0, SPE_POP]
-    pop_future_high = specs_data.loc[0, SPE_POP_FUTURE + 'High']
-    pop_future_low = specs_data.loc[0, SPE_POP_FUTURE + 'Low']
-    urban_current = specs_data.loc[0, SPE_URBAN]
-    urban_future = specs_data.loc[0, SPE_URBAN_FUTURE]
-    start_year = int(specs_data.loc[0, SPE_START_YEAR])
-    end_year = int(specs_data.loc[0, SPE_END_YEAR])
+    pop_actual = specs_data[SPE_POP]
+    pop_future_high = specs_data[SPE_POP_FUTURE + 'High']
+    pop_future_low = specs_data[SPE_POP_FUTURE + 'Low']
+    urban_current = specs_data[SPE_URBAN]
+    urban_future = specs_data[SPE_URBAN_FUTURE]
+    start_year = int(specs_data[SPE_START_YEAR])
+    end_year = int(specs_data[SPE_END_YEAR])
 
     intermediate_year = 2025
-    elec_actual = specs_data.loc[0, SPE_ELEC]
-    elec_actual_urban = specs_data.loc[0, SPE_ELEC_URBAN]
-    elec_actual_rural = specs_data.loc[0, SPE_ELEC_RURAL]
+    elec_actual = specs_data[SPE_ELEC]
+    elec_actual_urban = specs_data[SPE_ELEC_URBAN]
+    elec_actual_rural = specs_data[SPE_ELEC_RURAL]
 
     pop_modelled, urban_modelled = onsseter.calibrate_current_pop_and_urban(pop_actual, urban_current)
 
@@ -105,10 +108,10 @@ def calibration(specs_path: str, csv_path, specs_path_calib, calibrated_csv_path
     # this can be reflected through gridspeed.
     # In this case the parameter is set to a very high value therefore is not taken into account.
 
-    specs_data.loc[0, SPE_URBAN_MODELLED] = urban_modelled
-    specs_data.loc[0, SPE_ELEC_MODELLED] = elec_modelled
-    specs_data.loc[0, 'rural_elec_ratio_modelled'] = rural_elec_ratio
-    specs_data.loc[0, 'urban_elec_ratio_modelled'] = urban_elec_ratio
+    specs_data[SPE_URBAN_MODELLED] = urban_modelled
+    specs_data[SPE_ELEC_MODELLED] = elec_modelled
+    specs_data['rural_elec_ratio_modelled'] = rural_elec_ratio
+    specs_data['urban_elec_ratio_modelled'] = urban_elec_ratio
 
     book = load_workbook(specs_path)
     writer = pd.ExcelWriter(specs_path_calib, engine='openpyxl')

@@ -32,7 +32,7 @@ def run_analysis(tmpdir):
 
     """
 
-    specs_path = os.path.join('test', 'test_data', 'dj-specs-test.xlsx')
+    specs_path = os.path.join('test', 'test_data', 'config.csv')
     csv_path = os.path.join('test', 'test_data', 'dj-test.csv')
     calibrated_csv_path = os.path.join(tmpdir, 'dj-calibrated.csv')
     specs_path_calib = os.path.join(tmpdir, 'dj-specs-test-calib.xlsx')
