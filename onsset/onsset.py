@@ -108,15 +108,11 @@ class Technology:
                  capital_cost={float("inf"): 0},  # USD/kW
                  capacity_factor=0.9,  # percentage
                  grid_penalty_ratio=1,  # multiplier
-                 efficiency=1.0,  # percentage
-                 diesel_price=0.0,  # USD/litre
                  grid_price=0.0,  # USD/kWh for grid electricity
                  standalone=False,
                  mini_grid=False,
                  existing_grid_cost_ratio=0.1,  # percentage
                  grid_capacity_investment=0.0,  # USD/kW for on-grid capacity investments (excluding grid itself)
-                 diesel_truck_consumption=0,  # litres/hour
-                 diesel_truck_volume=0,  # litres
                  om_of_td_lines=0):  # percentage
 
         self.distribution_losses = distribution_losses
@@ -127,15 +123,11 @@ class Technology:
         self.capital_cost = capital_cost
         self.capacity_factor = capacity_factor
         self.grid_penalty_ratio = grid_penalty_ratio
-        self.efficiency = efficiency
-        self.diesel_price = diesel_price
         self.grid_price = grid_price
         self.standalone = standalone
         self.mini_grid = mini_grid
         self.existing_grid_cost_ratio = existing_grid_cost_ratio
         self.grid_capacity_investment = grid_capacity_investment
-        self.diesel_truck_consumption = diesel_truck_consumption
-        self.diesel_truck_volume = diesel_truck_volume
         self.om_of_td_lines = om_of_td_lines
 
     @classmethod
@@ -671,16 +663,14 @@ class SettlementProcessor:
 
     def compute_diesel_cost(self,
                             dataframe: pd.DataFrame,
-                            sa_diesel_cost: Dict,
-                            mg_diesel_cost: Dict,
+                            sa_diesel_cost,
+                            mg_diesel_cost,
                             year: int):
         """Calculate diesel fuel cost
 
         Arguments
         ---------
         dataframe: pandas.DataFrame
-        sa_diesel_cost: Dict
-        mg_diesel_cost: Dict
         year: int
 
         Returns
@@ -691,36 +681,33 @@ class SettlementProcessor:
         travel_time = df[SET_TRAVEL_HOURS].values
 
         df[SET_SA_DIESEL_FUEL + "{}".format(year)] = self._diesel_fuel_cost_calculator(
-            diesel_price=sa_diesel_cost['diesel_price'],
-            diesel_truck_volume=sa_diesel_cost['diesel_truck_volume'],
-            diesel_truck_consumption=sa_diesel_cost['diesel_truck_consumption'],
-            efficiency=sa_diesel_cost['efficiency'],
+            diesel_price=sa_diesel_cost.diesel_price,
+            diesel_truck_volume=sa_diesel_cost.diesel_truck_volume,
+            diesel_truck_consumption=sa_diesel_cost.diesel_truck_consumption,
+            efficiency=sa_diesel_cost.efficiency,
             traveltime=travel_time)
 
         df[SET_MG_DIESEL_FUEL + "{}".format(year)] = self._diesel_fuel_cost_calculator(
-            diesel_price=mg_diesel_cost['diesel_price'],
-            diesel_truck_volume=mg_diesel_cost['diesel_truck_volume'],
-            diesel_truck_consumption=mg_diesel_cost['diesel_truck_consumption'],
-            efficiency=mg_diesel_cost['efficiency'],
+            diesel_price=mg_diesel_cost.diesel_price,
+            diesel_truck_volume=mg_diesel_cost.diesel_truck_volume,
+            diesel_truck_consumption=mg_diesel_cost.diesel_truck_consumption,
+            efficiency=mg_diesel_cost.efficiency,
             traveltime=travel_time)
 
         return df.drop(columns=SET_TRAVEL_HOURS)
 
-    def diesel_cost_columns(self, sa_diesel_cost: Dict[str, float],
-                            mg_diesel_cost: Dict[str, float], year: int):
+    def diesel_cost_columns(self, mg_diesel_calc, sa_diesel_calc, year: int):
         """Calculate diesel fuel cost based on TravelHours column
 
         Arguments
         ---------
-        sa_diesel_cost: Dict
-        mg_diesel_cost: Dict
         year: int
 
         Returns
         -------
         """
         diesel_cost = self.compute_diesel_cost(self.df[[SET_TRAVEL_HOURS]],
-                                               sa_diesel_cost, mg_diesel_cost, year)
+                                               sa_diesel_calc, mg_diesel_calc, year)
 
         self.df = self.df.join(diesel_cost)
 
@@ -2261,3 +2248,40 @@ class SettlementProcessor:
         df_summary[year][sumtechs[31]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 8) &
                                                          (self.df[SET_LIMIT + "{}".format(year)] == 1)]
                                              [SET_INVESTMENT_COST + "{}".format(year)])
+
+
+class Diesel(Technology):
+
+    def __init__(self,
+                 tech_life=0,  # in years
+                 base_to_peak_load_ratio=0,
+                 distribution_losses=0,  # percentage
+                 connection_cost_per_hh=0,  # USD/hh
+                 om_costs=0.0,  # OM costs as percentage of capital costs
+                 capital_cost={float("inf"): 0},  # USD/kW
+                 capacity_factor=0.9,  # percentage
+                 grid_penalty_ratio=1,  # multiplier
+                 efficiency=1.0,  # percentage
+                 diesel_price=0.0,  # USD/litre
+                 grid_price=0.0,  # USD/kWh for grid electricity
+                 standalone=False,
+                 mini_grid=False,
+                 existing_grid_cost_ratio=0.1,  # percentage
+                 grid_capacity_investment=0.0,  # USD/kW for on-grid capacity investments (excluding grid itself)
+                 diesel_truck_consumption=0,  # litres/hour
+                 diesel_truck_volume=0,  # litres
+                 om_of_td_lines=0):  # percentage
+
+        super().__init__(tech_life=tech_life, base_to_peak_load_ratio=base_to_peak_load_ratio,
+                         distribution_losses=distribution_losses,
+                         connection_cost_per_hh=connection_cost_per_hh, om_costs=om_costs, capital_cost=capital_cost,
+                         capacity_factor=capacity_factor, grid_penalty_ratio=grid_penalty_ratio, grid_price=grid_price,
+                         standalone=standalone, mini_grid=mini_grid, existing_grid_cost_ratio=existing_grid_cost_ratio,
+                         grid_capacity_investment=grid_capacity_investment, om_of_td_lines=om_of_td_lines)
+
+        self.efficiency = efficiency
+        self.diesel_price = diesel_price
+        self.diesel_truck_consumption = diesel_truck_consumption
+        self.diesel_truck_volume = diesel_truck_volume
+
+

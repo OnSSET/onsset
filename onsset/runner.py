@@ -5,7 +5,7 @@ import os
 
 import pandas as pd
 from onsset import (SET_ELEC_ORDER, SET_LCOE_GRID, SET_MIN_GRID_DIST, SET_GRID_PENALTY,
-                    SET_MV_CONNECT_DIST, SET_WINDCF, SettlementProcessor, Technology)
+                    SET_MV_CONNECT_DIST, SET_WINDCF, SettlementProcessor, Technology, Diesel)
 
 try:
     from onsset.specs import (SPE_COUNTRY, SPE_ELEC, SPE_ELEC_MODELLED,
@@ -225,32 +225,30 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                                               },
                                 standalone=True)
 
-        mg_diesel_calc = Technology(om_of_td_lines=0.02,
-                                    distribution_losses=0.05,
-                                    connection_cost_per_hh=100,
-                                    base_to_peak_load_ratio=0.85,
-                                    capacity_factor=0.7,
-                                    tech_life=15,
-                                    om_costs=0.1,
-                                    capital_cost={float("inf"): 721},
-                                    mini_grid=True)
+        mg_diesel_calc = Diesel(om_of_td_lines=0.02,
+                                distribution_losses=0.05,
+                                connection_cost_per_hh=100,
+                                base_to_peak_load_ratio=0.85,
+                                capacity_factor=0.7,
+                                tech_life=15,
+                                om_costs=0.1,
+                                capital_cost={float("inf"): 721},
+                                diesel_price=diesel_price,
+                                efficiency=0.33,
+                                diesel_truck_consumption=33.7,
+                                diesel_truck_volume=15000,
+                                mini_grid=True)
 
-        sa_diesel_calc = Technology(base_to_peak_load_ratio=0.9,
-                                    capacity_factor=0.5,
-                                    tech_life=10,
-                                    om_costs=0.1,
-                                    capital_cost={float("inf"): 938},
-                                    standalone=True)
-
-        sa_diesel_cost = {'diesel_price': diesel_price,
-                          'efficiency': 0.28,
-                          'diesel_truck_consumption': 14,
-                          'diesel_truck_volume': 300}
-
-        mg_diesel_cost = {'diesel_price': diesel_price,
-                          'efficiency': 0.33,
-                          'diesel_truck_consumption': 33.7,
-                          'diesel_truck_volume': 15000}
+        sa_diesel_calc = Diesel(base_to_peak_load_ratio=0.9,
+                                capacity_factor=0.5,
+                                tech_life=10,
+                                om_costs=0.1,
+                                capital_cost={float("inf"): 938},
+                                diesel_price=diesel_price,
+                                efficiency=0.28,
+                                diesel_truck_consumption=14,
+                                diesel_truck_volume=300,
+                                standalone=True)
 
         # RUN_PARAM: One shall define here the years of analysis (excluding start year),
         # together with access targets per interval and timestep duration
@@ -285,7 +283,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
             onsseter.set_scenario_variables(year, num_people_per_hh_rural, num_people_per_hh_urban, time_step,
                                             start_year, urban_tier, rural_tier, end_year_pop, productive_demand)
 
-            onsseter.diesel_cost_columns(sa_diesel_cost, mg_diesel_cost, year)
+            onsseter.diesel_cost_columns(mg_diesel_calc, sa_diesel_calc, year)
 
             sa_diesel_investment, sa_pv_investment, mg_diesel_investment, mg_pv_investment, mg_wind_investment, \
                 mg_hydro_investment = onsseter.calculate_off_grid_lcoes(mg_hydro_calc, mg_wind_calc, mg_pv_calc,
