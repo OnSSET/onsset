@@ -9,25 +9,10 @@ import pandas as pd
 from onsset import (SET_ELEC_ORDER, SET_GRID_PENALTY, SET_LCOE_GRID,
                     SET_MIN_GRID_DIST, SET_MV_CONNECT_DIST, SET_WINDCF,
                     SettlementProcessor, Technology)
-
-try:
-    from onsset.specs import (SPE_COUNTRY, SPE_ELEC, SPE_ELEC_MODELLED,
-                              SPE_ELEC_RURAL, SPE_ELEC_URBAN, SPE_END_YEAR,
-                              SPE_GRID_CAPACITY_INVESTMENT, SPE_GRID_LOSSES,
-                              SPE_MAX_GRID_EXTENSION_DIST,
-                              SPE_NUM_PEOPLE_PER_HH_RURAL,
-                              SPE_NUM_PEOPLE_PER_HH_URBAN, SPE_POP, SPE_POP_FUTURE,
-                              SPE_START_YEAR, SPE_URBAN, SPE_URBAN_FUTURE,
-                              SPE_URBAN_MODELLED)
-except ImportError:
-    from specs import (SPE_COUNTRY, SPE_ELEC, SPE_ELEC_MODELLED,
-                       SPE_ELEC_RURAL, SPE_ELEC_URBAN, SPE_END_YEAR,
-                       SPE_GRID_CAPACITY_INVESTMENT, SPE_GRID_LOSSES,
-                       SPE_MAX_GRID_EXTENSION_DIST,
-                       SPE_NUM_PEOPLE_PER_HH_RURAL,
-                       SPE_NUM_PEOPLE_PER_HH_URBAN, SPE_POP, SPE_POP_FUTURE,
-                       SPE_START_YEAR, SPE_URBAN, SPE_URBAN_FUTURE,
-                       SPE_URBAN_MODELLED)
+from onsset.specs import (SPE_GRID_CAPACITY_INVESTMENT, SPE_GRID_LOSSES,
+                          SPE_MAX_GRID_EXTENSION_DIST,
+                          SPE_NUM_PEOPLE_PER_HH_RURAL,
+                          SPE_NUM_PEOPLE_PER_HH_URBAN)
 
 logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.DEBUG)
 
@@ -89,33 +74,34 @@ def calibration(specs_path: str, csv_path, specs_path_calib, calibrated_csv_path
 
     onsseter.df[SET_WINDCF] = onsseter.calc_wind_cfs()
 
-    pop_actual = specs_data[SPE_POP]
-    pop_future_high = specs_data[SPE_POP_FUTURE + 'High']
-    pop_future_low = specs_data[SPE_POP_FUTURE + 'Low']
-    urban_current = specs_data[SPE_URBAN]
-    urban_future = specs_data[SPE_URBAN_FUTURE]
-    start_year = int(specs_data[SPE_START_YEAR])
-    end_year = int(specs_data[SPE_END_YEAR])
-
     intermediate_year = 2025
-    elec_actual = specs_data[SPE_ELEC]
-    elec_actual_urban = specs_data[SPE_ELEC_URBAN]
-    elec_actual_rural = specs_data[SPE_ELEC_RURAL]
+    elec_actual = specs_data['ElecActual']
+    elec_actual_urban = specs_data['Urban_elec_ratio']
+    elec_actual_rural = specs_data['Rural_elec_ratio']
 
-    pop_modelled, urban_modelled = onsseter.calibrate_current_pop_and_urban(pop_actual, urban_current)
+    pop_modelled, urban_modelled = onsseter.calibrate_current_pop_and_urban(specs_data['PopStartYear'],
+                                                                            specs_data['UrbanRatioStartYear'])
 
-    onsseter.project_pop_and_urban(pop_modelled, pop_future_high, pop_future_low, urban_modelled,
-                                   urban_future, start_year, end_year, intermediate_year)
+    onsseter.project_pop_and_urban(pop_modelled, specs_data['PopEndYearHigh'],
+                                   specs_data['PopEndYearLow'],
+                                   urban_modelled,
+                                   specs_data['UrbanRatioEndYear'],
+                                   specs_data['StartYear'],
+                                   specs_data['EndYear'],
+                                   intermediate_year)
 
     elec_modelled, rural_elec_ratio, urban_elec_ratio = \
-        onsseter.elec_current_and_future(elec_actual, elec_actual_urban, elec_actual_rural, start_year)
+        onsseter.elec_current_and_future(elec_actual,
+                                         elec_actual_urban,
+                                         elec_actual_rural,
+                                         specs_data['StartYear'])
 
     # In case there are limitations in the way grid expansion is moving in a country,
     # this can be reflected through gridspeed.
     # In this case the parameter is set to a very high value therefore is not taken into account.
 
-    specs_data[SPE_URBAN_MODELLED] = urban_modelled
-    specs_data[SPE_ELEC_MODELLED] = elec_modelled
+    specs_data['UrbanRatioModelled'] = urban_modelled
+    specs_data['ElecModelled'] = elec_modelled
     specs_data['rural_elec_ratio_modelled'] = rural_elec_ratio
     specs_data['urban_elec_ratio_modelled'] = urban_elec_ratio
 
@@ -141,7 +127,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
     scenarios = scenario_info['Scenario']
     scenario_parameters = pd.read_excel(specs_path, sheet_name='ScenarioParameters')
     specs_data = pd.read_excel(specs_path, sheet_name='SpecsDataCalib')
-    print(specs_data.loc[0, SPE_COUNTRY])
+    print(specs_data.loc[0, 'Country'])
 
     for scenario in scenarios:
         print('Scenario: ' + str(scenario + 1))
@@ -169,20 +155,10 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
         prioritization = scenario_parameters.iloc[prio_index]['PrioritizationAlgorithm']
         auto_intensification = scenario_parameters.iloc[prio_index]['AutoIntensificationKM']
 
-        settlements_in_csv = calibrated_csv_path
-        settlements_out_csv = os.path.join(results_folder,
-                                           '{}-1-{}_{}_{}_{}_{}_{}.csv'.format(country_id, pop_index, tier_index,
-                                                                               five_year_index, grid_index, pv_index,
-                                                                               prio_index))
-        summary_csv = os.path.join(summary_folder,
-                                   '{}-1-{}_{}_{}_{}_{}_{}_summary.csv'.format(country_id, pop_index, tier_index,
-                                                                               five_year_index, grid_index, pv_index,
-                                                                               prio_index))
+        onsseter = SettlementProcessor(calibrated_csv_path)
 
-        onsseter = SettlementProcessor(settlements_in_csv)
-
-        start_year = specs_data.iloc[0][SPE_START_YEAR]
-        end_year = specs_data.iloc[0][SPE_END_YEAR]
+        start_year = specs_data.iloc[0]['StartYear']
+        end_year = specs_data.iloc[0]['EndYear']
 
         num_people_per_hh_rural = float(specs_data.iloc[0][SPE_NUM_PEOPLE_PER_HH_RURAL])
         num_people_per_hh_urban = float(specs_data.iloc[0][SPE_NUM_PEOPLE_PER_HH_URBAN])
@@ -347,6 +323,15 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                 onsseter.df.iloc[:, i] = pd.to_numeric(onsseter.df.iloc[:, i], downcast='float')
             elif onsseter.df.iloc[:, i].dtype == 'int64':
                 onsseter.df.iloc[:, i] = pd.to_numeric(onsseter.df.iloc[:, i], downcast='signed')
+
+        settlements_out_csv = os.path.join(results_folder,
+                                           '{}-1-{}_{}_{}_{}_{}_{}.csv'.format(country_id, pop_index, tier_index,
+                                                                               five_year_index, grid_index, pv_index,
+                                                                               prio_index))
+        summary_csv = os.path.join(summary_folder,
+                                   '{}-1-{}_{}_{}_{}_{}_{}_summary.csv'.format(country_id, pop_index, tier_index,
+                                                                               five_year_index, grid_index, pv_index,
+                                                                               prio_index))
 
         df_summary.to_csv(summary_csv, index=sumtechs)
         onsseter.df.to_csv(settlements_out_csv, index=False)
