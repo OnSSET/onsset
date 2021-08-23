@@ -4,6 +4,8 @@ from onsset.runner import read_scenario_data
 
 
 def test_read_scenario_data():
+    """Store the configuration data as a dictionary
+    """
 
     path = os.path.join('test', 'test_data', 'config.csv')
 
