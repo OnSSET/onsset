@@ -31,15 +31,15 @@ def run_analysis(tmpdir):
         Returns a tuple of bool for whether the summary or full files match
 
     """
-
     specs_path = os.path.join('test', 'test_data', 'config.csv')
+    scenario_path = os.path.join('test', 'test_data', 'dj-specs-test.xlsx')
     csv_path = os.path.join('test', 'test_data', 'dj-test.csv')
     calibrated_csv_path = os.path.join(tmpdir, 'dj-calibrated.csv')
     specs_path_calib = os.path.join(tmpdir, 'dj-specs-test-calib.xlsx')
 
     calibration(specs_path, csv_path, specs_path_calib, calibrated_csv_path)
 
-    scenario(specs_path, calibrated_csv_path, tmpdir, tmpdir)
+    scenario(specs_path, scenario_path, calibrated_csv_path, tmpdir, tmpdir)
 
     actual = os.path.join(tmpdir, 'dj-1-1_1_1_1_0_0_summary.csv')
     expected = os.path.join('test', 'test_results', 'expected_summary.csv')
