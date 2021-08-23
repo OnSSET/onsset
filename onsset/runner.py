@@ -3,7 +3,7 @@
 import logging
 import os
 from csv import DictReader, DictWriter
-from typing import Dict
+from typing import Any, Dict
 
 import pandas as pd
 from onsset import (SET_ELEC_ORDER, SET_GRID_PENALTY, SET_LCOE_GRID,
@@ -17,19 +17,21 @@ from onsset.specs import (SPE_GRID_CAPACITY_INVESTMENT, SPE_GRID_LOSSES,
 logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.DEBUG)
 
 
-def read_scenario_data(path_to_config: str) -> Dict:
+def read_scenario_data(path_to_config: str) -> Dict[str, Any]:
     """Reads the scenario data into a dictionary
     """
-    config = {}
+    config = {}  # typing: Dict[str, Any]
     with open(path_to_config, 'r') as csvfile:
         reader = DictReader(csvfile)
         config_file = list(reader)
         for row in config_file:
             if row['value']:
-                try:
+                if row['data_type'] == 'int':
+                    config[row['parameter']] = int(row['value'])
+                elif row['data_type'] == 'float':
                     config[row['parameter']] = float(row['value'])
-                except ValueError:
-                    config[row['parameter']] = row['value']
+                elif row['data_type'] == 'str':
+                    config[row['parameter']] = str(row['value'])
 
     return config
 
