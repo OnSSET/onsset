@@ -1,10 +1,10 @@
 import logging
 from math import exp, log, pi
 from typing import Dict
-import scipy.spatial
 
 import numpy as np
 import pandas as pd
+import scipy.spatial
 
 logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -1566,7 +1566,7 @@ class SettlementProcessor:
         dist, indexes = mytree.query(points)
         return indexes
 
-    def calculate_new_connections(self, year, time_step, start_year):
+    def calculate_new_connections(self, year: int, time_step: int, start_year: int):
         """this method defines new connections for grid related purposes
 
         Arguments
@@ -1719,7 +1719,8 @@ class SettlementProcessor:
         self.df.loc[self.df[SET_URBAN] == 2, SET_TOTAL_ENERGY_PER_CELL] = \
             self.df[SET_CAPITA_DEMAND] * self.df[SET_POP + "{}".format(year)]
 
-    def set_scenario_variables(self, year, num_people_per_hh_rural, num_people_per_hh_urban, time_step, start_year,
+    def set_scenario_variables(self, year: int, num_people_per_hh_rural, num_people_per_hh_urban,
+                               time_step: int, start_year: int,
                                urban_tier, rural_tier, end_year_pop, productive_demand):
         """
         this method determines some basic parameters required in LCOE calculation
@@ -1751,7 +1752,7 @@ class SettlementProcessor:
         self.calculate_total_demand_per_settlement(year)
 
     def calculate_off_grid_lcoes(self, mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc,
-                                 sa_diesel_calc, year, end_year, time_step, diesel_techs=0):
+                                 sa_diesel_calc, year: int, end_year: int, time_step: int, diesel_techs=0):
         """
         Calculate the LCOEs for all off-grid technologies
 
