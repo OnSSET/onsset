@@ -6,7 +6,7 @@ import scipy.spatial
 import numpy as np
 import pandas as pd
 
-logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.WARNING)
+logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.ERROR)
 logger = logging.getLogger(__name__)
 
 # Columns in settlements file must match these exactly
@@ -1284,35 +1284,33 @@ class SettlementProcessor:
         return elec_modelled, rural_elec_ratio, urban_elec_ratio
 
     def pre_electrification(self, grid_price, year, time_step, end_year, grid_calc, grid_capacity_limit,
-                            grid_connect_limit):
+                            grid_connect_limit, grid_investment, grid_name='Ouest'):
 
         """" ... """
 
         logging.info('Define the initial electrification status')
-        grid_investment = np.zeros(len(self.df[SET_X_DEG]))
         prev_code = self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)].copy(deep=True)
 
         # Grid-electrified settlements
         electrified_loce, electrified_investment = self.get_grid_lcoe(0, 0, 0, year, time_step, end_year, grid_calc)
         electrified_investment = electrified_investment[0]
-        grid_investment = np.where(self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] == 1,
+        grid_investment = np.where((self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] == 1) & (self.df['ClosestGrid'] == grid_name),
                                    electrified_investment, grid_investment)
 
-        self.df[SET_LCOE_GRID + "{}".format(year)] = 99
-        self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] == 1,
+        self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] == 1) & (self.df['ClosestGrid'] == grid_name),
                     SET_LCOE_GRID + "{}".format(year)] = grid_price
 
         # Two restrictions may be imposed on the grid. The new grid generation capacity that can be added and the
         # number of new households that can be connected. The next step calculates how much of that will be used up due
         # to demand (population) growth in already electrified settlements
-        consumption = sum(self.df.loc[prev_code == 1][SET_ENERGY_PER_CELL + "{}".format(year)])
+        consumption = sum(self.df.loc[(prev_code == 1) & (self.df['ClosestGrid'] == grid_name)][SET_ENERGY_PER_CELL + "{}".format(year)])
         average_load = consumption / (1 - grid_calc.distribution_losses) / HOURS_PER_YEAR  # kW
         peak_load = average_load / grid_calc.base_to_peak_load_ratio  # kW
         grid_capacity_limit -= peak_load
 
         self.df['Densification_connections'] = self.df[SET_NEW_CONNECTIONS + "{}".format(year)] / self.df[
             SET_NUM_PEOPLE_PER_HH]
-        grid_connect_limit -= sum(self.df.loc[prev_code == 1]['Densification_connections'])
+        grid_connect_limit -= sum(self.df.loc[(prev_code == 1) & (self.df['ClosestGrid'] == grid_name)]['Densification_connections'])
         del self.df['Densification_connections']
 
         return pd.Series(grid_investment), grid_capacity_limit, grid_connect_limit
@@ -1324,7 +1322,7 @@ class SettlementProcessor:
         self.df[SET_MIN_TD_DIST] = self.df[[SET_MV_DIST_PLANNED, SET_HV_DIST_PLANNED]].min(axis=1)
 
     def elec_extension(self, grid_calc, max_dist, year, start_year, end_year, time_step, grid_capacity_limit,
-                       grid_connect_limit, new_investment, auto_intensification=0, prioritization=0):
+                       grid_connect_limit, new_investment, auto_intensification=0, prioritization=0, grid_name='Ouest'):
         """
         Iterate through all electrified settlements and find which settlements can be economically connected to the grid
         Repeat with newly electrified settlements until no more are added
@@ -1343,6 +1341,9 @@ class SettlementProcessor:
         cell_path_real = self.df[SET_MV_CONNECT_DIST].copy(deep=True)
         cell_path_adjusted = list(np.zeros(len(prev_code)).tolist())
         mv_planned = self.df[SET_MV_DIST_PLANNED].copy(deep=True)
+        hv_dist = np.nan_to_num(self.df[SET_HV_DIST_PLANNED])
+        hv_dist_adjusted = np.nan_to_num(hv_dist * grid_penalty_ratio)
+        grid_region = self.df['ClosestGrid']
 
         # Start by identifying which settlements are grid-connected already
         electrified = np.where(prev_code == 1, 1, 0)
@@ -1350,7 +1351,11 @@ class SettlementProcessor:
         # The grid may be forced to expand around existing MV lines if this option has been selected, regardless
         # off-grid alternatives are less costly. The following section implements that
         if (prio == 2) or (prio == 4):
-            mv_dist_adjusted = np.nan_to_num(grid_penalty_ratio * mv_planned)
+            if min(mv_planned) == 9999:
+                mv_planned = hv_dist
+                mv_dist_adjusted = hv_dist_adjusted
+            else:
+                mv_dist_adjusted = np.nan_to_num(grid_penalty_ratio * mv_planned)
 
             intensification_lcoe, intensification_investment = \
                 self.get_grid_lcoe(dist_adjusted=mv_dist_adjusted, elecorder=0, additional_transformer=0, year=year,
@@ -1370,7 +1375,9 @@ class SettlementProcessor:
                                                   cell_path_adjusted=cell_path_adjusted, electrified=electrified,
                                                   year=year, grid_calc=grid_calc,
                                                   grid_investment=intensification_investment,
-                                                  new_investment=new_investment)
+                                                  new_investment=new_investment,
+                                                  region=grid_region,
+                                                  grid_name=grid_name)
 
         # Find the unelectrified settlements where grid can be less costly than off-grid
         filter_lcoe, filter_investment = self.get_grid_lcoe(0, 0, 0, year, time_step, end_year, grid_calc)
@@ -1397,12 +1404,11 @@ class SettlementProcessor:
                                               grid_connect_limit=grid_connect_limit, cell_path_real=cell_path_real,
                                               cell_path_adjusted=cell_path_adjusted, electrified=electrified, year=year,
                                               grid_calc=grid_calc, grid_investment=grid_investment,
-                                              new_investment=new_investment)
+                                              new_investment=new_investment,
+                                              region=grid_region,
+                                              grid_name=grid_name)
 
         #  Second round of extension from HV lines
-        hv_dist = np.nan_to_num(self.df[SET_HV_DIST_PLANNED])
-        hv_dist_adjusted = np.nan_to_num(hv_dist * grid_penalty_ratio)
-
         grid_lcoe, grid_investment = self.get_grid_lcoe(dist_adjusted=hv_dist_adjusted, elecorder=0,
                                                         additional_transformer=1, year=year, time_step=time_step,
                                                         end_year=end_year, grid_calc=grid_calc)
@@ -1415,7 +1421,9 @@ class SettlementProcessor:
                                               grid_connect_limit=grid_connect_limit, cell_path_real=cell_path_real,
                                               cell_path_adjusted=cell_path_adjusted, electrified=electrified,
                                               year=year, grid_calc=grid_calc, grid_investment=grid_investment,
-                                              new_investment=new_investment)
+                                              new_investment=new_investment,
+                                              region=grid_region,
+                                              grid_name=grid_name)
 
         # Third to last round of extension loops from electrified settlements. First considering all
         # electrified settlements up until this point, then from the newly electrified settlements in each round
@@ -1457,7 +1465,9 @@ class SettlementProcessor:
                                                     cell_path_real=cell_path_real,
                                                     cell_path_adjusted=cell_path_adjusted, electrified=electrified,
                                                     year=year, grid_calc=grid_calc, grid_investment=grid_investment,
-                                                    new_investment=new_investment)
+                                                    new_investment=new_investment,
+                                                    region=grid_region,
+                                                    grid_name=grid_name)
 
         return new_lcoes, cell_path_adjusted, elecorder, cell_path_real, pd.DataFrame(new_investment)
 
@@ -1526,7 +1536,8 @@ class SettlementProcessor:
 
     def update_grid_extension_info(self, grid_lcoe, dist, dist_adjusted, prev_dist, elecorder, new_elec_order,
                                    max_dist, new_lcoes, grid_capacity_limit, grid_connect_limit, cell_path_real,
-                                   cell_path_adjusted, electrified, year, grid_calc, grid_investment, new_investment):
+                                   cell_path_adjusted, electrified, year, grid_calc, grid_investment, new_investment,
+                                   region, grid_name):
 
         min_code_lcoes = self.df[SET_MIN_OFFGRID_LCOE + "{}".format(year)].copy(deep=True)
 
@@ -1535,6 +1546,7 @@ class SettlementProcessor:
         grid_lcoe.loc[electrified == 1] = 99
         grid_lcoe.loc[prev_dist + dist_adjusted > max_dist] = 99
         grid_lcoe.loc[grid_lcoe > new_lcoes] = 99
+        grid_lcoe.loc[region != grid_name] = 99
         consumption = self.df[SET_ENERGY_PER_CELL + "{}".format(year)]  # kWh/year
         average_load = consumption / (1 - grid_calc.distribution_losses) / HOURS_PER_YEAR  # kW
         peak_load = average_load / grid_calc.base_to_peak_load_ratio  # kW
@@ -1946,7 +1958,8 @@ class SettlementProcessor:
         self.df.loc[self.df[SET_MIN_OFFGRID + "{}".format(year)] == SET_LCOE_SA_DIESEL + "{}".format(
             year), SET_MIN_OFFGRID_CODE + "{}".format(year)] = codes[SET_LCOE_SA_DIESEL + "{}".format(year)]
 
-    def results_columns(self, year, time_step, prio, auto_intensification):
+    def results_columns(self, year, time_step, prio,
+                        auto_intensification_ouest, auto_intensification_sud, auto_intensification_est):
         """Calculate the capacity and investment requirements for each settlement
 
         Once the grid extension algorithm has been run, determine the minimum overall option,
@@ -1971,8 +1984,19 @@ class SettlementProcessor:
                     SET_MIN_OVERALL + "{}".format(year)] = 'Grid' + "{}".format(year)
 
         if (prio == 2) or (prio == 4):
-            self.df.loc[(self.df[SET_MV_DIST_PLANNED] < auto_intensification) &
-                        (self.df[SET_LCOE_GRID + "{}".format(year)] != 99),
+            self.df.loc[(self.df[SET_MV_DIST_PLANNED] < auto_intensification_ouest) &
+                        (self.df[SET_LCOE_GRID + "{}".format(year)] != 99) &
+                        (self.df['ClosestGrid'] == 'Ouest'),
+                        SET_MIN_OVERALL + "{}".format(year)] = 'Grid' + "{}".format(year)
+
+            self.df.loc[(self.df[SET_MV_DIST_PLANNED] < auto_intensification_sud) &
+                        (self.df[SET_LCOE_GRID + "{}".format(year)] != 99) &
+                        (self.df['ClosestGrid'] == 'Sud'),
+                        SET_MIN_OVERALL + "{}".format(year)] = 'Grid' + "{}".format(year)
+
+            self.df.loc[(self.df[SET_MV_DIST_PLANNED] < auto_intensification_est) &
+                        (self.df[SET_LCOE_GRID + "{}".format(year)] != 99) &
+                        (self.df['ClosestGrid'] == 'Est'),
                         SET_MIN_OVERALL + "{}".format(year)] = 'Grid' + "{}".format(year)
 
         # logging.info('Determine minimum overall LCOE')
@@ -1988,8 +2012,19 @@ class SettlementProcessor:
                     SET_MIN_OVERALL_LCOE + "{}".format(year)] = self.df[SET_LCOE_GRID + "{}".format(year)]
 
         if (prio == 2) or (prio == 4):
-            self.df.loc[(self.df[SET_MV_DIST_PLANNED] < auto_intensification) &
-                        (self.df[SET_LCOE_GRID + "{}".format(year)] != 99),
+            self.df.loc[(self.df[SET_MV_DIST_PLANNED] < auto_intensification_ouest) &
+                        (self.df[SET_LCOE_GRID + "{}".format(year)] != 99) &
+                        (self.df['ClosestGrid'] == 'Ouest'),
+                        SET_MIN_OVERALL_LCOE + "{}".format(year)] = self.df[SET_LCOE_GRID + "{}".format(year)]
+
+            self.df.loc[(self.df[SET_MV_DIST_PLANNED] < auto_intensification_sud) &
+                        (self.df[SET_LCOE_GRID + "{}".format(year)] != 99) &
+                        (self.df['ClosestGrid'] == 'Sud'),
+                        SET_MIN_OVERALL_LCOE + "{}".format(year)] = self.df[SET_LCOE_GRID + "{}".format(year)]
+
+            self.df.loc[(self.df[SET_MV_DIST_PLANNED] < auto_intensification_est) &
+                        (self.df[SET_LCOE_GRID + "{}".format(year)] != 99) &
+                        (self.df['ClosestGrid'] == 'Est'),
                         SET_MIN_OVERALL_LCOE + "{}".format(year)] = self.df[SET_LCOE_GRID + "{}".format(year)]
 
         # logging.info('Add technology codes')
@@ -2024,7 +2059,8 @@ class SettlementProcessor:
             sa_pv * sa_pv_investment + mg_diesel * mg_diesel_investment + mg_pv * mg_pv_investment + \
             mg_wind * mg_wind_investment + mg_hydro * mg_hydro_investment
 
-    def apply_limitations(self, eleclimit, year, time_step, prioritization, auto_densification=0):
+    def apply_limitations(self, eleclimit, year, time_step, prioritization, auto_densification_ouest=0,
+                          auto_densification_sud=0, auto_densification_est=0):
 
         logging.info('Determine electrification limits')
         choice = int(prioritization)
@@ -2051,7 +2087,14 @@ class SettlementProcessor:
         elif choice == 2:
             # Prioritize already electrified settlements, then intensification, then lowest investment per capita
 
-            self.df['Intensification'] = np.where(self.df[SET_MV_DIST_PLANNED] < auto_densification, 1, 0)
+            self.df['Intensification'] = np.where((self.df[SET_MV_DIST_PLANNED] < auto_densification_ouest) &
+                                                  (self.df['ClosestGrid'] == 'Ouest'), 1, 0)
+
+            self.df['Intensification'] = np.where((self.df[SET_MV_DIST_PLANNED] < auto_densification_sud) &
+                                                  (self.df['ClosestGrid'] == 'Sud'), 1, self.df['Intensification'])
+
+            self.df['Intensification'] = np.where((self.df[SET_MV_DIST_PLANNED] < auto_densification_est) &
+                                                  (self.df['ClosestGrid'] == 'Est'), 1, self.df['Intensification'])
 
             self.df.sort_values(by=[SET_ELEC_FINAL_CODE + "{}".format(year - time_step),
                                     'Intensification',
@@ -2094,15 +2137,28 @@ class SettlementProcessor:
         print("Le taux d'électrification atteint en {} est {:.1f} %".format(year, elecrate * 100))
 
     def calculate_new_capacity(self, mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc,
-                               sa_diesel_calc, grid_calc, year):
+                               sa_diesel_calc, grid_calc_ouest, grid_calc_sud, grid_calc_est, year):
 
         logging.info('Calculate new capacity')
         self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 99, SET_NEW_CAPACITY + "{}".format(year)] = 0
 
-        self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 1, SET_NEW_CAPACITY + "{}".format(year)] = (
+        self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 1) & (self.df['ClosestGrid'] == 'Ouest'),
+                    SET_NEW_CAPACITY + "{}".format(year)] = (
                 (self.df[SET_ENERGY_PER_CELL + "{}".format(year)]) /
-                (HOURS_PER_YEAR * grid_calc.capacity_factor * grid_calc.base_to_peak_load_ratio *
-                 (1 - grid_calc.distribution_losses)))
+                (HOURS_PER_YEAR * grid_calc_ouest.capacity_factor * grid_calc_ouest.base_to_peak_load_ratio *
+                 (1 - grid_calc_ouest.distribution_losses)))
+
+        self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 1) & (self.df['ClosestGrid'] == 'Ouest'),
+                    SET_NEW_CAPACITY + "{}".format(year)] = (
+                (self.df[SET_ENERGY_PER_CELL + "{}".format(year)]) /
+                (HOURS_PER_YEAR * grid_calc_sud.capacity_factor * grid_calc_sud.base_to_peak_load_ratio *
+                 (1 - grid_calc_sud.distribution_losses)))
+
+        self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 1) & (self.df['ClosestGrid'] == 'Ouest'),
+                    SET_NEW_CAPACITY + "{}".format(year)] = (
+                (self.df[SET_ENERGY_PER_CELL + "{}".format(year)]) /
+                (HOURS_PER_YEAR * grid_calc_est.capacity_factor * grid_calc_est.base_to_peak_load_ratio *
+                 (1 - grid_calc_est.distribution_losses)))
 
         self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 7, SET_NEW_CAPACITY + "{}".format(year)] = (
                 (self.df[SET_ENERGY_PER_CELL + "{}".format(year)]) /
