@@ -79,8 +79,7 @@ def calibration(specs_path, csv_path, specs_path_calib, calibrated_csv_path):
 
     pop_modelled, urban_modelled = onsseter.calibrate_current_pop_and_urban(pop_actual, urban_current)
 
-    onsseter.project_pop_and_urban(pop_modelled, pop_future, pop_future, urban_modelled,
-                                   urban_future, start_year, end_year, intermediate_year)
+
 
     elec_modelled, rural_elec_ratio, urban_elec_ratio = \
         onsseter.elec_current_and_future(elec_actual, elec_actual_urban, elec_actual_rural, start_year)
@@ -129,6 +128,22 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
         print('Scenario: ' + str(scenario + 1))
         country_id = specs_data.iloc[0]['CountryCode']
 
+        # Population lever
+        pop_index = scenario_info.iloc[scenario]['PopIndex']
+
+        pop_future = scenario_parameters.iloc[pop_index]['Population2030']
+        urban_future = scenario_parameters.iloc[pop_index]['UrbanRatio2030']
+
+        #  Discount rate lever
+        disscount_index = scenario_info.iloc[scenario]['DiscountIndex']
+        disc_rate = scenario_parameters.iloc[disscount_index]['DiscRate']
+
+        # Electrification rate target lever
+        electification_rate_index = scenario_info.iloc[scenario]['Electrification_rate']
+
+        electrification_rate_2030 = scenario_parameters.iloc[electification_rate_index]['ElecRate2030']
+        electrification_rate_2025 = scenario_parameters.iloc[electification_rate_index]['ElecRate2025']
+
         # Productive uses lever
         productive_index = scenario_info.iloc[scenario]['Productive_uses_demand']
         productive_demand = scenario_parameters.iloc[productive_index]['ProductiveDemand']
@@ -144,11 +159,11 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
         settlements_in_csv = calibrated_csv_path
         settlements_out_csv = os.path.join(results_folder,
-                                           '{}-{}_{}_{}.csv'.format(country_id, tier_index, productive_index,
-                                                                               pv_index))
+                                           '{}-{}_{}_{}_{}_{}_{}.csv'.format(country_id, tier_index, productive_index,
+                                                                               pv_index, disscount_index, electification_rate_index, pop_index))
         summary_csv = os.path.join(summary_folder,
-                                   '{}-{}_{}_{}_summary.csv'.format(country_id, tier_index, productive_index,
-                                                                               pv_index))
+                                   '{}-{}_{}_{}_{}_{}_{}_summary.csv'.format(country_id, tier_index, productive_index,
+                                                                               pv_index, disscount_index, electification_rate_index, pop_index))
 
         onsseter = SettlementProcessor(settlements_in_csv)
 
@@ -160,8 +175,8 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
         num_people_per_hh_urban = float(specs_data.iloc[0][SPE_NUM_PEOPLE_PER_HH_URBAN])
         max_grid_extension_dist = 50
 
-        intermediate_electrification_target = 0.75
-        end_year_electrification_rate_target = 1
+        intermediate_electrification_target = electrification_rate_2025
+        end_year_electrification_rate_target = electrification_rate_2030
 
         # West grid specifications
         auto_intensification_ouest = 0
@@ -180,6 +195,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
         annual_grid_cap_gen_limit_sud = {intermediate_year: 999999999,
                                          end_year: 999999999}
         grid_generation_cost_sud = 0.06
+        grid_generation_cost_sud = 0.06
         grid_power_plants_capital_cost_sud = 2000
         grid_losses_sud = 0.08
 
@@ -197,7 +213,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
         Technology.set_default_values(base_year=start_year,
                                       start_year=start_year,
                                       end_year=end_year,
-                                      discount_rate=0.08)
+                                      discount_rate=disc_rate)
 
         grid_calc_ouest = Technology(om_of_td_lines=0.1,
                                      distribution_losses=grid_losses_ouest,
@@ -330,6 +346,8 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
         time_steps = {intermediate_year: intermediate_year - start_year, end_year: end_year - intermediate_year}
 
         onsseter.current_mv_line_dist()
+
+        onsseter.project_pop_and_urban(pop_future, urban_future, start_year, end_year, intermediate_year)
 
         for year in yearsofanalysis:
             eleclimit = eleclimits[year]

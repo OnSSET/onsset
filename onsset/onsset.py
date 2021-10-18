@@ -1018,12 +1018,16 @@ class SettlementProcessor:
 
         return pop_modelled, urban_modelled
 
-    def project_pop_and_urban(self, pop_modelled, pop_future_high, pop_future_low, urban_modelled,
+    def project_pop_and_urban(self, pop_future_high,
                               urban_future, start_year, end_year, intermediate_year):
         """
         This function projects population and urban/rural ratio for the different years of the analysis
         """
         project_life = end_year - start_year
+
+        pop_modelled  = self.df[SET_POP_CALIB].sum()
+        urban_modelled = (self.df.loc[self.df[SET_URBAN] == 2, SET_POP_CALIB].sum()) / pop_modelled
+        pop_future_low = pop_future_high
 
         # Project future population, with separate growth rates for urban and rural
         logging.info('Population projection process')
