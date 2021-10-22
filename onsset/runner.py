@@ -66,11 +66,8 @@ def calibration(specs_path, csv_path, specs_path_calib, calibrated_csv_path):
     onsseter.df[SET_WINDCF] = onsseter.calc_wind_cfs()
 
     pop_actual = specs_data.loc[0, SPE_POP]
-    pop_future = specs_data.loc[0, SPE_POP_FUTURE]
     urban_current = specs_data.loc[0, SPE_URBAN]
-    urban_future = specs_data.loc[0, SPE_URBAN_FUTURE]
     start_year = int(specs_data.loc[0, SPE_START_YEAR])
-    end_year = int(specs_data.loc[0, SPE_END_YEAR])
 
     elec_actual = specs_data.loc[0, SPE_ELEC]
     elec_actual_urban = specs_data.loc[0, SPE_ELEC_URBAN]
@@ -80,10 +77,6 @@ def calibration(specs_path, csv_path, specs_path_calib, calibrated_csv_path):
 
     elec_modelled, rural_elec_ratio, urban_elec_ratio = \
         onsseter.elec_current_and_future(elec_actual, elec_actual_urban, elec_actual_rural, start_year)
-
-    # In case there are limitations in the way grid expansion is moving in a country, 
-    # this can be reflected through gridspeed.
-    # In this case the parameter is set to a very high value therefore is not taken into account.
 
     specs_data.loc[0, SPE_URBAN_MODELLED] = urban_modelled
     specs_data.loc[0, SPE_ELEC_MODELLED] = elec_modelled
@@ -172,58 +165,48 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
         onsseter = SettlementProcessor(settlements_in_csv)
 
-        if household_dem_index == 6:
+        onsseter.df['HealthDemand'] = 0
+        onsseter.df['EducationDemand'] = 0
+        onsseter.df['AgriDemand'] = 0
+        onsseter.df['CommercialDemand'] = 0
+        onsseter.df['HeavyIndustryDemand'] = 0
+
+        if rural_tier == 6:
             onsseter.df['ResidentialDemandTierCustom'] = onsseter.df['hh_dem_low']
-        elif household_dem_index == 7:
-            onsseter.df['ResidentialDemandTierCustom'] = onsseter.df['hh_dem_mid']
-        elif household_dem_index == 8:
-            onsseter.df['ResidentialDemandTierCustom'] = onsseter.df['hh_dem_high']
-
-        if social_dem_index == 1:
-            if household_dem_index == 6:
+            if health_demand == 1:
                 onsseter.df['HealthDemand'] = onsseter.df['health_dem_low']
+            if education_demand == 1:
                 onsseter.df['EducationDemand'] = onsseter.df['edu_dem_low']
-            elif household_dem_index == 7:
-                onsseter.df['HealthDemand'] = onsseter.df['health_dem_mid']
-                onsseter.df['EducationDemand'] = onsseter.df['edu_dem_mid']
-            elif household_dem_index == 8:
-                onsseter.df['HealthDemand'] = onsseter.df['health_dem_high']
-                onsseter.df['EducationDemand'] = onsseter.df['edu_dem_high']
-            else:
-                onsseter.df['HealthDemand'] = 0
-                onsseter.df['EducationDemand'] = 0
-        else:
-            onsseter.df['HealthDemand'] = 0
-            onsseter.df['EducationDemand'] = 0
-
-        if prod_dem_index == 1:
-            if household_dem_index == 6:
+            if agri_demand == 1:
                 onsseter.df['AgriDemand'] = onsseter.df['agri_dem_low']
+            if commercial_demand == 1:
                 onsseter.df['CommercialDemand'] = onsseter.df['prod_dem_low']
-            elif household_dem_index == 7:
-                onsseter.df['AgriDemand'] = onsseter.df['agri_dem_mid']
-                onsseter.df['CommercialDemand'] = onsseter.df['prod_dem_mid']
-            elif household_dem_index == 8:
-                onsseter.df['AgriDemand'] = onsseter.df['agri_dem_high']
-                onsseter.df['CommercialDemand'] = onsseter.df['prod_dem_high']
-            else:
-                onsseter.df['AgriDemand'] = 0
-                onsseter.df['CommercialDemand'] = 0
-        else:
-            onsseter.df['AgriDemand'] = 0
-            onsseter.df['CommercialDemand'] = 0
-
-        if ind_dem_index == 1:
-            if household_dem_index == 6:
+            if industrial_demand == 1:
                 onsseter.df['HeavyIndustryDemand'] = onsseter.df['ind_dem_low']
-            elif household_dem_index == 7:
-                onsseter.df['HeavyIndustryDemand'] = onsseter.df['ind_dem_mid']
-            elif household_dem_index == 8:
+        elif rural_tier == 8:
+            onsseter.df['ResidentialDemandTierCustom'] = onsseter.df['hh_dem_high']
+            if health_demand == 1:
+                onsseter.df['HealthDemand'] = onsseter.df['health_dem_high']
+            if education_demand == 1:
+                onsseter.df['EducationDemand'] = onsseter.df['edu_dem_high']
+            if agri_demand == 1:
+                onsseter.df['AgriDemand'] = onsseter.df['agri_dem_high']
+            if commercial_demand == 1:
+                onsseter.df['CommercialDemand'] = onsseter.df['prod_dem_high']
+            if industrial_demand == 1:
                 onsseter.df['HeavyIndustryDemand'] = onsseter.df['ind_dem_high']
-            else:
-                onsseter.df['HeavyIndustryDemand'] = 0
         else:
-            onsseter.df['HeavyIndustryDemand'] = 0
+            onsseter.df['ResidentialDemandTierCustom'] = onsseter.df['hh_dem_mid']
+            if health_demand == 1:
+                onsseter.df['HealthDemand'] = onsseter.df['health_dem_mid']
+            if education_demand == 1:
+                onsseter.df['EducationDemand'] = onsseter.df['edu_dem_mid']
+            if agri_demand == 1:
+                onsseter.df['AgriDemand'] = onsseter.df['agri_dem_mid']
+            if commercial_demand == 1:
+                onsseter.df['CommercialDemand'] = onsseter.df['prod_dem_mid']
+            if industrial_demand == 1:
+                onsseter.df['HeavyIndustryDemand'] = onsseter.df['ind_dem_mid']
 
         onsseter.df.drop(['hh_dem_low', 'hh_dem_mid', 'hh_dem_high', 'health_dem_low', 'health_dem_mid',
                           'health_dem_high', 'edu_dem_low', 'edu_dem_mid', 'edu_dem_high', 'agri_dem_low',
@@ -374,18 +357,19 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
         onsseter.df.loc[onsseter.df['Region'] == 'Haut-Katanga', 'ClosestGrid'] = 'Sud'
         onsseter.df.loc[onsseter.df['Region'] == 'Haut-Lomami', 'ClosestGrid'] = 'Sud'
         onsseter.df.loc[onsseter.df['Region'] == 'Lualaba', 'ClosestGrid'] = 'Sud'
-        onsseter.df.loc[onsseter.df['Region'] == 'Tanganyika', 'ClosestGrid'] = 'Sud'
-        onsseter.df.loc[onsseter.df['Region'] == 'Kasaï-Central', 'ClosestGrid'] = 'Sud'
+        onsseter.df.loc[onsseter.df['Region'] == 'Tanganyka', 'ClosestGrid'] = 'Sud'
+        onsseter.df.loc[onsseter.df['Region'] == 'Kasai-Central', 'ClosestGrid'] = 'Sud'
         onsseter.df.loc[onsseter.df['Region'] == 'Lomami', 'ClosestGrid'] = 'Sud'
+        onsseter.df.loc[onsseter.df['Region'] == 'Kasai-Oriental', 'ClosestGrid'] = 'Sud'
 
-        onsseter.df.loc[onsseter.df['Region'] == 'Kongo-Central', 'ClosestGrid'] = 'Ouest'
+        onsseter.df.loc[onsseter.df['Region'] == 'Kongo Central', 'ClosestGrid'] = 'Ouest'
         onsseter.df.loc[onsseter.df['Region'] == 'Kinshasa', 'ClosestGrid'] = 'Ouest'
         onsseter.df.loc[onsseter.df['Region'] == 'Kwango', 'ClosestGrid'] = 'Ouest'
-        onsseter.df.loc[onsseter.df['Region'] == 'Kasaï', 'ClosestGrid'] = 'Ouest'
+        onsseter.df.loc[onsseter.df['Region'] == 'Kasai', 'ClosestGrid'] = 'Ouest'
         onsseter.df.loc[onsseter.df['Region'] == 'Kwilu', 'ClosestGrid'] = 'Ouest'
-        onsseter.df.loc[onsseter.df['Region'] == 'Maï-Ndombe', 'ClosestGrid'] = 'Ouest'
+        onsseter.df.loc[onsseter.df['Region'] == 'Mai-Ndombe', 'ClosestGrid'] = 'Ouest'
         onsseter.df.loc[onsseter.df['Region'] == 'Tshuapa', 'ClosestGrid'] = 'Ouest'
-        onsseter.df.loc[onsseter.df['Region'] == 'Équateur', 'ClosestGrid'] = 'Ouest'
+        onsseter.df.loc[onsseter.df['Region'] == 'Equateur', 'ClosestGrid'] = 'Ouest'
         onsseter.df.loc[onsseter.df['Region'] == 'Mongala', 'ClosestGrid'] = 'Ouest'
         onsseter.df.loc[onsseter.df['Region'] == 'Sud-Ubangi', 'ClosestGrid'] = 'Ouest'
         onsseter.df.loc[onsseter.df['Region'] == 'Nord-Ubangi', 'ClosestGrid'] = 'Ouest'
@@ -396,8 +380,8 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
         onsseter.df.loc[onsseter.df['Region'] == 'Sankuru', 'ClosestGrid'] = 'Est'
         onsseter.df.loc[onsseter.df['Region'] == 'Tshopo', 'ClosestGrid'] = 'Est'
         onsseter.df.loc[onsseter.df['Region'] == 'Ituri', 'ClosestGrid'] = 'Est'
-        onsseter.df.loc[onsseter.df['Region'] == 'Bas-Uélé', 'ClosestGrid'] = 'Est'
-        onsseter.df.loc[onsseter.df['Region'] == 'Haut-Uélé', 'ClosestGrid'] = 'Est'
+        onsseter.df.loc[onsseter.df['Region'] == 'Bas-Uele', 'ClosestGrid'] = 'Est'
+        onsseter.df.loc[onsseter.df['Region'] == 'Haut-Uele', 'ClosestGrid'] = 'Est'
 
         prioritization = 2
 
