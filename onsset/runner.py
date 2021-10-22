@@ -72,14 +72,11 @@ def calibration(specs_path, csv_path, specs_path_calib, calibrated_csv_path):
     start_year = int(specs_data.loc[0, SPE_START_YEAR])
     end_year = int(specs_data.loc[0, SPE_END_YEAR])
 
-    intermediate_year = 2025
     elec_actual = specs_data.loc[0, SPE_ELEC]
     elec_actual_urban = specs_data.loc[0, SPE_ELEC_URBAN]
     elec_actual_rural = specs_data.loc[0, SPE_ELEC_RURAL]
 
     pop_modelled, urban_modelled = onsseter.calibrate_current_pop_and_urban(pop_actual, urban_current)
-
-
 
     elec_modelled, rural_elec_ratio, urban_elec_ratio = \
         onsseter.elec_current_and_future(elec_actual, elec_actual_urban, elec_actual_rural, start_year)
@@ -130,42 +127,108 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
         # Population lever
         pop_index = scenario_info.iloc[scenario]['PopIndex']
-
         pop_future = scenario_parameters.iloc[pop_index]['Population2030']
         urban_future = scenario_parameters.iloc[pop_index]['UrbanRatio2030']
+
+        # Electrification rate target lever
+        electification_rate_index = scenario_info.iloc[scenario]['ElecRateIndex']
+        electrification_rate_2030 = scenario_parameters.iloc[electification_rate_index]['ElecRate2030']
+        electrification_rate_2025 = scenario_parameters.iloc[electification_rate_index]['ElecRate2025']
+
+        #  Household demand lever
+        household_dem_index = scenario_info.iloc[scenario]['ResidentialDemand']
+        rural_tier = int(scenario_parameters.iloc[household_dem_index]['RuralTargetTier'])
+        urban_tier = int(scenario_parameters.iloc[household_dem_index]['UrbanTargetTier'])
+
+        # Social demand lever (Health and education)
+        social_dem_index = scenario_info.iloc[scenario]['SocialDem']
+        health_demand = scenario_parameters.iloc[social_dem_index]['HealthDemand']
+        education_demand = scenario_parameters.iloc[social_dem_index]['EducationDemand']
+
+        # Productive demand lever
+        prod_dem_index = scenario_info.iloc[scenario]['ProductiveDem']
+        commercial_demand = scenario_parameters.iloc[prod_dem_index]['CommercialDemand']
+        agri_demand = scenario_parameters.iloc[prod_dem_index]['AgriDemand']
+
+        # Industrial demand lever
+        ind_dem_index = scenario_info.iloc[scenario]['IndustrialDem']
+        industrial_demand = scenario_parameters.iloc[ind_dem_index]['IndustrialDemand']
+
+        # PV system cost
+        pv_index = scenario_info.iloc[scenario]['PVIndex']
+        pv_capital_cost_adjust = float(scenario_parameters.iloc[pv_index]['PV_Cost_adjust'])
 
         #  Discount rate lever
         disscount_index = scenario_info.iloc[scenario]['DiscountIndex']
         disc_rate = scenario_parameters.iloc[disscount_index]['DiscRate']
 
-        # Electrification rate target lever
-        electification_rate_index = scenario_info.iloc[scenario]['Electrification_rate']
-
-        electrification_rate_2030 = scenario_parameters.iloc[electification_rate_index]['ElecRate2030']
-        electrification_rate_2025 = scenario_parameters.iloc[electification_rate_index]['ElecRate2025']
-
-        # Productive uses lever
-        productive_index = scenario_info.iloc[scenario]['Productive_uses_demand']
-        productive_demand = scenario_parameters.iloc[productive_index]['ProductiveDemand']
-
-        #  Demand lever
-        tier_index = scenario_info.iloc[scenario]['Target_electricity_consumption_level']
-        rural_tier = int(scenario_parameters.iloc[tier_index]['RuralTargetTier'])
-        urban_tier = int(scenario_parameters.iloc[tier_index]['UrbanTargetTier'])
-
-        # PV system cost
-        pv_index = scenario_info.iloc[scenario]['PV_cost_adjust']
-        pv_capital_cost_adjust = float(scenario_parameters.iloc[pv_index]['PV_Cost_adjust'])
-
         settlements_in_csv = calibrated_csv_path
         settlements_out_csv = os.path.join(results_folder,
-                                           '{}-{}_{}_{}_{}_{}_{}.csv'.format(country_id, tier_index, productive_index,
-                                                                               pv_index, disscount_index, electification_rate_index, pop_index))
+                                           '{}-{}_{}_{}_{}_{}_{}_{}.csv'.format(country_id, pop_index, electification_rate_index, household_dem_index,
+                                                                                      social_dem_index, prod_dem_index, ind_dem_index, pv_index))
         summary_csv = os.path.join(summary_folder,
-                                   '{}-{}_{}_{}_{}_{}_{}_summary.csv'.format(country_id, tier_index, productive_index,
-                                                                               pv_index, disscount_index, electification_rate_index, pop_index))
+                                   '{}-{}_{}_{}_{}_{}_{}_{}_summary.csv'.format(country_id, pop_index, electification_rate_index, household_dem_index,
+                                                                                      social_dem_index, prod_dem_index, ind_dem_index, pv_index))
 
         onsseter = SettlementProcessor(settlements_in_csv)
+
+        if household_dem_index == 6:
+            onsseter.df['ResidentialDemandTierCustom'] = onsseter.df['hh_dem_low']
+        elif household_dem_index == 7:
+            onsseter.df['ResidentialDemandTierCustom'] = onsseter.df['hh_dem_mid']
+        elif household_dem_index == 8:
+            onsseter.df['ResidentialDemandTierCustom'] = onsseter.df['hh_dem_high']
+
+        if social_dem_index == 1:
+            if household_dem_index == 6:
+                onsseter.df['HealthDemand'] = onsseter.df['health_dem_low']
+                onsseter.df['EducationDemand'] = onsseter.df['edu_dem_low']
+            elif household_dem_index == 7:
+                onsseter.df['HealthDemand'] = onsseter.df['health_dem_mid']
+                onsseter.df['EducationDemand'] = onsseter.df['edu_dem_mid']
+            elif household_dem_index == 8:
+                onsseter.df['HealthDemand'] = onsseter.df['health_dem_high']
+                onsseter.df['EducationDemand'] = onsseter.df['edu_dem_high']
+            else:
+                onsseter.df['HealthDemand'] = 0
+                onsseter.df['EducationDemand'] = 0
+        else:
+            onsseter.df['HealthDemand'] = 0
+            onsseter.df['EducationDemand'] = 0
+
+        if prod_dem_index == 1:
+            if household_dem_index == 6:
+                onsseter.df['AgriDemand'] = onsseter.df['agri_dem_low']
+                onsseter.df['CommercialDemand'] = onsseter.df['prod_dem_low']
+            elif household_dem_index == 7:
+                onsseter.df['AgriDemand'] = onsseter.df['agri_dem_mid']
+                onsseter.df['CommercialDemand'] = onsseter.df['prod_dem_mid']
+            elif household_dem_index == 8:
+                onsseter.df['AgriDemand'] = onsseter.df['agri_dem_high']
+                onsseter.df['CommercialDemand'] = onsseter.df['prod_dem_high']
+            else:
+                onsseter.df['AgriDemand'] = 0
+                onsseter.df['CommercialDemand'] = 0
+        else:
+            onsseter.df['AgriDemand'] = 0
+            onsseter.df['CommercialDemand'] = 0
+
+        if ind_dem_index == 1:
+            if household_dem_index == 6:
+                onsseter.df['HeavyIndustryDemand'] = onsseter.df['ind_dem_low']
+            elif household_dem_index == 7:
+                onsseter.df['HeavyIndustryDemand'] = onsseter.df['ind_dem_mid']
+            elif household_dem_index == 8:
+                onsseter.df['HeavyIndustryDemand'] = onsseter.df['ind_dem_high']
+            else:
+                onsseter.df['HeavyIndustryDemand'] = 0
+        else:
+            onsseter.df['HeavyIndustryDemand'] = 0
+
+        onsseter.df.drop(['hh_dem_low', 'hh_dem_mid', 'hh_dem_high', 'health_dem_low', 'health_dem_mid',
+                          'health_dem_high', 'edu_dem_low', 'edu_dem_mid', 'edu_dem_high', 'agri_dem_low',
+                          'agri_dem_mid', 'agri_dem_high', 'prod_dem_low', 'prod_dem_mid', 'prod_dem_high',
+                          'ind_dem_low', 'ind_dem_mid', 'ind_dem_high'], axis=1, inplace=True)
 
         start_year = specs_data.iloc[0][SPE_START_YEAR]
         intermediate_year = specs_data.iloc[0]['Intermediate_year']
@@ -194,7 +257,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                                                  end_year: 999999999}
         annual_grid_cap_gen_limit_sud = {intermediate_year: 999999999,
                                          end_year: 999999999}
-        grid_generation_cost_sud = 0.06
+
         grid_generation_cost_sud = 0.06
         grid_power_plants_capital_cost_sud = 2000
         grid_losses_sud = 0.08
@@ -363,7 +426,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
             grid_connect_limit_est = time_step * annual_new_grid_connections_limit_est[year] * 1000
 
             onsseter.set_scenario_variables(year, num_people_per_hh_rural, num_people_per_hh_urban, time_step,
-                                            start_year, urban_tier, rural_tier, 1, productive_demand)
+                                            start_year, urban_tier, rural_tier, 1)
 
             onsseter.diesel_cost_columns(sa_diesel_cost, mg_diesel_cost, year)
 
@@ -593,9 +656,6 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
             summary_table[columns[7]] = [round(x / 1e4) / 1e2 for x in summary.iloc[49:56].astype(float).tolist()] + [
                 round(summary.iloc[49:56].sum() / 1e4) / 1e2]
 
-            summary_csv = os.path.join(summary_folder,
-                                       '{}-{}-{}_{}_{}_summary.csv'.format(country_id, region, tier_index, productive_index,
-                                                                          pv_index))
             summary_table.to_csv(summary_csv, index=True)
 
         logging.info('Finished')
