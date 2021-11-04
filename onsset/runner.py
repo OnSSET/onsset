@@ -133,15 +133,9 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
         rural_tier = int(scenario_parameters.iloc[household_dem_index]['RuralTargetTier'])
         urban_tier = int(scenario_parameters.iloc[household_dem_index]['UrbanTargetTier'])
 
-        # Social demand lever (Health and education)
-        social_dem_index = scenario_info.iloc[scenario]['SocialDem']
-        health_demand = scenario_parameters.iloc[social_dem_index]['HealthDemand']
-        education_demand = scenario_parameters.iloc[social_dem_index]['EducationDemand']
-
-        # Productive demand lever
-        prod_dem_index = scenario_info.iloc[scenario]['ProductiveDem']
-        commercial_demand = scenario_parameters.iloc[prod_dem_index]['CommercialDemand']
-        agri_demand = scenario_parameters.iloc[prod_dem_index]['AgriDemand']
+        # Social and productive demand lever (Health and education)
+        social_productive_dem_index = scenario_info.iloc[scenario]['SocialProductiveDem']
+        social_productive_demand = scenario_parameters.iloc[social_productive_dem_index]['SocialProductiveDemand']
 
         # Industrial demand lever
         ind_dem_index = scenario_info.iloc[scenario]['IndustrialDem']
@@ -157,11 +151,11 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
         settlements_in_csv = calibrated_csv_path
         settlements_out_csv = os.path.join(results_folder,
-                                           '{}-{}_{}_{}_{}_{}_{}_{}.csv'.format(country_id, pop_index, electification_rate_index, household_dem_index,
-                                                                                      social_dem_index, prod_dem_index, ind_dem_index, pv_index))
+                                           '{}-{}_{}_{}_{}_{}_{}.csv'.format(country_id, pop_index, electification_rate_index, household_dem_index,
+                                                                                      social_productive_dem_index, ind_dem_index, pv_index))
         summary_csv = os.path.join(summary_folder,
-                                   '{}-{}_{}_{}_{}_{}_{}_{}_summary.csv'.format(country_id, pop_index, electification_rate_index, household_dem_index,
-                                                                                      social_dem_index, prod_dem_index, ind_dem_index, pv_index))
+                                   '{}-{}_{}_{}_{}_{}_{}_summary.csv'.format(country_id, pop_index, electification_rate_index, household_dem_index,
+                                                                                      social_productive_dem_index, ind_dem_index, pv_index))
 
         onsseter = SettlementProcessor(settlements_in_csv)
 
@@ -171,42 +165,35 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
         onsseter.df['CommercialDemand'] = 0
         onsseter.df['HeavyIndustryDemand'] = 0
 
+        if social_productive_demand == 1:
+            onsseter.df['HealthDemand'] = onsseter.df['health_dem_low']
+            onsseter.df['EducationDemand'] = onsseter.df['edu_dem_low']
+            onsseter.df['AgriDemand'] = onsseter.df['agri_dem_low']
+            onsseter.df['CommercialDemand'] = onsseter.df['prod_dem_low']
+        elif social_productive_demand == 2:
+            onsseter.df['HealthDemand'] = onsseter.df['health_dem_mid']
+            onsseter.df['EducationDemand'] = onsseter.df['edu_dem_mid']
+            onsseter.df['AgriDemand'] = onsseter.df['agri_dem_mid']
+            onsseter.df['CommercialDemand'] = onsseter.df['prod_dem_mid']
+        elif social_productive_demand == 3:
+            onsseter.df['HealthDemand'] = onsseter.df['health_dem_high']
+            onsseter.df['EducationDemand'] = onsseter.df['edu_dem_high']
+            onsseter.df['AgriDemand'] = onsseter.df['agri_dem_high']
+            onsseter.df['CommercialDemand'] = onsseter.df['prod_dem_high']
+
+        if industrial_demand == 1:
+            onsseter.df['HeavyIndustryDemand'] = onsseter.df['ind_dem_low']
+        elif industrial_demand == 2:
+                onsseter.df['HeavyIndustryDemand'] = onsseter.df['ind_dem_mid']
+        elif industrial_demand == 3:
+                onsseter.df['HeavyIndustryDemand'] = onsseter.df['ind_dem_high']
+
         if rural_tier == 6:
             onsseter.df['ResidentialDemandTierCustom'] = onsseter.df['hh_dem_low']
-            if health_demand == 1:
-                onsseter.df['HealthDemand'] = onsseter.df['health_dem_low']
-            if education_demand == 1:
-                onsseter.df['EducationDemand'] = onsseter.df['edu_dem_low']
-            if agri_demand == 1:
-                onsseter.df['AgriDemand'] = onsseter.df['agri_dem_low']
-            if commercial_demand == 1:
-                onsseter.df['CommercialDemand'] = onsseter.df['prod_dem_low']
-            if industrial_demand == 1:
-                onsseter.df['HeavyIndustryDemand'] = onsseter.df['ind_dem_low']
+        elif rural_tier == 7:
+            onsseter.df['ResidentialDemandTierCustom'] = onsseter.df['hh_dem_mid']
         elif rural_tier == 8:
             onsseter.df['ResidentialDemandTierCustom'] = onsseter.df['hh_dem_high']
-            if health_demand == 1:
-                onsseter.df['HealthDemand'] = onsseter.df['health_dem_high']
-            if education_demand == 1:
-                onsseter.df['EducationDemand'] = onsseter.df['edu_dem_high']
-            if agri_demand == 1:
-                onsseter.df['AgriDemand'] = onsseter.df['agri_dem_high']
-            if commercial_demand == 1:
-                onsseter.df['CommercialDemand'] = onsseter.df['prod_dem_high']
-            if industrial_demand == 1:
-                onsseter.df['HeavyIndustryDemand'] = onsseter.df['ind_dem_high']
-        else:
-            onsseter.df['ResidentialDemandTierCustom'] = onsseter.df['hh_dem_mid']
-            if health_demand == 1:
-                onsseter.df['HealthDemand'] = onsseter.df['health_dem_mid']
-            if education_demand == 1:
-                onsseter.df['EducationDemand'] = onsseter.df['edu_dem_mid']
-            if agri_demand == 1:
-                onsseter.df['AgriDemand'] = onsseter.df['agri_dem_mid']
-            if commercial_demand == 1:
-                onsseter.df['CommercialDemand'] = onsseter.df['prod_dem_mid']
-            if industrial_demand == 1:
-                onsseter.df['HeavyIndustryDemand'] = onsseter.df['ind_dem_mid']
 
         onsseter.df.drop(['hh_dem_low', 'hh_dem_mid', 'hh_dem_high', 'health_dem_low', 'health_dem_mid',
                           'health_dem_high', 'edu_dem_low', 'edu_dem_mid', 'edu_dem_high', 'agri_dem_low',
@@ -502,7 +489,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
             elif onsseter.df.iloc[:, i].dtype == 'int64':
                 onsseter.df.iloc[:, i] = pd.to_numeric(onsseter.df.iloc[:, i], downcast='signed')
 
-
+        # Enable/disable the line below to include/exclude the full result files
         onsseter.df.to_csv(settlements_out_csv, index=False)
 
         elements = []
@@ -640,6 +627,12 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
             summary_table[columns[7]] = [round(x / 1e4) / 1e2 for x in summary.iloc[49:56].astype(float).tolist()] + [
                 round(summary.iloc[49:56].sum() / 1e4) / 1e2]
 
-            summary_table.to_csv(summary_csv, index=True)
+            # This line must also be updated if you change the levers and want regional summaries
+            summary_csv = os.path.join(summary_folder,
+                                       '{}-{}_{}_{}_{}_{}_{}_summary.csv'.format(region, pop_index, electification_rate_index, household_dem_index,
+                                                                                      social_productive_dem_index, ind_dem_index, pv_index))
+
+            # Enable or disable the line below to include/exclude regional summaries
+            # summary_table.to_csv(summary_csv, index=True)
 
         logging.info('Finished')
