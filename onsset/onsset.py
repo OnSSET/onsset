@@ -971,20 +971,14 @@ class SettlementProcessor:
         self.df[SET_ELEC_POP_CALIB] = self.df[SET_ELEC_POP] * pop_ratio
 
         logging.info('Urban/rural calibration process')
-        # TODO As indicated below, HRSL classifies in 0, 1 and 2; I don't get why if statement uses 3 here.
-        if max(self.df[SET_URBAN]) == 3:  # THIS OPTION IS CURRENTLY DISABLED
-            calibrate = True if 'n' in input(
-                'Use urban definition from GIS layer <y/n> (n=model calibration):') else False
-        else:
-            calibrate = True
         # RUN_PARAM: This is where manual calibration of urban/rural population takes place.
-        # The model uses 0, 1, 2 as GHS population layer does.
-        # As of this version, urban are only self.dfs with value equal to 2
-        if calibrate:
-            self.df.sort_values(by=[SET_POP_CALIB], inplace=True, ascending=False)
-            cumulative_urban_pop = self.df[SET_POP_CALIB].cumsum()
-            self.df[SET_URBAN] = np.where(cumulative_urban_pop < (urban_current * self.df[SET_POP_CALIB].sum()), 2, 0)
-            self.df.sort_index(inplace=True)
+        # The model uses 0, 1, 2 as follows; 0 = rural, 1 = peri-urban, 2 = urban.
+        # The calibration build into the model only classifies into urban/rural
+
+        self.df.sort_values(by=[SET_POP_CALIB], inplace=True, ascending=False)
+        cumulative_urban_pop = self.df[SET_POP_CALIB].cumsum()
+        self.df[SET_URBAN] = np.where(cumulative_urban_pop < (urban_current * self.df[SET_POP_CALIB].sum()), 2, 0)
+        self.df.sort_index(inplace=True)
 
         # Get the calculated urban ratio and compare to the actual ratio
         pop_urb = self.df.loc[self.df[SET_URBAN] > 1, SET_POP_CALIB].sum()
@@ -996,58 +990,28 @@ class SettlementProcessor:
 
         return pop_modelled, urban_modelled
 
-    def project_pop_and_urban(self, pop_modelled, pop_future_high, pop_future_low, urban_modelled,
-                              urban_future, start_year, end_year, intermediate_year):
+    def project_pop_and_urban(self, pop_future, urban_future, start_year, years_of_analysis):
         """
         This function projects population and urban/rural ratio for the different years of the analysis
         """
-        project_life = end_year - start_year
+        project_life = years_of_analysis[-1] - start_year
 
         # Project future population, with separate growth rates for urban and rural
         logging.info('Population projection process')
+        start_year_pop = self.df[SET_POP_CALIB].sum()
+        start_year_urban_ratio = self.df.loc[self.df[SET_URBAN] > 1, SET_POP_CALIB].sum() / start_year_pop
 
-        # TODO this is a residual of the previous process;
-        # shall we delete? Is there any scenario where we don't apply projections?
-        calibrate = True
+        urban_growth = (urban_future * pop_future) / (start_year_urban_ratio * start_year_pop)
+        rural_growth = ((1 - urban_future) * pop_future) / ((1 - start_year_urban_ratio) * start_year_pop)
 
-        if calibrate:
-            urban_growth_high = (urban_future * pop_future_high) / (urban_modelled * pop_modelled)
-            rural_growth_high = ((1 - urban_future) * pop_future_high) / ((1 - urban_modelled) * pop_modelled)
-
-            yearly_urban_growth_rate_high = urban_growth_high ** (1 / project_life)
-            yearly_rural_growth_rate_high = rural_growth_high ** (1 / project_life)
-
-            urban_growth_low = (urban_future * pop_future_low) / (urban_modelled * pop_modelled)
-            rural_growth_low = ((1 - urban_future) * pop_future_low) / ((1 - urban_modelled) * pop_modelled)
-
-            yearly_urban_growth_rate_low = urban_growth_low ** (1 / project_life)
-            yearly_rural_growth_rate_low = rural_growth_low ** (1 / project_life)
-        else:
-            urban_growth_high = pop_future_high / pop_modelled
-            rural_growth_high = pop_future_high / pop_modelled
-
-            yearly_urban_growth_rate_high = urban_growth_high ** (1 / project_life)
-            yearly_rural_growth_rate_high = rural_growth_high ** (1 / project_life)
-
-            urban_growth_low = pop_future_low / pop_modelled
-            rural_growth_low = pop_future_low / pop_modelled
-
-            yearly_urban_growth_rate_low = urban_growth_low ** (1 / project_life)
-            yearly_rural_growth_rate_low = rural_growth_low ** (1 / project_life)
-
-        # RUN_PARAM: Define here the years for which results should be provided in the output file.
-        years_of_analysis = [intermediate_year, end_year]
+        yearly_urban_growth_rate = urban_growth ** (1 / project_life)
+        yearly_rural_growth_rate = rural_growth ** (1 / project_life)
 
         for year in years_of_analysis:
-            self.df[SET_POP + "{}".format(year) + 'High'] = \
-                self.df.apply(lambda row: row[SET_POP_CALIB] * (yearly_urban_growth_rate_high ** (year - start_year))
+            self.df[SET_POP + "{}".format(year)] = \
+                self.df.apply(lambda row: row[SET_POP_CALIB] * (yearly_urban_growth_rate ** (year - start_year))
                               if row[SET_URBAN] > 1
-                              else row[SET_POP_CALIB] * (yearly_rural_growth_rate_high ** (year - start_year)), axis=1)
-
-            self.df[SET_POP + "{}".format(year) + 'Low'] = \
-                self.df.apply(lambda row: row[SET_POP_CALIB] * (yearly_urban_growth_rate_low ** (year - start_year))
-                              if row[SET_URBAN] > 1
-                              else row[SET_POP_CALIB] * (yearly_rural_growth_rate_low ** (year - start_year)), axis=1)
+                              else row[SET_POP_CALIB] * (yearly_rural_growth_rate ** (year - start_year)), axis=1)
 
         self.df[SET_POP + "{}".format(start_year)] = self.df.apply(lambda row: row[SET_POP_CALIB], axis=1)
 
@@ -1725,11 +1689,6 @@ class SettlementProcessor:
         productive_demand : int
 
         """
-
-        if end_year_pop == 0:
-            self.df[SET_POP + "{}".format(year)] = self.df[SET_POP + "{}".format(year) + 'Low']
-        else:
-            self.df[SET_POP + "{}".format(year)] = self.df[SET_POP + "{}".format(year) + 'High']
 
         self.calculate_new_connections(year, time_step, start_year)
         self.set_residential_demand(rural_tier, urban_tier, num_people_per_hh_rural, num_people_per_hh_urban,

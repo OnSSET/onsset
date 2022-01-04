@@ -64,29 +64,16 @@ def calibration(specs_path, csv_path, specs_path_calib, calibrated_csv_path):
     onsseter.df[SET_WINDCF] = onsseter.calc_wind_cfs()
 
     pop_actual = specs_data.loc[0, SPE_POP]
-    pop_future_high = specs_data.loc[0, SPE_POP_FUTURE + 'High']
-    pop_future_low = specs_data.loc[0, SPE_POP_FUTURE + 'Low']
     urban_current = specs_data.loc[0, SPE_URBAN]
-    urban_future = specs_data.loc[0, SPE_URBAN_FUTURE]
     start_year = int(specs_data.loc[0, SPE_START_YEAR])
-    end_year = int(specs_data.loc[0, SPE_END_YEAR])
-
-    intermediate_year = 2025
     elec_actual = specs_data.loc[0, SPE_ELEC]
     elec_actual_urban = specs_data.loc[0, SPE_ELEC_URBAN]
     elec_actual_rural = specs_data.loc[0, SPE_ELEC_RURAL]
 
     pop_modelled, urban_modelled = onsseter.calibrate_current_pop_and_urban(pop_actual, urban_current)
 
-    onsseter.project_pop_and_urban(pop_modelled, pop_future_high, pop_future_low, urban_modelled,
-                                   urban_future, start_year, end_year, intermediate_year)
-
     elec_modelled, rural_elec_ratio, urban_elec_ratio = \
         onsseter.elec_current_and_future(elec_actual, elec_actual_urban, elec_actual_rural, start_year)
-
-    # In case there are limitations in the way grid expansion is moving in a country, 
-    # this can be reflected through gridspeed.
-    # In this case the parameter is set to a very high value therefore is not taken into account.
 
     specs_data.loc[0, SPE_URBAN_MODELLED] = urban_modelled
     specs_data.loc[0, SPE_ELEC_MODELLED] = elec_modelled
@@ -127,6 +114,8 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
     for scenario in scenarios:
         print('Scenario: ' + str(scenario + 1))
         country_id = specs_data.iloc[0]['CountryCode']
+        pop_future = specs_data.loc[0, SPE_POP_FUTURE]
+        urban_future = specs_data.loc[0, SPE_URBAN_FUTURE]
 
         pop_index = scenario_info.iloc[scenario]['Population_Growth']
         tier_index = scenario_info.iloc[scenario]['Target_electricity_consumption_level']
@@ -270,6 +259,8 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
             df_summary.loc[sumtechs[row]] = "Nan"
 
         onsseter.current_mv_line_dist()
+
+        onsseter.project_pop_and_urban(pop_future, urban_future, start_year, yearsofanalysis)
 
         for year in yearsofanalysis:
             eleclimit = eleclimits[year]
