@@ -967,11 +967,7 @@ class SettlementProcessor:
         # Use above ratio to calibrate the population in a new column
         self.df[SET_POP_CALIB] = self.df.apply(lambda row: row[SET_POP] * pop_ratio, axis=1)
         pop_modelled = self.df[SET_POP_CALIB].sum()
-        pop_diff = abs(pop_modelled - pop_actual)
-        print('The calibrated population differs by {:.2f}. '
-              'In case this is not acceptable please revise this part of the code'.format(pop_diff))
 
-        # TODO Why do we apply the ratio to elec_pop? Shouldn't the calibration take place before defining elec_pop?
         self.df[SET_ELEC_POP_CALIB] = self.df[SET_ELEC_POP] * pop_ratio
 
         logging.info('Urban/rural calibration process')
@@ -985,22 +981,12 @@ class SettlementProcessor:
         # The model uses 0, 1, 2 as GHS population layer does.
         # As of this version, urban are only self.dfs with value equal to 2
         if calibrate:
-            urban_modelled = 2
-            factor = 1
-            while abs(urban_modelled - urban_current) > 0.01:
-                self.df[SET_URBAN] = 0
-                self.df.loc[(self.df[SET_POP_CALIB] > 5000 * factor) & (
-                        self.df[SET_POP_CALIB] / self.df[SET_GRID_CELL_AREA] > 350 * factor), SET_URBAN] = 1
-                self.df.loc[(self.df[SET_POP_CALIB] > 50000 * factor) & (
-                        self.df[SET_POP_CALIB] / self.df[SET_GRID_CELL_AREA] > 1500 * factor), SET_URBAN] = 2
-                pop_urb = self.df.loc[self.df[SET_URBAN] > 1, SET_POP_CALIB].sum()
-                urban_modelled = pop_urb / pop_actual
-                if urban_modelled > urban_current:
-                    factor *= 1.1
-                else:
-                    factor *= 0.9
+            self.df.sort_values(by=[SET_POP_CALIB], inplace=True, ascending=False)
+            cumulative_urban_pop = self.df[SET_POP_CALIB].cumsum()
+            self.df[SET_URBAN] = np.where(cumulative_urban_pop < (urban_current * self.df[SET_POP_CALIB].sum()), 2, 0)
+            self.df.sort_index(inplace=True)
 
-        # Get the calculated urban ratio, and limit it to within reasonable boundaries
+        # Get the calculated urban ratio and compare to the actual ratio
         pop_urb = self.df.loc[self.df[SET_URBAN] > 1, SET_POP_CALIB].sum()
         urban_modelled = pop_urb / pop_actual
 
