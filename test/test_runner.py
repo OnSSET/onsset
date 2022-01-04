@@ -44,6 +44,8 @@ def run_analysis(tmpdir):
     actual = os.path.join(tmpdir, 'dj-1-1_1_1_1_0_0_summary.csv')
     expected = os.path.join('test', 'test_results', 'expected_summary.csv')
     summary = filecmp.cmp(actual, expected)
+    if summary == False:
+        print(actual)
 
     actual = os.path.join(tmpdir, 'dj-1-1_1_1_1_0_0.csv')
     expected = os.path.join('test', 'test_results', 'expected_full.csv')
