@@ -175,8 +175,8 @@ class Technology:
     def get_lcoe(self, energy_per_cell, people, num_people_per_hh, start_year, end_year, new_connections,
                  total_energy_per_cell, prev_code, grid_cell_area, additional_mv_line_length=0.0,
                  capacity_factor=0.9, grid_penalty_ratio=1, fuel_cost=0, elec_loop=0, productive_nodes=0,
-                 additional_transformer=0, penalty=1, get_investment_cost=False):
-        """Calculates the LCOE depending on the parameters. Optionally calculates the investment cost instead.
+                 additional_transformer=0, penalty=1):
+        """Calculates the LCOE depending on the parameters.
 
         Parameters
         ----------
@@ -209,7 +209,6 @@ class Technology:
         capacity_factor : float or pandas.Series
         grid_penalty_ratio : float or pandas.Series
         fuel_cost : float or pandas.Series
-        get_investment_cost : bool
 
         Returns
         -------
@@ -218,23 +217,15 @@ class Technology:
 
         if type(people) == int or type(people) == float or type(people) == np.float64:
             if people == 0:
-                # If there are no people, the investment cost is zero.
-                if get_investment_cost:
-                    return 0
-                # Otherwise we set the people low (prevent div/0 error) and continue.
-                else:
-                    people = 0.00001
+                # If there are no people, set the people low (prevent div/0 error) and continue.
+                people = 0.00001
         else:
             people = np.maximum(people, 0.00001)
 
         if type(energy_per_cell) == int or type(energy_per_cell) == float or type(energy_per_cell) == np.float64:
             if energy_per_cell == 0:
-                # If there are no people, the investment cost is zero.
-                if get_investment_cost:
-                    return 0
-                # Otherwise we set the people low (prevent div/0 error) and continue.
-                else:
-                    energy_per_cell = 0.000000000001
+                # If there is no demand, set the demand low (prevent div/0 error) and continue.
+                energy_per_cell = 0.000000000001
         else:
             energy_per_cell = np.maximum(energy_per_cell, 0.000000000001)
 
@@ -330,10 +321,7 @@ class Technology:
         lcoe = pd.DataFrame(lcoe[:, np.newaxis])
         investment_cost = pd.DataFrame(investment_cost[:, np.newaxis])
 
-        if get_investment_cost:
-            return investment_cost
-        else:
-            return lcoe, investment_cost
+        return lcoe, investment_cost
 
     def transmission_network(self, peak_load, additional_mv_line_length=0, additional_transformer=0,
                              mv_distribution=False):
@@ -1557,7 +1545,6 @@ class SettlementProcessor:
             self.df.loc[
                 self.df[SET_NEW_CONNECTIONS + "{}".format(year)] < 0, SET_NEW_CONNECTIONS + "{}".format(year)] = 0
 
-    # RESIDENTIAL DEMAND STARTS
     def set_residential_demand(self, rural_tier, urban_tier, num_people_per_hh_rural,
                                num_people_per_hh_urban, productive_demand):
         """this method defines residential demand per tier level for each target year
