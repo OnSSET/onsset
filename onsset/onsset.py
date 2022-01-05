@@ -1830,7 +1830,6 @@ class SettlementProcessor:
 
         self.df.loc[self.df[SET_HYDRO_DIST] > max_hydro_dist, SET_LCOE_MG_HYDRO + "{}".format(year)] = 99
 
-                                                                SET_LCOE_MG_WIND + "{}".format(year),
         self.df[SET_MIN_OFFGRID + "{}".format(year)] = self.df[off_grid_techs].T.idxmin()
 
         logging.info('Determine minimum tech LCOE')
