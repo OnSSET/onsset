@@ -1821,7 +1821,6 @@ class SettlementProcessor:
             self.df.loc[self.df[SET_MIN_OFFGRID + "{}".format(year)] == off_grid_techs[i],
                         SET_MIN_OFFGRID_CODE + "{}".format(year)] = off_grid_tech_codes[i]
 
-
     def limit_hydro_usage(self, mg_hydro_calc, year):
         # A df with all hydro-power sites, to ensure that they aren't assigned more capacity than is available
         hydro_used = 'HydropowerUsed'  # the amount of the hydro potential that has been assigned
@@ -1877,16 +1876,6 @@ class SettlementProcessor:
 
         logging.info('Determine minimum overall LCOE')
         self.df[SET_MIN_OVERALL_LCOE + "{}".format(year)] = self.df[all_techs].T.min()
-
-        # ToDo - are the two below actually required?
-        # Ensure what is grid-connected in previous time-step remains grid-connected
-        self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] == 1,
-                    SET_MIN_OVERALL_LCOE + "{}".format(year)] = self.df[SET_LCOE_GRID + "{}".format(year)]
-
-        if (prio == 2) or (prio == 4):
-            self.df.loc[(self.df[SET_MV_DIST_PLANNED] < auto_intensification) &
-                        (self.df[SET_LCOE_GRID + "{}".format(year)] != 99),
-                        SET_MIN_OVERALL_LCOE + "{}".format(year)] = self.df[SET_LCOE_GRID + "{}".format(year)]
 
         for i in range(len(techs)):
             self.df.loc[self.df[SET_MIN_OVERALL + "{}".format(year)] == all_techs[i],
