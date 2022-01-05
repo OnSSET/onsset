@@ -248,8 +248,8 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
         time_steps = {2025: 7, 2030: 5}
 
         elements = ["1.Population", "2.New_Connections", "3.Capacity", "4.Investment"]
-        techs = ["Grid", "SA_Diesel", "SA_PV", "MG_Diesel", "MG_PV", "MG_Wind", "MG_Hydro", "MG_Hybrid"]
-        tech_codes = [1, 2, 3, 4, 5, 6, 7, 8]
+        techs = ["Grid", "SA_Diesel", "SA_PV", "MG_Diesel", "MG_PV", "MG_Wind", "MG_Hydro"]
+        tech_codes = [1, 2, 3, 4, 5, 6, 7]
 
         sumtechs = []
         for element in elements:

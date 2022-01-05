@@ -1799,13 +1799,11 @@ class SettlementProcessor:
         mg_hydro_calc : dict
         """
 
+        off_grid_techs = techs.pop(0)
+        off_grid_techs = [x + str(year) for x in techs]
+
         logging.info('Determine minimum technology (off-grid)')
-        self.df[SET_MIN_OFFGRID + "{}".format(year)] = self.df[[SET_LCOE_SA_PV + "{}".format(year),
-                                                                SET_LCOE_MG_WIND + "{}".format(year),
-                                                                SET_LCOE_MG_PV + "{}".format(year),
-                                                                SET_LCOE_MG_HYDRO + "{}".format(year),
-                                                                SET_LCOE_MG_DIESEL + "{}".format(year),
-                                                                SET_LCOE_SA_DIESEL + "{}".format(year)]].T.idxmin()
+        self.df[SET_MIN_OFFGRID + "{}".format(year)] = self.df[off_grid_techs].T.idxmin()
 
         # A df with all hydro-power sites, to ensure that they aren't assigned more capacity than is available
         hydro_used = 'HydropowerUsed'  # the amount of the hydro potential that has been assigned
@@ -1832,20 +1830,11 @@ class SettlementProcessor:
 
         self.df.loc[self.df[SET_HYDRO_DIST] > max_hydro_dist, SET_LCOE_MG_HYDRO + "{}".format(year)] = 99
 
-        self.df[SET_MIN_OFFGRID + "{}".format(year)] = self.df[[SET_LCOE_SA_PV + "{}".format(year),
                                                                 SET_LCOE_MG_WIND + "{}".format(year),
-                                                                SET_LCOE_MG_PV + "{}".format(year),
-                                                                SET_LCOE_MG_HYDRO + "{}".format(year),
-                                                                SET_LCOE_MG_DIESEL + "{}".format(year),
-                                                                SET_LCOE_SA_DIESEL + "{}".format(year)]].T.idxmin()
+        self.df[SET_MIN_OFFGRID + "{}".format(year)] = self.df[off_grid_techs].T.idxmin()
 
         logging.info('Determine minimum tech LCOE')
-        self.df[SET_MIN_OFFGRID_LCOE + "{}".format(year)] = self.df[[SET_LCOE_SA_PV + "{}".format(year),
-                                                                     SET_LCOE_MG_WIND + "{}".format(year),
-                                                                     SET_LCOE_MG_PV + "{}".format(year),
-                                                                     SET_LCOE_MG_HYDRO + "{}".format(year),
-                                                                     SET_LCOE_MG_DIESEL + "{}".format(year),
-                                                                     SET_LCOE_SA_DIESEL + "{}".format(year)]].T.min()
+        self.df[SET_MIN_OFFGRID_LCOE + "{}".format(year)] = self.df[off_grid_techs].T.min()
 
         # Add code numbers reflecting minimum off-grid technology code
 
