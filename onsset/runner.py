@@ -249,6 +249,8 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
         elements = ["1.Population", "2.New_Connections", "3.Capacity", "4.Investment"]
         techs = ["Grid", "SA_Diesel", "SA_PV", "MG_Diesel", "MG_PV", "MG_Wind", "MG_Hydro", "MG_Hybrid"]
+        tech_codes = [1, 2, 3, 4, 5, 6, 7, 8]
+
         sumtechs = []
         for element in elements:
             for tech in techs:
@@ -281,7 +283,8 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
             sa_diesel_investment, sa_pv_investment, mg_diesel_investment, mg_pv_investment, mg_wind_investment, \
                 mg_hydro_investment = onsseter.calculate_off_grid_lcoes(mg_hydro_calc, mg_wind_calc, mg_pv_calc,
                                                                         sa_pv_calc, mg_diesel_calc,
-                                                                        sa_diesel_calc, year, end_year, time_step)
+                                                                        sa_diesel_calc, year, end_year, time_step,
+                                                                        techs, tech_codes)
 
             grid_investment, grid_cap_gen_limit, grid_connect_limit = \
                 onsseter.pre_electrification(grid_price, year, time_step, end_year, grid_calc, grid_cap_gen_limit,
@@ -312,7 +315,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
             onsseter.calculate_new_capacity(mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc,
                                             sa_diesel_calc, grid_calc, year)
 
-            onsseter.calc_summaries(df_summary, sumtechs, techs, year)
+            onsseter.calc_summaries(df_summary, sumtechs, tech_codes, year)
 
         for i in range(len(onsseter.df.columns)):
             if onsseter.df.iloc[:, i].dtype == 'float64':

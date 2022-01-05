@@ -1687,7 +1687,7 @@ class SettlementProcessor:
         self.calculate_total_demand_per_settlement(year)
 
     def calculate_off_grid_lcoes(self, mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc,
-                                 sa_diesel_calc, year, end_year, time_step, diesel_techs=0):
+                                 sa_diesel_calc, year, end_year, time_step, techs, tech_codes, diesel_techs=0):
         """
         Calculate the LCOEs for all off-grid technologies
 
@@ -1782,16 +1782,16 @@ class SettlementProcessor:
                                 capacity_factor=self.df[SET_GHI] / HOURS_PER_YEAR)
         self.df.loc[self.df[SET_GHI] <= 1000, SET_LCOE_SA_PV + "{}".format(year)] = 99
 
-        self.choose_minimum_off_grid_tech(year, mg_hydro_calc)
+        self.choose_minimum_off_grid_tech(year, mg_hydro_calc, techs, tech_codes)
 
         return sa_diesel_investment, sa_pv_investment, mg_diesel_investment, mg_pv_investment, mg_wind_investment, \
             mg_hydro_investment
 
-    def choose_minimum_off_grid_tech(self, year, mg_hydro_calc):
+    def choose_minimum_off_grid_tech(self, year, mg_hydro_calc, techs,  tech_codes):
         """Choose minimum LCOE off-grid technology
 
         First step determines the off-grid technology with minimum LCOE
-        Second step determnines the value (number) of the selected minimum off-grid technology
+        Second step determines the value (number) of the selected minimum off-grid technology
 
         Arguments
         ---------
@@ -1848,16 +1848,10 @@ class SettlementProcessor:
                                                                      SET_LCOE_SA_DIESEL + "{}".format(year)]].T.min()
 
         # Add code numbers reflecting minimum off-grid technology code
-        codes = {SET_LCOE_MG_HYDRO + "{}".format(year): 7,
-                 SET_LCOE_MG_WIND + "{}".format(year): 6,
-                 SET_LCOE_MG_PV + "{}".format(year): 5,
-                 SET_LCOE_MG_DIESEL + "{}".format(year): 4,
-                 SET_LCOE_SA_DIESEL + "{}".format(year): 2,
-                 SET_LCOE_SA_PV + "{}".format(year): 3}
 
-        for c in codes:
-            self.df.loc[self.df[SET_MIN_OFFGRID + "{}".format(year)] == c,
-                        SET_MIN_OFFGRID_CODE + "{}".format(year)] = codes[c]
+        for i in range(len(techs)):
+            self.df.loc[self.df[SET_MIN_OFFGRID + "{}".format(year)] == techs[i] + "{}".format(year),
+                        SET_MIN_OFFGRID_CODE + "{}".format(year)] = tech_codes[i]
 
     def results_columns(self, year, time_step, prio, auto_intensification):
         """Calculate the capacity and investment requirements for each settlement
@@ -2047,22 +2041,20 @@ class SettlementProcessor:
                 (HOURS_PER_YEAR * (self.df[SET_GHI] / HOURS_PER_YEAR) * sa_pv_calc.base_to_peak_load_ratio *
                  (1 - sa_pv_calc.distribution_losses)))
 
-    def calc_summaries(self, df_summary, sumtechs, techs, year):
+    def calc_summaries(self, df_summary, sumtechs, tech_codes, year):
 
         """The next section calculates the summaries for technology split,
-        consumption added and total investment cost"""
+        capacity added and total investment cost"""
 
         logging.info('Calculate summaries')
 
         i = 0
-        techs_numbers = list(range(len(techs)))
-        techs_numbers = [x+1 for x in techs_numbers]
 
         summaries = [SET_POP, SET_NEW_CONNECTIONS, SET_NEW_CAPACITY, SET_INVESTMENT_COST]
 
         # Population Summaries
         for s in summaries:
-            for t in techs_numbers:
+            for t in tech_codes:
                 df_summary[year][sumtechs[i]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == t) &
                                                                 (self.df[SET_LIMIT + "{}".format(year)] == 1)]
                                                     [s + "{}".format(year)])
