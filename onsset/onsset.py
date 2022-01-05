@@ -1805,6 +1805,21 @@ class SettlementProcessor:
         logging.info('Determine minimum technology (off-grid)')
         self.df[SET_MIN_OFFGRID + "{}".format(year)] = self.df[off_grid_techs].T.idxmin()
 
+        logging.info('Ensure hydro-power is not over-utilized')
+        self.limit_hydro_usage(mg_hydro_calc, year)
+
+        self.df[SET_MIN_OFFGRID + "{}".format(year)] = self.df[off_grid_techs].T.idxmin()
+
+        logging.info('Determine minimum off-grid tech LCOE')
+        self.df[SET_MIN_OFFGRID_LCOE + "{}".format(year)] = self.df[off_grid_techs].T.min()
+
+        # Add code numbers reflecting minimum off-grid technology code
+
+        for i in range(len(techs)):
+            self.df.loc[self.df[SET_MIN_OFFGRID + "{}".format(year)] == techs[i] + "{}".format(year),
+                        SET_MIN_OFFGRID_CODE + "{}".format(year)] = tech_codes[i]
+
+    def limit_hydro_usage(self, mg_hydro_calc, year):
         # A df with all hydro-power sites, to ensure that they aren't assigned more capacity than is available
         hydro_used = 'HydropowerUsed'  # the amount of the hydro potential that has been assigned
         hydro_lcoe = self.df[SET_LCOE_MG_HYDRO + "{}".format(year)].copy()
@@ -1829,17 +1844,6 @@ class SettlementProcessor:
         self.df[SET_LCOE_MG_HYDRO + "{}".format(year)] = hydro_lcoe
 
         self.df.loc[self.df[SET_HYDRO_DIST] > max_hydro_dist, SET_LCOE_MG_HYDRO + "{}".format(year)] = 99
-
-        self.df[SET_MIN_OFFGRID + "{}".format(year)] = self.df[off_grid_techs].T.idxmin()
-
-        logging.info('Determine minimum tech LCOE')
-        self.df[SET_MIN_OFFGRID_LCOE + "{}".format(year)] = self.df[off_grid_techs].T.min()
-
-        # Add code numbers reflecting minimum off-grid technology code
-
-        for i in range(len(techs)):
-            self.df.loc[self.df[SET_MIN_OFFGRID + "{}".format(year)] == techs[i] + "{}".format(year),
-                        SET_MIN_OFFGRID_CODE + "{}".format(year)] = tech_codes[i]
 
     def results_columns(self, year, time_step, prio, auto_intensification):
         """Calculate the capacity and investment requirements for each settlement
