@@ -570,36 +570,47 @@ class Technology:
         mv_lines_distribution_length = np.where((people != new_connections) & ((prev_code < 2) | (prev_code > 3)),
                                                 mv_lines_distribution_length_additional,
                                                 mv_lines_distribution_length_new)
-        hv_lines_total_length = np.where((people != new_connections) & ((prev_code < 2) | (prev_code > 3)),
+
+        hv_lines_total_length = np.where((people != new_connections) & (prev_code < 2),
                                          hv_lines_total_length_additional,
                                          hv_lines_total_length_new)
-        mv_lines_connection_length = np.where((people != new_connections) & ((prev_code < 2) | (prev_code > 3)),
+
+        mv_lines_connection_length = np.where((people != new_connections) & (prev_code < 2),
                                               mv_lines_connection_length_additional,
                                               mv_lines_connection_length_new)
+
         total_lv_lines_length = np.where((people != new_connections) & ((prev_code < 2) | (prev_code > 3)),
                                          total_lv_lines_length_additional,
                                          total_lv_lines_length_new)
+
         num_transformers = np.where((people != new_connections) & ((prev_code < 2) | (prev_code > 3)),
                                     num_transformers_additional,
                                     num_transformers_new)
+
         total_nodes = np.where((people != new_connections) & ((prev_code < 2) | (prev_code > 3)),
                                total_nodes_additional,
                                total_nodes_new)
+
         no_of_hv_lv_substation = np.where((people != new_connections) & ((prev_code < 2) | (prev_code > 3)),
                                           no_of_hv_lv_substation_additional,
                                           no_of_hv_lv_substation_new)
+
         no_of_hv_mv_substation = np.where((people != new_connections) & ((prev_code < 2) | (prev_code > 3)),
                                           no_of_hv_mv_substation_additional,
                                           no_of_hv_mv_substation_new)
+
         no_of_mv_mv_substation = np.where((people != new_connections) & ((prev_code < 2) | (prev_code > 3)),
                                           no_of_mv_mv_substation_additional,
                                           no_of_mv_mv_substation_new)
+
         no_of_mv_lv_substation = np.where((people != new_connections) & ((prev_code < 2) | (prev_code > 3)),
                                           no_of_mv_lv_substation_additional,
                                           no_of_mv_lv_substation_new)
+
         generation_per_year = np.where((people != new_connections) & ((prev_code < 2) | (prev_code > 3)),
                                        generation_per_year_additional,
                                        generation_per_year_new)
+
         peak_load = np.where((people != new_connections) & ((prev_code < 2) | (prev_code > 3)),
                              peak_load_additional,
                              peak_load_new)
