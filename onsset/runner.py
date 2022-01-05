@@ -304,7 +304,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                                         prioritization=prioritization,
                                         new_investment=grid_investment)
 
-            onsseter.results_columns(year, time_step, prioritization, auto_intensification)
+            onsseter.results_columns(techs, tech_codes, year, time_step, prioritization, auto_intensification)
 
             onsseter.calculate_investments(sa_diesel_investment, sa_pv_investment, mg_diesel_investment,
                                            mg_pv_investment, mg_wind_investment,

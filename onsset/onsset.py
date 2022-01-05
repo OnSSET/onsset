@@ -1787,7 +1787,7 @@ class SettlementProcessor:
         return sa_diesel_investment, sa_pv_investment, mg_diesel_investment, mg_pv_investment, mg_wind_investment, \
             mg_hydro_investment
 
-    def choose_minimum_off_grid_tech(self, year, mg_hydro_calc, techs,  tech_codes):
+    def choose_minimum_off_grid_tech(self, year, mg_hydro_calc, techs, tech_codes):
         """Choose minimum LCOE off-grid technology
 
         First step determines the off-grid technology with minimum LCOE
@@ -1798,9 +1798,12 @@ class SettlementProcessor:
         year : int
         mg_hydro_calc : dict
         """
+        off_grid_techs = techs.copy()
+        del off_grid_techs[0]
+        off_grid_techs = [x + str(year) for x in off_grid_techs]
 
-        off_grid_techs = techs.pop(0)
-        off_grid_techs = [x + str(year) for x in techs]
+        off_grid_tech_codes = tech_codes.copy()
+        del off_grid_tech_codes[0]
 
         logging.info('Determine minimum technology (off-grid)')
         self.df[SET_MIN_OFFGRID + "{}".format(year)] = self.df[off_grid_techs].T.idxmin()
@@ -1814,10 +1817,10 @@ class SettlementProcessor:
         self.df[SET_MIN_OFFGRID_LCOE + "{}".format(year)] = self.df[off_grid_techs].T.min()
 
         # Add code numbers reflecting minimum off-grid technology code
+        for i in range(len(off_grid_techs)):
+            self.df.loc[self.df[SET_MIN_OFFGRID + "{}".format(year)] == off_grid_techs[i],
+                        SET_MIN_OFFGRID_CODE + "{}".format(year)] = off_grid_tech_codes[i]
 
-        for i in range(len(techs)):
-            self.df.loc[self.df[SET_MIN_OFFGRID + "{}".format(year)] == techs[i] + "{}".format(year),
-                        SET_MIN_OFFGRID_CODE + "{}".format(year)] = tech_codes[i]
 
     def limit_hydro_usage(self, mg_hydro_calc, year):
         # A df with all hydro-power sites, to ensure that they aren't assigned more capacity than is available
@@ -1845,7 +1848,7 @@ class SettlementProcessor:
 
         self.df.loc[self.df[SET_HYDRO_DIST] > max_hydro_dist, SET_LCOE_MG_HYDRO + "{}".format(year)] = 99
 
-    def results_columns(self, year, time_step, prio, auto_intensification):
+    def results_columns(self, techs, tech_codes, year, time_step, prio, auto_intensification):
         """Calculate the capacity and investment requirements for each settlement
 
         Once the grid extension algorithm has been run, determine the minimum overall option,
@@ -1857,32 +1860,26 @@ class SettlementProcessor:
 
         """
 
-        # logging.info('Determine minimum overall')
-        self.df[SET_MIN_OVERALL + "{}".format(year)] = self.df[[SET_LCOE_GRID + "{}".format(year),
-                                                                SET_LCOE_SA_PV + "{}".format(year),
-                                                                SET_LCOE_MG_WIND + "{}".format(year),
-                                                                SET_LCOE_MG_PV + "{}".format(year),
-                                                                SET_LCOE_MG_HYDRO + "{}".format(year),
-                                                                SET_LCOE_MG_DIESEL + "{}".format(year),
-                                                                SET_LCOE_SA_DIESEL + "{}".format(year)]].T.idxmin()
+        all_techs = [x + str(year) for x in techs]
 
+        logging.info('Determine minimum overall tech')
+        self.df[SET_MIN_OVERALL + "{}".format(year)] = self.df[all_techs].T.idxmin()
+
+        # Ensure what is grid-connected in previous time-step remains grid-connected
         self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] == 1,
                     SET_MIN_OVERALL + "{}".format(year)] = 'Grid' + "{}".format(year)
 
+        # Ensure settlements within intensification distance are grid-connected
         if (prio == 2) or (prio == 4):
             self.df.loc[(self.df[SET_MV_DIST_PLANNED] < auto_intensification) &
                         (self.df[SET_LCOE_GRID + "{}".format(year)] != 99),
                         SET_MIN_OVERALL + "{}".format(year)] = 'Grid' + "{}".format(year)
 
-        # logging.info('Determine minimum overall LCOE')
-        self.df[SET_MIN_OVERALL_LCOE + "{}".format(year)] = self.df[[SET_LCOE_GRID + "{}".format(year),
-                                                                     SET_LCOE_SA_PV + "{}".format(year),
-                                                                     SET_LCOE_MG_WIND + "{}".format(year),
-                                                                     SET_LCOE_MG_PV + "{}".format(year),
-                                                                     SET_LCOE_MG_HYDRO + "{}".format(year),
-                                                                     SET_LCOE_MG_DIESEL + "{}".format(year),
-                                                                     SET_LCOE_SA_DIESEL + "{}".format(year)]].T.min()
+        logging.info('Determine minimum overall LCOE')
+        self.df[SET_MIN_OVERALL_LCOE + "{}".format(year)] = self.df[all_techs].T.min()
 
+        # ToDo - are the two below actually required?
+        # Ensure what is grid-connected in previous time-step remains grid-connected
         self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] == 1,
                     SET_MIN_OVERALL_LCOE + "{}".format(year)] = self.df[SET_LCOE_GRID + "{}".format(year)]
 
@@ -1891,18 +1888,9 @@ class SettlementProcessor:
                         (self.df[SET_LCOE_GRID + "{}".format(year)] != 99),
                         SET_MIN_OVERALL_LCOE + "{}".format(year)] = self.df[SET_LCOE_GRID + "{}".format(year)]
 
-        # logging.info('Add technology codes')
-        codes = {SET_LCOE_GRID + "{}".format(year): 1,
-                 SET_LCOE_MG_HYDRO + "{}".format(year): 7,
-                 SET_LCOE_MG_WIND + "{}".format(year): 6,
-                 SET_LCOE_MG_PV + "{}".format(year): 5,
-                 SET_LCOE_MG_DIESEL + "{}".format(year): 4,
-                 SET_LCOE_SA_DIESEL + "{}".format(year): 2,
-                 SET_LCOE_SA_PV + "{}".format(year): 3}
-
-        for key in codes.keys():
-            self.df.loc[self.df[SET_MIN_OVERALL + "{}".format(year)] == key,
-                        SET_MIN_OVERALL_CODE + "{}".format(year)] = codes[key]
+        for i in range(len(techs)):
+            self.df.loc[self.df[SET_MIN_OVERALL + "{}".format(year)] == all_techs[i],
+                        SET_MIN_OVERALL_CODE + "{}".format(year)] = tech_codes[i]
 
     def calculate_investments(self, sa_diesel_investment, sa_pv_investment, mg_diesel_investment, mg_pv_investment,
                               mg_wind_investment, mg_hydro_investment, grid_investment, year):
