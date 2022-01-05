@@ -2066,30 +2066,12 @@ class SettlementProcessor:
         techs_numbers = list(range(len(techs)))
         techs_numbers = [x+1 for x in techs_numbers]
 
+        summaries = [SET_POP, SET_NEW_CONNECTIONS, SET_NEW_CAPACITY, SET_INVESTMENT_COST]
+
         # Population Summaries
-        for t in techs_numbers:
-            df_summary[year][sumtechs[i]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == t) &
-                                                            (self.df[SET_LIMIT + "{}".format(year)] == 1)]
-                                                [SET_POP + "{}".format(year)])
-            i += 1
-
-        # New_Connection Summaries
-        for t in techs_numbers:
-            df_summary[year][sumtechs[i]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == t) &
-                                                            (self.df[SET_LIMIT + "{}".format(year)] == 1)]
-                                                [SET_NEW_CONNECTIONS + "{}".format(year)])
-            i += 1
-
-        # Capacity Summaries
-        for t in techs_numbers:
-            df_summary[year][sumtechs[i]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == t) &
-                                                             (self.df[SET_LIMIT + "{}".format(year)] == 1)]
-                                                 [SET_NEW_CAPACITY + "{}".format(year)])
-            i += 1
-
-        # Investment Summaries
-        for t in techs_numbers:
-            df_summary[year][sumtechs[i]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == t) &
-                                                             (self.df[SET_LIMIT + "{}".format(year)] == 1)]
-                                                 [SET_INVESTMENT_COST + "{}".format(year)])
-            i += 1
+        for s in summaries:
+            for t in techs_numbers:
+                df_summary[year][sumtechs[i]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == t) &
+                                                                (self.df[SET_LIMIT + "{}".format(year)] == 1)]
+                                                    [s + "{}".format(year)])
+                i += 1
