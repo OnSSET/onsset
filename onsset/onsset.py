@@ -1719,7 +1719,6 @@ class SettlementProcessor:
                                 num_people_per_hh=self.df[SET_NUM_PEOPLE_PER_HH],
                                 grid_cell_area=self.df[SET_GRID_CELL_AREA],
                                 capacity_factor=self.df[SET_GHI] / HOURS_PER_YEAR)
-        self.df.loc[self.df[SET_GHI] <= 1000, SET_LCOE_MG_PV + "{}".format(year)] = 99
 
         logging.info('Calculate minigrid wind LCOE')
         self.df[SET_LCOE_MG_WIND + "{}".format(year)], mg_wind_investment, mg_wind_capacity = \
@@ -1733,7 +1732,6 @@ class SettlementProcessor:
                                   num_people_per_hh=self.df[SET_NUM_PEOPLE_PER_HH],
                                   grid_cell_area=self.df[SET_GRID_CELL_AREA],
                                   capacity_factor=self.df[SET_WINDCF])
-        self.df.loc[self.df[SET_WINDCF] <= 0.1, SET_LCOE_MG_WIND + "{}".format(year)] = 99
 
         if diesel_techs == 0:
             self.df[SET_LCOE_MG_DIESEL + "{}".format(year)] = 99
@@ -1783,13 +1781,12 @@ class SettlementProcessor:
                                 num_people_per_hh=self.df[SET_NUM_PEOPLE_PER_HH],
                                 grid_cell_area=self.df[SET_GRID_CELL_AREA],
                                 capacity_factor=self.df[SET_GHI] / HOURS_PER_YEAR)
-        self.df.loc[self.df[SET_GHI] <= 1000, SET_LCOE_SA_PV + "{}".format(year)] = 99
 
         self.choose_minimum_off_grid_tech(year, mg_hydro_calc, techs, tech_codes)
 
         return sa_diesel_investment, sa_diesel_capacity, sa_pv_investment, sa_pv_capacity, mg_diesel_investment, \
-               mg_diesel_capacity, mg_pv_investment, mg_pv_capacity, mg_wind_investment, mg_wind_capacity, \
-               mg_hydro_investment, mg_hydro_capacity
+            mg_diesel_capacity, mg_pv_investment, mg_pv_capacity, mg_wind_investment, mg_wind_capacity, \
+            mg_hydro_investment, mg_hydro_capacity
 
     def choose_minimum_off_grid_tech(self, year, mg_hydro_calc, techs, tech_codes):
         """Choose minimum LCOE off-grid technology
