@@ -280,8 +280,9 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
             onsseter.diesel_cost_columns(sa_diesel_cost, mg_diesel_cost, year)
 
-            sa_diesel_investment, sa_pv_investment, mg_diesel_investment, mg_pv_investment, mg_wind_investment, \
-                mg_hydro_investment = onsseter.calculate_off_grid_lcoes(mg_hydro_calc, mg_wind_calc, mg_pv_calc,
+            sa_diesel_investment, sa_diesel_capacity, sa_pv_investment, sa_pv_capacity, mg_diesel_investment, \
+            mg_diesel_capacity, mg_pv_investment, mg_pv_capacity, mg_wind_investment, mg_wind_capacity, \
+            mg_hydro_investment, mg_hydro_capacity = onsseter.calculate_off_grid_lcoes(mg_hydro_calc, mg_wind_calc, mg_pv_calc,
                                                                         sa_pv_calc, mg_diesel_calc,
                                                                         sa_diesel_calc, year, end_year, time_step,
                                                                         techs, tech_codes)
@@ -306,9 +307,9 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
             onsseter.results_columns(techs, tech_codes, year, time_step, prioritization, auto_intensification)
 
-            onsseter.calculate_investments(sa_diesel_investment, sa_pv_investment, mg_diesel_investment,
-                                           mg_pv_investment, mg_wind_investment,
-                                           mg_hydro_investment, grid_investment, year)
+            onsseter.calculate_investments_and_capacity(sa_diesel_investment, sa_diesel_capacity, sa_pv_investment, sa_pv_capacity, mg_diesel_investment, \
+            mg_diesel_capacity, mg_pv_investment, mg_pv_capacity, mg_wind_investment, mg_wind_capacity, \
+            mg_hydro_investment, mg_hydro_capacity, grid_investment, year)
 
             onsseter.apply_limitations(eleclimit, year, time_step, prioritization, auto_intensification)
 
