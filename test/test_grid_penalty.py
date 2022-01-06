@@ -3,10 +3,12 @@ import os
 from onsset import SettlementProcessor
 
 from pandas import DataFrame , Series
-from pandas.testing import assert_frame_equal , assert_series_equal
+from pandas.testing import assert_frame_equal, assert_series_equal
 from pytest import fixture
 
 "GRIDPENALTY"
+
+
 class TestSettlementProcessor:
 
     @fixture
@@ -23,7 +25,7 @@ class TestSettlementProcessor:
             {'X_deg': [42.00045, 41.9767, 42.0131],
              'Y_deg': [10.9668, 10.97138, 10.97166],
              'RoadDist':[11.954,14.282,10.472],
-             'SubstationDist':[77.972,80.351,76.497],
+             'SubstationDist':[77.972,80.351, 76.497],
              'LandCover':[2,16,5],
              'Elevation':[4,5,-3],
              'Slope':[0.75,1.498,0.73],
@@ -46,5 +48,5 @@ class TestSettlementProcessor:
         print(expected)
             
         # check_less_precise ensures that it does not consider
-        assert_series_equal(actual, expected, check_less_precise= False)
+        assert_series_equal(actual, expected)
        
