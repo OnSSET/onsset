@@ -287,12 +287,13 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                                                                         sa_diesel_calc, year, end_year, time_step,
                                                                         techs, tech_codes)
 
-            grid_investment, grid_cap_gen_limit, grid_connect_limit = \
+            grid_investment, grid_capacity, grid_cap_gen_limit, grid_connect_limit = \
                 onsseter.pre_electrification(grid_price, year, time_step, end_year, grid_calc, grid_cap_gen_limit,
                                              grid_connect_limit)
 
             onsseter.df[SET_LCOE_GRID + "{}".format(year)], onsseter.df[SET_MIN_GRID_DIST + "{}".format(year)], \
-            onsseter.df[SET_ELEC_ORDER + "{}".format(year)], onsseter.df[SET_MV_CONNECT_DIST], grid_investment = \
+            onsseter.df[SET_ELEC_ORDER + "{}".format(year)], onsseter.df[SET_MV_CONNECT_DIST], grid_investment,\
+                grid_capacity = \
                 onsseter.elec_extension(grid_calc,
                                         max_grid_extension_dist,
                                         year,
@@ -303,18 +304,18 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                                         grid_connect_limit,
                                         auto_intensification=auto_intensification,
                                         prioritization=prioritization,
-                                        new_investment=grid_investment)
+                                        new_investment=grid_investment,
+                                        new_capacity=grid_capacity)
 
             onsseter.results_columns(techs, tech_codes, year, time_step, prioritization, auto_intensification)
 
-            onsseter.calculate_investments_and_capacity(sa_diesel_investment, sa_diesel_capacity, sa_pv_investment, sa_pv_capacity, mg_diesel_investment, \
-            mg_diesel_capacity, mg_pv_investment, mg_pv_capacity, mg_wind_investment, mg_wind_capacity, \
-            mg_hydro_investment, mg_hydro_capacity, grid_investment, year)
+            onsseter.calculate_investments_and_capacity(sa_diesel_investment, sa_diesel_capacity, sa_pv_investment,
+                                                        sa_pv_capacity, mg_diesel_investment, mg_diesel_capacity,
+                                                        mg_pv_investment, mg_pv_capacity, mg_wind_investment,
+                                                        mg_wind_capacity, mg_hydro_investment, mg_hydro_capacity,
+                                                        grid_investment, grid_capacity, year)
 
             onsseter.apply_limitations(eleclimit, year, time_step, prioritization, auto_intensification)
-
-            onsseter.calculate_new_capacity(mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc,
-                                            sa_diesel_calc, grid_calc, year)
 
             onsseter.calc_summaries(df_summary, sumtechs, tech_codes, year)
 
