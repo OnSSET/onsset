@@ -731,10 +731,10 @@ class SettlementProcessor:
         logging.info('Ensure that columns that are supposed to be numeric are numeric')
 
         columns = [SET_NIGHT_LIGHTS, SET_POP, SET_GRID_CELL_AREA, SET_ELEC_POP, SET_GHI, SET_WINDVEL, SET_TRAVEL_HOURS,
-                    SET_ELEVATION, SET_SLOPE, SET_LAND_COVER, SET_SUBSTATION_DIST, SET_HV_DIST_CURRENT,
-                    SET_HV_DIST_PLANNED, SET_MV_DIST_CURRENT, SET_MV_DIST_PLANNED, SET_ROAD_DIST, SET_X_DEG, SET_Y_DEG,
-                    SET_DIST_TO_TRANS, SET_HYDRO_DIST, SET_HYDRO, SET_HYDRO_FID, SET_URBAN, SET_CAPITA_DEMAND,
-                    SET_AGRI_DEMAND, SET_HEALTH_DEMAND, SET_EDU_DEMAND, SET_COMMERCIAL_DEMAND, SET_ELEC_ORDER,
+                   SET_ELEVATION, SET_SLOPE, SET_LAND_COVER, SET_SUBSTATION_DIST, SET_HV_DIST_CURRENT,
+                   SET_HV_DIST_PLANNED, SET_MV_DIST_CURRENT, SET_MV_DIST_PLANNED, SET_ROAD_DIST, SET_X_DEG, SET_Y_DEG,
+                   SET_DIST_TO_TRANS, SET_HYDRO_DIST, SET_HYDRO, SET_HYDRO_FID, SET_URBAN, SET_CAPITA_DEMAND,
+                   SET_AGRI_DEMAND, SET_HEALTH_DEMAND, SET_EDU_DEMAND, SET_COMMERCIAL_DEMAND, SET_ELEC_ORDER,
                    'ResidentialDemandTierCustom', 'ResidentialDemandTier1', 'ResidentialDemandTier2',
                    'ResidentialDemandTier3', 'ResidentialDemandTier4', 'ResidentialDemandTier5']
 
@@ -996,55 +996,59 @@ class SettlementProcessor:
     def elec_current_and_future(self, elec_actual, elec_actual_urban, elec_actual_rural, start_year,
                                 min_night_lights=0, min_pop=50, max_transformer_dist=2, max_mv_dist=2, max_hv_dist=5):
         """
-        Calibrate the current electrification status, and future 'pre-electrification' status
+        Calibrate the current electrification status
         """
 
-        self.df.loc[self.df[SET_ELEC_POP] > self.df[SET_POP], SET_ELEC_POP] = self.df[SET_POP]
+        urban_pop = (self.df.loc[self.df[SET_URBAN] > 1, SET_POP_CALIB].sum())  # Total start year urban population
+        rural_pop = (self.df.loc[self.df[SET_URBAN] <= 1, SET_POP_CALIB].sum())  # Total start year rural population
+        total_pop = self.df[SET_POP_CALIB].sum()  # Total start year population
+
+        # Ensure initially considered electrified population in settlement !> calibrated pop in settlement
+        self.df.loc[self.df[SET_ELEC_POP] > self.df[SET_POP_CALIB], SET_ELEC_POP] = self.df[SET_POP]
 
         # REVIEW: The way this works now, for all urban or rural settlements that fit the conditioning.
         # The population SET_ELEC_POP is reduced by equal amount to match urban/rural national statistics respectively.
         # TODO We might need to update with off-grid electrified in future versions
-        urban_pop = (self.df.loc[self.df[SET_URBAN] > 1, SET_POP_CALIB].sum())  # Calibrate current electrification
-        rural_pop = (self.df.loc[self.df[SET_URBAN] <= 1, SET_POP_CALIB].sum())  # Calibrate current electrification
-        total_pop = self.df[SET_POP_CALIB].sum()
-        total_elec_ratio = elec_actual
-        urban_elec_ratio = elec_actual_urban
-        rural_elec_ratio = elec_actual_rural
+
         elec_modelled = 0
-        factor = (total_pop * total_elec_ratio) / (urban_pop * urban_elec_ratio + rural_pop * rural_elec_ratio)
-        urban_elec_ratio *= factor
-        rural_elec_ratio *= factor
+        factor = (total_pop * elec_actual) / (urban_pop * elec_actual_urban + rural_pop * elec_actual_rural)
+        elec_actual_urban *= factor
+        elec_actual_rural *= factor
         self.df.loc[self.df[SET_NIGHT_LIGHTS] <= 0, [SET_ELEC_POP_CALIB]] = 0
 
         logging.info('Calibrate current electrification')
-        self.df[SET_ELEC_CURRENT] = 0
+        self.df[SET_ELEC_CURRENT] = 0  # 0 = unelectrified, 1 = electrified. Initially all settlements set to 0
 
-        # This if function here skims through T&D columns to identify if any non 0 values exist;
+        # This if function here skims through T&D columns in csv to identify which GIS grid distance information exists;
         # Then it defines calibration method accordingly.
-        if max(self.df[SET_DIST_TO_TRANS]) > 0:
+        if max(self.df[SET_DIST_TO_TRANS]) < 9999:
             self.df[SET_CALIB_GRID_DIST] = self.df[SET_DIST_TO_TRANS]
-            priority = 1
+            priority = 0
             dist_limit = max_transformer_dist
-        elif max(self.df[SET_MV_DIST_CURRENT]) > 0:
+            grid_data = 'service transformers'
+        elif max(self.df[SET_MV_DIST_CURRENT]) < 9999:
             self.df[SET_CALIB_GRID_DIST] = self.df[SET_MV_DIST_CURRENT]
             priority = 1
             dist_limit = max_mv_dist
+            grid_data = 'MV lines'
         else:
             self.df[SET_CALIB_GRID_DIST] = self.df[SET_HV_DIST_CURRENT]
             priority = 2
             dist_limit = max_hv_dist
+            grid_data = 'HV lines'
+
+        print('We have identified the existence of {} as input data; therefore we proceed using '
+              'those for the calibration'.format(grid_data))
 
         condition = 0
 
         while condition == 0:
             # Assign the 1 (electrified)/0 (un-electrified) values to each cell
-            urban_electrified = urban_pop * urban_elec_ratio
-            rural_electrified = rural_pop * rural_elec_ratio
+            urban_electrified = urban_pop * elec_actual_urban
+            rural_electrified = rural_pop * elec_actual_rural
             # RUN_PARAM: Calibration parameters if MV lines or transformer location is available
             if priority == 1:
-                print(
-                    'We have identified the existence of transformers or MV lines as input data; '
-                    'therefore we proceed using those for the calibration')
+
                 self.df.loc[
                     (self.df[SET_CALIB_GRID_DIST] < dist_limit) & (self.df[SET_NIGHT_LIGHTS] > min_night_lights) & (
                             self.df[SET_POP_CALIB] > min_pop), SET_ELEC_CURRENT] = 1
@@ -1126,9 +1130,6 @@ class SettlementProcessor:
 
             # RUN_PARAM: Calibration parameters if only HV lines are available
             else:
-                print(
-                    'No transformers or MV lines were identified as input data; '
-                    'therefore we proceed to the calibration with HV line info')
                 self.df.loc[
                     (self.df[SET_CALIB_GRID_DIST] < dist_limit) & (self.df[SET_NIGHT_LIGHTS] > min_night_lights) & (
                             self.df[SET_POP_CALIB] > min_pop), SET_ELEC_CURRENT] = 1
@@ -1185,23 +1186,23 @@ class SettlementProcessor:
                 pop_elec = self.df.loc[self.df[SET_ELEC_CURRENT] == 1, SET_ELEC_POP_CALIB].sum()
                 elec_modelled = pop_elec / total_pop
 
-            urban_elec_ratio = self.df.loc[(self.df[SET_ELEC_CURRENT] == 1) & (
+            elec_actual_urban = self.df.loc[(self.df[SET_ELEC_CURRENT] == 1) & (
                     self.df[SET_URBAN] > 1), SET_ELEC_POP_CALIB].sum() / urban_pop
-            rural_elec_ratio = self.df.loc[(self.df[SET_ELEC_CURRENT] == 1) & (
+            elec_actual_rural = self.df.loc[(self.df[SET_ELEC_CURRENT] == 1) & (
                     self.df[SET_URBAN] <= 1), SET_ELEC_POP_CALIB].sum() / rural_pop
 
             print('The modelled electrification rate differ by {0:.2f}. '
                   'Urban elec. rate differ by {1:.2f} and Rural elec. rate differ by {2:.2f}. \n'
-                  'If this is not acceptable please revise this '
-                  'part of the algorithm'.format(elec_modelled - elec_actual,
-                                                 urban_elec_ratio - elec_actual_urban,
-                                                 rural_elec_ratio - elec_actual_rural))
+                  'If this is not acceptable please revise this part of the algorithm'.format(
+                  elec_modelled - elec_actual, elec_actual_urban - elec_actual_urban,
+                  elec_actual_rural - elec_actual_rural))
+
             condition = 1
 
         self.df[SET_ELEC_FINAL_CODE + "{}".format(start_year)] = \
             self.df.apply(lambda row: 1 if row[SET_ELEC_CURRENT] == 1 else 99, axis=1)
 
-        return elec_modelled, rural_elec_ratio, urban_elec_ratio
+        return elec_modelled, elec_actual_rural, elec_actual_urban
 
     def current_mv_line_dist(self):
         logging.info('Determine current MV line length')
