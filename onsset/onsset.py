@@ -1704,7 +1704,8 @@ class SettlementProcessor:
                                    prev_code=self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
                                    num_people_per_hh=self.df[SET_NUM_PEOPLE_PER_HH],
                                    grid_cell_area=self.df[SET_GRID_CELL_AREA],
-                                   additional_mv_line_length=self.df[SET_HYDRO_DIST])
+                                   additional_mv_line_length=self.df[SET_HYDRO_DIST],
+                                   capacity_factor=mg_hydro_calc.capacity_factor)
 
         logging.info('Calculate minigrid PV LCOE')
         self.df[SET_LCOE_MG_PV + "{}".format(year)], mg_pv_investment, mg_pv_capacity = \
@@ -1753,7 +1754,8 @@ class SettlementProcessor:
                                         prev_code=self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
                                         num_people_per_hh=self.df[SET_NUM_PEOPLE_PER_HH],
                                         grid_cell_area=self.df[SET_GRID_CELL_AREA],
-                                        fuel_cost=self.df[SET_MG_DIESEL_FUEL + "{}".format(year)])
+                                        fuel_cost=self.df[SET_MG_DIESEL_FUEL + "{}".format(year)],
+                                        capacity_factor=mg_diesel_calc.capacity_factor)
 
             logging.info('Calculate standalone diesel LCOE')
             self.df[SET_LCOE_SA_DIESEL + "{}".format(year)], sa_diesel_investment,  sa_diesel_capacity = \
@@ -1766,7 +1768,8 @@ class SettlementProcessor:
                                         prev_code=self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
                                         num_people_per_hh=self.df[SET_NUM_PEOPLE_PER_HH],
                                         grid_cell_area=self.df[SET_GRID_CELL_AREA],
-                                        fuel_cost=self.df[SET_SA_DIESEL_FUEL + "{}".format(year)])
+                                        fuel_cost=self.df[SET_SA_DIESEL_FUEL + "{}".format(year)],
+                                        capacity_factor=sa_diesel_calc.capacity_factor)
 
         logging.info('Calculate standalone PV LCOE')
         self.df[SET_LCOE_SA_PV + "{}".format(year)], sa_pv_investment, sa_pv_capacity = \
