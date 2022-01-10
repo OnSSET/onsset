@@ -496,13 +496,13 @@ class Technology:
 
         # Start by calculating the distribution network required to meet all of the demand
         cluster_mv_lines_length_total, cluster_lv_lines_length_total, no_of_service_transf_total, \
-            generation_per_year_total, peak_load_total, total_nodes_total = \
+        generation_per_year_total, peak_load_total, total_nodes_total = \
             self.distribution_network(people, total_energy_per_cell, num_people_per_hh, grid_cell_area,
                                       productive_nodes)
 
         # Next calculate the network that is already there
         cluster_mv_lines_length_existing, cluster_lv_lines_length_existing, no_of_service_transf_existing, \
-            generation_per_year_existing, peak_load_existing, total_nodes_existing = \
+        generation_per_year_existing, peak_load_existing, total_nodes_existing = \
             self.distribution_network(np.maximum((people - new_connections), 1),
                                       (total_energy_per_cell - energy_per_cell),
                                       num_people_per_hh, grid_cell_area, productive_nodes)
@@ -522,12 +522,12 @@ class Technology:
 
         # Then calculate the transmission network (HV or MV lines plus transformers) using the same methodology
         hv_lines_total_length_total, mv_lines_connection_length_total, no_of_hv_mv_substation_total, \
-            no_of_mv_mv_substation_total, no_of_hv_lv_substation_total, no_of_mv_lv_substation_total = \
+        no_of_mv_mv_substation_total, no_of_hv_lv_substation_total, no_of_mv_lv_substation_total = \
             self.transmission_network(peak_load_total, additional_mv_line_length, additional_transformer,
                                       mv_distribution=mv_distribution)
 
         hv_lines_total_length_existing, mv_lines_connection_length_existing, no_of_hv_mv_substation_existing, \
-            no_of_mv_mv_substation_existing, no_of_hv_lv_substation_existing, no_of_mv_lv_substation_existing = \
+        no_of_mv_mv_substation_existing, no_of_hv_lv_substation_existing, no_of_mv_lv_substation_existing = \
             self.transmission_network(peak_load_existing, additional_mv_line_length, additional_transformer,
                                       mv_distribution=mv_distribution)
 
@@ -545,13 +545,13 @@ class Technology:
 
         # If no distribution network is present, perform the calculations only once
         mv_lines_distribution_length_new, total_lv_lines_length_new, num_transformers_new, generation_per_year_new, \
-            peak_load_new, total_nodes_new = self.distribution_network(people, energy_per_cell, num_people_per_hh,
-                                                                       grid_cell_area, productive_nodes)
+        peak_load_new, total_nodes_new = self.distribution_network(people, energy_per_cell, num_people_per_hh,
+                                                                   grid_cell_area, productive_nodes)
 
         mv_distribution = np.where(mv_lines_distribution_length_new > 0, True, False)
 
         hv_lines_total_length_new, mv_lines_connection_length_new, no_of_hv_mv_substation_new, \
-            no_of_mv_mv_substation_new, no_of_hv_lv_substation_new, no_of_mv_lv_substation_new = \
+        no_of_mv_mv_substation_new, no_of_hv_lv_substation_new, no_of_mv_lv_substation_new = \
             self.transmission_network(peak_load_new, additional_mv_line_length, additional_transformer,
                                       mv_distribution=mv_distribution)
 
@@ -988,8 +988,8 @@ class SettlementProcessor:
         for year in years_of_analysis:
             self.df[SET_POP + "{}".format(year)] = \
                 self.df.apply(lambda row: row[SET_POP_CALIB] * (yearly_urban_growth_rate ** (year - start_year))
-                              if row[SET_URBAN] > 1
-                              else row[SET_POP_CALIB] * (yearly_rural_growth_rate ** (year - start_year)), axis=1)
+                if row[SET_URBAN] > 1
+                else row[SET_POP_CALIB] * (yearly_rural_growth_rate ** (year - start_year)), axis=1)
 
         self.df[SET_POP + "{}".format(start_year)] = self.df.apply(lambda row: row[SET_POP_CALIB], axis=1)
 
@@ -998,6 +998,8 @@ class SettlementProcessor:
         """
         Calibrate the current electrification status
         """
+
+        self.df[SET_ELEC_POP_CALIB] = self.df[SET_ELEC_POP] * (self.df[SET_POP_CALIB].sum() / self.df[SET_POP].sum())
 
         urban_pop = (self.df.loc[self.df[SET_URBAN] > 1, SET_POP_CALIB].sum())  # Total start year urban population
         rural_pop = (self.df.loc[self.df[SET_URBAN] <= 1, SET_POP_CALIB].sum())  # Total start year rural population
@@ -1093,6 +1095,7 @@ class SettlementProcessor:
         # REVIEW. If not enough people live where there is NTL, electrify people around buffer from existing grid
         i = 0
         td_dist_2 = 0.1
+
         while abs(elec_actual - elec_modelled) > 0.01:
             pop_elec_2 = self.df.loc[(self.df[SET_ELEC_CURRENT] == 0) & (self.df[SET_POP_CALIB] > min_pop) &
                                      (self.df[SET_CALIB_GRID_DIST] < td_dist_2), SET_POP_CALIB].sum()
@@ -1123,9 +1126,10 @@ class SettlementProcessor:
 
         print('The modelled electrification rate differ by {0:.2f}. '
               'Urban elec. rate differ by {1:.2f} and Rural elec. rate differ by {2:.2f}. \n'
-              'If this is not acceptable please revise this part of the algorithm'.format(
-            elec_modelled - elec_actual, elec_modelled_urban - elec_actual_urban,
-            elec_modelled_rural - elec_actual_rural))
+              'If this is not acceptable please '
+              'revise this part of the algorithm'.format(elec_modelled - elec_actual,
+                                                         (urban_elec_modelled / urban_pop - elec_actual_urban),
+                                                         (rural_elec_modelled / rural_pop - elec_actual_rural)))
 
         self.df[SET_ELEC_FINAL_CODE + "{}".format(start_year)] = \
             self.df.apply(lambda row: 1 if row[SET_ELEC_CURRENT] == 1 else 99, axis=1)
@@ -1149,13 +1153,14 @@ class SettlementProcessor:
         prev_code = self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)].copy(deep=True)
 
         # Grid-electrified settlements
-        electrified_loce, electrified_investment, electrified_capacity = self.get_grid_lcoe(0, 0, 0, year, time_step, end_year, grid_calc)
+        electrified_loce, electrified_investment, electrified_capacity = self.get_grid_lcoe(0, 0, 0, year, time_step,
+                                                                                            end_year, grid_calc)
         electrified_investment = electrified_investment[0]
         electrified_capacity = electrified_capacity[0]
         grid_investment = np.where(self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] == 1,
                                    electrified_investment, grid_investment)
         grid_capacity = np.where(self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] == 1,
-                                   electrified_capacity, grid_capacity)
+                                 electrified_capacity, grid_capacity)
 
         self.df[SET_LCOE_GRID + "{}".format(year)] = 99
         self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] == 1,
@@ -1212,7 +1217,7 @@ class SettlementProcessor:
             intensification_lcoe.columns = [0]
 
             grid_capacity_limit, grid_connect_limit, cell_path_real, cell_path_adjusted, elecorder, electrified, \
-                new_lcoes, new_investment, new_capacity \
+            new_lcoes, new_investment, new_capacity \
                 = self.update_grid_extension_info(grid_lcoe=intensification_lcoe, dist=mv_planned,
                                                   dist_adjusted=mv_dist_adjusted, prev_dist=0, elecorder=elecorder,
                                                   new_elec_order=1, max_dist=max_dist, new_lcoes=new_lcoes,
@@ -1226,7 +1231,8 @@ class SettlementProcessor:
                                                   new_capacity=new_capacity)
 
         # Find the unelectrified settlements where grid can be less costly than off-grid
-        filter_lcoe, filter_investment, filter_capacity = self.get_grid_lcoe(0, 0, 0, year, time_step, end_year, grid_calc)
+        filter_lcoe, filter_investment, filter_capacity = self.get_grid_lcoe(0, 0, 0, year, time_step, end_year,
+                                                                             grid_calc)
         filter_lcoe = filter_lcoe[0]
         filter_lcoe.loc[electrified == 1] = 99
         unelectrified = np.where(filter_lcoe < min_code_lcoes)
@@ -1239,11 +1245,12 @@ class SettlementProcessor:
         mv_dist_adjusted = np.nan_to_num(grid_penalty_ratio * mv_dist)
 
         grid_lcoe, grid_investment, grid_capacity = self.get_grid_lcoe(dist_adjusted=mv_dist_adjusted, elecorder=0,
-                                                        additional_transformer=0, year=year, time_step=time_step,
-                                                        end_year=end_year, grid_calc=grid_calc)
+                                                                       additional_transformer=0, year=year,
+                                                                       time_step=time_step,
+                                                                       end_year=end_year, grid_calc=grid_calc)
 
         grid_capacity_limit, grid_connect_limit, cell_path_real, cell_path_adjusted, elecorder, electrified, \
-            new_lcoes, new_investment, new_capacity \
+        new_lcoes, new_investment, new_capacity \
             = self.update_grid_extension_info(grid_lcoe=grid_lcoe, dist=mv_dist, dist_adjusted=mv_dist_adjusted,
                                               prev_dist=0, elecorder=elecorder, new_elec_order=1, max_dist=max_dist,
                                               new_lcoes=new_lcoes, grid_capacity_limit=grid_capacity_limit,
@@ -1258,11 +1265,12 @@ class SettlementProcessor:
         hv_dist_adjusted = np.nan_to_num(hv_dist * grid_penalty_ratio)
 
         grid_lcoe, grid_investment, grid_capacity = self.get_grid_lcoe(dist_adjusted=hv_dist_adjusted, elecorder=0,
-                                                        additional_transformer=1, year=year, time_step=time_step,
-                                                        end_year=end_year, grid_calc=grid_calc)
+                                                                       additional_transformer=1, year=year,
+                                                                       time_step=time_step,
+                                                                       end_year=end_year, grid_calc=grid_calc)
 
         grid_capacity_limit, grid_connect_limit, cell_path_real, cell_path_adjusted, elecorder, electrified, \
-            new_lcoes, new_investment, new_capacity \
+        new_lcoes, new_investment, new_capacity \
             = self.update_grid_extension_info(grid_lcoe=grid_lcoe, dist=hv_dist, dist_adjusted=hv_dist_adjusted,
                                               prev_dist=0, elecorder=elecorder, new_elec_order=1, max_dist=999999,
                                               new_lcoes=new_lcoes, grid_capacity_limit=grid_capacity_limit,
@@ -1291,13 +1299,13 @@ class SettlementProcessor:
                                                         grid_penalty_ratio, elecorder)
 
                 grid_lcoe, grid_investment, grid_capacity = self.get_grid_lcoe(dist_adjusted=nearest_dist_adjusted,
-                                                                elecorder=nearest_elec_order,
-                                                                additional_transformer=0, year=year,
-                                                                time_step=time_step,
-                                                                end_year=end_year, grid_calc=grid_calc)
+                                                                               elecorder=nearest_elec_order,
+                                                                               additional_transformer=0, year=year,
+                                                                               time_step=time_step,
+                                                                               end_year=end_year, grid_calc=grid_calc)
 
                 grid_capacity_limit, grid_connect_limit, cell_path_real, cell_path_adjusted, elecorder, electrified, \
-                    new_lcoes, new_investment, new_capacity = \
+                new_lcoes, new_investment, new_capacity = \
                     self.update_grid_extension_info(grid_lcoe=grid_lcoe, dist=nearest_dist,
                                                     dist_adjusted=nearest_dist_adjusted,
                                                     prev_dist=prev_dist, elecorder=elecorder,
@@ -1310,7 +1318,8 @@ class SettlementProcessor:
                                                     new_investment=new_investment, grid_capacity=grid_capacity,
                                                     new_capacity=new_capacity)
 
-        return new_lcoes, cell_path_adjusted, elecorder, cell_path_real, pd.DataFrame(new_investment), pd.DataFrame(new_capacity)
+        return new_lcoes, cell_path_adjusted, elecorder, cell_path_real, pd.DataFrame(new_investment), pd.DataFrame(
+            new_capacity)
 
     def get_grid_lcoe(self, dist_adjusted, elecorder, additional_transformer, year, time_step, end_year, grid_calc):
         grid_lcoe, grid_investment, grid_capacity = \
@@ -1415,7 +1424,7 @@ class SettlementProcessor:
         new_capacity = np.where(grid_lcoe < min_code_lcoes, grid_capacity, new_capacity)
 
         return grid_capacity_limit, grid_connect_limit, cell_path_real, cell_path_adjusted, elecorder, \
-            electrified, new_lcoes, new_investment, new_capacity
+               electrified, new_lcoes, new_investment, new_capacity
 
     @staticmethod
     def haversine_vector(lon1, lat1, lon2, lat2):
@@ -1685,7 +1694,7 @@ class SettlementProcessor:
                                         capacity_factor=mg_diesel_calc.capacity_factor)
 
             logging.info('Calculate standalone diesel LCOE')
-            self.df[SET_LCOE_SA_DIESEL + "{}".format(year)], sa_diesel_investment,  sa_diesel_capacity = \
+            self.df[SET_LCOE_SA_DIESEL + "{}".format(year)], sa_diesel_investment, sa_diesel_capacity = \
                 sa_diesel_calc.get_lcoe(energy_per_cell=self.df[SET_ENERGY_PER_CELL + "{}".format(year)],
                                         start_year=year - time_step,
                                         end_year=end_year,
@@ -1714,8 +1723,8 @@ class SettlementProcessor:
         self.choose_minimum_off_grid_tech(year, mg_hydro_calc, techs, tech_codes)
 
         return sa_diesel_investment, sa_diesel_capacity, sa_pv_investment, sa_pv_capacity, mg_diesel_investment, \
-            mg_diesel_capacity, mg_pv_investment, mg_pv_capacity, mg_wind_investment, mg_wind_capacity, \
-            mg_hydro_investment, mg_hydro_capacity
+               mg_diesel_capacity, mg_pv_investment, mg_pv_capacity, mg_wind_investment, mg_wind_capacity, \
+               mg_hydro_investment, mg_hydro_capacity
 
     def choose_minimum_off_grid_tech(self, year, mg_hydro_calc, techs, tech_codes):
         """Choose minimum LCOE off-grid technology
@@ -1829,15 +1838,15 @@ class SettlementProcessor:
         self.df[SET_INVESTMENT_COST + "{}".format(year)] = 0
 
         self.df[SET_INVESTMENT_COST + "{}".format(year)] = grid * grid_investment + sa_diesel * sa_diesel_investment + \
-            sa_pv * sa_pv_investment + mg_diesel * mg_diesel_investment + mg_pv * mg_pv_investment + \
-            mg_wind * mg_wind_investment + mg_hydro * mg_hydro_investment
+                                                           sa_pv * sa_pv_investment + mg_diesel * mg_diesel_investment + mg_pv * mg_pv_investment + \
+                                                           mg_wind * mg_wind_investment + mg_hydro * mg_hydro_investment
 
         logging.info('Calculate new capacity')
         self.df[SET_NEW_CAPACITY + "{}".format(year)] = 0
 
         self.df[SET_NEW_CAPACITY + "{}".format(year)] = grid * grid_capacity + sa_diesel * sa_diesel_capacity + \
-            sa_pv * sa_pv_capacity + mg_diesel * mg_diesel_capacity + mg_pv * mg_pv_capacity + \
-            mg_wind * mg_wind_capacity + mg_hydro * mg_hydro_capacity
+                                                        sa_pv * sa_pv_capacity + mg_diesel * mg_diesel_capacity + mg_pv * mg_pv_capacity + \
+                                                        mg_wind * mg_wind_capacity + mg_hydro * mg_hydro_capacity
 
     def apply_limitations(self, eleclimit, year, time_step, prioritization, auto_densification=0):
 
@@ -1924,7 +1933,8 @@ class SettlementProcessor:
         # Population Summaries
         for s in summaries:
             for t in tech_codes:
-                df_summary[year][sumtechs[i]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == t) &
-                                                                (self.df[SET_LIMIT + "{}".format(year)] == 1)]
-                                                    [s + "{}".format(year)])
+                df_summary[year][sumtechs[i]] = sum(
+                    self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == t) &
+                                (self.df[SET_LIMIT + "{}".format(year)] == 1)]
+                    [s + "{}".format(year)])
                 i += 1
