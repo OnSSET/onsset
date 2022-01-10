@@ -993,7 +993,7 @@ class SettlementProcessor:
 
         self.df[SET_POP + "{}".format(start_year)] = self.df.apply(lambda row: row[SET_POP_CALIB], axis=1)
 
-    def elec_current_and_future(self, elec_actual, elec_actual_urban, elec_actual_rural, start_year,
+    def calibrate_elec_current(self, elec_actual, elec_actual_urban, elec_actual_rural, start_year,
                                 min_night_lights=0, min_pop=50, max_transformer_dist=2, max_mv_dist=2, max_hv_dist=5):
         """
         Calibrate the current electrification status
