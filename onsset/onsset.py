@@ -1135,12 +1135,16 @@ class SettlementProcessor:
         pop_elec = self.df.loc[self.df[SET_ELEC_CURRENT] == 1, SET_ELEC_POP_CALIB].sum()
         elec_modelled = pop_elec / total_pop
 
+        buffer_used = 'No'
+        td_dist_2 = 0
+
         if buffer:
-        # If not enough people live where there is NTL, electrify people around buffer from existing grid
+            # If not enough people live where there is NTL, and buffer option set to True,
+            # electrify people around buffer from existing grid
             i = 0
-            td_dist_2 = 0.1
 
             while abs(elec_actual - elec_modelled) > 0.01:
+                buffer_used = 'Yes'
                 pop_elec_2 = self.df.loc[(self.df[SET_ELEC_CURRENT] == 0) & (self.df[SET_POP_CALIB] > min_pop) &
                                          (self.df[SET_CALIB_GRID_DIST] < td_dist_2), SET_POP_CALIB].sum()
                 if i < 50:
@@ -1165,6 +1169,7 @@ class SettlementProcessor:
 
         if elec_modelled > elec_actual:
             self.df[SET_ELEC_POP_CALIB] *= elec_actual / elec_modelled
+
         pop_elec = self.df.loc[self.df[SET_ELEC_CURRENT] == 1, SET_ELEC_POP_CALIB].sum()
         elec_modelled = pop_elec / total_pop
         urban_elec_modelled = self.df.loc[(self.df[SET_ELEC_CURRENT] == 1) & (self.df[SET_URBAN] == 2),
@@ -1184,10 +1189,8 @@ class SettlementProcessor:
         self.df[SET_ELEC_FINAL_CODE + "{}".format(start_year)] = 99
         self.df.loc[self.df[SET_ELEC_CURRENT] == 1, SET_ELEC_FINAL_CODE + "{}".format(start_year)] = 1
 
-        # self.df[SET_ELEC_FINAL_CODE + "{}".format(start_year)] = \
-        #     self.df.apply(lambda row: 1 if row[SET_ELEC_CURRENT] == 1 else 99, axis=1)
-
-        return elec_modelled, elec_actual_rural, elec_actual_urban
+        return elec_modelled, rural_elec_modelled / rural_pop, urban_elec_modelled / urban_pop, grid_data, dist_limit, \
+               min_night_lights, min_pop, buffer_used, td_dist_2
 
     def current_mv_line_dist(self):
         logging.info('Determine current MV line length')
