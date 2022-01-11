@@ -72,13 +72,20 @@ def calibration(specs_path, csv_path, specs_path_calib, calibrated_csv_path):
 
     pop_modelled, urban_modelled = onsseter.calibrate_current_pop_and_urban(pop_actual, urban_current)
 
-    elec_modelled, rural_elec_ratio, urban_elec_ratio = \
-        onsseter.elec_current_and_future(elec_actual, elec_actual_urban, elec_actual_rural, start_year)
-
     specs_data.loc[0, SPE_URBAN_MODELLED] = urban_modelled
-    specs_data.loc[0, SPE_ELEC_MODELLED] = elec_modelled
-    specs_data.loc[0, 'rural_elec_ratio_modelled'] = rural_elec_ratio
-    specs_data.loc[0, 'urban_elec_ratio_modelled'] = urban_elec_ratio
+
+    elec_calibration_results = onsseter.calibrate_elec_current(elec_actual, elec_actual_urban, elec_actual_rural,
+                                                               start_year, buffer=True)
+
+    specs_data.loc[0, SPE_ELEC_MODELLED] = elec_calibration_results[0]
+    specs_data.loc[0, 'rural_elec_ratio_modelled'] = elec_calibration_results[1]
+    specs_data.loc[0, 'urban_elec_ratio_modelled'] = elec_calibration_results[2]
+    specs_data['grid_data_used'] = elec_calibration_results[3]
+    specs_data['grid_distance_used'] = elec_calibration_results[4]
+    specs_data['ntl_limit'] = elec_calibration_results[5]
+    specs_data['pop_limit'] = elec_calibration_results[6]
+    specs_data['Buffer_used'] = elec_calibration_results[7]
+    specs_data['buffer_distance'] = elec_calibration_results[8]
 
     book = load_workbook(specs_path)
     writer = pd.ExcelWriter(specs_path_calib, engine='openpyxl')

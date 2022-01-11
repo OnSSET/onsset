@@ -3,7 +3,7 @@ import os
 from onsset import SettlementProcessor
 
 from pandas import DataFrame,Series
-from pandas.testing import  assert_series_equal
+from pandas.testing import assert_series_equal
 from pytest import fixture
 
 
