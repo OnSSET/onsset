@@ -30,7 +30,7 @@ class TestCalcWind:
         sp = setup_settlementprocessor
         wind_vel = 5.08063
 
-        actual = sp.get_wind_cf(wind_vel)
+        actual = sp.calc_wind_cfs(wind_vel)
 
         print(actual)
 
@@ -53,7 +53,7 @@ class TestCalcWind:
         sp = setup_settlementprocessor
         wind_vel = 0
 
-        actual = sp.get_wind_cf(wind_vel)
+        actual = sp.calc_wind_cfs(wind_vel)
 
         print(actual)
 
@@ -76,5 +76,8 @@ class TestCalcWind:
         sp = setup_settlementprocessor
         wind_vel = -1
 
-        with raises(ValueError):
-            sp.get_wind_cf(wind_vel)
+        actual = sp.calc_wind_cfs(wind_vel)
+
+        expected = 0
+
+        assert actual == expected
