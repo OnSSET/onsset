@@ -993,8 +993,8 @@ class SettlementProcessor:
 
         self.df[SET_POP + "{}".format(start_year)] = self.df.apply(lambda row: row[SET_POP_CALIB], axis=1)
 
-    def calibrate_elec_current(self, elec_actual, elec_actual_urban, elec_actual_rural, start_year,
-                                min_night_lights=0, min_pop=50, max_transformer_dist=2, max_mv_dist=2, max_hv_dist=5):
+    def calibrate_elec_current(self, elec_actual, elec_actual_urban, elec_actual_rural, start_year, min_night_lights=0,
+                               min_pop=50, max_transformer_dist=2, max_mv_dist=2, max_hv_dist=5, buffer=True):
         """
         Calibrate the current electrification status
         """
@@ -1003,9 +1003,15 @@ class SettlementProcessor:
 
         urban_pop = (self.df.loc[self.df[SET_URBAN] > 1, SET_POP_CALIB].sum())  # Total start year urban population
         rural_pop = (self.df.loc[self.df[SET_URBAN] <= 1, SET_POP_CALIB].sum())  # Total start year rural population
+        total_pop = self.df[SET_POP_CALIB].sum()  # Total start year population
+
+        factor = (total_pop * elec_actual) / (urban_pop * elec_actual_urban + rural_pop * elec_actual_rural)
+        elec_actual_urban *= factor
+        elec_actual_rural *= factor
+
         urban_electrified = urban_pop * elec_actual_urban  # Total start year electrified urban population
         rural_electrified = rural_pop * elec_actual_rural  # Total start year electrified rural population
-        total_pop = self.df[SET_POP_CALIB].sum()  # Total start year population
+        total_electrified = urban_electrified + rural_electrified
 
         # Ensure initially considered electrified population in settlement !> calibrated pop in settlement
         self.df.loc[self.df[SET_ELEC_POP] > self.df[SET_POP_CALIB], SET_ELEC_POP] = self.df[SET_POP]
@@ -1015,9 +1021,6 @@ class SettlementProcessor:
         # TODO We might need to update with off-grid electrified in future versions
 
         elec_modelled = 0
-        factor = (total_pop * elec_actual) / (urban_pop * elec_actual_urban + rural_pop * elec_actual_rural)
-        elec_actual_urban *= factor
-        elec_actual_rural *= factor
         self.df.loc[self.df[SET_NIGHT_LIGHTS] <= 0, [SET_ELEC_POP_CALIB]] = 0
 
         logging.info('Calibrate current electrification')
@@ -1041,88 +1044,134 @@ class SettlementProcessor:
         print('We have identified the existence of {} as input data; therefore we proceed using '
               'those for the calibration'.format(grid_data))
 
-        # Update which settlements are considered to be electrified
+        # Update which settlements are considered to be electrified according to the conditions
         self.df.loc[(self.df[SET_CALIB_GRID_DIST] < dist_limit) & (self.df[SET_NIGHT_LIGHTS] > min_night_lights) &
                     (self.df[SET_POP_CALIB] > min_pop), SET_ELEC_CURRENT] = 1
 
-        urban_elec_modelled = self.df.loc[(self.df[SET_ELEC_CURRENT] == 1) & (self.df[SET_URBAN] > 1),
-                                          SET_ELEC_POP_CALIB].sum()
+        max_rural_ntl_elec = self.df.loc[(self.df[SET_ELEC_CURRENT] == 1) &
+                                         (self.df[SET_URBAN] < 2), SET_POP_CALIB].sum()
+        max_urban_ntl_elec = self.df.loc[(self.df[SET_ELEC_CURRENT] == 1) &
+                                         (self.df[SET_URBAN] == 2), SET_POP_CALIB].sum()
+        max_total_ntl_elec = max_rural_ntl_elec + max_urban_ntl_elec
 
-        rural_elec_modelled = self.df.loc[(self.df[SET_ELEC_CURRENT] == 1) & (self.df[SET_URBAN] <= 1),
-                                          SET_ELEC_POP_CALIB].sum()
+        if max_total_ntl_elec < elec_actual:
+            if buffer:
+                print('Not enough people meet the criteria. '
+                      'Proceeding with calibration using buffer around existing grid infrastructure.')
+            else:
+                print('Not enough people meet the criteria. Buffer option is not chosen, '
+                      'therefore calibrated elec pop is smaller than actual elec pop.')
+            print('If this is not okay, consider revising the starting conditions')
 
-        urban_elec_factor = urban_elec_modelled / urban_electrified
-        rural_elec_factor = rural_elec_modelled / rural_electrified
+            self.df.loc[self.df[SET_ELEC_CURRENT] == 1, SET_ELEC_POP_CALIB] = self.df[SET_POP_CALIB]
 
-        if urban_elec_factor > 1:
-            self.df.loc[(self.df[SET_ELEC_CURRENT] == 1) & (self.df[SET_URBAN] > 1), SET_ELEC_POP_CALIB] *= (
-                    1 / urban_elec_factor)
+        elif (max_urban_ntl_elec < urban_electrified) or (max_rural_ntl_elec < rural_electrified):
+            print('Not enough urban or rural population meet the criteria. '
+                  'Calibrating to match total electrified population only')
+            total_elec_modelled = self.df.loc[self.df[SET_ELEC_CURRENT] == 1, SET_ELEC_POP_CALIB.sum()]
+            total_elec_factor = total_elec_modelled / (urban_electrified + rural_electrified)
+
+            if total_elec_factor > 1:
+                self.df.loc[(self.df[SET_ELEC_CURRENT] == 1), SET_ELEC_POP_CALIB] *= (1 / total_elec_factor)
+            else:
+                i = 0
+                while total_elec_factor <= 1:
+                    if i < 10:
+                        self.df.loc[
+                            (self.df[SET_ELEC_CURRENT] == 1), SET_ELEC_POP_CALIB] *= 1.1
+                        self.df[SET_ELEC_POP_CALIB] = np.minimum(self.df[SET_ELEC_POP_CALIB], self.df[SET_POP_CALIB])
+                        total_elec_modelled = self.df.loc[self.df[SET_ELEC_CURRENT] == 1, SET_ELEC_POP_CALIB.sum()]
+                        total_elec_factor = total_elec_modelled / (urban_electrified + rural_electrified)
+                        i += 1
+                    else:
+                        break
+
         else:
-            i = 0
-            while urban_elec_factor <= 1:
-                if i < 10:
-                    self.df.loc[
-                        (self.df[SET_ELEC_CURRENT] == 1) & (self.df[SET_URBAN] == 2), SET_ELEC_POP_CALIB] *= 1.1
-                    self.df[SET_ELEC_POP_CALIB] = np.minimum(self.df[SET_ELEC_POP_CALIB], self.df[SET_POP_CALIB])
-                    urban_elec_modelled = self.df.loc[
-                        (self.df[SET_ELEC_CURRENT] == 1) & (self.df[SET_URBAN] == 2), SET_ELEC_POP_CALIB].sum()
-                    urban_elec_factor = urban_elec_modelled / urban_electrified
-                    i += 1
-                else:
-                    break
+            print('Calibrating to match both urban and rural electrified population')
+            urban_elec_modelled = self.df.loc[(self.df[SET_ELEC_CURRENT] == 1) & (self.df[SET_URBAN] == 2),
+                                              SET_ELEC_POP_CALIB].sum()
 
-        if rural_elec_factor > 1:
-            self.df.loc[(self.df[SET_ELEC_CURRENT] == 1) & (self.df[SET_URBAN] <= 1), SET_ELEC_POP_CALIB] *= (
-                    1 / rural_elec_factor)
-        else:
-            i = 0
-            while rural_elec_factor <= 1:
-                if i < 10:
-                    self.df.loc[
-                        (self.df[SET_ELEC_CURRENT] == 1) & (self.df[SET_URBAN] < 2), SET_ELEC_POP_CALIB] *= 1.1
-                    self.df[SET_ELEC_POP_CALIB] = np.minimum(self.df[SET_ELEC_POP_CALIB],
-                                                             self.df[SET_POP_CALIB])
-                    rural_elec_modelled = self.df.loc[
-                        (self.df[SET_ELEC_CURRENT] == 1) & (self.df[SET_URBAN] < 2), SET_ELEC_POP_CALIB].sum()
-                    rural_elec_factor = rural_elec_modelled / rural_electrified
-                    i += 1
-                else:
-                    break
+            rural_elec_modelled = self.df.loc[(self.df[SET_ELEC_CURRENT] == 1) & (self.df[SET_URBAN] < 2),
+                                              SET_ELEC_POP_CALIB].sum()
+
+            urban_elec_factor = urban_elec_modelled / urban_electrified
+            rural_elec_factor = rural_elec_modelled / rural_electrified
+
+            if urban_elec_factor > 1:
+                self.df.loc[(self.df[SET_ELEC_CURRENT] == 1) & (self.df[SET_URBAN] == 2), SET_ELEC_POP_CALIB] *= (
+                        1 / urban_elec_factor)
+            else:
+                i = 0
+                while urban_elec_factor <= 1:
+                    if i < 10:
+                        self.df.loc[
+                            (self.df[SET_ELEC_CURRENT] == 1) & (self.df[SET_URBAN] == 2), SET_ELEC_POP_CALIB] *= 1.1
+                        self.df[SET_ELEC_POP_CALIB] = np.minimum(self.df[SET_ELEC_POP_CALIB], self.df[SET_POP_CALIB])
+                        urban_elec_modelled = self.df.loc[
+                            (self.df[SET_ELEC_CURRENT] == 1) & (self.df[SET_URBAN] == 2), SET_ELEC_POP_CALIB].sum()
+                        urban_elec_factor = urban_elec_modelled / urban_electrified
+                        i += 1
+                    else:
+                        break
+
+            if rural_elec_factor > 1:
+                self.df.loc[(self.df[SET_ELEC_CURRENT] == 1) & (self.df[SET_URBAN] < 2), SET_ELEC_POP_CALIB] *= (
+                        1 / rural_elec_factor)
+            else:
+                i = 0
+                while rural_elec_factor <= 1:
+                    if i < 10:
+                        self.df.loc[
+                            (self.df[SET_ELEC_CURRENT] == 1) & (self.df[SET_URBAN] < 2), SET_ELEC_POP_CALIB] *= 1.1
+                        self.df[SET_ELEC_POP_CALIB] = np.minimum(self.df[SET_ELEC_POP_CALIB],
+                                                                 self.df[SET_POP_CALIB])
+                        rural_elec_modelled = self.df.loc[
+                            (self.df[SET_ELEC_CURRENT] == 1) & (self.df[SET_URBAN] < 2), SET_ELEC_POP_CALIB].sum()
+                        rural_elec_factor = rural_elec_modelled / rural_electrified
+                        i += 1
+                    else:
+                        break
 
         pop_elec = self.df.loc[self.df[SET_ELEC_CURRENT] == 1, SET_ELEC_POP_CALIB].sum()
         elec_modelled = pop_elec / total_pop
 
-        # REVIEW. If not enough people live where there is NTL, electrify people around buffer from existing grid
-        i = 0
-        td_dist_2 = 0.1
+        if buffer:
+        # If not enough people live where there is NTL, electrify people around buffer from existing grid
+            i = 0
+            td_dist_2 = 0.1
 
-        while abs(elec_actual - elec_modelled) > 0.01:
-            pop_elec_2 = self.df.loc[(self.df[SET_ELEC_CURRENT] == 0) & (self.df[SET_POP_CALIB] > min_pop) &
-                                     (self.df[SET_CALIB_GRID_DIST] < td_dist_2), SET_POP_CALIB].sum()
-            if i < 50:
-                if (pop_elec + pop_elec_2) / total_pop > elec_actual:
-                    elec_modelled = (pop_elec + pop_elec_2) / total_pop
+            while abs(elec_actual - elec_modelled) > 0.01:
+                pop_elec_2 = self.df.loc[(self.df[SET_ELEC_CURRENT] == 0) & (self.df[SET_POP_CALIB] > min_pop) &
+                                         (self.df[SET_CALIB_GRID_DIST] < td_dist_2), SET_POP_CALIB].sum()
+                if i < 50:
+                    if (pop_elec + pop_elec_2) / total_pop > elec_actual:
+                        elec_modelled = (pop_elec + pop_elec_2) / total_pop
+                        self.df.loc[(self.df[SET_ELEC_CURRENT] == 0) & (self.df[SET_POP_CALIB] > min_pop) &
+                                    (self.df[SET_CALIB_GRID_DIST] < td_dist_2), SET_ELEC_POP_CALIB] = self.df[
+                            SET_POP_CALIB]
+                        self.df.loc[(self.df[SET_ELEC_CURRENT] == 0) & (self.df[SET_POP_CALIB] > min_pop) &
+                                    (self.df[SET_CALIB_GRID_DIST] < td_dist_2), SET_ELEC_CURRENT] = 1
+                    else:
+                        i += 1
+                        td_dist_2 += 0.1
+                else:
                     self.df.loc[(self.df[SET_ELEC_CURRENT] == 0) & (self.df[SET_POP_CALIB] > min_pop) &
                                 (self.df[SET_CALIB_GRID_DIST] < td_dist_2), SET_ELEC_POP_CALIB] = self.df[
                         SET_POP_CALIB]
                     self.df.loc[(self.df[SET_ELEC_CURRENT] == 0) & (self.df[SET_POP_CALIB] > min_pop) &
                                 (self.df[SET_CALIB_GRID_DIST] < td_dist_2), SET_ELEC_CURRENT] = 1
-                else:
-                    i += 1
-                    td_dist_2 += 0.1
-            else:
-                self.df.loc[(self.df[SET_ELEC_CURRENT] == 0) & (self.df[SET_POP_CALIB] > min_pop) &
-                            (self.df[SET_CALIB_GRID_DIST] < td_dist_2), SET_ELEC_POP_CALIB] = self.df[
-                    SET_POP_CALIB]
-                self.df.loc[(self.df[SET_ELEC_CURRENT] == 0) & (self.df[SET_POP_CALIB] > min_pop) &
-                            (self.df[SET_CALIB_GRID_DIST] < td_dist_2), SET_ELEC_CURRENT] = 1
-                elec_modelled = (pop_elec + pop_elec_2) / total_pop
-                break
+                    elec_modelled = (pop_elec + pop_elec_2) / total_pop
+                    break
 
         if elec_modelled > elec_actual:
             self.df[SET_ELEC_POP_CALIB] *= elec_actual / elec_modelled
         pop_elec = self.df.loc[self.df[SET_ELEC_CURRENT] == 1, SET_ELEC_POP_CALIB].sum()
         elec_modelled = pop_elec / total_pop
+        urban_elec_modelled = self.df.loc[(self.df[SET_ELEC_CURRENT] == 1) & (self.df[SET_URBAN] == 2),
+                                          SET_ELEC_POP_CALIB].sum()
+
+        rural_elec_modelled = self.df.loc[(self.df[SET_ELEC_CURRENT] == 1) & (self.df[SET_URBAN] < 2),
+                                          SET_ELEC_POP_CALIB].sum()
 
         print('The modelled electrification rate differ by {0:.2f}. '
               'Urban elec. rate differ by {1:.2f} and Rural elec. rate differ by {2:.2f}. \n'
@@ -1131,8 +1180,12 @@ class SettlementProcessor:
                                                          (urban_elec_modelled / urban_pop - elec_actual_urban),
                                                          (rural_elec_modelled / rural_pop - elec_actual_rural)))
 
-        self.df[SET_ELEC_FINAL_CODE + "{}".format(start_year)] = \
-            self.df.apply(lambda row: 1 if row[SET_ELEC_CURRENT] == 1 else 99, axis=1)
+
+        self.df[SET_ELEC_FINAL_CODE + "{}".format(start_year)] = 99
+        self.df.loc[self.df[SET_ELEC_CURRENT] == 1, SET_ELEC_FINAL_CODE + "{}".format(start_year)] = 1
+
+        # self.df[SET_ELEC_FINAL_CODE + "{}".format(start_year)] = \
+        #     self.df.apply(lambda row: 1 if row[SET_ELEC_CURRENT] == 1 else 99, axis=1)
 
         return elec_modelled, elec_actual_rural, elec_actual_urban
 
