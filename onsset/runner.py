@@ -5,7 +5,7 @@ import os
 
 import pandas as pd
 from onsset import (SET_ELEC_ORDER, SET_LCOE_GRID, SET_MIN_GRID_DIST, SET_GRID_PENALTY,
-                    SET_MV_CONNECT_DIST, SET_WINDCF, SettlementProcessor, Technology)
+                    SET_MV_CONNECT_DIST, SET_WINDVEL, SET_WINDCF, SettlementProcessor, Technology)
 
 try:
     from onsset.specs import (SPE_COUNTRY, SPE_ELEC, SPE_ELEC_MODELLED,
@@ -61,7 +61,7 @@ def calibration(specs_path, csv_path, specs_path_calib, calibrated_csv_path):
     onsseter.condition_df()
     onsseter.df[SET_GRID_PENALTY] = onsseter.grid_penalties(onsseter.df)
 
-    onsseter.df[SET_WINDCF] = onsseter.calc_wind_cfs()
+    onsseter.df[SET_WINDCF] = onsseter.calc_wind_cfs(onsseter.df[SET_WINDVEL])
 
     pop_actual = specs_data.loc[0, SPE_POP]
     urban_current = specs_data.loc[0, SPE_URBAN]
