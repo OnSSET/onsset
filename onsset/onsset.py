@@ -2,7 +2,7 @@ import logging
 from math import exp, log, pi
 from typing import Dict
 import scipy.spatial
-
+from hybrids_pv import *
 import numpy as np
 import pandas as pd
 
@@ -1667,6 +1667,21 @@ class SettlementProcessor:
         self.set_residential_demand(rural_tier, urban_tier, num_people_per_hh_rural, num_people_per_hh_urban,
                                     productive_demand)
         self.calculate_total_demand_per_settlement(year)
+
+    def hybrid_mini_grids(self, year, start_year, end_year):
+        ghi, temp = read_environmental_data(r'C:\GitHub\OnSSET\Results\sl-2-pv.csv')
+
+        self.df.apply(lambda row: pv_diesel_hybrid(
+            row[SET_ENERGY_PER_CELL + "{}".format(year)],
+            row[SET_GHI],
+            ghi,
+            temp,
+            row[SET_TIER],
+            start_year,
+            end_year,
+            [row[SET_MG_DIESEL_FUEL + "{}".format(year)]]), axis=1)
+
+
 
     def calculate_off_grid_lcoes(self, mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc,
                                  sa_diesel_calc, year, end_year, time_step, techs, tech_codes, diesel_techs=0):

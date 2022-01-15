@@ -1,9 +1,9 @@
 import numpy as np
-# import logging
+import logging
 import pandas as pd
 import os
 
-# logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.DEBUG)
+logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.DEBUG)
 
 
 def read_environmental_data(path):
@@ -20,24 +20,23 @@ def read_environmental_data(path):
 
 def pv_diesel_hybrid(
         energy_per_hh,  # kWh/household/year as defined
-        ghi,  # highest annual GHI value encountered in the GIS data
+        ghi,
         ghi_curve,
         temp,
         tier,
         start_year,
         end_year,
-        pv_cost_factor,
+        diesel_price,
         diesel_cost=261,  # diesel generator capital cost, USD/kW rated power
         pv_no=15,  # number of PV panel sizes simulated
         diesel_no=15,  # number of diesel generators simulated
-        discount_rate=0.08,
-        diesel_range=[0.7]
+        discount_rate=0.08
 ):
     n_chg = 0.92  # charge efficiency of battery
     n_dis = 0.92  # discharge efficiency of battery
     lpsp_max = 0.10  # maximum loss of load allowed over the year, in share of kWh
     battery_cost = 139  # battery capital capital cost, USD/kWh of storage capacity
-    pv_cost = 503 * pv_cost_factor  # PV panel capital cost, USD/kW peak power
+    pv_cost = 503  # PV panel capital cost, USD/kW peak power
     pv_life = 25  # PV panel expected lifetime, years
     diesel_life = 10  # diesel generator expected lifetime, years
     pv_om = 0.015  # annual OM cost of PV panels
@@ -219,18 +218,22 @@ def pv_diesel_hybrid(
     # This section creates the range of PV capacities, diesel capacities and battery sizes to be simulated
     ref = 5 * load_curve[19]
 
+    def diesel_range(x, max_steps):
+        if x < 1000:
+            return [1000]
+        else:
+            step = ceil(x / max_steps / 1000) * 1000
+            return list(range(0, x + step, step))
+
     battery_sizes = [0.5 * energy_per_hh / 365, energy_per_hh / 365, 2 * energy_per_hh / 365]
     pv_caps = []
-    diesel_caps = []
-    diesel_extend = np.ones(pv_no)
-    pv_extend = np.ones(diesel_no)
-
     for i in range(pv_no):
         pv_caps.append(ref * (pv_no - i) / pv_no)
+    diesel_caps = diesel_range(max(load_curve), diesel_no)
+    diesel_no = len(diesel_caps)
 
-    for j in range(diesel_no):
-        diesel_caps.append(j * max(load_curve) / diesel_no)
-
+    diesel_extend = np.ones(pv_no)
+    pv_extend = np.ones(len(diesel_caps))
     pv_caps = np.outer(np.array(pv_caps), pv_extend)
     diesel_caps = np.outer(diesel_extend, np.array(diesel_caps))
 
@@ -295,22 +298,20 @@ def pv_diesel_hybrid(
     capacity_range = []
     ren_share_range = []
 
-    for d in diesel_range:
+    lcoe, investment = calculate_hybrid_lcoe(diesel_price)
+    lcoe = np.where(lpsp > lpsp_max, 99, lcoe)
+    lcoe = np.where(diesel_share > diesel_limit, 99, lcoe)
 
-        lcoe, investment = calculate_hybrid_lcoe(d)
-        lcoe = np.where(lpsp > lpsp_max, 99, lcoe)
-        lcoe = np.where(diesel_share > diesel_limit, 99, lcoe)
+    min_lcoe = np.min(lcoe)
+    min_lcoe_combination = np.unravel_index(np.argmin(lcoe, axis=None), lcoe.shape)
+    ren_share = 1 - diesel_share[min_lcoe_combination]
+    capacity = pv_panel_size[min_lcoe_combination] + diesel_capacity[min_lcoe_combination]
+    ren_capacity = pv_panel_size[min_lcoe_combination] / capacity
+    # excess_gen = excess_gen[min_lcoe_combination]
 
-        min_lcoe = np.min(lcoe)
-        min_lcoe_combination = np.unravel_index(np.argmin(lcoe, axis=None), lcoe.shape)
-        ren_share = 1 - diesel_share[min_lcoe_combination]
-        capacity = pv_panel_size[min_lcoe_combination] + diesel_capacity[min_lcoe_combination]
-        ren_capacity = pv_panel_size[min_lcoe_combination] / capacity
-        # excess_gen = excess_gen[min_lcoe_combination]
-
-        min_lcoe_range.append(min_lcoe)
-        investment_range.append(investment[min_lcoe_combination])
-        capacity_range.append(capacity)
-        ren_share_range.append(ren_share)
+    min_lcoe_range.append(min_lcoe)
+    investment_range.append(investment[min_lcoe_combination])
+    capacity_range.append(capacity)
+    ren_share_range.append(ren_share)
 
     return min_lcoe_range, investment_range, capacity_range, ren_share_range  # , ren_capacity, excess_gen
