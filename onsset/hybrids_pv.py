@@ -199,7 +199,7 @@ def pv_diesel_hybrid(
     charge_controller = 142
 
     ghi = ghi_curve * ghi * 1000 / ghi_curve.sum()
-    hour_numbers = pd.Series(
+    hour_numbers = np.array(
         (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23) * 365)
     dod_max = 0.8  # maximum depth of discharge of battery
 
@@ -254,7 +254,6 @@ def pv_diesel_hybrid(
                 hourly_optimization(hour, battery_use, soc, battery_size, n_dis, inv_eff, n_chg, diesel_capacity,
                                     fuel_result, annual_diesel_gen, unmet_demand, dod, excess_gen, temp, ghi,
                                     pv_capacity, load_curve, battery_life, dod_max)
-
 
         condition = unmet_demand / energy_per_hh  # LPSP is calculated
         excess_gen = excess_gen / energy_per_hh
