@@ -37,13 +37,18 @@ def pv_generation(temp, ghi, pv_capacity, load, inv_eff):
     return net_load
 
 
+#@numba.jit(nopython=True)
 @numba.jit(nopython=True)
-def dispatchable_energy(soc, battery_size, n_dis, inv_eff, n_chg):
+def dispatchable_energy(soc, battery_size, n_dis, inv_eff):
     # Dispatchable energy from battery available to meet load
     # battery_dispatchable = soc * battery_size * n_dis * inv_eff
+    return soc * battery_size * n_dis * inv_eff
+
+@numba.jit(nopython=True)
+def chargeable_energy(soc, battery_size, n_chg, inv_eff):
     # Energy required to fully charge battery
     # battery_chargeable = (1 - soc) * battery_size / n_chg / inv_eff
-    return soc * battery_size * n_dis * inv_eff, (1 - soc) * battery_size / n_chg / inv_eff
+    return (1 - soc) * battery_size / n_chg / inv_eff
 
 
 @numba.jit(nopython=True)
@@ -245,7 +250,9 @@ def pv_diesel_hybrid(
 
             battery_use, soc = self_discharge(battery_use, soc)
 
-            battery_dispatchable, battery_chargeable = dispatchable_energy(soc, battery_size, n_dis, inv_eff, n_chg)
+            battery_dispatchable = dispatchable_energy(soc, battery_size, n_dis, inv_eff)
+
+            battery_chargeable = chargeable_energy(soc, battery_size, n_chg, inv_eff)
 
             fuel_result, annual_diesel_gen, diesel_gen, load = diesel_dispatch(hour, load, battery_dispatchable,
                                                                                    diesel_capacity,
@@ -321,7 +328,7 @@ def pv_diesel_hybrid(
                 for diesel in range(diesel_no):
 
                     diesel_size = diesel_capacity[battery, pv, diesel]
-                    battery_capacity = battery_size[battery, pv, diesel]
+                    battery_capacity = battery_sizes[battery]
 
                     # For the number of diesel, pv and battery capacities the lpsp, battery lifetime, fuel usage and LPSP is calculated
                     diesel_share[battery, pv, diesel], battery_life[battery, pv, diesel], lpsp[battery, pv, diesel], fuel_usage[battery, pv, diesel], excess_gen[battery, pv, diesel] = \
