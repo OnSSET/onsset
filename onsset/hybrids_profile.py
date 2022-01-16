@@ -19,5 +19,6 @@ def profile_hybrids(iterations):
 
 profile_hybrids(1)
 
-cProfile.run('profile_hybrids(100)', sort='tottime')
+
+cProfile.run('profile_hybrids(10)', sort='tottime')
 

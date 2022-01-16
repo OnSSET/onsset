@@ -8,8 +8,14 @@ logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.ERROR)
 
 
 def read_environmental_data(path):
-    ghi_curve = pd.read_csv(path, usecols=[3], skiprows=341882).values
-    temp = pd.read_csv(path, usecols=[2], skiprows=341882).values
+    # ghi_curve = pd.read_csv(path, usecols=[3], skiprows=341882)
+    # temp = pd.read_csv(path, usecols=[2], skiprows=341882)
+
+    ghi_curve = pd.read_csv(path, skiprows=341882)
+    temp = pd.read_csv(path, skiprows=341882)
+
+    ghi_curve = ghi_curve.iloc[:, 3].values
+    temp = temp.iloc[:, 2].values
 
     # ghi_curve = pd.read_csv(path, usecols=[3], skiprows=3).values * 1000
     # temp = pd.read_csv(path, usecols=[5], skiprows=3).values
@@ -25,12 +31,15 @@ def self_discharge(hour, battery_use, soc):
 
 
 @numba.jit(nopython=True)
-def pv_generation(temp, ghi, hour, pv_capacity, load_curve, inv_eff):
+def pv_generation(temperature, ghi, hour, pv_capacity, load_curve, inv_eff):
     # Calculation of PV gen and net load
     k_t = 0.005  # temperature factor of PV panels
 
-    t_cell = temp[hour] + 0.0256 * ghi[hour]  # PV cell temperature
-    pv_gen = pv_capacity * 0.9 * ghi[hour] / 1000 * (1 - k_t * (t_cell - 25))  # PV generation in the hour
+    temp = float(temperature[hour])
+    ghi = float(ghi[hour])
+
+    t_cell = temp + 0.0256 * ghi  # PV cell temperature
+    pv_gen = pv_capacity * 0.9 * ghi / 1000 * (1 - k_t * (t_cell - 25))  # PV generation in the hour
     net_load = load_curve[hour] - pv_gen * inv_eff  # remaining load not met by PV panels
     return net_load
 
@@ -95,7 +104,7 @@ def diesel_dispatch(hour, net_load, battery_dispatchable, diesel_capacity, batte
             diesel_gen = 0
 
     if diesel_gen > 0:
-        fuel_result = diesel_capacity * 0.08145 + diesel_gen * 0.246
+        fuel_result = fuel_result + diesel_capacity * 0.08145 + diesel_gen * 0.246
     else:
         fuel_result = 0
 
@@ -255,13 +264,22 @@ def pv_diesel_hybrid(
 
     load_curve = load_curve(tier, energy_per_hh)
 
-    def pv_diesel_capacities(pv_capacity, battery_size, diesel_capacity, pv_no, diesel_no, battery_no, fuel_result,
-                             battery_life, soc, unmet_demand, excess_gen, annual_diesel_gen, dod):
+
+    @numba.njit()
+    def pv_diesel_capacities(pv_capacity, battery_size, diesel_capacity):
+        fuel_result = 0
+        battery_life = 0
+        soc = 0.5
+        unmet_demand = 0
+        excess_gen = 0
+        annual_diesel_gen = 0
+        dod = 0
+        battery_use = 0
 
         for hour in hour_numbers:
             if hour == 0:
-                battery_use = np.zeros(shape=(battery_no, pv_no, diesel_no))
-                dod = np.zeros(shape=(battery_no, pv_no, diesel_no))
+                battery_use = 0
+                dod = 0
 
             battery_use, soc, net_load, fuel_result, annual_diesel_gen, diesel_gen, unmet_demand, excess_gen, dod, battery_life = \
                 hourly_optimization(hour, battery_use, soc, battery_size, n_dis, inv_eff, n_chg, diesel_capacity,
@@ -310,18 +328,29 @@ def pv_diesel_hybrid(
         diesel_capacity[j, :, :] = diesel_caps
 
     battery_no = len(battery_sizes)
-    fuel_result = np.zeros(shape=(battery_no, pv_no, diesel_no))
-    battery_life = np.zeros(shape=(battery_no, pv_no, diesel_no))
-    soc = np.ones(shape=(battery_no, pv_no, diesel_no)) * 0.5
-    unmet_demand = np.zeros(shape=(battery_no, pv_no, diesel_no))
-    excess_gen = np.zeros(shape=(battery_no, pv_no, diesel_no))  # TODO
-    annual_diesel_gen = np.zeros(shape=(battery_no, pv_no, diesel_no))
-    dod = np.zeros(shape=(battery_no, pv_no, diesel_no))
 
-    # For the number of diesel, pv and battery capacities the lpsp, battery lifetime, fuel usage and LPSP is calculated
-    diesel_share, battery_life, lpsp, fuel_usage, excess_gen = \
-        pv_diesel_capacities(pv_panel_size, battery_size, diesel_capacity, pv_no, diesel_no, len(battery_sizes),
-                             fuel_result, battery_life, soc, unmet_demand, excess_gen, annual_diesel_gen, dod)
+    def run_everything(battery_no, pv_no, diesel_no, pv_panel_size, diesel_capacity, battery_size):
+
+        diesel_share = np.zeros(shape=(battery_no, pv_no, diesel_no))
+        battery_life = np.zeros(shape=(battery_no, pv_no, diesel_no))
+        lpsp = np.zeros(shape=(battery_no, pv_no, diesel_no))
+        fuel_usage = np.zeros(shape=(battery_no, pv_no, diesel_no))
+        excess_gen = np.zeros(shape=(battery_no, pv_no, diesel_no))
+
+        for battery in range(battery_no):
+            for pv in range(pv_no):
+                for diesel in range(diesel_no):
+                    pv_size = pv_panel_size[battery, pv, diesel]
+                    diesel_size = diesel_capacity[battery, pv, diesel]
+                    battery_capacity = battery_size[battery, pv, diesel]
+
+                    # For the number of diesel, pv and battery capacities the lpsp, battery lifetime, fuel usage and LPSP is calculated
+                    diesel_share[battery, pv, diesel], battery_life[battery, pv, diesel], lpsp[battery, pv, diesel], fuel_usage[battery, pv, diesel], excess_gen[battery, pv, diesel] = \
+                        pv_diesel_capacities(pv_size, battery_capacity, diesel_size)
+
+        return diesel_share, battery_life, lpsp, fuel_usage, excess_gen
+
+    diesel_share, battery_life, lpsp, fuel_usage, excess_gen = run_everything(battery_no, pv_no, diesel_no, pv_panel_size, diesel_capacity, battery_size)
 
     battery_life = np.minimum(20, battery_life)
 
