@@ -19,7 +19,7 @@ def read_environmental_data(path):
 @numba.jit(nopython=True)
 def self_discharge(hour, battery_use, soc):
     # Battery self-discharge (0.02% per hour)
-    battery_use[hour, :, :] = 0.0002 * soc
+    battery_use = battery_use + 0.0002 * soc
     soc *= 0.9998
     return battery_use, soc
 
@@ -115,17 +115,13 @@ def soc_and_battery_usage(net_load, diesel_gen, n_dis, inv_eff, battery_size, n_
                     0)
 
     # The amount of battery discharge in the hour is stored (measured in State Of Charge)
-    battery_use[hour, :, :] = \
-        np.minimum(np.where(net_load > 0,
-                            net_load / n_dis / battery_size,
-                            0),
-                   soc)
+    battery_use = battery_use + np.minimum(np.where(net_load > 0, net_load / n_dis / battery_size, 0), soc)
 
     return battery_use, soc
 
 
 @numba.jit(nopython=True)
-def unmet_demand_and_excess_gen(unmet_demand, soc, n_dis, battery_size, n_chg, dod, excess_gen, hour):
+def unmet_demand_and_excess_gen(unmet_demand, soc, n_dis, battery_size, n_chg, excess_gen, dod):
     # If State of charge is negative, that means there's demand that could not be met.
     unmet_demand += np.where(soc < 0,
                              -soc / n_dis * battery_size,
@@ -139,13 +135,18 @@ def unmet_demand_and_excess_gen(unmet_demand, soc, n_dis, battery_size, n_chg, d
 
     soc = np.minimum(soc, 1)
 
-    dod[hour, :, :] = 1 - soc  # The depth of discharge in every hour of the day is stored
+    dod_hour = 1 - soc  # The depth of discharge in the hour
 
-    return unmet_demand, soc, excess_gen, dod
+    dod = np.where(dod_hour > dod, dod_hour, dod)
+
+
+    return unmet_demand, soc, excess_gen, dod_hour
+
 
 @numba.jit(nopython=True)
 def hourly_optimization(hour, battery_use, soc, battery_size, n_dis, inv_eff, n_chg, diesel_capacity, fuel_result,
-                        annual_diesel_gen, unmet_demand, dod, excess_gen, temp, ghi, pv_capacity, load_curve):
+                        annual_diesel_gen, unmet_demand, dod, excess_gen, temp, ghi, pv_capacity, load_curve,
+                        battery_life, dod_max):
 
     battery_use, soc = self_discharge(hour, battery_use, soc)
 
@@ -161,10 +162,12 @@ def hourly_optimization(hour, battery_use, soc, battery_size, n_dis, inv_eff, n_
     battery_use, soc = soc_and_battery_usage(net_load, diesel_gen, n_dis, inv_eff, battery_size, n_chg,
                                              battery_use, soc, hour)
 
-    unmet_demand, soc, excess_gen, dod = unmet_demand_and_excess_gen(unmet_demand, soc, n_dis, battery_size,
-                                                                     n_chg, dod, excess_gen, hour)
+    unmet_demand, soc, excess_gen, dod = unmet_demand_and_excess_gen(unmet_demand, soc, n_dis, battery_size, n_chg, excess_gen, dod)
 
-    return battery_use, soc, net_load, fuel_result, annual_diesel_gen, diesel_gen, unmet_demand, excess_gen, dod
+    if hour == 23:  # The battery wear during the last day is calculated
+        battery_life += battery_use / (531.52764 * np.maximum(0.1, dod * dod_max) ** -1.12297)
+
+    return battery_use, soc, net_load, fuel_result, annual_diesel_gen, diesel_gen, unmet_demand, excess_gen, dod, battery_life
 
 
 def pv_diesel_hybrid(
@@ -239,29 +242,19 @@ def pv_diesel_hybrid(
 
     load_curve = load_curve(tier, energy_per_hh)
 
-    def pv_diesel_capacities(pv_capacity, battery_size, diesel_capacity, pv_no, diesel_no, battery_no):
-        dod = np.zeros(shape=(24, battery_no, pv_no, diesel_no))
-        battery_use = np.zeros(
-            shape=(24, battery_no, pv_no, diesel_no))  # Stores the amount of battery discharge during the day
-        fuel_result = np.zeros(shape=(battery_no, pv_no, diesel_no))
-        battery_life = np.zeros(shape=(battery_no, pv_no, diesel_no))
-        soc = np.ones(shape=(battery_no, pv_no, diesel_no)) * 0.5
-        unmet_demand = np.zeros(shape=(battery_no, pv_no, diesel_no))
-        excess_gen = np.zeros(shape=(battery_no, pv_no, diesel_no))  # TODO
-        annual_diesel_gen = np.zeros(shape=(battery_no, pv_no, diesel_no))
-        dod_max = np.ones(shape=(battery_no, pv_no, diesel_no)) * 0.6
+    def pv_diesel_capacities(pv_capacity, battery_size, diesel_capacity, pv_no, diesel_no, battery_no, fuel_result,
+                             battery_life, soc, unmet_demand, excess_gen, annual_diesel_gen, dod):
 
         for hour in hour_numbers:
+            if hour == 0:
+                battery_use = np.zeros(shape=(battery_no, pv_no, diesel_no))
+                dod = np.zeros(shape=(battery_no, pv_no, diesel_no))
 
-            battery_use, soc, net_load, fuel_result, annual_diesel_gen, diesel_gen, unmet_demand, excess_gen, dod = \
+            battery_use, soc, net_load, fuel_result, annual_diesel_gen, diesel_gen, unmet_demand, excess_gen, dod, battery_life = \
                 hourly_optimization(hour, battery_use, soc, battery_size, n_dis, inv_eff, n_chg, diesel_capacity,
                                     fuel_result, annual_diesel_gen, unmet_demand, dod, excess_gen, temp, ghi,
-                                    pv_capacity, load_curve)
+                                    pv_capacity, load_curve, battery_life, dod_max)
 
-            if hour == 23:  # The battery wear during the last day is calculated
-                battery_used = np.where(dod.max(axis=0) > 0, 1, 0)
-                battery_life += battery_use.sum(axis=0) / (
-                        531.52764 * np.maximum(0.1, dod.max(axis=0) * dod_max) ** -1.12297) * battery_used
 
         condition = unmet_demand / energy_per_hh  # LPSP is calculated
         excess_gen = excess_gen / energy_per_hh
@@ -304,9 +297,20 @@ def pv_diesel_hybrid(
         pv_panel_size[j, :, :] = pv_caps
         diesel_capacity[j, :, :] = diesel_caps
 
+    battery_no = len(battery_sizes)
+    fuel_result = np.zeros(shape=(battery_no, pv_no, diesel_no))
+    battery_life = np.zeros(shape=(battery_no, pv_no, diesel_no))
+    soc = np.ones(shape=(battery_no, pv_no, diesel_no)) * 0.5
+    unmet_demand = np.zeros(shape=(battery_no, pv_no, diesel_no))
+    excess_gen = np.zeros(shape=(battery_no, pv_no, diesel_no))  # TODO
+    annual_diesel_gen = np.zeros(shape=(battery_no, pv_no, diesel_no))
+    dod = np.zeros(shape=(battery_no, pv_no, diesel_no))
+
     # For the number of diesel, pv and battery capacities the lpsp, battery lifetime, fuel usage and LPSP is calculated
     diesel_share, battery_life, lpsp, fuel_usage, excess_gen = \
-        pv_diesel_capacities(pv_panel_size, battery_size, diesel_capacity, pv_no, diesel_no, len(battery_sizes))
+        pv_diesel_capacities(pv_panel_size, battery_size, diesel_capacity, pv_no, diesel_no, len(battery_sizes),
+                             fuel_result, battery_life, soc, unmet_demand, excess_gen, annual_diesel_gen, dod)
+
     battery_life = np.minimum(20, battery_life)
 
     def calculate_hybrid_lcoe(diesel_price):
