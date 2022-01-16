@@ -37,30 +37,19 @@ def pv_generation(temp, ghi, pv_capacity, load, inv_eff):
     return net_load
 
 
-#@numba.jit(nopython=True)
 @numba.jit(nopython=True)
-def dispatchable_energy(soc, battery_size, n_dis, inv_eff):
-    # Dispatchable energy from battery available to meet load
-    # battery_dispatchable = soc * battery_size * n_dis * inv_eff
-    return soc * battery_size * n_dis * inv_eff
-
-@numba.jit(nopython=True)
-def chargeable_energy(soc, battery_size, n_chg, inv_eff):
-    # Energy required to fully charge battery
-    # battery_chargeable = (1 - soc) * battery_size / n_chg / inv_eff
-    return (1 - soc) * battery_size / n_chg / inv_eff
-
-
-@numba.jit(nopython=True)
-def diesel_dispatch(hour, net_load, battery_dispatchable, diesel_capacity, battery_chargeable, fuel_result, annual_diesel_gen):
+def diesel_dispatch(hour, net_load, diesel_capacity, fuel_result, annual_diesel_gen, soc, inv_eff, n_dis, n_chg, battery_size):
     # Below is the dispatch strategy for the diesel generator as described in word document
+
+    battery_dispatchable = soc * battery_size * n_dis * inv_eff
+    battery_chargeable = (1 - soc) * battery_size / n_chg / inv_eff
 
     if 4 < hour <= 17:
         # During the morning and day, the batteries are dispatched primarily.
         # The diesel generator, if needed, is run at the lowest possible capacity
 
         # Minimum diesel capacity to cover the net load after batteries.
-        # Diesel genrator limited by lowest possible capacity (40%) and rated capacity
+        # Diesel generator limited by lowest possible capacity (40%) and rated capacity
         min_diesel = min(max(net_load - battery_dispatchable, 0.4 * diesel_capacity), diesel_capacity)
 
         if net_load > battery_dispatchable:
@@ -230,7 +219,7 @@ def pv_diesel_hybrid(
 
     load_curve = load_curve(tier, energy_per_hh)
 
-    @numba.njit()
+    @numba.njit
     def hourly_optimization(battery_size, diesel_capacity, net_load):
         fuel_result = 0
         battery_life = 0
@@ -250,14 +239,7 @@ def pv_diesel_hybrid(
 
             battery_use, soc = self_discharge(battery_use, soc)
 
-            battery_dispatchable = dispatchable_energy(soc, battery_size, n_dis, inv_eff)
-
-            battery_chargeable = chargeable_energy(soc, battery_size, n_chg, inv_eff)
-
-            fuel_result, annual_diesel_gen, diesel_gen, load = diesel_dispatch(hour, load, battery_dispatchable,
-                                                                                   diesel_capacity,
-                                                                                   battery_chargeable, fuel_result,
-                                                                                   annual_diesel_gen)
+            fuel_result, annual_diesel_gen, diesel_gen, load = diesel_dispatch(hour, load, diesel_capacity, fuel_result, annual_diesel_gen, soc, inv_eff, n_dis, n_chg, battery_size)
 
             battery_use, soc = soc_and_battery_usage(load, diesel_gen, n_dis, inv_eff, battery_size, n_chg,
                                                      battery_use, soc)
