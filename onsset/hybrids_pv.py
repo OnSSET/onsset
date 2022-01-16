@@ -143,6 +143,29 @@ def unmet_demand_and_excess_gen(unmet_demand, soc, n_dis, battery_size, n_chg, d
 
     return unmet_demand, soc, excess_gen, dod
 
+@numba.jit(nopython=True)
+def hourly_optimization(hour, battery_use, soc, battery_size, n_dis, inv_eff, n_chg, diesel_capacity, fuel_result,
+                        annual_diesel_gen, unmet_demand, dod, excess_gen, temp, ghi, pv_capacity, load_curve):
+
+    battery_use, soc = self_discharge(hour, battery_use, soc)
+
+    net_load = pv_generation(temp, ghi, hour, pv_capacity, load_curve, inv_eff)
+
+    battery_dispatchable, battery_chargeable = dispatchable_energy(soc, battery_size, n_dis, inv_eff, n_chg)
+
+    fuel_result, annual_diesel_gen, diesel_gen, net_load = diesel_dispatch(hour, net_load, battery_dispatchable,
+                                                                           diesel_capacity,
+                                                                           battery_chargeable, fuel_result,
+                                                                           annual_diesel_gen)
+
+    battery_use, soc = soc_and_battery_usage(net_load, diesel_gen, n_dis, inv_eff, battery_size, n_chg,
+                                             battery_use, soc, hour)
+
+    unmet_demand, soc, excess_gen, dod = unmet_demand_and_excess_gen(unmet_demand, soc, n_dis, battery_size,
+                                                                     n_chg, dod, excess_gen, hour)
+
+    return battery_use, soc, net_load, fuel_result, annual_diesel_gen, diesel_gen, unmet_demand, excess_gen, dod
+
 
 def pv_diesel_hybrid(
         energy_per_hh,  # kWh/household/year as defined
@@ -230,22 +253,10 @@ def pv_diesel_hybrid(
 
         for hour in hour_numbers:
 
-            battery_use, soc = self_discharge(hour, battery_use, soc)
-
-            net_load = pv_generation(temp, ghi, hour, pv_capacity, load_curve, inv_eff)
-
-            battery_dispatchable, battery_chargeable = dispatchable_energy(soc, battery_size, n_dis, inv_eff, n_chg)
-
-            fuel_result, annual_diesel_gen, diesel_gen, net_load = diesel_dispatch(hour, net_load, battery_dispatchable,
-                                                                                   diesel_capacity,
-                                                                                   battery_chargeable, fuel_result,
-                                                                                   annual_diesel_gen)
-
-            battery_use, soc = soc_and_battery_usage(net_load, diesel_gen, n_dis, inv_eff, battery_size, n_chg,
-                                                     battery_use, soc, hour)
-
-            unmet_demand, soc, excess_gen, dod = unmet_demand_and_excess_gen(unmet_demand, soc, n_dis, battery_size,
-                                                                             n_chg, dod, excess_gen, hour)
+            battery_use, soc, net_load, fuel_result, annual_diesel_gen, diesel_gen, unmet_demand, excess_gen, dod = \
+                hourly_optimization(hour, battery_use, soc, battery_size, n_dis, inv_eff, n_chg, diesel_capacity,
+                                    fuel_result, annual_diesel_gen, unmet_demand, dod, excess_gen, temp, ghi,
+                                    pv_capacity, load_curve)
 
             if hour == 23:  # The battery wear during the last day is calculated
                 battery_used = np.where(dod.max(axis=0) > 0, 1, 0)
