@@ -58,7 +58,11 @@ def diesel_dispatch(hour, net_load, battery_dispatchable, diesel_capacity, batte
             np.maximum(net_load - battery_dispatchable, 0.4 * diesel_capacity),
             diesel_capacity)
 
-        diesel_gen = np.where(net_load > battery_dispatchable, min_diesel, 0)
+        if net_load > battery_dispatchable:
+            diesel_gen = min_diesel
+        else:
+            diesel_gen = 0
+
 
     elif 17 > hour > 23:
         # During the evening, the diesel generator is dispatched primarily, at max_diesel.
@@ -70,7 +74,11 @@ def diesel_dispatch(hour, net_load, battery_dispatchable, diesel_capacity, batte
             np.minimum(net_load + battery_chargeable, diesel_capacity),
             0.4 * diesel_capacity)
 
-        diesel_gen = np.where(net_load > 0, max_diesel, 0)
+        if net_load > 0:
+            diesel_gen = max_diesel
+        else:
+            diesel_gen = 0
+
     else:
         # During night, batteries are dispatched primarily.
         # The diesel generator is used at max_diesel if load is larger than battery capacity
@@ -81,10 +89,17 @@ def diesel_dispatch(hour, net_load, battery_dispatchable, diesel_capacity, batte
             np.minimum(net_load + battery_chargeable, diesel_capacity),
             0.4 * diesel_capacity)
 
-        diesel_gen = np.where(net_load > battery_dispatchable, max_diesel, 0)
+        if net_load > battery_dispatchable:
+            diesel_gen = max_diesel
+        else:
+            diesel_gen = 0
 
-    fuel_result += np.where(diesel_gen > 0, diesel_capacity * 0.08145 + diesel_gen * 0.246, 0)
-    annual_diesel_gen += diesel_gen
+    if diesel_gen > 0:
+        fuel_result = diesel_capacity * 0.08145 + diesel_gen * 0.246
+    else:
+        fuel_result = 0
+
+    annual_diesel_gen = annual_diesel_gen + diesel_gen
 
     # Reamining load after diesel generator
     net_load = net_load - diesel_gen
@@ -94,53 +109,51 @@ def diesel_dispatch(hour, net_load, battery_dispatchable, diesel_capacity, batte
 
 @numba.jit(nopython=True)
 def soc_and_battery_usage(net_load, diesel_gen, n_dis, inv_eff, battery_size, n_chg, battery_use, soc, hour):
-    # If diesel generation is used, but is smaller than load, battery is discharged
-    soc -= np.where((net_load > 0) & (diesel_gen > 0),
-                    net_load / n_dis / inv_eff / battery_size,
-                    0)
 
-    # If diesel generation is used, and is larger than load, battery is charged
-    soc -= np.where((net_load < 0) & (diesel_gen > 0),
-                    net_load * n_chg * inv_eff / battery_size,
-                    0)
+    if (net_load > 0) & (diesel_gen > 0):
+        # If diesel generation is used, but is smaller than load, battery is discharged
+        soc = soc - net_load / n_dis / inv_eff / battery_size
 
-    # If net load is positive and no diesel is used, battery is discharged
-    soc -= np.where((net_load > 0) & (diesel_gen == 0),
-                    net_load / n_dis / battery_size,
-                    0)
+    if (net_load < 0) & (diesel_gen > 0):
+        # If diesel generation is used, and is larger than load, battery is charged
+        soc = soc - net_load * n_chg * inv_eff / battery_size
 
-    # If net load is negative, and no diesel has been used, excess PV gen is used to charge battery
-    soc -= np.where((net_load < 0) & (diesel_gen == 0),
-                    net_load * n_chg / battery_size,
-                    0)
+    if (net_load > 0) & (diesel_gen == 0):
+        # If net load is positive and no diesel is used, battery is discharged
+        soc = soc - net_load / n_dis / battery_size
+
+    if (net_load < 0) & (diesel_gen == 0):
+        # If net load is negative, and no diesel has been used, excess PV gen is used to charge battery
+        soc = soc - net_load * n_chg / battery_size
 
     # The amount of battery discharge in the hour is stored (measured in State Of Charge)
-    battery_use = battery_use + np.minimum(np.where(net_load > 0, net_load / n_dis / battery_size, 0), soc)
+    if net_load > 0:
+        battery_use = battery_use + np.minimum(net_load / n_dis / battery_size, soc)
+    else:
+        battery_use = battery_use + np.minimum(0, soc)  # Unneccessary?
 
     return battery_use, soc
 
 
 @numba.jit(nopython=True)
 def unmet_demand_and_excess_gen(unmet_demand, soc, n_dis, battery_size, n_chg, excess_gen, dod):
-    # If State of charge is negative, that means there's demand that could not be met.
-    unmet_demand += np.where(soc < 0,
-                             -soc / n_dis * battery_size,
-                             0)
-    soc = np.maximum(soc, 0)
 
-    # If State of Charge is larger than 1, that means there was excess PV/diesel generation
-    excess_gen += np.where(soc > 1,
-                           (soc - 1) / n_chg * battery_size,
-                           0)
+    if soc < 0:
+        # If State of charge is negative, that means there's demand that could not be met.
+        unmet_demand = unmet_demand - soc / n_dis * battery_size
+        soc = 0
 
-    soc = np.minimum(soc, 1)
+    if soc > 1:
+        # If State of Charge is larger than 1, that means there was excess PV/diesel generation
+        excess_gen = excess_gen + (soc - 1) / n_chg * battery_size
+        soc = 1
 
     dod_hour = 1 - soc  # The depth of discharge in the hour
 
-    dod = np.where(dod_hour > dod, dod_hour, dod)
+    if dod_hour > dod:
+        dod = dod_hour
 
-
-    return unmet_demand, soc, excess_gen, dod_hour
+    return unmet_demand, soc, excess_gen, dod
 
 
 @numba.jit(nopython=True)
