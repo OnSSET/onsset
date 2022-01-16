@@ -23,34 +23,27 @@ def read_environmental_data(path):
 
 
 @numba.jit(nopython=True)
-def self_discharge(hour, battery_use, soc):
+def self_discharge(battery_use, soc):
     # Battery self-discharge (0.02% per hour)
-    battery_use = battery_use + 0.0002 * soc
-    soc *= 0.9998
-    return battery_use, soc
+    return battery_use + 0.0002 * soc, soc - 0.0002 * soc
 
-
-@numba.jit(nopython=True)
-def pv_generation(temperature, ghi, hour, pv_capacity, load_curve, inv_eff):
+@numba.njit
+def pv_generation(temp, ghi, pv_capacity, load, inv_eff):
     # Calculation of PV gen and net load
     k_t = 0.005  # temperature factor of PV panels
-
-    temp = float(temperature[hour])
-    ghi = float(ghi[hour])
-
     t_cell = temp + 0.0256 * ghi  # PV cell temperature
     pv_gen = pv_capacity * 0.9 * ghi / 1000 * (1 - k_t * (t_cell - 25))  # PV generation in the hour
-    net_load = load_curve[hour] - pv_gen * inv_eff  # remaining load not met by PV panels
+    net_load = load - pv_gen * inv_eff  # remaining load not met by PV panels
     return net_load
 
 
 @numba.jit(nopython=True)
 def dispatchable_energy(soc, battery_size, n_dis, inv_eff, n_chg):
     # Dispatchable energy from battery available to meet load
-    battery_dispatchable = soc * battery_size * n_dis * inv_eff
+    # battery_dispatchable = soc * battery_size * n_dis * inv_eff
     # Energy required to fully charge battery
-    battery_chargeable = (1 - soc) * battery_size / n_chg / inv_eff
-    return battery_dispatchable, battery_chargeable
+    # battery_chargeable = (1 - soc) * battery_size / n_chg / inv_eff
+    return soc * battery_size * n_dis * inv_eff, (1 - soc) * battery_size / n_chg / inv_eff
 
 
 @numba.jit(nopython=True)
@@ -63,15 +56,12 @@ def diesel_dispatch(hour, net_load, battery_dispatchable, diesel_capacity, batte
 
         # Minimum diesel capacity to cover the net load after batteries.
         # Diesel genrator limited by lowest possible capacity (40%) and rated capacity
-        min_diesel = np.minimum(
-            np.maximum(net_load - battery_dispatchable, 0.4 * diesel_capacity),
-            diesel_capacity)
+        min_diesel = min(max(net_load - battery_dispatchable, 0.4 * diesel_capacity), diesel_capacity)
 
         if net_load > battery_dispatchable:
             diesel_gen = min_diesel
         else:
             diesel_gen = 0
-
 
     elif 17 > hour > 23:
         # During the evening, the diesel generator is dispatched primarily, at max_diesel.
@@ -79,9 +69,7 @@ def diesel_dispatch(hour, net_load, battery_dispatchable, diesel_capacity, batte
 
         #  Maximum amount of diesel needed to supply load and charge battery
         # Diesel genrator limited by lowest possible capacity (40%) and rated capacity
-        max_diesel = np.maximum(
-            np.minimum(net_load + battery_chargeable, diesel_capacity),
-            0.4 * diesel_capacity)
+        max_diesel = max(min(net_load + battery_chargeable, diesel_capacity), 0.4 * diesel_capacity)
 
         if net_load > 0:
             diesel_gen = max_diesel
@@ -94,9 +82,7 @@ def diesel_dispatch(hour, net_load, battery_dispatchable, diesel_capacity, batte
 
         #  Maximum amount of diesel needed to supply load and charge battery
         # Diesel genrator limited by lowest possible capacity (40%) and rated capacity
-        max_diesel = np.maximum(
-            np.minimum(net_load + battery_chargeable, diesel_capacity),
-            0.4 * diesel_capacity)
+        max_diesel = max(min(net_load + battery_chargeable, diesel_capacity), 0.4 * diesel_capacity)
 
         if net_load > battery_dispatchable:
             diesel_gen = max_diesel
@@ -108,44 +94,44 @@ def diesel_dispatch(hour, net_load, battery_dispatchable, diesel_capacity, batte
     else:
         fuel_result = 0
 
-    annual_diesel_gen = annual_diesel_gen + diesel_gen
+    # annual_diesel_gen = annual_diesel_gen + diesel_gen
 
     # Reamining load after diesel generator
-    net_load = net_load - diesel_gen
+    # net_load = net_load - diesel_gen
 
-    return fuel_result, annual_diesel_gen, diesel_gen, net_load
+    return fuel_result, annual_diesel_gen + diesel_gen, diesel_gen, net_load - diesel_gen
 
 
 @numba.jit(nopython=True)
-def soc_and_battery_usage(net_load, diesel_gen, n_dis, inv_eff, battery_size, n_chg, battery_use, soc, hour):
+def soc_and_battery_usage(net_load, diesel_gen, n_dis, inv_eff, battery_size, n_chg, battery_use, soc):
 
-    if (net_load > 0) & (diesel_gen > 0):
-        # If diesel generation is used, but is smaller than load, battery is discharged
-        soc = soc - net_load / n_dis / inv_eff / battery_size
-
-    if (net_load < 0) & (diesel_gen > 0):
-        # If diesel generation is used, and is larger than load, battery is charged
-        soc = soc - net_load * n_chg * inv_eff / battery_size
-
-    if (net_load > 0) & (diesel_gen == 0):
-        # If net load is positive and no diesel is used, battery is discharged
-        soc = soc - net_load / n_dis / battery_size
-
-    if (net_load < 0) & (diesel_gen == 0):
-        # If net load is negative, and no diesel has been used, excess PV gen is used to charge battery
-        soc = soc - net_load * n_chg / battery_size
+    if net_load > 0:
+        if diesel_gen > 0:
+            # If diesel generation is used, but is smaller than load, battery is discharged
+            soc = soc - net_load / n_dis / inv_eff / battery_size
+        elif diesel_gen == 0:
+            # If net load is positive and no diesel is used, battery is discharged
+            soc = soc - net_load / n_dis / battery_size
+    elif net_load < 0:
+        if diesel_gen > 0:
+            # If diesel generation is used, and is larger than load, battery is charged
+            soc = soc - net_load * n_chg * inv_eff / battery_size
+        if diesel_gen == 0:
+            # If net load is negative, and no diesel has been used, excess PV gen is used to charge battery
+            soc = soc - net_load * n_chg / battery_size
 
     # The amount of battery discharge in the hour is stored (measured in State Of Charge)
     if net_load > 0:
-        battery_use = battery_use + np.minimum(net_load / n_dis / battery_size, soc)
+        battery_use = battery_use + min(net_load / n_dis / battery_size, soc)
     else:
-        battery_use = battery_use + np.minimum(0, soc)  # Unneccessary?
+        battery_use = battery_use + min(0, soc)  # Unneccessary?
 
     return battery_use, soc
 
 
 @numba.jit(nopython=True)
-def unmet_demand_and_excess_gen(unmet_demand, soc, n_dis, battery_size, n_chg, excess_gen, dod):
+def unmet_demand_and_excess_gen(unmet_demand, soc, n_dis, battery_size, n_chg, excess_gen, dod,
+                                hour, battery_life, dod_max, battery_use):
 
     if soc < 0:
         # If State of charge is negative, that means there's demand that could not be met.
@@ -157,39 +143,14 @@ def unmet_demand_and_excess_gen(unmet_demand, soc, n_dis, battery_size, n_chg, e
         excess_gen = excess_gen + (soc - 1) / n_chg * battery_size
         soc = 1
 
-    dod_hour = 1 - soc  # The depth of discharge in the hour
-
-    if dod_hour > dod:
-        dod = dod_hour
-
-    return unmet_demand, soc, excess_gen, dod
-
-
-@numba.jit(nopython=True)
-def hourly_optimization(hour, battery_use, soc, battery_size, n_dis, inv_eff, n_chg, diesel_capacity, fuel_result,
-                        annual_diesel_gen, unmet_demand, dod, excess_gen, temp, ghi, pv_capacity, load_curve,
-                        battery_life, dod_max):
-
-    battery_use, soc = self_discharge(hour, battery_use, soc)
-
-    net_load = pv_generation(temp, ghi, hour, pv_capacity, load_curve, inv_eff)
-
-    battery_dispatchable, battery_chargeable = dispatchable_energy(soc, battery_size, n_dis, inv_eff, n_chg)
-
-    fuel_result, annual_diesel_gen, diesel_gen, net_load = diesel_dispatch(hour, net_load, battery_dispatchable,
-                                                                           diesel_capacity,
-                                                                           battery_chargeable, fuel_result,
-                                                                           annual_diesel_gen)
-
-    battery_use, soc = soc_and_battery_usage(net_load, diesel_gen, n_dis, inv_eff, battery_size, n_chg,
-                                             battery_use, soc, hour)
-
-    unmet_demand, soc, excess_gen, dod = unmet_demand_and_excess_gen(unmet_demand, soc, n_dis, battery_size, n_chg, excess_gen, dod)
+    # If he depth of discharge in the hour is lower than...
+    if 1 - soc > dod:
+        dod = 1 - soc
 
     if hour == 23:  # The battery wear during the last day is calculated
-        battery_life += battery_use / (531.52764 * np.maximum(0.1, dod * dod_max) ** -1.12297)
+        battery_life = battery_life + battery_use / (531.52764 * max(0.1, dod * dod_max) ** -1.12297)
 
-    return battery_use, soc, net_load, fuel_result, annual_diesel_gen, diesel_gen, unmet_demand, excess_gen, dod, battery_life
+    return unmet_demand, soc, excess_gen, dod,  battery_life
 
 
 def pv_diesel_hybrid(
@@ -264,9 +225,8 @@ def pv_diesel_hybrid(
 
     load_curve = load_curve(tier, energy_per_hh)
 
-
     @numba.njit()
-    def pv_diesel_capacities(pv_capacity, battery_size, diesel_capacity):
+    def hourly_optimization(battery_size, diesel_capacity, net_load):
         fuel_result = 0
         battery_life = 0
         soc = 0.5
@@ -281,14 +241,29 @@ def pv_diesel_hybrid(
                 battery_use = 0
                 dod = 0
 
-            battery_use, soc, net_load, fuel_result, annual_diesel_gen, diesel_gen, unmet_demand, excess_gen, dod, battery_life = \
-                hourly_optimization(hour, battery_use, soc, battery_size, n_dis, inv_eff, n_chg, diesel_capacity,
-                                    fuel_result, annual_diesel_gen, unmet_demand, dod, excess_gen, temp, ghi,
-                                    pv_capacity, load_curve, battery_life, dod_max)
+            load = net_load[hour]
+
+            battery_use, soc = self_discharge(battery_use, soc)
+
+            battery_dispatchable, battery_chargeable = dispatchable_energy(soc, battery_size, n_dis, inv_eff, n_chg)
+
+            fuel_result, annual_diesel_gen, diesel_gen, load = diesel_dispatch(hour, load, battery_dispatchable,
+                                                                                   diesel_capacity,
+                                                                                   battery_chargeable, fuel_result,
+                                                                                   annual_diesel_gen)
+
+            battery_use, soc = soc_and_battery_usage(load, diesel_gen, n_dis, inv_eff, battery_size, n_chg,
+                                                     battery_use, soc)
+
+            unmet_demand, soc, excess_gen, dod, battery_life = unmet_demand_and_excess_gen(unmet_demand, soc, n_dis,
+                                                                                           battery_size, n_chg,
+                                                                                           excess_gen, dod, hour,
+                                                                                           battery_life, dod_max,
+                                                                                           battery_use)
 
         condition = unmet_demand / energy_per_hh  # LPSP is calculated
         excess_gen = excess_gen / energy_per_hh
-        battery_life = np.round(1 / battery_life)
+        battery_life = round(1 / battery_life)
         diesel_share = annual_diesel_gen / energy_per_hh
 
         return diesel_share, battery_life, condition, fuel_result, excess_gen
@@ -312,7 +287,7 @@ def pv_diesel_hybrid(
 
     diesel_extend = np.ones(pv_no)
     pv_extend = np.ones(len(diesel_caps))
-    pv_caps = np.outer(np.array(pv_caps), pv_extend)
+    pv_extend = np.outer(np.array(pv_caps), pv_extend)
     diesel_caps = np.outer(diesel_extend, np.array(diesel_caps))
 
     # This section creates 2d-arrays to store information on PV capacities, diesel capacities, battery sizes,
@@ -324,11 +299,13 @@ def pv_diesel_hybrid(
 
     for j in range(len(battery_sizes)):
         battery_size[j, :, :] *= battery_sizes[j]
-        pv_panel_size[j, :, :] = pv_caps
+        pv_panel_size[j, :, :] = pv_extend
         diesel_capacity[j, :, :] = diesel_caps
 
     battery_no = len(battery_sizes)
 
+
+    #@numba.njit
     def run_everything(battery_no, pv_no, diesel_no, pv_panel_size, diesel_capacity, battery_size):
 
         diesel_share = np.zeros(shape=(battery_no, pv_no, diesel_no))
@@ -337,20 +314,22 @@ def pv_diesel_hybrid(
         fuel_usage = np.zeros(shape=(battery_no, pv_no, diesel_no))
         excess_gen = np.zeros(shape=(battery_no, pv_no, diesel_no))
 
-        for battery in range(battery_no):
-            for pv in range(pv_no):
+        for pv in range(pv_no):
+            pv_size = pv_panel_size[pv]
+            net_load = pv_generation(temp, ghi, pv_size, load_curve, inv_eff)
+            for battery in range(battery_no):
                 for diesel in range(diesel_no):
-                    pv_size = pv_panel_size[battery, pv, diesel]
+
                     diesel_size = diesel_capacity[battery, pv, diesel]
                     battery_capacity = battery_size[battery, pv, diesel]
 
                     # For the number of diesel, pv and battery capacities the lpsp, battery lifetime, fuel usage and LPSP is calculated
                     diesel_share[battery, pv, diesel], battery_life[battery, pv, diesel], lpsp[battery, pv, diesel], fuel_usage[battery, pv, diesel], excess_gen[battery, pv, diesel] = \
-                        pv_diesel_capacities(pv_size, battery_capacity, diesel_size)
+                        hourly_optimization(battery_capacity, diesel_size, net_load)
 
         return diesel_share, battery_life, lpsp, fuel_usage, excess_gen
 
-    diesel_share, battery_life, lpsp, fuel_usage, excess_gen = run_everything(battery_no, pv_no, diesel_no, pv_panel_size, diesel_capacity, battery_size)
+    diesel_share, battery_life, lpsp, fuel_usage, excess_gen = run_everything(battery_no, pv_no, diesel_no, pv_caps, diesel_capacity, battery_size)
 
     battery_life = np.minimum(20, battery_life)
 
