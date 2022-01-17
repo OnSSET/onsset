@@ -296,30 +296,24 @@ def pv_diesel_hybrid(
     battery_no = len(battery_sizes)
     battery_sizes = np.array(battery_sizes)
 
-    #@numba.njit
-    def run_everything(battery_no, pv_no, diesel_no, pv_panel_size, diesel_capacity, battery_sizes):
+    diesel_share = np.zeros(shape=(battery_no, pv_no, diesel_no))
+    battery_life = np.zeros(shape=(battery_no, pv_no, diesel_no))
+    lpsp = np.zeros(shape=(battery_no, pv_no, diesel_no))
+    fuel_usage = np.zeros(shape=(battery_no, pv_no, diesel_no))
+    excess_gen = np.zeros(shape=(battery_no, pv_no, diesel_no))
 
-        diesel_share = np.zeros(shape=(battery_no, pv_no, diesel_no))
-        battery_life = np.zeros(shape=(battery_no, pv_no, diesel_no))
-        lpsp = np.zeros(shape=(battery_no, pv_no, diesel_no))
-        fuel_usage = np.zeros(shape=(battery_no, pv_no, diesel_no))
-        excess_gen = np.zeros(shape=(battery_no, pv_no, diesel_no))
+    for pv in range(pv_no):
+        pv_size = pv_caps[pv]
+        net_load = pv_generation(temp, ghi, pv_size, load_curve, inv_eff)
+        for battery in range(battery_no):
+            battery_capacity = battery_sizes[battery]
+            for diesel in range(diesel_no):
+                diesel_size = diesel_caps[diesel]
 
-        for pv in range(pv_no):
-            pv_size = pv_panel_size[pv]
-            net_load = pv_generation(temp, ghi, pv_size, load_curve, inv_eff)
-            for battery in range(battery_no):
-                battery_capacity = battery_sizes[battery]
-                for diesel in range(diesel_no):
-                    diesel_size = diesel_capacity[diesel]
-
-                    # For the number of diesel, pv and battery capacities the lpsp, battery lifetime, fuel usage and LPSP is calculated
-                    diesel_share[battery, pv, diesel], battery_life[battery, pv, diesel], lpsp[battery, pv, diesel], fuel_usage[battery, pv, diesel], excess_gen[battery, pv, diesel] = \
-                        hourly_optimization(battery_capacity, diesel_size, net_load)
-
-        return diesel_share, battery_life, lpsp, fuel_usage, excess_gen
-
-    diesel_share, battery_life, lpsp, fuel_usage, excess_gen = run_everything(battery_no, pv_no, diesel_no, np.array(pv_caps), np.array(diesel_caps), battery_sizes)
+                # For the number of diesel, pv and battery capacities the lpsp, battery lifetime, fuel usage and LPSP is calculated
+                diesel_share[battery, pv, diesel], battery_life[battery, pv, diesel], lpsp[battery, pv, diesel], \
+                fuel_usage[battery, pv, diesel], excess_gen[battery, pv, diesel] = \
+                    hourly_optimization(battery_capacity, diesel_size, net_load)
 
     battery_life = np.minimum(20, battery_life)
 
