@@ -3,6 +3,7 @@ import logging
 import pandas as pd
 import os
 import numba
+from numba import prange
 
 logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.ERROR)
 
@@ -151,6 +152,42 @@ def unmet_demand_and_excess_gen(unmet_demand, soc, n_dis, battery_size, n_chg, e
 
     return unmet_demand, soc, excess_gen, dod,  battery_life
 
+@numba.njit
+def hourly_optimization(battery_size, diesel_capacity, net_load, hour_numbers, inv_eff, n_dis, n_chg, dod_max,
+                        energy_per_hh):
+    fuel_result = 0
+    battery_life = 0
+    soc = 0.5
+    unmet_demand = 0
+    excess_gen = 0
+    annual_diesel_gen = 0
+    dod = 0
+    battery_use = 0
+
+    for hour in hour_numbers:
+        load = net_load[hour]
+
+        battery_use, soc = self_discharge(battery_use, soc)
+
+        fuel_result, annual_diesel_gen, diesel_gen, load = diesel_dispatch(hour, load, diesel_capacity, fuel_result,
+                                                                           annual_diesel_gen, soc, inv_eff, n_dis,
+                                                                           n_chg, battery_size)
+
+        battery_use, soc, dod = soc_and_battery_usage(load, diesel_gen, n_dis, inv_eff, battery_size, n_chg,
+                                                      battery_use, soc, hour, dod)
+
+        unmet_demand, soc, excess_gen, dod, battery_life = unmet_demand_and_excess_gen(unmet_demand, soc, n_dis,
+                                                                                       battery_size, n_chg,
+                                                                                       excess_gen, dod, hour,
+                                                                                       battery_life, dod_max,
+                                                                                       battery_use)
+
+    condition = unmet_demand / energy_per_hh  # LPSP is calculated
+    excess_gen = excess_gen / energy_per_hh
+    battery_life = round(1 / battery_life)
+    diesel_share = annual_diesel_gen / energy_per_hh
+
+    return diesel_share, battery_life, condition, fuel_result, excess_gen
 
 def pv_diesel_hybrid(
         energy_per_hh,  # kWh/household/year as defined
@@ -224,40 +261,7 @@ def pv_diesel_hybrid(
 
     load_curve = load_curve(tier, energy_per_hh)
 
-    @numba.njit
-    def hourly_optimization(battery_size, diesel_capacity, net_load):
-        fuel_result = 0
-        battery_life = 0
-        soc = 0.5
-        unmet_demand = 0
-        excess_gen = 0
-        annual_diesel_gen = 0
-        dod = 0
-        battery_use = 0
 
-        for hour in hour_numbers:
-
-            load = net_load[hour]
-
-            battery_use, soc = self_discharge(battery_use, soc)
-
-            fuel_result, annual_diesel_gen, diesel_gen, load = diesel_dispatch(hour, load, diesel_capacity, fuel_result, annual_diesel_gen, soc, inv_eff, n_dis, n_chg, battery_size)
-
-            battery_use, soc, dod = soc_and_battery_usage(load, diesel_gen, n_dis, inv_eff, battery_size, n_chg,
-                                                     battery_use, soc, hour, dod)
-
-            unmet_demand, soc, excess_gen, dod, battery_life = unmet_demand_and_excess_gen(unmet_demand, soc, n_dis,
-                                                                                           battery_size, n_chg,
-                                                                                           excess_gen, dod, hour,
-                                                                                           battery_life, dod_max,
-                                                                                           battery_use)
-
-        condition = unmet_demand / energy_per_hh  # LPSP is calculated
-        excess_gen = excess_gen / energy_per_hh
-        battery_life = round(1 / battery_life)
-        diesel_share = annual_diesel_gen / energy_per_hh
-
-        return diesel_share, battery_life, condition, fuel_result, excess_gen
 
     # This section creates the range of PV capacities, diesel capacities and battery sizes to be simulated
     ref = 5 * load_curve[19]
@@ -302,18 +306,19 @@ def pv_diesel_hybrid(
     fuel_usage = np.zeros(shape=(battery_no, pv_no, diesel_no))
     excess_gen = np.zeros(shape=(battery_no, pv_no, diesel_no))
 
-    for pv in range(pv_no):
+    for pv in prange(pv_no):
         pv_size = pv_caps[pv]
         net_load = pv_generation(temp, ghi, pv_size, load_curve, inv_eff)
-        for battery in range(battery_no):
+        for battery in prange(battery_no):
             battery_capacity = battery_sizes[battery]
-            for diesel in range(diesel_no):
+            for diesel in prange(diesel_no):
                 diesel_size = diesel_caps[diesel]
 
                 # For the number of diesel, pv and battery capacities the lpsp, battery lifetime, fuel usage and LPSP is calculated
                 diesel_share[battery, pv, diesel], battery_life[battery, pv, diesel], lpsp[battery, pv, diesel], \
                 fuel_usage[battery, pv, diesel], excess_gen[battery, pv, diesel] = \
-                    hourly_optimization(battery_capacity, diesel_size, net_load)
+                    hourly_optimization(battery_capacity, diesel_size, net_load, hour_numbers, inv_eff, n_dis, n_chg,
+                                        dod_max, energy_per_hh)
 
     battery_life = np.minimum(20, battery_life)
 
