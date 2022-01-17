@@ -277,7 +277,7 @@ def pv_diesel_hybrid(
     diesel_extend = np.ones(pv_no)
     pv_extend = np.ones(len(diesel_caps))
     pv_extend = np.outer(np.array(pv_caps), pv_extend)
-    diesel_caps = np.outer(diesel_extend, np.array(diesel_caps))
+    diesel_extend = np.outer(diesel_extend, np.array(diesel_caps))
 
     # This section creates 2d-arrays to store information on PV capacities, diesel capacities, battery sizes,
     # fuel usage, battery life and LPSP
@@ -289,13 +289,13 @@ def pv_diesel_hybrid(
     for j in range(len(battery_sizes)):
         battery_size[j, :, :] *= battery_sizes[j]
         pv_panel_size[j, :, :] = pv_extend
-        diesel_capacity[j, :, :] = diesel_caps
+        diesel_capacity[j, :, :] = diesel_extend
 
     battery_no = len(battery_sizes)
-
+    battery_sizes = np.array(battery_sizes)
 
     #@numba.njit
-    def run_everything(battery_no, pv_no, diesel_no, pv_panel_size, diesel_capacity, battery_size):
+    def run_everything(battery_no, pv_no, diesel_no, pv_panel_size, diesel_capacity, battery_sizes):
 
         diesel_share = np.zeros(shape=(battery_no, pv_no, diesel_no))
         battery_life = np.zeros(shape=(battery_no, pv_no, diesel_no))
@@ -309,7 +309,7 @@ def pv_diesel_hybrid(
             for battery in range(battery_no):
                 for diesel in range(diesel_no):
 
-                    diesel_size = diesel_capacity[battery, pv, diesel]
+                    diesel_size = diesel_capacity[diesel]
                     battery_capacity = battery_sizes[battery]
 
                     # For the number of diesel, pv and battery capacities the lpsp, battery lifetime, fuel usage and LPSP is calculated
@@ -318,7 +318,7 @@ def pv_diesel_hybrid(
 
         return diesel_share, battery_life, lpsp, fuel_usage, excess_gen
 
-    diesel_share, battery_life, lpsp, fuel_usage, excess_gen = run_everything(battery_no, pv_no, diesel_no, pv_caps, diesel_capacity, battery_size)
+    diesel_share, battery_life, lpsp, fuel_usage, excess_gen = run_everything(battery_no, pv_no, diesel_no, np.array(pv_caps), np.array(diesel_caps), battery_sizes)
 
     battery_life = np.minimum(20, battery_life)
 
