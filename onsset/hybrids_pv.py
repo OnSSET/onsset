@@ -4,6 +4,7 @@ import pandas as pd
 import os
 import numba
 from numba import prange
+import math
 
 logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.ERROR)
 
@@ -189,6 +190,57 @@ def hourly_optimization(battery_size, diesel_capacity, net_load, hour_numbers, i
 
     return diesel_share, battery_life, condition, fuel_result, excess_gen
 
+
+@numba.njit
+def calculate_hybrid_lcoe(diesel_price, end_year, start_year, energy_per_hh, battery_sizes, pv_no, diesel_no,
+                          fuel_usage, pv_panel_size, pv_cost, charge_controller, pv_om, diesel_capacity, diesel_cost,
+                          diesel_om, inverter_life, load_curve, inverter_cost, diesel_life, pv_life, battery_life,
+                          battery_size, battery_cost, dod_max, discount_rate):
+    # Necessary information for calculation of LCOE is defined
+    project_life = end_year - start_year
+    generation = np.ones(project_life) * energy_per_hh
+    generation[0] = 0
+
+    # Calculate LCOE
+    #sum_costs = np.zeros((len(battery_sizes), pv_no, diesel_no))
+    sum_el_gen = 0  # np.zeros((len(battery_sizes), pv_no, diesel_no))
+    investment = 0  # np.zeros((len(battery_sizes), pv_no, diesel_no))
+
+    for year in prange(project_life + 1):
+        salvage = 0  #np.zeros((len(battery_sizes), pv_no, diesel_no))
+        inverter_investment = 0
+        diesel_investment = 0
+        pv_investment = 0
+        battery_investment = 0
+
+        fuel_costs = fuel_usage * diesel_price
+        om_costs = (pv_panel_size * (pv_cost + charge_controller) * pv_om + diesel_capacity * diesel_cost * diesel_om)
+
+        if year % inverter_life == 0:
+            inverter_investment = max(load_curve) * inverter_cost
+        if year % diesel_life == 0:
+            diesel_investment = diesel_capacity * diesel_cost
+        if year % pv_life == 0:
+            pv_investment = pv_panel_size * (pv_cost + charge_controller)
+        if year % battery_life == 0:
+            battery_investment = battery_size * battery_cost / dod_max  # TODO Include dod_max here?
+
+        if year == project_life:
+            salvage = (1 - (project_life % battery_life) / battery_life) * battery_cost * battery_size / dod_max + \
+                      (1 - (project_life % diesel_life) / diesel_life) * diesel_capacity * diesel_cost + \
+                      (1 - (project_life % pv_life) / pv_life) * pv_panel_size * (pv_cost + charge_controller) + \
+                      (1 - (project_life % inverter_life) / inverter_life) * max(load_curve) * inverter_cost
+
+        investment += diesel_investment + pv_investment + battery_investment + inverter_investment - salvage
+
+        sum_costs = (fuel_costs + om_costs + battery_investment + diesel_investment + pv_investment - salvage) / (
+                (1 + discount_rate) ** year)
+
+        if year > 0:
+            sum_el_gen += energy_per_hh / ((1 + discount_rate) ** year)
+
+    return sum_costs / sum_el_gen, investment
+
 def pv_diesel_hybrid(
         energy_per_hh,  # kWh/household/year as defined
         ghi,
@@ -270,7 +322,7 @@ def pv_diesel_hybrid(
         if x < 1000:
             return [1000]
         else:
-            step = ceil(x / max_steps / 1000) * 1000
+            step = math.ceil(x / max_steps / 1000) * 1000
             return list(range(0, x + step, step))
 
     battery_sizes = [0.5 * energy_per_hh / 365, energy_per_hh / 365, 2 * energy_per_hh / 365]
@@ -322,46 +374,6 @@ def pv_diesel_hybrid(
 
     battery_life = np.minimum(20, battery_life)
 
-    def calculate_hybrid_lcoe(diesel_price):
-        # Necessary information for calculation of LCOE is defined
-        project_life = end_year - start_year
-        generation = np.ones(project_life) * energy_per_hh
-        generation[0] = 0
-
-        # Calculate LCOE
-        sum_costs = np.zeros((len(battery_sizes), pv_no, diesel_no))
-        sum_el_gen = np.zeros((len(battery_sizes), pv_no, diesel_no))
-        investment = np.zeros((len(battery_sizes), pv_no, diesel_no))
-
-        for year in range(project_life + 1):
-            salvage = np.zeros((len(battery_sizes), pv_no, diesel_no))
-
-            fuel_costs = fuel_usage * diesel_price
-            om_costs = (pv_panel_size * (
-                        pv_cost + charge_controller) * pv_om + diesel_capacity * diesel_cost * diesel_om)
-
-            inverter_investment = np.where(year % inverter_life == 0, max(load_curve) * inverter_cost, 0)
-            diesel_investment = np.where(year % diesel_life == 0, diesel_capacity * diesel_cost, 0)
-            pv_investment = np.where(year % pv_life == 0, pv_panel_size * (pv_cost + charge_controller), 0)
-            battery_investment = np.where(year % battery_life == 0, battery_size * battery_cost / dod_max,
-                                          0)  # TODO Include dod_max here?
-
-            if year == project_life:
-                salvage = (1 - (project_life % battery_life) / battery_life) * battery_cost * battery_size / dod_max + \
-                          (1 - (project_life % diesel_life) / diesel_life) * diesel_capacity * diesel_cost + \
-                          (1 - (project_life % pv_life) / pv_life) * pv_panel_size * (pv_cost + charge_controller) + \
-                          (1 - (project_life % inverter_life) / inverter_life) * max(load_curve) * inverter_cost
-
-            investment += diesel_investment + pv_investment + battery_investment + inverter_investment - salvage
-
-            sum_costs += (fuel_costs + om_costs + battery_investment + diesel_investment + pv_investment - salvage) / (
-                        (1 + discount_rate) ** year)
-
-            if year > 0:
-                sum_el_gen += energy_per_hh / ((1 + discount_rate) ** year)
-
-        return sum_costs / sum_el_gen, investment
-
     diesel_limit = 0.5
 
     min_lcoe_range = []
@@ -369,7 +381,21 @@ def pv_diesel_hybrid(
     capacity_range = []
     ren_share_range = []
 
-    lcoe, investment = calculate_hybrid_lcoe(diesel_price)
+    lcoe = np.zeros((len(battery_sizes), pv_no, diesel_no))
+    investment = np.zeros((len(battery_sizes), pv_no, diesel_no))
+
+    for pv in prange(pv_no):
+        pv_size = pv_caps[pv]
+        for battery in prange(battery_no):
+            battery_capacity = battery_sizes[battery]
+            for diesel in prange(diesel_no):
+                diesel_size = diesel_caps[diesel]
+
+                lcoe[battery, pv, diesel], investment[battery, pv, diesel] = calculate_hybrid_lcoe(diesel_price, end_year, start_year, energy_per_hh, battery_capacity, pv_no, diesel_no,
+                                      fuel_usage[battery, pv, diesel], pv_size, pv_cost, charge_controller, pv_om, diesel_size, diesel_cost,
+                                      diesel_om, inverter_life, load_curve, inverter_cost, diesel_life, pv_life, battery_life[battery, pv, diesel],
+                                      battery_capacity, battery_cost, dod_max, discount_rate)
+
     lcoe = np.where(lpsp > lpsp_max, 99, lcoe)
     lcoe = np.where(diesel_share > diesel_limit, 99, lcoe)
 

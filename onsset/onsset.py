@@ -1669,6 +1669,7 @@ class SettlementProcessor:
         self.calculate_total_demand_per_settlement(year)
 
     def hybrid_mini_grids(self, year, start_year, end_year):
+        logging.info('Optimize hybrid PV mini-grids')
         ghi, temp = read_environmental_data(r'C:\GitHub\OnSSET\Results\sl-2-pv.csv')
 
         self.df.apply(lambda row: pv_diesel_hybrid(
