@@ -22,10 +22,11 @@ def read_environmental_data(path):
     return ghi_curve, temp
 
 
-@numba.jit(nopython=True)
+@numba.njit
 def self_discharge(battery_use, soc):
     # Battery self-discharge (0.02% per hour)
     return battery_use + 0.0002 * soc, soc - 0.0002 * soc
+
 
 @numba.njit
 def pv_generation(temp, ghi, pv_capacity, load, inv_eff):
@@ -37,7 +38,7 @@ def pv_generation(temp, ghi, pv_capacity, load, inv_eff):
     return net_load
 
 
-@numba.jit(nopython=True)
+@numba.njit
 def diesel_dispatch(hour, net_load, diesel_capacity, fuel_result, annual_diesel_gen, soc, inv_eff, n_dis, n_chg, battery_size):
     # Below is the dispatch strategy for the diesel generator as described in word document
 
@@ -96,7 +97,7 @@ def diesel_dispatch(hour, net_load, diesel_capacity, fuel_result, annual_diesel_
     return fuel_result, annual_diesel_gen + diesel_gen, diesel_gen, net_load - diesel_gen
 
 
-@numba.jit(nopython=True)
+@numba.njit
 def soc_and_battery_usage(net_load, diesel_gen, n_dis, inv_eff, battery_size, n_chg, battery_use, soc, hour, dod):
 
     if net_load > 0:
@@ -127,7 +128,7 @@ def soc_and_battery_usage(net_load, diesel_gen, n_dis, inv_eff, battery_size, n_
     return battery_use, soc, dod
 
 
-@numba.jit(nopython=True)
+@numba.njit
 def unmet_demand_and_excess_gen(unmet_demand, soc, n_dis, battery_size, n_chg, excess_gen, dod,
                                 hour, battery_life, dod_max, battery_use):
 
@@ -308,10 +309,9 @@ def pv_diesel_hybrid(
             pv_size = pv_panel_size[pv]
             net_load = pv_generation(temp, ghi, pv_size, load_curve, inv_eff)
             for battery in range(battery_no):
+                battery_capacity = battery_sizes[battery]
                 for diesel in range(diesel_no):
-
                     diesel_size = diesel_capacity[diesel]
-                    battery_capacity = battery_sizes[battery]
 
                     # For the number of diesel, pv and battery capacities the lpsp, battery lifetime, fuel usage and LPSP is calculated
                     diesel_share[battery, pv, diesel], battery_life[battery, pv, diesel], lpsp[battery, pv, diesel], fuel_usage[battery, pv, diesel], excess_gen[battery, pv, diesel] = \
