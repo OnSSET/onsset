@@ -97,7 +97,7 @@ def diesel_dispatch(hour, net_load, diesel_capacity, fuel_result, annual_diesel_
 
 
 @numba.jit(nopython=True)
-def soc_and_battery_usage(net_load, diesel_gen, n_dis, inv_eff, battery_size, n_chg, battery_use, soc):
+def soc_and_battery_usage(net_load, diesel_gen, n_dis, inv_eff, battery_size, n_chg, battery_use, soc, hour, dod):
 
     if net_load > 0:
         if diesel_gen > 0:
@@ -115,12 +115,16 @@ def soc_and_battery_usage(net_load, diesel_gen, n_dis, inv_eff, battery_size, n_
             soc = soc - net_load * n_chg / battery_size
 
     # The amount of battery discharge in the hour is stored (measured in State Of Charge)
+    if hour == 0:
+        battery_use = 0
+        dod = 0
+
     if net_load > 0:
         battery_use = battery_use + min(net_load / n_dis / battery_size, soc)
     else:
         battery_use = battery_use + min(0, soc)  # Unneccessary?
 
-    return battery_use, soc
+    return battery_use, soc, dod
 
 
 @numba.jit(nopython=True)
@@ -231,9 +235,6 @@ def pv_diesel_hybrid(
         battery_use = 0
 
         for hour in hour_numbers:
-            if hour == 0:
-                battery_use = 0
-                dod = 0
 
             load = net_load[hour]
 
@@ -241,8 +242,8 @@ def pv_diesel_hybrid(
 
             fuel_result, annual_diesel_gen, diesel_gen, load = diesel_dispatch(hour, load, diesel_capacity, fuel_result, annual_diesel_gen, soc, inv_eff, n_dis, n_chg, battery_size)
 
-            battery_use, soc = soc_and_battery_usage(load, diesel_gen, n_dis, inv_eff, battery_size, n_chg,
-                                                     battery_use, soc)
+            battery_use, soc, dod = soc_and_battery_usage(load, diesel_gen, n_dis, inv_eff, battery_size, n_chg,
+                                                     battery_use, soc, hour, dod)
 
             unmet_demand, soc, excess_gen, dod, battery_life = unmet_demand_and_excess_gen(unmet_demand, soc, n_dis,
                                                                                            battery_size, n_chg,
