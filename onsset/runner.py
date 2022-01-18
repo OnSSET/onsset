@@ -149,14 +149,10 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
         disscount_index = scenario_info.iloc[scenario]['DiscountIndex']
         disc_rate = scenario_parameters.iloc[disscount_index]['DiscRate']
 
-        settlements_in_csv = calibrated_csv_path
-        settlements_out_csv = os.path.join(results_folder,
-                                           '{}-{}_{}_{}_{}_{}_{}.csv'.format(country_id, pop_index, electification_rate_index, household_dem_index,
-                                                                                      social_productive_dem_index, ind_dem_index, pv_index))
-        summary_csv = os.path.join(summary_folder,
-                                   '{}-{}_{}_{}_{}_{}_{}_summary.csv'.format(country_id, pop_index, electification_rate_index, household_dem_index,
-                                                                                      social_productive_dem_index, ind_dem_index, pv_index))
+        scenario_name = '{}_{}_{}_{}_{}_{}'.format(pop_index, electification_rate_index, household_dem_index,
+                                                   social_productive_dem_index, ind_dem_index, pv_index)
 
+        settlements_in_csv = calibrated_csv_path
         onsseter = SettlementProcessor(settlements_in_csv)
 
         onsseter.df['HealthDemand'] = 0
@@ -494,9 +490,12 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
         ### In the two variable below you can choose which summaries to include
 
         short_results = True  # If True, only selected columns included in the results. If False, all columns included in results
-        regional_summaries = False  # If True, regional summaries are computed and saved. If False, only national summaries included
+        regional_summaries = True  # If True, regional summaries are computed and saved. If False, only national summaries included
 
         ###
+
+        settlements_out_csv = os.path.join(results_folder, '{}-{}.csv'.format(country_id, scenario_name))
+        summary_csv = os.path.join(summary_folder, '{}-{}_summary.csv'.format(country_id, scenario_name))
 
         if short_results:
             df_short = onsseter.df[['id', 'X_deg', 'Y_deg', 'Region', 'PopStartYear', 'ElecPopCalib', 'Pop2025',
@@ -519,9 +518,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                 summary_table = onsseter.calc_drc_summaries(yearsofanalysis, region)
 
                 # This line must also be updated if you change the levers and want regional summaries
-                summary_csv = os.path.join(summary_folder,
-                                           '{}-{}_{}_{}_{}_{}_{}_summary.csv'.format(region, pop_index, electification_rate_index, household_dem_index,
-                                                                                          social_productive_dem_index, ind_dem_index, pv_index))
+                summary_csv = os.path.join(summary_folder, '{}-{}_summary.csv'.format(region, scenario_name))
 
                 # Enable or disable the line below to include/exclude regional summaries
                 summary_table.to_csv(summary_csv, index=True)
