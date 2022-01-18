@@ -1668,7 +1668,7 @@ class SettlementProcessor:
                                     productive_demand)
         self.calculate_total_demand_per_settlement(year)
 
-    def hybrid_mini_grids(self, year, start_year, end_year):
+    def hybrid_mini_grids(self, year, start_year, end_year):  # ToDo ensure hybrids are fully integrated
         logging.info('Optimize hybrid PV mini-grids')
         ghi, temp = read_environmental_data(r'C:\GitHub\OnSSET\Results\sl-2-pv.csv')
 
@@ -1681,7 +1681,6 @@ class SettlementProcessor:
             start_year,
             end_year,
             row[SET_MG_DIESEL_FUEL + "{}".format(year)]), axis=1)
-
 
 
     def calculate_off_grid_lcoes(self, mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc,
