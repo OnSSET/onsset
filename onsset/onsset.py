@@ -2352,3 +2352,76 @@ class SettlementProcessor:
         df_summary[year][sumtechs[31]] = sum(self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 8) &
                                                          (self.df[SET_LIMIT + "{}".format(year)] == 1)]
                                              [SET_INVESTMENT_COST + "{}".format(year)])
+        
+    def calc_drc_summaries(self, yearsofanalysis, region='None'):
+
+        if region == 'None':
+            summary_df = self.df
+        else:
+            summary_df = self.df.loc[self.df['Region'] == region]
+
+        elements = []
+        for year in yearsofanalysis:
+            elements.append("Population{}".format(year))
+            elements.append("NewConnections{}".format(year))
+            elements.append("Capacity{}".format(year))
+            elements.append("Investment{}".format(year))
+
+        techs = ["Grid", "SA_Diesel", "SA_PV", "MG_Diesel", "MG_PV", "MG_Wind", "MG_Hydro"]
+
+        sumtechs = []
+        for year in yearsofanalysis:
+            sumtechs.extend(["Population{}".format(year) + t for t in techs])
+            sumtechs.extend(["NewConnections{}".format(year) + t for t in techs])
+            sumtechs.extend(["Capacity{}".format(year) + t for t in techs])
+            sumtechs.extend(["Investment{}".format(year) + t for t in techs])
+
+        summary = pd.Series(index=sumtechs, name='country')
+
+        for year in yearsofanalysis:
+            code = 1
+            for t in techs:
+                summary.loc["Population{}".format(year) + t] = summary_df.loc[
+                    (summary_df[SET_MIN_OVERALL_CODE + '{}'.format(year)] == code) & (
+                            summary_df[SET_ELEC_FINAL_CODE + '{}'.format(year)] < 99), SET_POP + '{}'.format(
+                        year)].sum()
+                summary.loc["NewConnections{}".format(year) + t] = summary_df.loc[
+                    (summary_df[SET_MIN_OVERALL_CODE + '{}'.format(year)] == code) & (summary_df[
+                                                                                           SET_ELEC_FINAL_CODE + '{}'.format(
+                                                                                               year)] < 99), SET_NEW_CONNECTIONS + '{}'.format(
+                        year)].sum()
+                summary.loc["Capacity{}".format(year) + t] = summary_df.loc[(summary_df[
+                                                                                  SET_MIN_OVERALL_CODE + '{}'.format(
+                                                                                      year)] == code) & (summary_df[
+                                                                                                             SET_ELEC_FINAL_CODE + '{}'.format(
+                                                                                                                 year)] < 99), SET_NEW_CAPACITY + '{}'.format(
+                    year)].sum() / 1000
+                summary.loc["Investment{}".format(year) + t] = summary_df.loc[
+                    (summary_df[SET_MIN_OVERALL_CODE + '{}'.format(year)] == code) & (summary_df[
+                                                                                           SET_ELEC_FINAL_CODE + '{}'.format(
+                                                                                               year)] < 99), SET_INVESTMENT_COST + '{}'.format(
+                        year)].sum()
+                code += 1
+
+        index = techs + ['Total']
+        columns = []
+        for year in yearsofanalysis:
+            columns.append("Population{}".format(year))
+            columns.append("NewConnections{}".format(year))
+            columns.append("Capacity{} (MW)".format(year))
+            columns.append("Investment{} (million USD)".format(year))
+
+        summary_table = pd.DataFrame(index=index, columns=columns)
+
+        summary_table[columns[0]] = summary.iloc[0:7].astype(int).tolist() + [int(summary.iloc[0:7].sum())]
+        summary_table[columns[1]] = summary.iloc[7:14].astype(int).tolist() + [int(summary.iloc[7:14].sum())]
+        summary_table[columns[2]] = summary.iloc[14:21].astype(int).tolist() + [int(summary.iloc[14:21].sum())]
+        summary_table[columns[3]] = [round(x / 1e4) / 1e2 for x in summary.iloc[21:28].astype(float).tolist()] + [
+            round(summary.iloc[21:28].sum() / 1e4) / 1e2]
+        summary_table[columns[4]] = summary.iloc[28:35].astype(int).tolist() + [int(summary.iloc[28:35].sum())]
+        summary_table[columns[5]] = summary.iloc[35:42].astype(int).tolist() + [int(summary.iloc[35:42].sum())]
+        summary_table[columns[6]] = summary.iloc[42:49].astype(int).tolist() + [int(summary.iloc[42:49].sum())]
+        summary_table[columns[7]] = [round(x / 1e4) / 1e2 for x in summary.iloc[49:56].astype(float).tolist()] + [
+            round(summary.iloc[49:56].sum() / 1e4) / 1e2]
+
+        return summary_table

@@ -491,166 +491,39 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
             elif onsseter.df.iloc[:, i].dtype == 'int64':
                 onsseter.df.iloc[:, i] = pd.to_numeric(onsseter.df.iloc[:, i], downcast='signed')
 
-        ### In this part of the code you can choose which summaries to include
+        ### In the two variable below you can choose which summaries to include
 
-        short_results=True  # If True, only selected columns included in the results. If False, all columns included in results
-        regional_summaries=True  # If True, regional summaries are computed and saved. If False, only national summaries included
+        short_results = True  # If True, only selected columns included in the results. If False, all columns included in results
+        regional_summaries = False  # If True, regional summaries are computed and saved. If False, only national summaries included
 
-
-
-
-
+        ###
 
         if short_results:
-            df_short = onsseter.df[['id', 'X_deg', 'Y_deg', 'Region', 'PopStartYear', 'ElecPopCalib', 'Pop2025', 'NewConnections2025',
-                                   'NewCapacity2025', 'InvestmentCost2025', 'NewDemand2025', 'TotalDemand2025', 'Pop2030',
-                                   'NewConnections2030', 'NewCapacity2030', 'InvestmentCost2030', 'NewDemand2030',
-                                   'TotalDemand2030']]
+            df_short = onsseter.df[['id', 'X_deg', 'Y_deg', 'Region', 'PopStartYear', 'ElecPopCalib', 'Pop2025',
+                                    'FinalElecCode2025', 'NewConnections2025', 'NewCapacity2025', 'InvestmentCost2025',
+                                    'NewDemand2025', 'TotalDemand2025', 'Pop2030', 'FinalElecCode2030',
+                                    'NewConnections2030', 'NewCapacity2030', 'InvestmentCost2030', 'NewDemand2030',
+                                    'TotalDemand2030']]
             df_short.to_csv(settlements_out_csv, index=False)
         else:
             onsseter.df.to_csv(settlements_out_csv, index=False)
 
-        elements = []
-        for year in yearsofanalysis:
-            elements.append("Population{}".format(year))
-            elements.append("NewConnections{}".format(year))
-            elements.append("Capacity{}".format(year))
-            elements.append("Investment{}".format(year))
-
-        techs = ["Grid", "SA_Diesel", "SA_PV", "MG_Diesel", "MG_PV", "MG_Wind", "MG_Hydro"]
-
-        sumtechs = []
-        for year in yearsofanalysis:
-            sumtechs.extend(["Population{}".format(year) + t for t in techs])
-            sumtechs.extend(["NewConnections{}".format(year) + t for t in techs])
-            sumtechs.extend(["Capacity{}".format(year) + t for t in techs])
-            sumtechs.extend(["Investment{}".format(year) + t for t in techs])
-
-        summary = pd.Series(index=sumtechs, name='country')
-
-        for year in yearsofanalysis:
-            code = 1
-            for t in techs:
-                summary.loc["Population{}".format(year) + t] = onsseter.df.loc[
-                    (onsseter.df[SET_MIN_OVERALL_CODE + '{}'.format(year)] == code) & (
-                                onsseter.df[SET_ELEC_FINAL_CODE + '{}'.format(year)] < 99), SET_POP + '{}'.format(
-                        year)].sum()
-                summary.loc["NewConnections{}".format(year) + t] = onsseter.df.loc[
-                    (onsseter.df[SET_MIN_OVERALL_CODE + '{}'.format(year)] == code) & (onsseter.df[
-                                                                                           SET_ELEC_FINAL_CODE + '{}'.format(
-                                                                                               year)] < 99), SET_NEW_CONNECTIONS + '{}'.format(
-                        year)].sum()
-                summary.loc["Capacity{}".format(year) + t] = onsseter.df.loc[(onsseter.df[
-                                                                                  SET_MIN_OVERALL_CODE + '{}'.format(
-                                                                                      year)] == code) & (onsseter.df[
-                                                                                                             SET_ELEC_FINAL_CODE + '{}'.format(
-                                                                                                                 year)] < 99), SET_NEW_CAPACITY + '{}'.format(
-                    year)].sum() / 1000
-                summary.loc["Investment{}".format(year) + t] = onsseter.df.loc[
-                    (onsseter.df[SET_MIN_OVERALL_CODE + '{}'.format(year)] == code) & (onsseter.df[
-                                                                                           SET_ELEC_FINAL_CODE + '{}'.format(
-                                                                                               year)] < 99), SET_INVESTMENT_COST + '{}'.format(
-                        year)].sum()
-                code += 1
-
-        index = techs + ['Total']
-        columns = []
-        for year in yearsofanalysis:
-            columns.append("Population{}".format(year))
-            columns.append("NewConnections{}".format(year))
-            columns.append("Capacity{} (MW)".format(year))
-            columns.append("Investment{} (million USD)".format(year))
-
-        summary_table = pd.DataFrame(index=index, columns=columns)
-
-        summary_table[columns[0]] = summary.iloc[0:7].astype(int).tolist() + [int(summary.iloc[0:7].sum())]
-        summary_table[columns[1]] = summary.iloc[7:14].astype(int).tolist() + [int(summary.iloc[7:14].sum())]
-        summary_table[columns[2]] = summary.iloc[14:21].astype(int).tolist() + [int(summary.iloc[14:21].sum())]
-        summary_table[columns[3]] = [round(x / 1e4) / 1e2 for x in summary.iloc[21:28].astype(float).tolist()] + [
-            round(summary.iloc[21:28].sum() / 1e4) / 1e2]
-        summary_table[columns[4]] = summary.iloc[28:35].astype(int).tolist() + [int(summary.iloc[28:35].sum())]
-        summary_table[columns[5]] = summary.iloc[35:42].astype(int).tolist() + [int(summary.iloc[35:42].sum())]
-        summary_table[columns[6]] = summary.iloc[42:49].astype(int).tolist() + [int(summary.iloc[42:49].sum())]
-        summary_table[columns[7]] = [round(x / 1e4) / 1e2 for x in summary.iloc[49:56].astype(float).tolist()] + [
-            round(summary.iloc[49:56].sum() / 1e4) / 1e2]
+        summary_table = onsseter.calc_drc_summaries(yearsofanalysis)
 
         summary_table.to_csv(summary_csv, index=True)
 
-        regions = onsseter.df['Region'].unique()
+        if regional_summaries:
+            regions = onsseter.df['Region'].unique()
+            for region in regions:
 
-        for region in regions:
+                summary_table = onsseter.calc_drc_summaries(yearsofanalysis, region)
 
-            elements = []
-            for year in yearsofanalysis:
-                elements.append("Population{}".format(year))
-                elements.append("NewConnections{}".format(year))
-                elements.append("Capacity{}".format(year))
-                elements.append("Investment{}".format(year))
+                # This line must also be updated if you change the levers and want regional summaries
+                summary_csv = os.path.join(summary_folder,
+                                           '{}-{}_{}_{}_{}_{}_{}_summary.csv'.format(region, pop_index, electification_rate_index, household_dem_index,
+                                                                                          social_productive_dem_index, ind_dem_index, pv_index))
 
-            techs = ["Grid", "SA_Diesel", "SA_PV", "MG_Diesel", "MG_PV", "MG_Wind", "MG_Hydro"]
-
-            sumtechs = []
-            for year in yearsofanalysis:
-                sumtechs.extend(["Population{}".format(year) + t for t in techs])
-                sumtechs.extend(["NewConnections{}".format(year) + t for t in techs])
-                sumtechs.extend(["Capacity{}".format(year) + t for t in techs])
-                sumtechs.extend(["Investment{}".format(year) + t for t in techs])
-
-            summary = pd.Series(index=sumtechs, name='country')
-
-            for year in yearsofanalysis:
-                code = 1
-                for t in techs:
-                    summary.loc["Population{}".format(year) + t] = onsseter.df.loc[
-                        (onsseter.df[SET_MIN_OVERALL_CODE + '{}'.format(year)] == code) & (
-                                    onsseter.df[SET_ELEC_FINAL_CODE + '{}'.format(year)] < 99) & (
-                                    onsseter.df['Region'] == region), SET_POP + '{}'.format(year)].sum()
-                    summary.loc["NewConnections{}".format(year) + t] = onsseter.df.loc[
-                        (onsseter.df[SET_MIN_OVERALL_CODE + '{}'.format(year)] == code) & (
-                                    onsseter.df[SET_ELEC_FINAL_CODE + '{}'.format(year)] < 99) & (
-                                    onsseter.df['Region'] == region), SET_NEW_CONNECTIONS + '{}'.format(year)].sum()
-                    summary.loc["Capacity{}".format(year) + t] = onsseter.df.loc[(onsseter.df[
-                                                                                      SET_MIN_OVERALL_CODE + '{}'.format(
-                                                                                          year)] == code) & (
-                                                                                             onsseter.df[
-                                                                                                 SET_ELEC_FINAL_CODE + '{}'.format(
-                                                                                                     year)] < 99) & (
-                                                                                             onsseter.df[
-                                                                                                 'Region'] == region), SET_NEW_CAPACITY + '{}'.format(
-                        year)].sum() / 1000
-                    summary.loc["Investment{}".format(year) + t] = onsseter.df.loc[
-                        (onsseter.df[SET_MIN_OVERALL_CODE + '{}'.format(year)] == code) & (
-                                    onsseter.df[SET_ELEC_FINAL_CODE + '{}'.format(year)] < 99) & (
-                                    onsseter.df['Region'] == region), SET_INVESTMENT_COST + '{}'.format(year)].sum()
-                    code += 1
-
-            index = techs + ['Total']
-            columns = []
-            for year in yearsofanalysis:
-                columns.append("Population{}".format(year))
-                columns.append("NewConnections{}".format(year))
-                columns.append("Capacity{} (MW)".format(year))
-                columns.append("Investment{} (million USD)".format(year))
-
-            summary_table = pd.DataFrame(index=index, columns=columns)
-
-            summary_table[columns[0]] = summary.iloc[0:7].astype(int).tolist() + [int(summary.iloc[0:7].sum())]
-            summary_table[columns[1]] = summary.iloc[7:14].astype(int).tolist() + [int(summary.iloc[7:14].sum())]
-            summary_table[columns[2]] = summary.iloc[14:21].astype(int).tolist() + [int(summary.iloc[14:21].sum())]
-            summary_table[columns[3]] = [round(x / 1e4) / 1e2 for x in summary.iloc[21:28].astype(float).tolist()] + [
-                round(summary.iloc[21:28].sum() / 1e4) / 1e2]
-            summary_table[columns[4]] = summary.iloc[28:35].astype(int).tolist() + [int(summary.iloc[28:35].sum())]
-            summary_table[columns[5]] = summary.iloc[35:42].astype(int).tolist() + [int(summary.iloc[35:42].sum())]
-            summary_table[columns[6]] = summary.iloc[42:49].astype(int).tolist() + [int(summary.iloc[42:49].sum())]
-            summary_table[columns[7]] = [round(x / 1e4) / 1e2 for x in summary.iloc[49:56].astype(float).tolist()] + [
-                round(summary.iloc[49:56].sum() / 1e4) / 1e2]
-
-            # This line must also be updated if you change the levers and want regional summaries
-            summary_csv = os.path.join(summary_folder,
-                                       '{}-{}_{}_{}_{}_{}_{}_summary.csv'.format(region, pop_index, electification_rate_index, household_dem_index,
-                                                                                      social_productive_dem_index, ind_dem_index, pv_index))
-
-            # Enable or disable the line below to include/exclude regional summaries
-            # summary_table.to_csv(summary_csv, index=True)
+                # Enable or disable the line below to include/exclude regional summaries
+                summary_table.to_csv(summary_csv, index=True)
 
         logging.info('Finished')
