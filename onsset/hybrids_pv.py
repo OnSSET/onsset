@@ -24,7 +24,7 @@ def read_environmental_data(path):
     return ghi_curve, temp
 
 
-@numba.njit
+@numba.njit  # ToDo ensure works with battery_size = 0
 def self_discharge(battery_use, soc):
     # Battery self-discharge (0.02% per hour)
     return battery_use + 0.0002 * soc, soc - 0.0002 * soc
@@ -40,7 +40,7 @@ def pv_generation(temp, ghi, pv_capacity, load, inv_eff):
     return net_load
 
 
-@numba.njit
+@numba.njit  # ToDo ensure works with battery_size = 0
 def diesel_dispatch(hour, net_load, diesel_capacity, fuel_result, annual_diesel_gen, soc, inv_eff, n_dis, n_chg, battery_size):
     # Below is the dispatch strategy for the diesel generator as described in word document
 
@@ -99,7 +99,7 @@ def diesel_dispatch(hour, net_load, diesel_capacity, fuel_result, annual_diesel_
     return fuel_result, annual_diesel_gen + diesel_gen, diesel_gen, net_load - diesel_gen
 
 
-@numba.njit
+@numba.njit  # ToDo ensure works with battery_size = 0
 def soc_and_battery_usage(net_load, diesel_gen, n_dis, inv_eff, battery_size, n_chg, battery_use, soc, hour, dod):
 
     if net_load > 0:
@@ -130,7 +130,7 @@ def soc_and_battery_usage(net_load, diesel_gen, n_dis, inv_eff, battery_size, n_
     return battery_use, soc, dod
 
 
-@numba.njit
+@numba.njit  # ToDo ensure works with battery_size = 0
 def unmet_demand_and_excess_gen(unmet_demand, soc, n_dis, battery_size, n_chg, excess_gen, dod,
                                 hour, battery_life, dod_max, battery_use):
 
@@ -192,7 +192,7 @@ def hourly_optimization(battery_size, diesel_capacity, net_load, hour_numbers, i
 
 
 @numba.njit
-def calculate_hybrid_lcoe(diesel_price, end_year, start_year, energy_per_hh, battery_sizes, pv_no, diesel_no,
+def calculate_hybrid_lcoe(diesel_price, end_year, start_year, energy_per_hh,
                           fuel_usage, pv_panel_size, pv_cost, charge_controller, pv_om, diesel_capacity, diesel_cost,
                           diesel_om, inverter_life, load_curve, inverter_cost, diesel_life, pv_life, battery_life,
                           battery_size, battery_cost, dod_max, discount_rate):
@@ -321,102 +321,53 @@ def pv_diesel_hybrid(
 
     # This section creates the range of PV capacities, diesel capacities and battery sizes to be simulated
     ref = 5 * load_curve[19]
-
-    def diesel_range(x, max_steps):
-        if x < 1:
-            return np.array([1])
-        else:
-            step_size = math.ceil(x / max_steps)
-            steps = math.ceil(x / step_size) + 1
-            out = np.ones(steps) * step_size
-            for i in prange(steps):
-                out[i] = out[i] * i
-            return out
-
-    battery_sizes = [0.5 * energy_per_hh / 365, energy_per_hh / 365, 2 * energy_per_hh / 365]
     pv_caps = []
     for i in prange(pv_no):
         pv_caps.append(ref * (pv_no - i) / pv_no)
-    diesel_caps = diesel_range(max(load_curve), diesel_no)
-    diesel_no = len(diesel_caps)
 
-    diesel_extend = np.ones(pv_no)
-    pv_extend = np.ones(len(diesel_caps))
-    pv_extend = np.outer(np.array(pv_caps), pv_extend)
-    diesel_extend = np.outer(diesel_extend, np.array(diesel_caps))
+    if max(load_curve) < 1:
+        diesel_caps = np.array([1])
+        steps = 1
+    else:
+        step_size = math.ceil(max(load_curve) / diesel_no)
+        steps = math.ceil(max(load_curve) / step_size) + 1
+        diesel_caps = np.ones(steps) * step_size
+        for i in prange(steps):
+            diesel_caps[i] = diesel_caps[i] * i
 
-    # This section creates 2d-arrays to store information on PV capacities, diesel capacities, battery sizes,
-    # fuel usage, battery life and LPSP
+    battery_sizes = [0.5 * energy_per_hh / 365, energy_per_hh / 365, 2 * energy_per_hh / 365]
 
-    battery_size = np.ones((len(battery_sizes), pv_no, diesel_no))
-    pv_panel_size = np.zeros((len(battery_sizes), pv_no, diesel_no))
-    diesel_capacity = np.zeros((len(battery_sizes), pv_no, diesel_no))
-
-    for j in prange(len(battery_sizes)):
-        battery_size[j, :, :] *= battery_sizes[j]
-        pv_panel_size[j, :, :] = pv_extend
-        diesel_capacity[j, :, :] = diesel_extend
-
-    battery_no = len(battery_sizes)
-    battery_sizes = np.array(battery_sizes)
-
-    diesel_share = np.zeros(shape=(battery_no, pv_no, diesel_no))
-    battery_life = np.zeros(shape=(battery_no, pv_no, diesel_no))
-    lpsp = np.zeros(shape=(battery_no, pv_no, diesel_no))
-    fuel_usage = np.zeros(shape=(battery_no, pv_no, diesel_no))
-    excess_gen = np.zeros(shape=(battery_no, pv_no, diesel_no))
-
-    for pv in prange(pv_no):
-        pv_size = pv_caps[pv]
-        net_load = pv_generation(temp, ghi, pv_size, load_curve, inv_eff)
-        for battery in prange(battery_no):
-            battery_capacity = battery_sizes[battery]
-            for diesel in prange(diesel_no):
-                diesel_size = diesel_caps[diesel]
-
-                # For the number of diesel, pv and battery capacities the lpsp, battery lifetime, fuel usage and LPSP is calculated
-                diesel_share[battery, pv, diesel], battery_life[battery, pv, diesel], lpsp[battery, pv, diesel], \
-                fuel_usage[battery, pv, diesel], excess_gen[battery, pv, diesel] = \
-                    hourly_optimization(battery_capacity, diesel_size, net_load, hour_numbers, inv_eff, n_dis, n_chg,
-                                        dod_max, energy_per_hh)
-
-    battery_life = np.minimum(20, battery_life)
+    min_diesel_share = 0
+    min_pv_capacity = 0
+    min_diesel_capacity = 0
+    min_lcoe = 99
+    min_investment = 0
 
     diesel_limit = 0.5
 
-    min_lcoe_range = []
-    investment_range = []
-    capacity_range = []
-    ren_share_range = []
+    for pv_size in pv_caps:
+        net_load = pv_generation(temp, ghi, pv_size, load_curve, inv_eff)
+        for battery_capacity in battery_sizes:
+            for diesel_size in diesel_caps:
 
-    lcoe = np.zeros((len(battery_sizes), pv_no, diesel_no))
-    investment = np.zeros((len(battery_sizes), pv_no, diesel_no))
+                # For the number of diesel, pv and battery capacities the lpsp, battery lifetime, fuel usage and LPSP is calculated
+                diesel_share, battery_life, lpsp, fuel_usage, excess_gen = \
+                    hourly_optimization(battery_capacity, diesel_size, net_load, hour_numbers, inv_eff, n_dis, n_chg,
+                                        dod_max, energy_per_hh)
 
-    for pv in prange(pv_no):
-        pv_size = pv_caps[pv]
-        for battery in prange(battery_no):
-            battery_capacity = battery_sizes[battery]
-            for diesel in prange(diesel_no):
-                diesel_size = diesel_caps[diesel]
+                battery_life = np.minimum(20, battery_life)
 
-                lcoe[battery, pv, diesel], investment[battery, pv, diesel] = calculate_hybrid_lcoe(diesel_price, end_year, start_year, energy_per_hh, battery_capacity, pv_no, diesel_no,
-                                      fuel_usage[battery, pv, diesel], pv_size, pv_cost, charge_controller, pv_om, diesel_size, diesel_cost,
-                                      diesel_om, inverter_life, load_curve, inverter_cost, diesel_life, pv_life, battery_life[battery, pv, diesel],
-                                      battery_capacity, battery_cost, dod_max, discount_rate)
+                lcoe, investment = calculate_hybrid_lcoe(diesel_price, end_year, start_year, energy_per_hh, fuel_usage,
+                                                         pv_size, pv_cost, charge_controller, pv_om, diesel_size,
+                                                         diesel_cost, diesel_om, inverter_life, load_curve,
+                                                         inverter_cost, diesel_life, pv_life, battery_life,
+                                                         battery_capacity, battery_cost, dod_max, discount_rate)
 
-    lcoe = np.where(lpsp > lpsp_max, 99, lcoe)
-    lcoe = np.where(diesel_share > diesel_limit, 99, lcoe)
+                if (lcoe < min_lcoe) & (lpsp < lpsp_max) & (diesel_share > diesel_limit):
+                    min_diesel_share = diesel_share
+                    min_lcoe = lcoe
+                    min_investment = investment
+                    min_pv_capacity = pv_size
+                    min_diesel_capacity = diesel_size
 
-    min_lcoe = np.min(lcoe)
-    min_lcoe_combination = np.unravel_index(np.argmin(lcoe, axis=None), lcoe.shape)
-    ren_share = 1 - diesel_share[min_lcoe_combination]
-    capacity = pv_panel_size[min_lcoe_combination] + diesel_capacity[min_lcoe_combination]
-    ren_capacity = pv_panel_size[min_lcoe_combination] / capacity
-    # excess_gen = excess_gen[min_lcoe_combination]
-
-    min_lcoe_range.append(min_lcoe)
-    investment_range.append(investment[min_lcoe_combination])
-    capacity_range.append(capacity)
-    ren_share_range.append(ren_share)
-
-    return min_lcoe_range, investment_range, capacity_range, ren_share_range  # , ren_capacity, excess_gen
+    return min_lcoe, min_investment, min_pv_capacity + min_diesel_capacity, 1 - min_diesel_share

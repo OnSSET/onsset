@@ -1680,7 +1680,7 @@ class SettlementProcessor:
             row[SET_TIER],
             start_year,
             end_year,
-            [row[SET_MG_DIESEL_FUEL + "{}".format(year)]]), axis=1)
+            row[SET_MG_DIESEL_FUEL + "{}".format(year)]), axis=1)
 
 
 
