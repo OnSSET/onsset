@@ -490,7 +490,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
         ### In the two variable below you can choose which summaries to include
 
         short_results = True  # If True, only selected columns included in the results. If False, all columns included in results
-        regional_summaries = True  # If True, regional summaries are computed and saved. If False, only national summaries included
+        regional_summaries = False  # If True, regional summaries are computed and saved. If False, only national summaries included
 
         ###
 
