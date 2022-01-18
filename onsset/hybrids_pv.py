@@ -166,7 +166,7 @@ def hourly_optimization(battery_size, diesel_capacity, net_load, hour_numbers, i
     battery_use = 0
 
     for hour in hour_numbers:
-        load = net_load[hour]
+        load = net_load[int(hour)]
 
         battery_use, soc = self_discharge(battery_use, soc)
 
@@ -241,6 +241,8 @@ def calculate_hybrid_lcoe(diesel_price, end_year, start_year, energy_per_hh, bat
 
     return sum_costs / sum_el_gen, investment
 
+
+#@numba.njit
 def pv_diesel_hybrid(
         energy_per_hh,  # kWh/household/year as defined
         ghi,
@@ -270,8 +272,12 @@ def pv_diesel_hybrid(
     charge_controller = 142
 
     ghi = ghi_curve * ghi * 1000 / ghi_curve.sum()
-    hour_numbers = np.array(
-        (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23) * 365)
+
+    hour_numbers = np.empty(8760)
+    for i in prange(365):
+        for j in prange(24):
+            hour_numbers[i * 24 + j] = j
+
     dod_max = 0.8  # maximum depth of discharge of battery
 
     def load_curve(tier, energy_per_hh):
@@ -313,21 +319,23 @@ def pv_diesel_hybrid(
 
     load_curve = load_curve(tier, energy_per_hh)
 
-
-
     # This section creates the range of PV capacities, diesel capacities and battery sizes to be simulated
     ref = 5 * load_curve[19]
 
     def diesel_range(x, max_steps):
-        if x < 1000:
-            return [1000]
+        if x < 1:
+            return np.array([1])
         else:
-            step = math.ceil(x / max_steps / 1000) * 1000
-            return list(range(0, x + step, step))
+            step_size = math.ceil(x / max_steps)
+            steps = math.ceil(x / step_size) + 1
+            out = np.ones(steps) * step_size
+            for i in prange(steps):
+                out[i] = out[i] * i
+            return out
 
     battery_sizes = [0.5 * energy_per_hh / 365, energy_per_hh / 365, 2 * energy_per_hh / 365]
     pv_caps = []
-    for i in range(pv_no):
+    for i in prange(pv_no):
         pv_caps.append(ref * (pv_no - i) / pv_no)
     diesel_caps = diesel_range(max(load_curve), diesel_no)
     diesel_no = len(diesel_caps)
@@ -344,7 +352,7 @@ def pv_diesel_hybrid(
     pv_panel_size = np.zeros((len(battery_sizes), pv_no, diesel_no))
     diesel_capacity = np.zeros((len(battery_sizes), pv_no, diesel_no))
 
-    for j in range(len(battery_sizes)):
+    for j in prange(len(battery_sizes)):
         battery_size[j, :, :] *= battery_sizes[j]
         pv_panel_size[j, :, :] = pv_extend
         diesel_capacity[j, :, :] = diesel_extend
