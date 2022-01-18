@@ -2199,6 +2199,17 @@ class SettlementProcessor:
                 (HOURS_PER_YEAR * (self.df[SET_GHI] / HOURS_PER_YEAR) * sa_pv_calc.base_to_peak_load_ratio *
                  (1 - sa_pv_calc.distribution_losses)))
 
+    def update_results_columns(self, year):
+        self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 99, SET_NEW_CAPACITY + "{}".format(year)] = 0
+        self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 99, SET_INVESTMENT_COST + "{}".format(year)] = 0
+        self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 99, SET_INVESTMENT_COST + "{}".format(year)] = 0
+        self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 99, SET_NEW_CONNECTIONS + "{}".format(year)] = 0
+        self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 99, SET_ENERGY_PER_CELL + "{}".format(year)] = 0
+        self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 99, SET_TOTAL_ENERGY_PER_CELL] = 0
+
+        self.df['NewDemand' + "{}".format(year)] = self.df[SET_ENERGY_PER_CELL + "{}".format(year)]
+        self.df['TotalDemand' + "{}".format(year)] = self.df[SET_TOTAL_ENERGY_PER_CELL]
+
     def calc_summaries(self, df_summary, sumtechs, year):
 
         """The next section calculates the summaries for technology split,

@@ -483,14 +483,32 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
             onsseter.calculate_new_capacity(mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc,
                                             sa_diesel_calc, grid_calc_ouest, grid_calc_sud, grid_calc_est, year)
 
+            onsseter.update_results_columns(year)
+
         for i in range(len(onsseter.df.columns)):
             if onsseter.df.iloc[:, i].dtype == 'float64':
                 onsseter.df.iloc[:, i] = pd.to_numeric(onsseter.df.iloc[:, i], downcast='float')
             elif onsseter.df.iloc[:, i].dtype == 'int64':
                 onsseter.df.iloc[:, i] = pd.to_numeric(onsseter.df.iloc[:, i], downcast='signed')
 
-        # Enable/disable the line below to include/exclude the full result files
-        onsseter.df.to_csv(settlements_out_csv, index=False)
+        ### In this part of the code you can choose which summaries to include
+
+        short_results=True  # If True, only selected columns included in the results. If False, all columns included in results
+        regional_summaries=True  # If True, regional summaries are computed and saved. If False, only national summaries included
+
+
+
+
+
+
+        if short_results:
+            df_short = onsseter.df[['id', 'X_deg', 'Y_deg', 'Region', 'PopStartYear', 'ElecPopCalib', 'Pop2025', 'NewConnections2025',
+                                   'NewCapacity2025', 'InvestmentCost2025', 'NewDemand2025', 'TotalDemand2025', 'Pop2030',
+                                   'NewConnections2030', 'NewCapacity2030', 'InvestmentCost2030', 'NewDemand2030',
+                                   'TotalDemand2030']]
+            df_short.to_csv(settlements_out_csv, index=False)
+        else:
+            onsseter.df.to_csv(settlements_out_csv, index=False)
 
         elements = []
         for year in yearsofanalysis:
