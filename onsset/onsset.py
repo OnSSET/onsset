@@ -2375,6 +2375,8 @@ class SettlementProcessor:
             sumtechs.extend(["NewConnections{}".format(year) + t for t in techs])
             sumtechs.extend(["Capacity{}".format(year) + t for t in techs])
             sumtechs.extend(["Investment{}".format(year) + t for t in techs])
+            sumtechs.extend(["NewDemand{}".format(year) + t for t in techs])
+            sumtechs.extend(["TotalDemand{}".format(year) + t for t in techs])
 
         summary = pd.Series(index=sumtechs, name='country')
 
@@ -2400,7 +2402,17 @@ class SettlementProcessor:
                     (summary_df[SET_MIN_OVERALL_CODE + '{}'.format(year)] == code) & (summary_df[
                                                                                            SET_ELEC_FINAL_CODE + '{}'.format(
                                                                                                year)] < 99), SET_INVESTMENT_COST + '{}'.format(
-                        year)].sum()
+                        year)].sum()/1000000
+                summary.loc["NewDemand{}".format(year) + t] = summary_df.loc[
+                    (summary_df[SET_MIN_OVERALL_CODE + '{}'.format(year)] == code) & (summary_df[
+                                                                                          SET_ELEC_FINAL_CODE + '{}'.format(
+                                                                                              year)] < 99), 'NewDemand' + '{}'.format(
+                        year)].sum()/1000
+                summary.loc["TotalDemand{}".format(year) + t] = summary_df.loc[
+                    (summary_df[SET_MIN_OVERALL_CODE + '{}'.format(year)] == code) & (summary_df[
+                                                                                          SET_ELEC_FINAL_CODE + '{}'.format(
+                                                                                              year)] < 99), 'TotalDemand' + '{}'.format(
+                        year)].sum()/1000
                 code += 1
 
         index = techs + ['Total']
@@ -2410,18 +2422,24 @@ class SettlementProcessor:
             columns.append("NewConnections{}".format(year))
             columns.append("Capacity{} (MW)".format(year))
             columns.append("Investment{} (million USD)".format(year))
+            columns.append("NewDemand{} (MWh)".format(year))
+            columns.append("TotalDemand{} (MWh)".format(year))
 
         summary_table = pd.DataFrame(index=index, columns=columns)
 
-        summary_table[columns[0]] = summary.iloc[0:7].astype(int).tolist() + [int(summary.iloc[0:7].sum())]
-        summary_table[columns[1]] = summary.iloc[7:14].astype(int).tolist() + [int(summary.iloc[7:14].sum())]
-        summary_table[columns[2]] = summary.iloc[14:21].astype(int).tolist() + [int(summary.iloc[14:21].sum())]
-        summary_table[columns[3]] = [round(x / 1e4) / 1e2 for x in summary.iloc[21:28].astype(float).tolist()] + [
-            round(summary.iloc[21:28].sum() / 1e4) / 1e2]
-        summary_table[columns[4]] = summary.iloc[28:35].astype(int).tolist() + [int(summary.iloc[28:35].sum())]
-        summary_table[columns[5]] = summary.iloc[35:42].astype(int).tolist() + [int(summary.iloc[35:42].sum())]
-        summary_table[columns[6]] = summary.iloc[42:49].astype(int).tolist() + [int(summary.iloc[42:49].sum())]
-        summary_table[columns[7]] = [round(x / 1e4) / 1e2 for x in summary.iloc[49:56].astype(float).tolist()] + [
-            round(summary.iloc[49:56].sum() / 1e4) / 1e2]
+        i = 0
+        for column in columns:
+            summary_table[column] = (summary.iloc[i*len(techs):((i+1)*len(techs))]*100/summary.iloc[i*len(techs):((i+1)*len(techs))].sum()).tolist() + [(summary.iloc[i*len(techs):((i+1)*len(techs))].sum())]
+            i += 1
+        # summary_table[columns[0]] = summary.iloc[0:7].astype(int).tolist() + [int(summary.iloc[0:7].sum())]
+        # summary_table[columns[1]] = summary.iloc[7:14].astype(int).tolist() + [int(summary.iloc[7:14].sum())]
+        # summary_table[columns[2]] = summary.iloc[14:21].astype(int).tolist() + [int(summary.iloc[14:21].sum())]
+        # summary_table[columns[3]] = summary.iloc[21:28].astype(int).tolist() + [int(summary.iloc[21:28].sum())]
+        # summary_table[columns[4]] = summary.iloc[28:35].astype(int).tolist() + [int(summary.iloc[28:35].sum())]
+        # summary_table[columns[5]] = summary.iloc[35:42].astype(int).tolist() + [int(summary.iloc[35:42].sum())]
+        #
+        # summary_table[columns[6]] = summary.iloc[42:49].astype(int).tolist() + [int(summary.iloc[42:49].sum())]
+        # summary_table[columns[7]] = [round(x / 1e4) / 1e2 for x in summary.iloc[49:56].astype(float).tolist()] + [
+        #     round(summary.iloc[49:56].sum() / 1e4) / 1e2]
 
         return summary_table
