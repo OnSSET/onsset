@@ -487,25 +487,12 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
             elif onsseter.df.iloc[:, i].dtype == 'int64':
                 onsseter.df.iloc[:, i] = pd.to_numeric(onsseter.df.iloc[:, i], downcast='signed')
 
-        ### In the two variable below you can choose which summaries to include
+        ### In the variable below you can choose which results to include
 
         short_results = True  # If True, only selected columns included in the results. If False, all columns included in results
-        regional_summaries = True  # If True, regional summaries are computed and saved. If False, only national summaries included
 
-        ###
-
-        if regional_summaries:
-            settlements_out_dir = os.path.join(results_folder, scenario_name)
-            summaries_out_dir = os.path.join(summary_folder, scenario_name)
-
-            if not os.path.exists(settlements_out_dir):
-                os.makedirs(settlements_out_dir)
-
-            if not os.path.exists(summaries_out_dir):
-                os.makedirs(summaries_out_dir)
-        else:
-            settlements_out_dir = results_folder
-            summaries_out_dir = summary_folder
+        settlements_out_dir = results_folder
+        summaries_out_dir = summary_folder
 
         settlements_out_csv = os.path.join(settlements_out_dir, '{}-{}.csv'.format(country_id, scenario_name))
         summary_csv = os.path.join(summaries_out_dir, '{}-{}_summary.csv'.format(country_id, scenario_name))
@@ -523,17 +510,5 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
         summary_table = onsseter.calc_drc_summaries(yearsofanalysis)
 
         summary_table.to_csv(summary_csv, index=True)
-
-        if regional_summaries:
-            regions = onsseter.df['Region'].unique()
-            for region in regions:
-
-                summary_table = onsseter.calc_drc_summaries(yearsofanalysis, region)
-
-                # This line must also be updated if you change the levers and want regional summaries
-                summary_csv = os.path.join(summaries_out_dir, '{}-{}_summary.csv'.format(region, scenario_name))
-
-                # Enable or disable the line below to include/exclude regional summaries
-                summary_table.to_csv(summary_csv, index=True)
 
         logging.info('Finished')

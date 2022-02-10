@@ -2353,57 +2353,18 @@ class SettlementProcessor:
                                                          (self.df[SET_LIMIT + "{}".format(year)] == 1)]
                                              [SET_INVESTMENT_COST + "{}".format(year)])
         
-    def calc_drc_summaries(self, yearsofanalysis, region='None'):
+    def calc_drc_summaries(self, yearsofanalysis):
 
-        if region == 'None':
-            summary_df = self.df
-        else:
-            summary_df = self.df.loc[self.df['Region'] == region]
-
-        elements = []
-        for year in yearsofanalysis:
-            elements.append("Population{}".format(year))
-            elements.append("NewConnections{}".format(year))
-            elements.append("Capacity{}".format(year))
-            elements.append("Investment{}".format(year))
-
+        regions = self.df['Region'].unique()
+        regions.sort()
+        regions = ['cd'] + regions.tolist()
+        columns = []
+        search_for = []
         techs = ["Grid", "SA_Diesel", "SA_PV", "MG_Diesel", "MG_PV", "MG_Wind", "MG_Hydro", "Unelectrified"]
         tech_codes = [1, 2, 3, 4, 5, 6, 7, 99]
+        tech_list = []
+        year_list = []
 
-        sumtechs = []
-        for year in yearsofanalysis:
-            sumtechs.extend(["Population{}".format(year) + t for t in techs])
-            sumtechs.extend(["NewConnections{}".format(year) + t for t in techs])
-            sumtechs.extend(["Capacity{}".format(year) + t for t in techs])
-            sumtechs.extend(["Investment{}".format(year) + t for t in techs])
-            sumtechs.extend(["NewDemand{}".format(year) + t for t in techs])
-            sumtechs.extend(["TotalDemand{}".format(year) + t for t in techs])
-
-        summary = pd.Series(index=sumtechs, name='country')
-
-        for year in yearsofanalysis:
-
-            for t, code in zip(techs, tech_codes):
-                summary.loc["Population{}".format(year) + t] = summary_df.loc[
-                    (summary_df[SET_ELEC_FINAL_CODE + '{}'.format(year)] == code), SET_POP + '{}'.format(year)].sum()
-
-                summary.loc["NewConnections{}".format(year) + t] = summary_df.loc[
-                    (summary_df[SET_ELEC_FINAL_CODE + '{}'.format(year)] == code), SET_NEW_CONNECTIONS + '{}'.format(year)].sum()
-
-                summary.loc["Capacity{}".format(year) + t] = summary_df.loc[
-                    (summary_df[SET_ELEC_FINAL_CODE + '{}'.format(year)] == code), SET_NEW_CAPACITY + '{}'.format(year)].sum() / 1000
-
-                summary.loc["Investment{}".format(year) + t] = summary_df.loc[
-                    (summary_df[SET_ELEC_FINAL_CODE + '{}'.format(year)] == code), SET_INVESTMENT_COST + '{}'.format(year)].sum()/1000000
-
-                summary.loc["NewDemand{}".format(year) + t] = summary_df.loc[
-                    (summary_df[SET_ELEC_FINAL_CODE + '{}'.format(year)] == code), 'NewDemand' + '{}'.format(year)].sum()/1000
-
-                summary.loc["TotalDemand{}".format(year) + t] = summary_df.loc[
-                    (summary_df[SET_ELEC_FINAL_CODE + '{}'.format(year)] == code), 'TotalDemand' + '{}'.format(year)].sum()/1000
-
-        index = techs + ['Total']
-        columns = []
         for year in yearsofanalysis:
             columns.append("Population{}".format(year))
             columns.append("NewConnections{}".format(year))
@@ -2412,11 +2373,62 @@ class SettlementProcessor:
             columns.append("NewDemand{} (MWh)".format(year))
             columns.append("TotalDemand{} (MWh)".format(year))
 
-        summary_table = pd.DataFrame(index=index, columns=columns)
+            search_for.append(SET_POP + '{}'.format(year))
+            search_for.append(SET_NEW_CONNECTIONS + '{}'.format(year))
+            search_for.append(SET_NEW_CAPACITY + '{}'.format(year))
+            search_for.append(SET_INVESTMENT_COST + '{}'.format(year))
+            search_for.append('NewDemand' + '{}'.format(year))
+            search_for.append('TotalDemand' + '{}'.format(year))
 
-        i = 0
-        for column in columns:
-            summary_table[column] = (summary.iloc[i*len(techs):((i+1)*len(techs))]*100/summary.iloc[i*len(techs):((i+1)*len(techs))].sum()).tolist() + [(summary.iloc[i*len(techs):((i+1)*len(techs))].sum())]
-            i += 1
+            tech_list.append(0)
+            tech_list.append(0)
+            tech_list.append(0)
+            tech_list.append(0)
+            tech_list.append(0)
+            tech_list.append(0)
+
+            year_list.append(year)
+            year_list.append(year)
+            year_list.append(year)
+            year_list.append(year)
+            year_list.append(year)
+            year_list.append(year)
+
+        unit_divider = [1, 1, 1000, 1000000, 1000, 1000, 1, 1, 1000, 1000000, 1000, 1000]
+
+        for year in yearsofanalysis:
+            outputs = ['Population{}'.format(year), "NewConnections{}".format(year), "Capacity{} (MW)".format(year),
+                       "Investment{} (million USD)".format(year), "NewDemand{} (MWh)".format(year),
+                       "TotalDemand{} (MWh)".format(year)]
+            ind = [SET_POP + '{}'.format(year), SET_NEW_CONNECTIONS + '{}'.format(year), SET_NEW_CAPACITY + '{}'.format(year),
+                   SET_INVESTMENT_COST + '{}'.format(year), 'NewDemand' + '{}'.format(year),
+                   'TotalDemand' + '{}'.format(year)]
+
+            for o, i in zip(outputs, ind):
+                for t, c in zip(techs, tech_codes):
+                    columns.append(o + '_{}'.format(t))
+                    search_for.append(i)
+                    tech_list.append(c)
+                    year_list.append(year)
+
+        summary_table = pd.DataFrame(index=regions, columns=columns)
+
+        for r in regions:
+
+            if r == 'cd':
+                summary_df = self.df
+            else:
+                summary_df = self.df.loc[self.df['Region'] == r]
+
+            i = 0
+            for c in columns:
+                if i < 12:
+                    summary_table[c][r] = round(summary_df[search_for[i]].sum() / unit_divider[i], 4)
+                else:
+                    if summary_df[search_for[i]].sum() == 0:
+                        summary_table[c][r] = 0
+                    else:
+                        summary_table[c][r] = round((summary_df.loc[summary_df[SET_ELEC_FINAL_CODE + '{}'.format(year_list[i])] == tech_list[i], search_for[i]].sum()) / summary_df[search_for[i]].sum() * 100, 2)
+                i += 1
 
         return summary_table
