@@ -213,7 +213,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                                                    end_year: 999999999}
         annual_grid_cap_gen_limit_ouest = {intermediate_year: 999999999,
                                            end_year: 999999999}
-        grid_generation_cost_ouest = 0.03
+        grid_generation_cost_ouest = 0.07
         grid_power_plants_capital_cost_ouest = 2000
         grid_losses_ouest = 0.08
 
@@ -224,7 +224,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
         annual_grid_cap_gen_limit_sud = {intermediate_year: 999999999,
                                          end_year: 999999999}
 
-        grid_generation_cost_sud = 0.06
+        grid_generation_cost_sud = 0.07
         grid_power_plants_capital_cost_sud = 2000
         grid_losses_sud = 0.08
 
@@ -234,7 +234,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                                                  end_year: 999999999}
         annual_grid_cap_gen_limit_est = {intermediate_year: 999999999,
                                          end_year: 999999999}
-        grid_generation_cost_est = 0.08
+        grid_generation_cost_est = 0.07
         grid_power_plants_capital_cost_est = 2000
         grid_losses_est = 0.08
 
@@ -407,15 +407,18 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
             grid_investment, grid_cap_gen_limit_ouest, grid_connect_limit_ouest = \
                 onsseter.pre_electrification(grid_generation_cost_ouest, year, time_step, end_year, grid_calc_ouest,
-                                             grid_cap_gen_limit_ouest, grid_connect_limit_ouest, grid_investment)
+                                             grid_cap_gen_limit_ouest, grid_connect_limit_ouest, grid_investment,
+                                             grid_name='Ouest')
 
             grid_investment, grid_cap_gen_limit_sud, grid_connect_limit_sud = \
                 onsseter.pre_electrification(grid_generation_cost_sud, year, time_step, end_year, grid_calc_sud,
-                                             grid_cap_gen_limit_sud, grid_connect_limit_sud, grid_investment)
+                                             grid_cap_gen_limit_sud, grid_connect_limit_sud, grid_investment,
+                                             grid_name='Sud')
 
             grid_investment, grid_cap_gen_limit_est, grid_connect_limit_est = \
                 onsseter.pre_electrification(grid_generation_cost_est, year, time_step, end_year, grid_calc_est,
-                                             grid_cap_gen_limit_est, grid_connect_limit_est, grid_investment)
+                                             grid_cap_gen_limit_est, grid_connect_limit_est, grid_investment,
+                                             grid_name='Est')
 
             onsseter.df[SET_LCOE_GRID + "{}".format(year)], onsseter.df[SET_MIN_GRID_DIST + "{}".format(year)], \
             onsseter.df[SET_ELEC_ORDER + "{}".format(year)], onsseter.df[SET_MV_CONNECT_DIST], grid_investment = \

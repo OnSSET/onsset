@@ -2157,13 +2157,13 @@ class SettlementProcessor:
                 (HOURS_PER_YEAR * grid_calc_ouest.capacity_factor * grid_calc_ouest.base_to_peak_load_ratio *
                  (1 - grid_calc_ouest.distribution_losses)))
 
-        self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 1) & (self.df['ClosestGrid'] == 'Ouest'),
+        self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 1) & (self.df['ClosestGrid'] == 'Est'),
                     SET_NEW_CAPACITY + "{}".format(year)] = (
                 (self.df[SET_ENERGY_PER_CELL + "{}".format(year)]) /
                 (HOURS_PER_YEAR * grid_calc_sud.capacity_factor * grid_calc_sud.base_to_peak_load_ratio *
                  (1 - grid_calc_sud.distribution_losses)))
 
-        self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 1) & (self.df['ClosestGrid'] == 'Ouest'),
+        self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == 1) & (self.df['ClosestGrid'] == 'Sud'),
                     SET_NEW_CAPACITY + "{}".format(year)] = (
                 (self.df[SET_ENERGY_PER_CELL + "{}".format(year)]) /
                 (HOURS_PER_YEAR * grid_calc_est.capacity_factor * grid_calc_est.base_to_peak_load_ratio *
@@ -2357,13 +2357,18 @@ class SettlementProcessor:
 
         regions = self.df['Region'].unique()
         regions.sort()
-        regions = ['cd'] + regions.tolist()
+        regions = regions.tolist() + ['cd']
         columns = []
         search_for = []
         techs = ["Grid", "SA_Diesel", "SA_PV", "MG_Diesel", "MG_PV", "MG_Wind", "MG_Hydro", "Unelectrified"]
         tech_codes = [1, 2, 3, 4, 5, 6, 7, 99]
         tech_list = []
         year_list = []
+
+        final_indexes = ['Bas-Uele', 'Equateur', 'Haut-Katanga', 'Haut-Lomami',  'Haut-Uele', 'Ituri', 'Kasai',
+                         'Kasai-Central', 'Kasai-Oriental', 'Kinshasa', 'Kongo-Central', 'Kwango', 'Kwilu', 'Lomami',
+                         'Lualaba', 'Mai-Ndombe', 'Maniema', 'Mongala', 'Nord-Kivu', 'Nord-Ubangi', 'Sankuru',
+                         'Sud-Kivu', 'Sud-Ubangi', 'Tanganyika', 'Tshopo', 'Tshuapa', 'DRC']
 
         for year in yearsofanalysis:
             columns.append("Population{}".format(year))
@@ -2430,5 +2435,8 @@ class SettlementProcessor:
                     else:
                         summary_table[c][r] = round((summary_df.loc[summary_df[SET_ELEC_FINAL_CODE + '{}'.format(year_list[i])] == tech_list[i], search_for[i]].sum()) / summary_df[search_for[i]].sum() * 100, 2)
                 i += 1
+
+        final_index_dict = dict(zip(regions, final_indexes))
+        summary_table.rename(index=final_index_dict, inplace=True)
 
         return summary_table
