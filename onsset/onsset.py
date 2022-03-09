@@ -6,7 +6,7 @@ import scipy.spatial
 import numpy as np
 import pandas as pd
 
-logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.DEBUG)
+logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.ERROR)
 logger = logging.getLogger(__name__)
 
 # Columns in settlements file must match these exactly
@@ -1541,7 +1541,7 @@ class SettlementProcessor:
                 self.df[SET_NEW_CONNECTIONS + "{}".format(year)] < 0, SET_NEW_CONNECTIONS + "{}".format(year)] = 0
 
     def set_residential_demand(self, rural_tier, urban_tier, num_people_per_hh_rural,
-                               num_people_per_hh_urban, productive_demand):
+                               num_people_per_hh_urban):
         """this method defines residential demand per tier level for each target year
 
         Arguments
@@ -1597,28 +1597,7 @@ class SettlementProcessor:
             self.df.loc[self.df[SET_CAPITA_DEMAND] * self.df[SET_NUM_PEOPLE_PER_HH] < tier_2, SET_TIER] = 2
             self.df.loc[self.df[SET_CAPITA_DEMAND] * self.df[SET_NUM_PEOPLE_PER_HH] < tier_1, SET_TIER] = 1
 
-            # Add commercial demand
-            # agri = True if 'y' in input('Include agricultural demand? <y/n> ') else False
-            # if agri:
-            if int(productive_demand) == 1:
-                self.df[SET_CAPITA_DEMAND] += self.df[SET_AGRI_DEMAND]
-
-            # commercial = True if 'y' in input('Include commercial demand? <y/n> ') else False
-            # if commercial:
-            if int(productive_demand) == 1:
-                self.df[SET_CAPITA_DEMAND] += self.df[SET_COMMERCIAL_DEMAND]
-
-            # health = True if 'y' in input('Include health demand? <y/n> ') else False
-            # if health:
-            if int(productive_demand) == 1:
-                self.df[SET_CAPITA_DEMAND] += self.df[SET_HEALTH_DEMAND]
-
-            # edu = True if 'y' in input('Include educational demand? <y/n> ') else False
-            # if edu:
-            if int(productive_demand) == 1:
-                self.df[SET_CAPITA_DEMAND] += self.df[SET_EDU_DEMAND]
-
-    def calculate_total_demand_per_settlement(self, year):
+    def calculate_total_demand_per_settlement(self, year, time_step):
         """this method calculates total demand for each settlement per year
 
         Arguments
@@ -1642,8 +1621,13 @@ class SettlementProcessor:
         self.df.loc[self.df[SET_URBAN] == 2, SET_TOTAL_ENERGY_PER_CELL] = \
             self.df[SET_CAPITA_DEMAND] * self.df[SET_POP + "{}".format(year)]
 
+        self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] != 99,
+                    SET_ENERGY_PER_CELL + "{}".format(year)] += self.df[SET_AGRI_DEMAND] + self.df[SET_COMMERCIAL_DEMAND] + self.df[SET_HEALTH_DEMAND] + self.df[SET_EDU_DEMAND]
+
+        self.df[SET_TOTAL_ENERGY_PER_CELL] += self.df[SET_AGRI_DEMAND] + self.df[SET_COMMERCIAL_DEMAND] + self.df[SET_HEALTH_DEMAND] + self.df[SET_EDU_DEMAND]
+
     def set_scenario_variables(self, year, num_people_per_hh_rural, num_people_per_hh_urban, time_step, start_year,
-                               urban_tier, rural_tier, end_year_pop, productive_demand):
+                               urban_tier, rural_tier):
         """
         this method determines some basic parameters required in LCOE calculation
         it sets the basic scenario parameters that differ based on urban/rural so that they are in the table and
@@ -1664,9 +1648,8 @@ class SettlementProcessor:
         """
 
         self.calculate_new_connections(year, time_step, start_year)
-        self.set_residential_demand(rural_tier, urban_tier, num_people_per_hh_rural, num_people_per_hh_urban,
-                                    productive_demand)
-        self.calculate_total_demand_per_settlement(year)
+        self.set_residential_demand(rural_tier, urban_tier, num_people_per_hh_rural, num_people_per_hh_urban)
+        self.calculate_total_demand_per_settlement(year, time_step)
 
     def calculate_off_grid_lcoes(self, mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc,
                                  sa_diesel_calc, year, end_year, time_step, techs, tech_codes, diesel_techs=0):
@@ -1963,7 +1946,7 @@ class SettlementProcessor:
 
         print("The electrification rate achieved in {} is {:.1f} %".format(year, elecrate * 100))
 
-    def calc_summaries(self, df_summary, sumtechs, tech_codes, year):
+    def calc_summaries(self, df_summary, sumtechs, tech_codes, year, time_step, final_year):
 
         """The next section calculates the summaries for technology split,
         capacity added and total investment cost"""
@@ -1972,7 +1955,9 @@ class SettlementProcessor:
 
         i = 0
 
-        summaries = [SET_POP, SET_NEW_CONNECTIONS, SET_NEW_CAPACITY, SET_INVESTMENT_COST]
+        self.df['TotalCosts' + '{}'.format(year)] = self.df[SET_ENERGY_PER_CELL + "{}".format(year)] * self.df[SET_MIN_OVERALL_LCOE + "{}".format(year)] * (final_year - (year - time_step))
+
+        summaries = [SET_POP, SET_NEW_CONNECTIONS, SET_NEW_CAPACITY, SET_INVESTMENT_COST, 'TotalCosts']
 
         # Population Summaries
         for s in summaries:
