@@ -318,9 +318,13 @@ class Technology:
         discounted_costs = (investments + operation_and_maintenance + fuel - salvage) / discount_factor
         discounted_generation = el_gen / discount_factor
         lcoe = np.sum(discounted_costs, axis=1) / np.sum(discounted_generation, axis=1)
-        lcoe = pd.DataFrame(lcoe[:, np.newaxis])
-        investment_cost = pd.DataFrame(investment_cost[:, np.newaxis])
-        installed_capacity = pd.DataFrame(installed_capacity[:, np.newaxis])
+        #lcoe = pd.DataFrame(lcoe[:, np.newaxis])
+        #investment_cost = pd.DataFrame(investment_cost[:, np.newaxis])
+        #installed_capacity = pd.DataFrame(installed_capacity[:, np.newaxis])
+
+        lcoe = pd.DataFrame(lcoe)
+        investment_cost = pd.DataFrame(investment_cost)
+        installed_capacity = pd.DataFrame(installed_capacity)
 
         return lcoe, investment_cost, installed_capacity
 
