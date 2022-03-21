@@ -6,7 +6,7 @@ import scipy.spatial
 import numpy as np
 import pandas as pd
 
-logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.DEBUG)
+logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.ERROR)
 logger = logging.getLogger(__name__)
 
 # Columns in settlements file must match these exactly
@@ -318,9 +318,13 @@ class Technology:
         discounted_costs = (investments + operation_and_maintenance + fuel - salvage) / discount_factor
         discounted_generation = el_gen / discount_factor
         lcoe = np.sum(discounted_costs, axis=1) / np.sum(discounted_generation, axis=1)
-        lcoe = pd.DataFrame(lcoe[:, np.newaxis])
-        investment_cost = pd.DataFrame(investment_cost[:, np.newaxis])
-        installed_capacity = pd.DataFrame(installed_capacity[:, np.newaxis])
+        #lcoe = pd.DataFrame(lcoe[:, np.newaxis])
+        #investment_cost = pd.DataFrame(investment_cost[:, np.newaxis])
+        #installed_capacity = pd.DataFrame(installed_capacity[:, np.newaxis])
+
+        lcoe = pd.DataFrame(lcoe)
+        investment_cost = pd.DataFrame(investment_cost)
+        installed_capacity = pd.DataFrame(installed_capacity)
 
         return lcoe, investment_cost, installed_capacity
 
@@ -1056,7 +1060,7 @@ class SettlementProcessor:
         elif (max_urban_ntl_elec < urban_electrified) or (max_rural_ntl_elec < rural_electrified):
             print('Not enough urban or rural population meet the criteria. '
                   'Calibrating to match total electrified population only')
-            total_elec_modelled = self.df.loc[self.df[SET_ELEC_CURRENT] == 1, SET_ELEC_POP_CALIB.sum()]
+            total_elec_modelled = self.df.loc[self.df[SET_ELEC_CURRENT] == 1, SET_ELEC_POP_CALIB].sum()
             total_elec_factor = total_elec_modelled / (urban_electrified + rural_electrified)
 
             if total_elec_factor > 1:
