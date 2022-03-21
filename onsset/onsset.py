@@ -6,7 +6,7 @@ import scipy.spatial
 import numpy as np
 import pandas as pd
 
-logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.DEBUG)
+logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.ERROR)
 logger = logging.getLogger(__name__)
 
 # Columns in settlements file must match these exactly
@@ -1056,7 +1056,7 @@ class SettlementProcessor:
         elif (max_urban_ntl_elec < urban_electrified) or (max_rural_ntl_elec < rural_electrified):
             print('Not enough urban or rural population meet the criteria. '
                   'Calibrating to match total electrified population only')
-            total_elec_modelled = self.df.loc[self.df[SET_ELEC_CURRENT] == 1, SET_ELEC_POP_CALIB.sum()]
+            total_elec_modelled = self.df.loc[self.df[SET_ELEC_CURRENT] == 1, SET_ELEC_POP_CALIB].sum()
             total_elec_factor = total_elec_modelled / (urban_electrified + rural_electrified)
 
             if total_elec_factor > 1:
