@@ -5,6 +5,9 @@ import scipy.spatial
 from hybrids_pv import *
 import numpy as np
 import pandas as pd
+import pyswarms as ps
+from pyswarms.utils.plotters import (plot_cost_history, plot_contour, plot_surface)
+from pyswarms.utils.plotters.formatters import Mesher
 
 logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -1668,9 +1671,9 @@ class SettlementProcessor:
                                     productive_demand)
         self.calculate_total_demand_per_settlement(year)
 
-    def hybrid_mini_grids(self, year, start_year, end_year):  # ToDo ensure hybrids are fully integrated
+    def hybrid_mini_grids(self, year, start_year, end_year, pv_path):  # ToDo ensure hybrids are fully integrated
         logging.info('Optimize hybrid PV mini-grids')
-        ghi, temp = read_environmental_data(r'C:\GitHub\OnSSET\Results\sl-2-pv.csv')
+        ghi, temp = read_environmental_data(pv_path)
 
         self.df.apply(lambda row: pv_diesel_hybrid(
             row[SET_ENERGY_PER_CELL + "{}".format(year)],
@@ -1682,6 +1685,114 @@ class SettlementProcessor:
             end_year,
             row[SET_MG_DIESEL_FUEL + "{}".format(year)]), axis=1)
 
+    def run_pso(self, year, start_year, end_year, time_step, pv_path):
+
+        def pso_mini_grids(start_year, ghi_curve, ghi, temp, demand, diesel_price, tier, end_year):
+            load_curve = calc_load_curve(tier, demand)
+
+            pv_min = 0
+            battery_min = 0.25 * (demand / 365)
+            diesel_min = 0.5
+            min_bounds = np.array([pv_min, battery_min, diesel_min])
+            min_bounds_no_battery = np.array([pv_min, 0, diesel_min])
+
+            pv_max = 5 * load_curve[19]
+            battery_max = 5 * (demand / 365)
+            diesel_max = max(load_curve)
+            max_bounds = np.array([pv_max, battery_max, diesel_max])
+            max_bounds_no_battery = np.array([pv_max, battery_max, diesel_max])
+
+            bounds = (min_bounds, max_bounds)
+            bounds_no_battery = (min_bounds_no_battery, max_bounds_no_battery)
+
+            options = {'c1': 0.5, 'c2': 0.3, 'w': 0.9}
+            optimizer = ps.single.GlobalBestPSO(n_particles=10, dimensions=3, options=options, bounds=bounds)
+            optimizer_no_battery = ps.single.GlobalBestPSO(n_particles=10, dimensions=3, options=options, bounds=bounds)
+
+            ghi_local = ghi_curve * ghi * 1000 / ghi_curve.sum()
+
+            def opt_func(X):
+                n_particles = X.shape[0]
+                lcoe = [find_least_cost_option(X[i], temp, ghi_local, hour_numbers,
+                                               load_curve, inv_eff, n_dis, n_chg, dod_max, demand,
+                                               diesel_price, end_year, start_year, pv_cost, charge_controller, pv_om,
+                                               diesel_cost, diesel_om, inverter_life, inverter_cost, diesel_life,
+                                               pv_life,  battery_cost, discount_rate, lpsp_max, diesel_limit) for i in range(n_particles)]
+
+                return np.array(lcoe)
+
+            def opt_func_no_battery(X):
+                n_particles = X.shape[0]
+                lcoe = [find_least_cost_option(X[i], temp, ghi_local, hour_numbers,
+                                               load_curve, inv_eff, n_dis, n_chg, dod_max, demand,
+                                               diesel_price, end_year, start_year, pv_cost, charge_controller, pv_om,
+                                               diesel_cost, diesel_om, inverter_life, inverter_cost, diesel_life,
+                                               pv_life,  battery_cost, discount_rate, lpsp_max, 1) for i in range(n_particles)]
+
+                return np.array(lcoe)
+
+            cost, pos = optimizer.optimize(opt_func, iters=100, verbose=False)
+
+            pso_outputs = find_least_cost_option(pos, temp, ghi_local, hour_numbers,
+                                                 load_curve, inv_eff, n_dis, n_chg, dod_max, demand, diesel_price,
+                                                 end_year, start_year, pv_cost, charge_controller, pv_om, diesel_cost,
+                                                 diesel_om, inverter_life, inverter_cost, diesel_life, pv_life,
+                                                 battery_cost, discount_rate, lpsp_max, diesel_limit, simple=False)
+
+            cost_no_battery, pos_no_battery = optimizer_no_battery.optimize(opt_func, iters=30, verbose=False)
+
+            pso_no_battery_outputs = find_least_cost_option(pos_no_battery, temp, ghi_local, hour_numbers,
+                                                 load_curve, inv_eff, n_dis, n_chg, dod_max, demand, diesel_price,
+                                                 end_year, start_year, pv_cost, charge_controller, pv_om, diesel_cost,
+                                                 diesel_om, inverter_life, inverter_cost, diesel_life, pv_life,
+                                                 battery_cost, discount_rate, lpsp_max, 1, simple=False)
+
+            #      lcoe,           investment,     fuel cost,      om cost,      , battery size,   battery life
+            return pso_outputs[0], pso_outputs[3], pso_outputs[5], pso_outputs[6], pso_outputs[7], pso_outputs[8], pso_no_battery_outputs[3], pso_no_battery_outputs[5], pso_no_battery_outputs[6]
+
+        logging.info('Optimize hybrid PV mini-grids (PSO)')
+
+        diesel_cost = 897  # diesel generator capital cost, USD/kW rated power
+        discount_rate = 0.08
+        n_chg = 0.92  # charge efficiency of battery
+        n_dis = 0.92  # discharge efficiency of battery
+        battery_cost = 139  # battery capital capital cost, USD/kWh of storage capacity
+        pv_cost = 810  # PV panel capital cost, USD/kW peak power
+        pv_life = 25  # PV panel expected lifetime, years
+        diesel_life = 10  # diesel generator expected lifetime, years
+        pv_om = 0.015  # annual OM cost of PV panels
+        diesel_om = 0.1  # annual OM cost of diesel generator
+        inverter_cost = 180
+        inverter_life = 10
+        dod_max = 0.8  # maximum depth of discharge of battery
+        inv_eff = 0.92  # inverter_efficiency
+        charge_controller = 142
+        lpsp_max = 0.05  # maximum loss of load allowed over the year, in share of kWh
+        diesel_limit = 0.5
+
+        ghi_curve, temp = read_environmental_data(pv_path)  # ToDo move to outer
+
+        hour_numbers = np.empty(8760)
+        for i in prange(365):
+            for j in prange(24):
+                hour_numbers[i * 24 + j] = j
+
+        self.df['PSOMiniGridLCOE{}'.format(year)], self.df['PSOMiniGridInvestment{}'.format(year)], self.df['PSOMiniGridFuel{}'.format(year)],\
+            self.df['PSOMiniGridOM{}'.format(year)], self.df['PSOMiniGridBatterySize{}'.format(year)], self.df['PSOMiniGridBatteryLife{}'.format(year)], \
+            self.df['PSOMiniGridNBInvestment{}'.format(year)], self.df['PSOMiniGridNBFuel{}'.format(year)], self.df['PSOMiniGridNBOM{}'.format(year)] = self.df.apply(
+            lambda row: pso_mini_grids(  # (self, start_year, ghi_curve, ghi, temp, demand, diesel_price, tier)
+                start_year,
+                ghi_curve,
+                row[SET_GHI],
+                temp,
+                row[SET_ENERGY_PER_CELL + "{}".format(year)],
+                row[SET_MG_DIESEL_FUEL + "{}".format(year)],
+                row[SET_TIER],
+                end_year)
+            if (row['Pop{}'.format(start_year)] > 100) & (row[SET_ELEC_FINAL_CODE + '{}'.format(year-time_step)] > 1) else 99,
+            axis=1)
+
+        logging.info('Optimize hybrid PV mini-grids - Finished')
 
     def calculate_off_grid_lcoes(self, mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc,
                                  sa_diesel_calc, year, end_year, time_step, techs, tech_codes, diesel_techs=0):

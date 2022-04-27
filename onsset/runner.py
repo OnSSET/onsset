@@ -100,7 +100,7 @@ def calibration(specs_path, csv_path, specs_path_calib, calibrated_csv_path):
     onsseter.df.to_csv(settlements_out_csv, index=False)
 
 
-def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
+def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder, pv_path):
     """
 
     Arguments
@@ -252,7 +252,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
         # together with access targets per interval and timestep duration
         yearsofanalysis = [2025, 2030]
         eleclimits = {2025: five_year_target, 2030: 1}
-        time_steps = {2025: 7, 2030: 5}
+        time_steps = {2025: 5, 2030: 5}
 
         elements = ["1.Population", "2.New_Connections", "3.Capacity", "4.Investment"]
         techs = ["Grid", "SA_Diesel", "SA_PV", "MG_Diesel", "MG_PV", "MG_Wind", "MG_Hydro"]
@@ -287,7 +287,9 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
             onsseter.diesel_cost_columns(sa_diesel_cost, mg_diesel_cost, year)
 
-            onsseter.hybrid_mini_grids(year, year - time_step, end_year)
+            onsseter.run_pso(year, start_year, end_year, time_step, pv_path)
+
+            onsseter.hybrid_mini_grids(year, year - time_step, end_year, pv_path)
 
             sa_diesel_investment, sa_diesel_capacity, sa_pv_investment, sa_pv_capacity, mg_diesel_investment, \
             mg_diesel_capacity, mg_pv_investment, mg_pv_capacity, mg_wind_investment, mg_wind_capacity, \

@@ -13,10 +13,10 @@ def profile_hybrids(iterations):
     path = os.path.join(r'C:\GitHub\OnSSET\Results\sl-2-pv.csv')
     ghi_curve, temp = read_environmental_data(path)
     for i in range(iterations):
-        a = pv_diesel_hybrid(9000, ghi, ghi_curve, temp, tier, 2020, 2030, 0.78)
+        a = pv_diesel_hybrid(9000, ghi, ghi_curve, temp, tier, 2020, 2030, 0.78, battery_sizes=[0], diesel_limit=1, array_output=True)
 
-profile_hybrids(1)
+#  profile_hybrids(1)
 
 
-cProfile.run('profile_hybrids(100)', sort='tottime')
+cProfile.run('profile_hybrids(1)', sort='tottime')
 
