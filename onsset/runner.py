@@ -289,7 +289,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder, pv
 
             onsseter.run_pso(year, start_year, end_year, time_step, pv_path)
 
-            onsseter.hybrid_mini_grids(year, year - time_step, end_year, pv_path)
+            # onsseter.hybrid_mini_grids(year, year - time_step, end_year, pv_path)
 
             sa_diesel_investment, sa_diesel_capacity, sa_pv_investment, sa_pv_capacity, mg_diesel_investment, \
             mg_diesel_capacity, mg_pv_investment, mg_pv_capacity, mg_wind_investment, mg_wind_capacity, \

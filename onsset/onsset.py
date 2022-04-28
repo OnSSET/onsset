@@ -1739,7 +1739,7 @@ class SettlementProcessor:
                                                  diesel_om, inverter_life, inverter_cost, diesel_life, pv_life,
                                                  battery_cost, discount_rate, lpsp_max, diesel_limit, simple=False)
 
-            cost_no_battery, pos_no_battery = optimizer_no_battery.optimize(opt_func, iters=30, verbose=False)
+            cost_no_battery, pos_no_battery = optimizer_no_battery.optimize(opt_func_no_battery, iters=30, verbose=False)
 
             pso_no_battery_outputs = find_least_cost_option(pos_no_battery, temp, ghi_local, hour_numbers,
                                                  load_curve, inv_eff, n_dis, n_chg, dod_max, demand, diesel_price,
@@ -1779,7 +1779,7 @@ class SettlementProcessor:
 
         self.df['PSOMiniGridLCOE{}'.format(year)], self.df['PSOMiniGridInvestment{}'.format(year)], self.df['PSOMiniGridFuel{}'.format(year)],\
             self.df['PSOMiniGridOM{}'.format(year)], self.df['PSOMiniGridBatterySize{}'.format(year)], self.df['PSOMiniGridBatteryLife{}'.format(year)], \
-            self.df['PSOMiniGridNBInvestment{}'.format(year)], self.df['PSOMiniGridNBFuel{}'.format(year)], self.df['PSOMiniGridNBOM{}'.format(year)] = self.df.apply(
+            self.df['PSOMiniGridNBInvestment{}'.format(year)], self.df['PSOMiniGridNBFuel{}'.format(year)], self.df['PSOMiniGridNBOM{}'.format(year)] = zip(*self.df.apply(
             lambda row: pso_mini_grids(  # (self, start_year, ghi_curve, ghi, temp, demand, diesel_price, tier)
                 start_year,
                 ghi_curve,
@@ -1789,8 +1789,8 @@ class SettlementProcessor:
                 row[SET_MG_DIESEL_FUEL + "{}".format(year)],
                 row[SET_TIER],
                 end_year)
-            if (row['Pop{}'.format(start_year)] > 100) & (row[SET_ELEC_FINAL_CODE + '{}'.format(year-time_step)] > 1) else 99,
-            axis=1)
+            if (row['Pop{}'.format(start_year)] > 100) & (row[SET_ELEC_FINAL_CODE + '{}'.format(year-time_step)] > 1) else [99, 0, 0, 0, 0, 0, 0, 0, 0],
+            axis=1))
 
         logging.info('Optimize hybrid PV mini-grids - Finished')
 
