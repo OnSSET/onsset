@@ -126,7 +126,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder, pv
 
         pop_index = scenario_info.iloc[scenario]['Population_Growth']
         tier_index = scenario_info.iloc[scenario]['Target_electricity_consumption_level']
-        five_year_index = scenario_info.iloc[scenario]['Electrification_target_5_years']
+        five_year_index = scenario_info.iloc[scenario]['Grid_connection_cap']
         grid_index = scenario_info.iloc[scenario]['Grid_electricity_generation_cost']
         pv_index = scenario_info.iloc[scenario]['PV_cost_adjust']
         diesel_index = scenario_info.iloc[scenario]['Diesel_price']
@@ -148,13 +148,11 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder, pv
 
         settlements_in_csv = calibrated_csv_path
         settlements_out_csv = os.path.join(results_folder,
-                                           '{}-1-{}_{}_{}_{}_{}_{}.csv'.format(country_id, pop_index, tier_index,
-                                                                               five_year_index, grid_index, pv_index,
-                                                                               prio_index))
+                                           '{}-1-{}_{}.csv'.format(country_id, tier_index,
+                                                                               five_year_index))
         summary_csv = os.path.join(summary_folder,
-                                   '{}-1-{}_{}_{}_{}_{}_{}_summary.csv'.format(country_id, pop_index, tier_index,
-                                                                               five_year_index, grid_index, pv_index,
-                                                                               prio_index))
+                                   '{}-1-{}_{}_summary.csv'.format(country_id, tier_index,
+                                                                               five_year_index))
 
         onsseter = SettlementProcessor(settlements_in_csv)
 
@@ -175,7 +173,6 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder, pv
         grid_calc = Technology(om_of_td_lines=0.02,
                                distribution_losses=float(specs_data.iloc[0][SPE_GRID_LOSSES]),
                                connection_cost_per_hh=125,
-                               base_to_peak_load_ratio=0.8,
                                capacity_factor=1,
                                tech_life=30,
                                grid_capacity_investment=float(specs_data.iloc[0][SPE_GRID_CAPACITY_INVESTMENT]),
@@ -185,7 +182,6 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder, pv
         mg_hydro_calc = Technology(om_of_td_lines=0.02,
                                    distribution_losses=0.05,
                                    connection_cost_per_hh=100,
-                                   base_to_peak_load_ratio=0.85,
                                    capacity_factor=0.5,
                                    tech_life=30,
                                    capital_cost={float("inf"): 3000},
@@ -195,7 +191,6 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder, pv
         mg_wind_calc = Technology(om_of_td_lines=0.02,
                                   distribution_losses=0.05,
                                   connection_cost_per_hh=100,
-                                  base_to_peak_load_ratio=0.85,
                                   capital_cost={float("inf"): 3750},
                                   om_costs=0.02,
                                   tech_life=20,
@@ -204,14 +199,12 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder, pv
         mg_pv_calc = Technology(om_of_td_lines=0.02,
                                 distribution_losses=0.05,
                                 connection_cost_per_hh=100,
-                                base_to_peak_load_ratio=0.85,
                                 tech_life=20,
                                 om_costs=0.015,
                                 capital_cost={float("inf"): 2950 * pv_capital_cost_adjust},
                                 mini_grid=True)
 
-        sa_pv_calc = Technology(base_to_peak_load_ratio=0.9,
-                                tech_life=15,
+        sa_pv_calc = Technology(tech_life=15,
                                 om_costs=0.02,
                                 capital_cost={float("inf"): 6950 * pv_capital_cost_adjust,
                                               1: 4470 * pv_capital_cost_adjust,
@@ -224,19 +217,25 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder, pv
         mg_diesel_calc = Technology(om_of_td_lines=0.02,
                                     distribution_losses=0.05,
                                     connection_cost_per_hh=100,
-                                    base_to_peak_load_ratio=0.85,
                                     capacity_factor=0.7,
                                     tech_life=15,
                                     om_costs=0.1,
                                     capital_cost={float("inf"): 721},
                                     mini_grid=True)
 
-        sa_diesel_calc = Technology(base_to_peak_load_ratio=0.9,
-                                    capacity_factor=0.5,
+        sa_diesel_calc = Technology(capacity_factor=0.5,
                                     tech_life=10,
                                     om_costs=0.1,
                                     capital_cost={float("inf"): 938},
                                     standalone=True)
+
+        mg_pv_hybrid_calc = Technology(om_of_td_lines=0.02,
+                                       distribution_losses=0.05,
+                                       connection_cost_per_hh=100,
+                                       capacity_factor=0.5,
+                                       tech_life=20,
+                                       mini_grid=True,
+                                       hybrid=True)
 
         sa_diesel_cost = {'diesel_price': diesel_price,
                           'efficiency': 0.28,
@@ -255,8 +254,8 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder, pv
         time_steps = {2025: 5, 2030: 5}
 
         elements = ["1.Population", "2.New_Connections", "3.Capacity", "4.Investment"]
-        techs = ["Grid", "SA_Diesel", "SA_PV", "MG_Diesel", "MG_PV", "MG_Wind", "MG_Hydro"]
-        tech_codes = [1, 2, 3, 4, 5, 6, 7]
+        techs = ["Grid", "SA_Diesel", "SA_PV", "MG_Diesel", "MG_Wind", "MG_Hydro", "MG_PV_Hybrid"]
+        tech_codes = [1, 2, 3, 4, 6, 7, 8]
 
         sumtechs = []
         for element in elements:
@@ -280,16 +279,15 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder, pv
                 grid_connect_limit = time_step * annual_new_grid_connections_limit
             else:
                 grid_cap_gen_limit = 9999999999
-                grid_connect_limit = 9999999999
+                grid_connect_limit = time_step * annual_new_grid_connections_limit
 
             onsseter.set_scenario_variables(year, num_people_per_hh_rural, num_people_per_hh_urban, time_step,
                                             start_year, urban_tier, rural_tier, end_year_pop, productive_demand)
 
             onsseter.diesel_cost_columns(sa_diesel_cost, mg_diesel_cost, year)
 
-            onsseter.run_pso(year, start_year, end_year, time_step, pv_path)
-
-            # onsseter.hybrid_mini_grids(year, year - time_step, end_year, pv_path)
+            pv_hybrid_investment, pv_hybrid_capacity = onsseter.run_pso(year, start_year, end_year, time_step, pv_path,
+                                                                        mg_pv_hybrid_calc)
 
             sa_diesel_investment, sa_diesel_capacity, sa_pv_investment, sa_pv_capacity, mg_diesel_investment, \
             mg_diesel_capacity, mg_pv_investment, mg_pv_capacity, mg_wind_investment, mg_wind_capacity, \
@@ -297,6 +295,8 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder, pv
                                                                         sa_pv_calc, mg_diesel_calc,
                                                                         sa_diesel_calc, year, end_year, time_step,
                                                                         techs, tech_codes)
+
+            onsseter.choose_minimum_off_grid_tech(year, mg_hydro_calc, techs, tech_codes)
 
             grid_investment, grid_capacity, grid_cap_gen_limit, grid_connect_limit = \
                 onsseter.pre_electrification(grid_price, year, time_step, end_year, grid_calc, grid_cap_gen_limit,
@@ -324,6 +324,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder, pv
                                                         sa_pv_capacity, mg_diesel_investment, mg_diesel_capacity,
                                                         mg_pv_investment, mg_pv_capacity, mg_wind_investment,
                                                         mg_wind_capacity, mg_hydro_investment, mg_hydro_capacity,
+                                                        pv_hybrid_investment, pv_hybrid_capacity,
                                                         grid_investment, grid_capacity, year)
 
             onsseter.apply_limitations(eleclimit, year, time_step, prioritization, auto_intensification)

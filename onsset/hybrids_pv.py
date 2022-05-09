@@ -333,7 +333,7 @@ def find_least_cost_option(configuration, temp, ghi, hour_numbers, load_curve, i
     if simple:
         return lcoe
     else:
-        return lcoe, lpsp, diesel_share, investment, battery_investment, fuel_cost, om_cost, battery, battery_life
+        return lcoe, lpsp, diesel_share, investment, battery_investment, fuel_cost, om_cost, battery, battery_life, pv + diesel
 
 @numba.njit
 def calc_load_curve(tier, energy_per_hh):
