@@ -213,6 +213,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                                                    end_year: 999999999}
         annual_grid_cap_gen_limit_ouest = {intermediate_year: 999999999,
                                            end_year: 999999999}
+
         grid_generation_cost_ouest = 0.07
         grid_power_plants_capital_cost_ouest = 2000
         grid_losses_ouest = 0.08
@@ -296,7 +297,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                                 base_to_peak_load_ratio=0.85,
                                 tech_life=25,
                                 om_costs=0.015,
-                                capital_cost={float("inf"): 6327 * pv_capital_cost_adjust},
+                                capital_cost={float("inf"): 2950 * pv_capital_cost_adjust}, #2950,
                                 mini_grid=True)
 
         sa_pv_calc = Technology(base_to_peak_load_ratio=0.9,
@@ -492,7 +493,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
         ### In the variable below you can choose which results to include
 
-        short_results = True  # If True, only selected columns included in the results. If False, all columns included in results
+        short_results = False  # If True, only selected columns included in the results. If False, all columns included in results
 
         settlements_out_dir = results_folder
         summaries_out_dir = summary_folder
