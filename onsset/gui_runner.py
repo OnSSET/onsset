@@ -13,10 +13,12 @@ root = tk.Tk()
 root.withdraw()
 root.attributes("-topmost", True)
 
-choice = int(input('Enter 1 to prepare/calibrate the GIS input file, 2 to run scenario(s): '))
+#choice = int(input('Enter 1 to prepare/calibrate the GIS input file, 2 to run scenario(s): '))
+choice = 2
 
 messagebox.showinfo('OnSSET', 'Open the specs file')
 specs_path = filedialog.askopenfilename()
+print(specs_path)
 
 specs = pd.read_excel(specs_path, index_col=0)
 
@@ -35,11 +37,14 @@ if choice == 1:
     calibration(specs_path, csv_path, specs_path_calib, calibrated_csv_path)
 
 elif choice == 2:
-    messagebox.showinfo('OnSSET', 'Open the csv file with calibrated GIS data')
-    calibrated_csv_path = filedialog.askopenfilename()
+    #messagebox.showinfo('OnSSET', 'Open the csv file with calibrated GIS data')
+    #calibrated_csv_path = filedialog.askopenfilename()
+    #print(calibrated_csv_path)
     messagebox.showinfo('OnSSET', 'Browse to RESULTS folder to save outputs')
     results_folder = filedialog.askdirectory()
+    #results_folder = r'C:\Users\asahl\OneDrive - KTH\box_files\PhD\Paper 3 Somalia\Results\TestNoGrid'
     messagebox.showinfo('OnSSET', 'Browse to SUMMARIES folder and name the scenario to save outputs')
     summary_folder = filedialog.askdirectory()
+    #summary_folder = r'C:\Users\asahl\OneDrive - KTH\box_files\PhD\Paper 3 Somalia\Results\TestNoGrid'
 
-    scenario(specs_path, calibrated_csv_path, results_folder, summary_folder)
+    scenario(specs_path, results_folder, summary_folder)
