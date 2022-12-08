@@ -2,6 +2,7 @@
 
 import logging
 import os
+import time
 
 import pandas as pd
 from onsset import (SET_ELEC_ORDER, SET_LCOE_GRID, SET_MIN_GRID_DIST, SET_GRID_PENALTY,
@@ -27,7 +28,7 @@ except ImportError:
                        SPE_URBAN_MODELLED)
 from openpyxl import load_workbook
 
-logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.DEBUG)
+logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.ERROR)
 
 
 def calibration(specs_path, csv_path, specs_path_calib, calibrated_csv_path):
@@ -119,7 +120,7 @@ def scenario(specs_path, results_folder, summary_folder):
     # print(specs_data.iloc[0, SPE_COUNTRY])
 
     for scenario in scenarios:
-        print('Scenario: ' + str(scenario + 1))
+        print('Scenario: ' + str(scenario + 1), time.ctime())
 
         yearsofanalysis = specs_data.index.tolist()
         base_year = specs_data.iloc[0][SPE_START_YEAR]
@@ -137,10 +138,14 @@ def scenario(specs_path, results_folder, summary_folder):
 
         settlements_in_csv = calibrated_csv_path
         onsseter = SettlementProcessor(settlements_in_csv)
+        onsseter.df.fillna(1, inplace=True)
 
         elements = ["1.Population", "2.New_Connections", "3.Capacity", "4.Investment", "5.Total_Costs"]
         techs = ["Grid", "SA_Diesel", "SA_PV", "MG_Diesel", "MG_PV", "MG_Wind", "MG_Hydro", "MG_PV_Hybrid", "MG_Wind_Hybrid"]
         tech_codes = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+        techs = ["Grid", "SA_Diesel", "SA_PV", "MG_Diesel", "MG_PV", "MG_Wind", "MG_Hydro", "MG_PV_Hybrid"]
+        tech_codes = [1, 2, 3, 4, 5, 6, 7, 8]
 
         sumtechs = []
         for element in elements:
@@ -333,6 +338,8 @@ def scenario(specs_path, results_folder, summary_folder):
                                         new_investment=grid_investment,
                                         new_capacity=grid_capacity)
 
+            onsseter.df[SET_ELEC_ORDER] = onsseter.df[SET_ELEC_ORDER + "{}".format(year)]
+
             onsseter.results_columns(techs, tech_codes, year, time_step, prioritization, auto_intensification)
 
             onsseter.calculate_investments_and_capacity(sa_diesel_investment, sa_diesel_capacity, sa_pv_investment,
@@ -345,13 +352,15 @@ def scenario(specs_path, results_folder, summary_folder):
 
             onsseter.apply_limitations(eleclimit, year, time_step, prioritization, auto_intensification)
 
-            onsseter.calc_summaries(df_summary, sumtechs, tech_codes, year, time_step, yearsofanalysis[-1], transmission_investment)
+            onsseter.calc_summaries(df_summary, sumtechs, tech_codes, year, time_step, yearsofanalysis[-1], transmission_investment, yearsofanalysis)
 
         for i in range(len(onsseter.df.columns)):
             if onsseter.df.iloc[:, i].dtype == 'float64':
-                onsseter.df.iloc[:, i] = pd.to_numeric(onsseter.df.iloc[:, i], downcast='float')
+                onsseter.df[onsseter.df.columns[i]] = pd.to_numeric(onsseter.df[onsseter.df.columns[i]], downcast='float')
+                # onsseter.df.iloc[:, i] = pd.to_numeric(onsseter.df.iloc[:, i], downcast='float')
             elif onsseter.df.iloc[:, i].dtype == 'int64':
-                onsseter.df.iloc[:, i] = pd.to_numeric(onsseter.df.iloc[:, i], downcast='signed')
+                onsseter.df[onsseter.df.columns[i]] = pd.to_numeric(onsseter.df[onsseter.df.columns[i]], downcast='signed')
+                # onsseter.df.iloc[:, i] = pd.to_numeric(onsseter.df.iloc[:, i], downcast='signed')
 
         df_summary.to_csv(summary_csv, index=sumtechs)
         onsseter.df.to_csv(settlements_out_csv, index=False)

@@ -1221,10 +1221,17 @@ class SettlementProcessor:
         prev_code = self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)].copy(deep=True)
 
         # Grid-electrified settlements
-        electrified_loce, electrified_investment, electrified_capacity = self.get_grid_lcoe(0, 0, 0, year, time_step,
-                                                                                            end_year, grid_calc)
+        electrified_loce, electrified_investment, electrified_capacity = self.get_grid_lcoe(dist_adjusted=self.df[SET_MV_CONNECT_DIST]*self.df[SET_GRID_PENALTY],
+                                                                                            elecorder=self.df[SET_ELEC_ORDER],
+                                                                                            additional_transformer=0,
+                                                                                            year=year,
+                                                                                            time_step=time_step,
+                                                                                            end_year=end_year,
+                                                                                            grid_calc=grid_calc)
         electrified_investment = electrified_investment[0]
         electrified_capacity = electrified_capacity[0]
+        electrified_loce = electrified_loce[0]
+
         grid_investment = np.where(self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] == 1,
                                    electrified_investment, grid_investment)
         grid_capacity = np.where(self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] == 1,
@@ -1232,7 +1239,7 @@ class SettlementProcessor:
 
         self.df[SET_LCOE_GRID + "{}".format(year)] = 99
         self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] == 1,
-                    SET_LCOE_GRID + "{}".format(year)] = grid_price
+                    SET_LCOE_GRID + "{}".format(year)] = electrified_loce
 
         # Two restrictions may be imposed on the grid. The new grid generation capacity that can be added and the
         # number of new households that can be connected. The next step calculates how much of that will be used up due
@@ -2130,6 +2137,12 @@ class SettlementProcessor:
                                 base_to_peak=self.df[SET_BASE_TO_PEAK],
                                 capacity_factor=self.df[SET_GHI] / HOURS_PER_YEAR)
 
+        self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] == 1, SET_LCOE_SA_PV + "{}".format(year)] = 999
+        self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] == 4, SET_LCOE_SA_PV + "{}".format(year)] = 999
+        self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] == 7, SET_LCOE_SA_PV + "{}".format(year)] = 999
+        self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] == 8, SET_LCOE_SA_PV + "{}".format(year)] = 999
+        self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] == 9, SET_LCOE_SA_PV + "{}".format(year)] = 999
+
         self.choose_minimum_off_grid_tech(year, mg_hydro_calc, techs, tech_codes)
 
         return sa_diesel_investment, sa_diesel_capacity, sa_pv_investment, sa_pv_capacity, mg_diesel_investment, \
@@ -2225,6 +2238,10 @@ class SettlementProcessor:
 
         logging.info('Determine minimum overall LCOE')
         self.df[SET_MIN_OVERALL_LCOE + "{}".format(year)] = self.df[all_techs].T.min()
+
+        for i in range(len(techs)):  # ToDo check
+            self.df.loc[self.df[SET_MIN_OVERALL + "{}".format(year)] == all_techs[i],
+                        SET_MIN_OVERALL_LCOE + "{}".format(year)] = self.df[all_techs[i]]
 
         for i in range(len(techs)):
             self.df.loc[self.df[SET_MIN_OVERALL + "{}".format(year)] == all_techs[i],
@@ -2338,7 +2355,7 @@ class SettlementProcessor:
 
         print("The electrification rate achieved in {} is {:.1f} %".format(year, elecrate * 100))
 
-    def calc_summaries(self, df_summary, sumtechs, tech_codes, year, time_step, final_year, transmission_cost):
+    def calc_summaries(self, df_summary, sumtechs, tech_codes, year, time_step, final_year, transmission_cost, yearsofanalysis):
 
         """The next section calculates the summaries for technology split,
         capacity added and total investment cost"""
@@ -2359,5 +2376,9 @@ class SettlementProcessor:
                     [s + "{}".format(year)])
                 i += 1
 
-        if year == 2030:
-            df_summary[2030]['4.Investment_Grid'] += transmission_cost
+        hv_years = [i for i in yearsofanalysis if i >= 2030]
+        hv_years.sort()
+
+        if year == hv_years[0]:
+            df_summary[year]['4.Investment_Grid'] += transmission_cost
+            df_summary[year]['5.Total_Costs_Grid'] += transmission_cost
