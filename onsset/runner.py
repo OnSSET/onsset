@@ -140,7 +140,7 @@ def scenario(specs_path, results_folder, summary_folder):
         onsseter = SettlementProcessor(settlements_in_csv)
         onsseter.df.fillna(1, inplace=True)
 
-        elements = ["1.Population", "2.New_Connections", "3.Capacity", "4.Investment", "5.Total_Costs"]
+        elements = ["1.Population", "2.New_Connections", "3.Capacity", "4.Investment", "5.Total_Costs", "6.Demand", "7.Demand_LCOE"]
         techs = ["Grid", "SA_Diesel", "SA_PV", "MG_Diesel", "MG_PV", "MG_Wind", "MG_Hydro", "MG_PV_Hybrid", "MG_Wind_Hybrid"]
         tech_codes = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 

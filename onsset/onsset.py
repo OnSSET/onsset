@@ -2364,9 +2364,10 @@ class SettlementProcessor:
 
         i = 0
 
+        self.df['DemandLCOE' + '{}'.format(year)] = self.df[SET_ENERGY_PER_CELL + "{}".format(year)] * self.df[SET_MIN_OVERALL_LCOE + "{}".format(year)]
         self.df['TotalCosts' + '{}'.format(year)] = self.df[SET_ENERGY_PER_CELL + "{}".format(year)] * self.df[SET_MIN_OVERALL_LCOE + "{}".format(year)] * (final_year - (year - time_step))
 
-        summaries = [SET_POP, SET_NEW_CONNECTIONS, SET_NEW_CAPACITY, SET_INVESTMENT_COST, 'TotalCosts']
+        summaries = [SET_POP, SET_NEW_CONNECTIONS, SET_NEW_CAPACITY, SET_INVESTMENT_COST, 'TotalCosts', SET_ENERGY_PER_CELL, 'DemandLCOE']
 
         for s in summaries:
             for t in tech_codes:
