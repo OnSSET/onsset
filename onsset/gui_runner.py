@@ -37,14 +37,14 @@ if choice == 1:
     calibration(specs_path, csv_path, specs_path_calib, calibrated_csv_path)
 
 elif choice == 2:
-    #messagebox.showinfo('OnSSET', 'Open the csv file with calibrated GIS data')
-    #calibrated_csv_path = filedialog.askopenfilename()
-    #print(calibrated_csv_path)
+    messagebox.showinfo('OnSSET', 'Open the csv file with calibrated GIS data')
+    calibrated_csv_path = filedialog.askopenfilename()
+    print(calibrated_csv_path)
+
     messagebox.showinfo('OnSSET', 'Browse to RESULTS folder to save outputs')
     results_folder = filedialog.askdirectory()
-    #results_folder = r'C:\Users\asahl\OneDrive - KTH\box_files\PhD\Paper 3 Somalia\Results\TestNoGrid'
+
     messagebox.showinfo('OnSSET', 'Browse to SUMMARIES folder and name the scenario to save outputs')
     summary_folder = filedialog.askdirectory()
-    #summary_folder = r'C:\Users\asahl\OneDrive - KTH\box_files\PhD\Paper 3 Somalia\Results\TestNoGrid'
 
-    scenario(specs_path, results_folder, summary_folder)
+    scenario(specs_path, calibrated_csv_path, results_folder, summary_folder)

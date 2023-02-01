@@ -101,7 +101,7 @@ def calibration(specs_path, csv_path, specs_path_calib, calibrated_csv_path):
     onsseter.df.to_csv(settlements_out_csv, index=False)
 
 
-def scenario(specs_path, results_folder, summary_folder):
+def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
     """
 
     Arguments
@@ -133,7 +133,6 @@ def scenario(specs_path, results_folder, summary_folder):
             time_steps[yearsofanalysis[year]] = yearsofanalysis[year] - start_years[year]
 
         grid_option = scenario_info.iloc[scenario]['GridOption']
-        calibrated_csv_path = scenario_parameters.iloc[grid_option]['GridPath']
         transmission_investment = scenario_parameters.iloc[grid_option]['TransmissionCost']
 
         settlements_in_csv = calibrated_csv_path
@@ -170,7 +169,7 @@ def scenario(specs_path, results_folder, summary_folder):
         auto_intensification = scenario_parameters.iloc[prio_index]['AutoIntensificationKM']
 
         pv_capital_cost_adjust = 1
-        productive_demand = 1  # scenario_parameters.iloc[productive_index]['ProductiveDemand']
+        productive_demand = 1
 
         country_id = specs_data.iloc[0]['CountryCode']
 
