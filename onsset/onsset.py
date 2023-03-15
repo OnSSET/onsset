@@ -1072,7 +1072,7 @@ class SettlementProcessor:
                         self.df.loc[
                             (self.df[SET_ELEC_CURRENT] == 1), SET_ELEC_POP_CALIB] *= 1.1
                         self.df[SET_ELEC_POP_CALIB] = np.minimum(self.df[SET_ELEC_POP_CALIB], self.df[SET_POP_CALIB])
-                        total_elec_modelled = self.df.loc[self.df[SET_ELEC_CURRENT] == 1, SET_ELEC_POP_CALIB.sum()]
+                        total_elec_modelled = self.df.loc[self.df[SET_ELEC_CURRENT] == 1, SET_ELEC_POP_CALIB].sum()
                         total_elec_factor = total_elec_modelled / (urban_electrified + rural_electrified)
                         i += 1
                     else:
