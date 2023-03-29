@@ -125,8 +125,6 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
     except ValueError:
         pass
 
-
-
     for scenario in scenarios:
 
         print('Scenario: ' + str(scenario + 1))
@@ -332,11 +330,11 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
 
             onsseter.calc_summaries(df_summary, sumtechs, tech_names, tech_codes, year)
 
-        for i in range(len(onsseter.df.columns)):
-            if onsseter.df.iloc[:, i].dtype == 'float64':
-                onsseter.df.iloc[:, i] = pd.to_numeric(onsseter.df.iloc[:, i], downcast='float')
-            elif onsseter.df.iloc[:, i].dtype == 'int64':
-                onsseter.df.iloc[:, i] = pd.to_numeric(onsseter.df.iloc[:, i], downcast='signed')
+        for i in onsseter.df.columns:
+            if onsseter.df[i].dtype == 'float64':
+                onsseter.df[i] = pd.to_numeric(onsseter.df[i], downcast='float')
+            elif onsseter.df[i].dtype == 'int64':
+                onsseter.df[i] = pd.to_numeric(onsseter.df[i], downcast='signed')
 
         df_summary.to_csv(summary_csv, index=sumtechs)
         onsseter.df.to_csv(settlements_out_csv, index=False)
