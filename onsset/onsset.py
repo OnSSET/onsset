@@ -116,7 +116,8 @@ class Technology:
                  grid_capacity_investment=0.0,  # USD/kW for on-grid capacity investments (excluding grid itself)
                  diesel_truck_consumption=0,  # litres/hour
                  diesel_truck_volume=0,  # litres
-                 om_of_td_lines=0):  # percentage
+                 om_of_td_lines=0,
+                 additional_mv_line_length=0):  # percentage
 
         self.distribution_losses = distribution_losses
         self.connection_cost_per_hh = connection_cost_per_hh
@@ -136,6 +137,7 @@ class Technology:
         self.diesel_truck_consumption = diesel_truck_consumption
         self.diesel_truck_volume = diesel_truck_volume
         self.om_of_td_lines = om_of_td_lines
+        self.additional_mv_line_length = additional_mv_line_length
 
     @classmethod
     def set_default_values(cls, base_year, start_year, end_year, discount_rate, hv_line_type=69, hv_line_cost=53000,
@@ -1366,8 +1368,12 @@ class SettlementProcessor:
                                                     new_investment=new_investment, grid_capacity=grid_capacity,
                                                     new_capacity=new_capacity)
 
-        return new_lcoes, cell_path_adjusted, elecorder, cell_path_real, pd.DataFrame(new_investment), pd.DataFrame(
-            new_capacity)
+        self.df[SET_LCOE_GRID + "{}".format(year)] = new_lcoes
+        self.df[SET_MIN_GRID_DIST + "{}".format(year)] = cell_path_adjusted
+        self.df[SET_ELEC_ORDER + "{}".format(year)] = elecorder
+        self.df[SET_MV_CONNECT_DIST] = cell_path_real
+
+        return pd.DataFrame(new_investment), pd.DataFrame(new_capacity)
 
     def get_grid_lcoe(self, dist_adjusted, elecorder, additional_transformer, year, time_step, end_year, grid_calc):
         grid_lcoe, grid_investment, grid_capacity = \
@@ -1672,109 +1678,36 @@ class SettlementProcessor:
                                     productive_demand)
         self.calculate_total_demand_per_settlement(year)
 
-    def calculate_off_grid_lcoes(self, mg_hydro_calc, mg_wind_calc, mg_pv_calc, sa_pv_calc, mg_diesel_calc,
-                                 sa_diesel_calc, year, end_year, time_step, techs, tech_codes, diesel_techs=0):
+    def calculate_off_grid_lcoes(self, tech_calcs, year, end_year, time_step, techs, tech_codes):
         """
         Calculate the LCOEs for all off-grid technologies
 
         """
+        investments = {}
+        capacities = {}
 
-        logging.info('Calculate minigrid hydro LCOE')
-        self.df[SET_LCOE_MG_HYDRO + "{}".format(year)], mg_hydro_investment, mg_hydro_capacity = \
-            mg_hydro_calc.get_lcoe(energy_per_cell=self.df[SET_ENERGY_PER_CELL + "{}".format(year)],
-                                   start_year=year - time_step,
-                                   end_year=end_year,
-                                   people=self.df[SET_POP + "{}".format(year)],
-                                   new_connections=self.df[SET_NEW_CONNECTIONS + "{}".format(year)],
-                                   total_energy_per_cell=self.df[SET_TOTAL_ENERGY_PER_CELL],
-                                   prev_code=self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
-                                   num_people_per_hh=self.df[SET_NUM_PEOPLE_PER_HH],
-                                   grid_cell_area=self.df[SET_GRID_CELL_AREA],
-                                   additional_mv_line_length=self.df[SET_HYDRO_DIST],
-                                   capacity_factor=mg_hydro_calc.capacity_factor)
+        for t in techs:
+            if t != 'Grid':
+                self.df[t + "{}".format(year)], investment, capacity = \
+                    tech_calcs[t].get_lcoe(energy_per_cell=self.df[SET_ENERGY_PER_CELL + "{}".format(year)],
+                                           start_year=year - time_step,
+                                           end_year=end_year,
+                                           people=self.df[SET_POP + "{}".format(year)],
+                                           new_connections=self.df[SET_NEW_CONNECTIONS + "{}".format(year)],
+                                           total_energy_per_cell=self.df[SET_TOTAL_ENERGY_PER_CELL],
+                                           prev_code=self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
+                                           num_people_per_hh=self.df[SET_NUM_PEOPLE_PER_HH],
+                                           grid_cell_area=self.df[SET_GRID_CELL_AREA],
+                                           additional_mv_line_length=tech_calcs[t].additional_mv_line_length,
+                                           capacity_factor=tech_calcs[t].capacity_factor)
+                investments[t] = investment
+                capacities[t] = capacity
 
-        logging.info('Calculate minigrid PV LCOE')
-        self.df[SET_LCOE_MG_PV + "{}".format(year)], mg_pv_investment, mg_pv_capacity = \
-            mg_pv_calc.get_lcoe(energy_per_cell=self.df[SET_ENERGY_PER_CELL + "{}".format(year)],
-                                start_year=year - time_step,
-                                end_year=end_year,
-                                people=self.df[SET_POP + "{}".format(year)],
-                                new_connections=self.df[SET_NEW_CONNECTIONS + "{}".format(year)],
-                                total_energy_per_cell=self.df[SET_TOTAL_ENERGY_PER_CELL],
-                                prev_code=self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
-                                num_people_per_hh=self.df[SET_NUM_PEOPLE_PER_HH],
-                                grid_cell_area=self.df[SET_GRID_CELL_AREA],
-                                capacity_factor=self.df[SET_GHI] / HOURS_PER_YEAR)
+        self.choose_minimum_off_grid_tech(year, tech_calcs, techs, tech_codes)
 
-        logging.info('Calculate minigrid wind LCOE')
-        self.df[SET_LCOE_MG_WIND + "{}".format(year)], mg_wind_investment, mg_wind_capacity = \
-            mg_wind_calc.get_lcoe(energy_per_cell=self.df[SET_ENERGY_PER_CELL + "{}".format(year)],
-                                  start_year=year - time_step,
-                                  end_year=end_year,
-                                  people=self.df[SET_POP + "{}".format(year)],
-                                  new_connections=self.df[SET_NEW_CONNECTIONS + "{}".format(year)],
-                                  total_energy_per_cell=self.df[SET_TOTAL_ENERGY_PER_CELL],
-                                  prev_code=self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
-                                  num_people_per_hh=self.df[SET_NUM_PEOPLE_PER_HH],
-                                  grid_cell_area=self.df[SET_GRID_CELL_AREA],
-                                  capacity_factor=self.df[SET_WINDCF])
+        return investments, capacities
 
-        if diesel_techs == 0:
-            self.df[SET_LCOE_MG_DIESEL + "{}".format(year)] = 99
-            self.df[SET_LCOE_SA_DIESEL + "{}".format(year)] = 99
-            sa_diesel_investment = mg_pv_investment * 0
-            mg_diesel_investment = mg_pv_investment * 0
-            sa_diesel_capacity = mg_pv_capacity * 0
-            mg_diesel_capacity = mg_pv_capacity * 0
-        else:
-            logging.info('Calculate minigrid diesel LCOE')
-            self.df[SET_LCOE_MG_DIESEL + "{}".format(year)], mg_diesel_investment, mg_diesel_capacity = \
-                mg_diesel_calc.get_lcoe(energy_per_cell=self.df[SET_ENERGY_PER_CELL + "{}".format(year)],
-                                        start_year=year - time_step,
-                                        end_year=end_year,
-                                        people=self.df[SET_POP + "{}".format(year)],
-                                        new_connections=self.df[SET_NEW_CONNECTIONS + "{}".format(year)],
-                                        total_energy_per_cell=self.df[SET_TOTAL_ENERGY_PER_CELL],
-                                        prev_code=self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
-                                        num_people_per_hh=self.df[SET_NUM_PEOPLE_PER_HH],
-                                        grid_cell_area=self.df[SET_GRID_CELL_AREA],
-                                        fuel_cost=self.df[SET_MG_DIESEL_FUEL + "{}".format(year)],
-                                        capacity_factor=mg_diesel_calc.capacity_factor)
-
-            logging.info('Calculate standalone diesel LCOE')
-            self.df[SET_LCOE_SA_DIESEL + "{}".format(year)], sa_diesel_investment, sa_diesel_capacity = \
-                sa_diesel_calc.get_lcoe(energy_per_cell=self.df[SET_ENERGY_PER_CELL + "{}".format(year)],
-                                        start_year=year - time_step,
-                                        end_year=end_year,
-                                        people=self.df[SET_POP + "{}".format(year)],
-                                        new_connections=self.df[SET_NEW_CONNECTIONS + "{}".format(year)],
-                                        total_energy_per_cell=self.df[SET_TOTAL_ENERGY_PER_CELL],
-                                        prev_code=self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
-                                        num_people_per_hh=self.df[SET_NUM_PEOPLE_PER_HH],
-                                        grid_cell_area=self.df[SET_GRID_CELL_AREA],
-                                        fuel_cost=self.df[SET_SA_DIESEL_FUEL + "{}".format(year)],
-                                        capacity_factor=sa_diesel_calc.capacity_factor)
-
-        logging.info('Calculate standalone PV LCOE')
-        self.df[SET_LCOE_SA_PV + "{}".format(year)], sa_pv_investment, sa_pv_capacity = \
-            sa_pv_calc.get_lcoe(energy_per_cell=self.df[SET_ENERGY_PER_CELL + "{}".format(year)],
-                                start_year=year - time_step,
-                                end_year=end_year,
-                                people=self.df[SET_POP + "{}".format(year)],
-                                new_connections=self.df[SET_NEW_CONNECTIONS + "{}".format(year)],
-                                total_energy_per_cell=self.df[SET_TOTAL_ENERGY_PER_CELL],
-                                prev_code=self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)],
-                                num_people_per_hh=self.df[SET_NUM_PEOPLE_PER_HH],
-                                grid_cell_area=self.df[SET_GRID_CELL_AREA],
-                                capacity_factor=self.df[SET_GHI] / HOURS_PER_YEAR)
-
-        self.choose_minimum_off_grid_tech(year, mg_hydro_calc, techs, tech_codes)
-
-        return sa_diesel_investment, sa_diesel_capacity, sa_pv_investment, sa_pv_capacity, mg_diesel_investment, \
-               mg_diesel_capacity, mg_pv_investment, mg_pv_capacity, mg_wind_investment, mg_wind_capacity, \
-               mg_hydro_investment, mg_hydro_capacity
-
-    def choose_minimum_off_grid_tech(self, year, mg_hydro_calc, techs, tech_codes):
+    def choose_minimum_off_grid_tech(self, year, tech_calcs, techs, tech_codes):
         """Choose minimum LCOE off-grid technology
 
         First step determines the off-grid technology with minimum LCOE
@@ -1787,16 +1720,19 @@ class SettlementProcessor:
         """
         off_grid_techs = techs.copy()
         del off_grid_techs[0]
-        off_grid_techs = [x + str(year) for x in off_grid_techs]
 
-        off_grid_tech_codes = tech_codes.copy()
-        del off_grid_tech_codes[0]
+        off_grid_tech_codes = [tech_codes[x] for x in off_grid_techs]
+
+        off_grid_techs = [x + str(year) for x in off_grid_techs]
 
         logging.info('Determine minimum technology (off-grid)')
         self.df[SET_MIN_OFFGRID + "{}".format(year)] = self.df[off_grid_techs].T.idxmin()
 
         logging.info('Ensure hydro-power is not over-utilized')
-        self.limit_hydro_usage(mg_hydro_calc, year)
+        try:
+            self.limit_hydro_usage(tech_calcs['MG_Hydro'], year)
+        except KeyError:
+            print('Hydro mini-grids not included or incorrectly named, skipping')
 
         self.df[SET_MIN_OFFGRID + "{}".format(year)] = self.df[off_grid_techs].T.idxmin()
 
@@ -1847,6 +1783,7 @@ class SettlementProcessor:
         """
 
         all_techs = [x + str(year) for x in techs]
+        all_techs_codes = [tech_codes[x] for x in techs]
 
         logging.info('Determine minimum overall tech')
         self.df[SET_MIN_OVERALL + "{}".format(year)] = self.df[all_techs].T.idxmin()
@@ -1866,35 +1803,27 @@ class SettlementProcessor:
 
         for i in range(len(techs)):
             self.df.loc[self.df[SET_MIN_OVERALL + "{}".format(year)] == all_techs[i],
-                        SET_MIN_OVERALL_CODE + "{}".format(year)] = tech_codes[i]
+                        SET_MIN_OVERALL_CODE + "{}".format(year)] = all_techs_codes[i]
 
-    def calculate_investments_and_capacity(self, sa_diesel_investment, sa_diesel_capacity, sa_pv_investment,
-                                           sa_pv_capacity, mg_diesel_investment, mg_diesel_capacity, mg_pv_investment,
-                                           mg_pv_capacity, mg_wind_investment, mg_wind_capacity, mg_hydro_investment,
-                                           mg_hydro_capacity, grid_investment, grid_capacity, year):
+    def calculate_investments_and_capacity(self, investments, capacities, grid_investment, grid_capacity, year,
+                                           techs, tech_codes):
 
-        grid = pd.DataFrame(np.where(self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 1, 1, 0))
-        sa_diesel = pd.DataFrame(np.where(self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 2, 1, 0))
-        sa_pv = pd.DataFrame(np.where(self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 3, 1, 0))
-        mg_diesel = pd.DataFrame(np.where(self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 4, 1, 0))
-        mg_pv = pd.DataFrame(np.where(self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 5, 1, 0))
-        mg_wind = pd.DataFrame(np.where(self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 6, 1, 0))
-        mg_hydro = pd.DataFrame(np.where(self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == 7, 1, 0))
+        investments['Grid'] = grid_investment
+        capacities['Grid'] = grid_capacity
 
-        logging.info('Calculate investment cost')
+        all_techs = [x + str(year) for x in techs]
+        all_techs_codes = [tech_codes[x] for x in techs]
 
         self.df[SET_INVESTMENT_COST + "{}".format(year)] = 0
-
-        self.df[SET_INVESTMENT_COST + "{}".format(year)] = grid * grid_investment + sa_diesel * sa_diesel_investment + \
-                                                           sa_pv * sa_pv_investment + mg_diesel * mg_diesel_investment + mg_pv * mg_pv_investment + \
-                                                           mg_wind * mg_wind_investment + mg_hydro * mg_hydro_investment
-
-        logging.info('Calculate new capacity')
         self.df[SET_NEW_CAPACITY + "{}".format(year)] = 0
 
-        self.df[SET_NEW_CAPACITY + "{}".format(year)] = grid * grid_capacity + sa_diesel * sa_diesel_capacity + \
-                                                        sa_pv * sa_pv_capacity + mg_diesel * mg_diesel_capacity + mg_pv * mg_pv_capacity + \
-                                                        mg_wind * mg_wind_capacity + mg_hydro * mg_hydro_capacity
+        logging.info('Calculate investment cost')
+        logging.info('Calculate new capacity')
+        for t, t_code in zip(techs, all_techs_codes):
+            tech_used = pd.Series(np.where(self.df[SET_MIN_OVERALL_CODE + "{}".format(year)] == t_code, 1, 0))
+
+            self.df[SET_INVESTMENT_COST + "{}".format(year)] += tech_used * investments[t][0]
+            self.df[SET_NEW_CAPACITY + "{}".format(year)] += tech_used * capacities[t][0]
 
     def apply_limitations(self, eleclimit, year, time_step, prioritization, auto_densification=0):
 
@@ -1967,20 +1896,21 @@ class SettlementProcessor:
 
         print("The electrification rate achieved in {} is {:.1f} %".format(year, elecrate * 100))
 
-    def calc_summaries(self, df_summary, sumtechs, tech_codes, year):
+    def calc_summaries(self, df_summary, sumtechs, techs,tech_codes, year):
 
         """The next section calculates the summaries for technology split,
         capacity added and total investment cost"""
 
         logging.info('Calculate summaries')
 
+        all_tech_codes = [tech_codes[x] for x in techs]
         i = 0
 
         summaries = [SET_POP, SET_NEW_CONNECTIONS, SET_NEW_CAPACITY, SET_INVESTMENT_COST]
 
         # Population Summaries
         for s in summaries:
-            for t in tech_codes:
+            for t in all_tech_codes:
                 df_summary[year][sumtechs[i]] = sum(
                     self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] == t) &
                                 (self.df[SET_LIMIT + "{}".format(year)] == 1)]
