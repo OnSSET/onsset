@@ -2,6 +2,7 @@
 
 import logging
 import os
+import numpy as np
 import itertools
 
 import pandas as pd
@@ -101,7 +102,8 @@ def calibration(specs_path, csv_path, specs_path_calib, calibrated_csv_path):
     onsseter.df.to_csv(settlements_out_csv, index=False)
 
 
-def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
+def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder,
+             gis_costs_path='', power_cost_path='', save_shapefiles=False, gis_grid_extension=False):
     """
 
     Arguments
@@ -112,6 +114,9 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
     summary_folder : str
 
     """
+
+    if gis_grid_extension:
+        import onsset_gis
 
     scenario_info = pd.read_excel(specs_path, sheet_name='ScenarioInfo')
     scenarios = scenario_info['Scenario']
@@ -195,6 +200,9 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
         onsseter.current_mv_line_dist()
 
         onsseter.project_pop_and_urban(pop_future, urban_future, base_year, yearsofanalysis)
+
+        if gis_grid_extension:
+            onsseter.df = onsset_gis.create_geodataframe(onsseter.df)
 
         for year in yearsofanalysis:
             time_step = time_steps[year]
@@ -316,10 +324,28 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                 onsseter.pre_electrification(grid_price, year, time_step, end_year, grid_calc, grid_cap_gen_limit,
                                              grid_connect_limit)
 
-            grid_investment, grid_capacity = \
-                onsseter.elec_extension(grid_calc, max_grid_extension_dist, year, start_year, end_year, time_step,
-                                        grid_cap_gen_limit, grid_connect_limit, auto_intensification=auto_intensification,
-                                        prioritization=prioritization, new_investment=grid_investment, new_capacity=grid_capacity)
+            if gis_grid_extension:
+                print('Running pathfinder for grid extensions')
+                onsseter.df['extension_distance_' + '{}'.format(year)] = 99
+
+                onsseter.pre_screening(eleclimit, year, time_step, prioritization, auto_intensification)
+
+                #grid_investment = np.zeros(len(onsseter.df['X_deg']))
+                onsseter.max_extension_dist(year, time_step, end_year, start_year, grid_calc)
+
+                onsseter.df = onsset_gis.find_grid_path(onsseter.df, year, time_step, start_year, grid_connect_limit,
+                                                        grid_cap_gen_limit, gis_costs_path, power_cost_path,
+                                                        max_grid_extension_dist, results_folder, save_shapefiles)
+
+                grid_investment, grid_capacity = \
+                    onsseter.elec_extension_gis(grid_calc, max_grid_extension_dist, year, start_year, end_year,
+                                                time_step, new_investment=grid_investment, new_capacity=grid_capacity)
+            else:
+                grid_investment, grid_capacity = \
+                    onsseter.elec_extension(grid_calc, max_grid_extension_dist, year, start_year, end_year, time_step,
+                                            grid_cap_gen_limit, grid_connect_limit,
+                                            auto_intensification=auto_intensification, prioritization=prioritization,
+                                            new_investment=grid_investment, new_capacity=grid_capacity)
 
             onsseter.results_columns(tech_names, tech_codes, year, time_step, prioritization, auto_intensification)
 

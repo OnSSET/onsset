@@ -133,3 +133,5 @@ dmypy.json
 
 # System
 .DS_Store
+*.tif
+*.gpkg
