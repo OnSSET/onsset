@@ -210,7 +210,7 @@ def find_grid_path(df, year, time_step, start_year, max_connections, max_capacit
 
     if full:
         #from gridfinder import thin, raster_to_lines
-
+        # ToDo
         import shapely.wkt
         from rasterio.transform import xy
         from shapely.geometry import Point, LineString
