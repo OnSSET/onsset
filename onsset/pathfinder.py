@@ -222,8 +222,7 @@ def seek(
         # Reinitialize locations to add.
         new_locs[:n_new_locs, :] = 0
         n_new_locs = 0
-        if iteration == 6585:
-            a = 1+1
+
         # Retrieve and check the location with shortest distance.
         (distance_here, (row_here, col_here)) = heapq.heappop(halo)
         n_new_locs, n_targets_remaining_update, max_connections, max_capacity = nb_loop(
