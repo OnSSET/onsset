@@ -58,6 +58,8 @@ def find_grid_path(df, year, time_step, start_year, max_connections, max_capacit
 
     targets_for_raster = [(row.geometry, row.MaxDist) for _, row in targets.iterrows()]
 
+    # ToDo skip if no targets to rasterize
+
     targets_raster = rasterize(
         targets_for_raster,
         out_shape=shape,
