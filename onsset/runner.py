@@ -188,7 +188,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder,
                       "MG_PV_Hybrid": 8}
 
         # RunParam: define the technologes to be included in the analysis
-        tech_names = ["Grid", "SA_PV", "MG_PV", "MG_Wind", "MG_Hydro", "MG_PV_Hybrid"]
+        tech_names = ["Grid", "SA_PV", "MG_PV", "MG_Wind", "MG_Hydro"]
 
         sumtechs = []
         for element in elements:
@@ -314,28 +314,39 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder,
 
             onsseter.diesel_cost_columns(sa_diesel_cost, mg_diesel_cost, year)
 
-            hybrid_lcoe, hybrid_capacity, hybrid_investment = onsseter.pv_hybrids_lcoe(year)
+            if 'MG_PV_Hybrid' in tech_names:
 
-            mg_pv_hybrid_calc = Technology(om_of_td_lines=0.02,
-                                           distribution_losses=0.05,
-                                           connection_cost_per_hh=100,
-                                           capacity_factor=0.5,
-                                           base_to_peak_load_ratio=0.85, #ToDo
-                                           tech_life=20,
-                                           mini_grid=True,
-                                           hybrid_fuel=hybrid_lcoe,
-                                           hybrid_investment=hybrid_investment,
-                                           hybrid_capacity=hybrid_capacity,
-                                           hybrid=True)
+                hybrid_lcoe, hybrid_capacity, hybrid_investment = onsseter.pv_hybrids_lcoe(year)
 
-            tech_calcs = {'Grid': grid_calc,
-                          "SA_Diesel": sa_diesel_calc,
-                          "SA_PV": sa_pv_calc,
-                          "MG_Diesel": mg_diesel_calc,
-                          "MG_PV": mg_pv_calc,
-                          "MG_Wind": mg_wind_calc,
-                          "MG_Hydro": mg_hydro_calc,
-                          "MG_PV_Hybrid": mg_pv_hybrid_calc}
+                mg_pv_hybrid_calc = Technology(om_of_td_lines=0.02,
+                                               distribution_losses=0.05,
+                                               connection_cost_per_hh=100,
+                                               capacity_factor=0.5,
+                                               base_to_peak_load_ratio=0.85,  # ToDo
+                                               tech_life=20,
+                                               mini_grid=True,
+                                               hybrid_fuel=hybrid_lcoe,
+                                               hybrid_investment=hybrid_investment,
+                                               hybrid_capacity=hybrid_capacity,
+                                               hybrid=True)
+
+                tech_calcs = {'Grid': grid_calc,
+                              "SA_Diesel": sa_diesel_calc,
+                              "SA_PV": sa_pv_calc,
+                              "MG_Diesel": mg_diesel_calc,
+                              "MG_PV": mg_pv_calc,
+                              "MG_Wind": mg_wind_calc,
+                              "MG_Hydro": mg_hydro_calc,
+                              "MG_PV_Hybrid": mg_pv_hybrid_calc}
+
+            else:
+                tech_calcs = {'Grid': grid_calc,
+                              "SA_Diesel": sa_diesel_calc,
+                              "SA_PV": sa_pv_calc,
+                              "MG_Diesel": mg_diesel_calc,
+                              "MG_PV": mg_pv_calc,
+                              "MG_Wind": mg_wind_calc,
+                              "MG_Hydro": mg_hydro_calc}
 
             investments, capacities = onsseter.calculate_off_grid_lcoes(tech_calcs, year, end_year,
                                                                         time_step, tech_names, tech_codes)

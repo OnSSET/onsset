@@ -169,8 +169,6 @@ def seek(
     origin_locations = np.where(origins != 0)
     distance[origin_locations] = 0
 
-
-
     # The paths array shows each of the paths that are discovered
     # from targets to their nearest origin point.
     paths = np.zeros((n_rows, n_cols), dtype=np.int8)
@@ -223,7 +221,7 @@ def seek(
         new_locs[:n_new_locs, :] = 0
         n_new_locs = 0
 
-        # Retrieve and check the location with shortest distance.
+        # Retrieve and check the location with the shortest distance.
         (distance_here, (row_here, col_here)) = heapq.heappop(halo)
         n_new_locs, n_targets_remaining_update, max_connections, max_capacity = nb_loop(
             col_here,
@@ -251,7 +249,6 @@ def seek(
         for i_loc in range(n_new_locs):
             loc = (int(new_locs[i_loc, 1]), int(new_locs[i_loc, 2]))
             heapq.heappush(halo, (new_locs[i_loc, 0], loc))
-
 
     if debug:
         print('\r                                                 ', end='')

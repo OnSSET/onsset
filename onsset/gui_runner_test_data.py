@@ -13,12 +13,12 @@ specs_path = r'C:\Users\asahl\OneDrive - KTH\box_files\PhD\Paper 4 DRC\runs\cd-2
 specs = pd.read_excel(specs_path, index_col=0)
 
 # messagebox.showinfo('OnSSET', 'Open the file containing separated countries')
-csv_path = r'C:\Users\asahl\OneDrive - KTH\box_files\PhD\Paper 4 DRC\runs\drc_nw6.csv'
+csv_path = r'C:\Users\asahl\OneDrive - KTH\box_files\PhD\Paper 4 DRC\runs\drc_nw62.csv'
 
-calibrated_csv_path = r'C:\Users\asahl\OneDrive - KTH\box_files\PhD\Paper 4 DRC\runs\drc_nw6-calibrated.csv'
+calibrated_csv_path = r'C:\Users\asahl\OneDrive - KTH\box_files\PhD\Paper 4 DRC\runs\drc_nw63-calibrated.csv'
 specs_path_calib = r'C:\Users\asahl\OneDrive - KTH\box_files\PhD\Paper 4 DRC\runs\cd-2-specs.xlsx'
 
-calibration(specs_path, csv_path, specs_path_calib, calibrated_csv_path)
+# calibration(specs_path, csv_path, specs_path_calib, calibrated_csv_path)
 
 # Run scenarios
 # calibrated_csv_path = '../test/test_data/dj-test-calibrated.csv'
@@ -30,4 +30,4 @@ gis_cost_path = r'C:\Users\asahl\OneDrive - KTH\box_files\PhD\Paper 4 DRC\runs\N
 power_cost_path = r'C:\Users\asahl\OneDrive - KTH\box_files\PhD\Paper 4 DRC\runs\NW_power_cost.tif'
 
 scenario(calibrated_specs_path, calibrated_csv_path, results_folder, summary_folder, gis_cost_path,
-         power_cost_path, save_shapefiles=True, gis_grid_extension=True)
+         power_cost_path, save_shapefiles=True, gis_grid_extension=True, dist_network_detail=False)

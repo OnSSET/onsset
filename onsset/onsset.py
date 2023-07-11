@@ -1622,7 +1622,8 @@ class SettlementProcessor:
 
         grid_lcoe = grid_lcoe[0]
         grid_investment = grid_investment[0]
-        new_investment = new_investment[0]
+        grid_capacity = grid_capacity[0]
+        #new_investment = new_investment[0]
         grid_lcoe.loc[electrified == 1] = 99
         grid_lcoe.loc[prev_dist + dist_adjusted > max_dist] = 99
         grid_lcoe.loc[grid_lcoe > new_lcoes] = 99
