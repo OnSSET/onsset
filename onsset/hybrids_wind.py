@@ -23,7 +23,7 @@ def wind_diesel_hybrid(
         end_year,
         wind_no=15,  # number of wind panel sizes simulated
         diesel_no=15,  # number of diesel generators simulated
-        discount_rate=0.10,
+        discount_rate=0.198,
         diesel_range=[0.7]
 ):
     n_chg = 0.92  # charge efficiency of battery

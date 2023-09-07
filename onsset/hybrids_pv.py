@@ -29,7 +29,7 @@ def pv_diesel_hybrid(
         diesel_cost=400,
         pv_no=15,  # number of PV panel sizes simulated
         diesel_no=15,  # number of diesel generators simulated
-        discount_rate=0.10,
+        discount_rate=0.198,
         diesel_range=[0.7]
         # pv_cost = (220 + 283)
 ):

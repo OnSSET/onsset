@@ -139,7 +139,8 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
         onsseter = SettlementProcessor(settlements_in_csv)
         onsseter.df.fillna(1, inplace=True)
 
-        elements = ["1.Population", "2.New_Connections", "3.Capacity", "4.Investment", "5.Total_Costs", "6.Demand", "7.Demand_LCOE"]
+        elements = ["1.Population", "2.New_Connections", "3.Capacity", "4.Investment", "5.Total_Costs", "6.Demand",
+                    "7.Demand_LCOE", '8.all_costs', '9.all_costs_discounted', '10.gen', '11.discounted_gen']
         techs = ["Grid", "SA_Diesel", "SA_PV", "MG_Diesel", "MG_PV", "MG_Wind", "MG_Hydro", "MG_PV_Hybrid", "MG_Wind_Hybrid"]
         tech_codes = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 
@@ -150,6 +151,9 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
         for element in elements:
             for tech in techs:
                 sumtechs.append(element + "_" + tech)
+        sumtechs.append('TotalCost')
+        sumtechs.append('TotalDiscountedCost')
+        sumtechs.append('LCOE')
         total_rows = len(sumtechs)
         df_summary = pd.DataFrame(columns=yearsofanalysis)
         for row in range(0, total_rows):
@@ -182,8 +186,6 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
             time_step = time_steps[year]
             start_year = year - time_step
 
-
-
             eleclimit = specs_data.loc[year]['ElecTarget']
             annual_new_grid_connections_limit = specs_data.loc[year, 'GridConnectionsLimitThousands'] * 1000
             annual_grid_cap_gen_limit = specs_data.loc[year, 'NewGridGenerationCapacityAnnualLimitMW'] * 1000
@@ -197,8 +199,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
             # RUN_PARAM: Fill in general and technology specific parameters (e.g. discount rate, losses etc.)
             Technology.set_default_values(base_year=base_year,
                                           start_year=start_year,
-                                          end_year=end_year,
-                                          discount_rate=0.08)
+                                          end_year=end_year)
 
             grid_calc = Technology(om_of_td_lines=0.02,
                                    distribution_losses=float(specs_data.iloc[0][SPE_GRID_LOSSES]),
@@ -208,7 +209,8 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                                    tech_life=30,
                                    grid_capacity_investment=float(specs_data.iloc[0][SPE_GRID_CAPACITY_INVESTMENT]),
                                    grid_penalty_ratio=1,
-                                   grid_price=grid_price)
+                                   grid_price=grid_price,
+                                   discount_rate=0.155)
 
             mg_hydro_calc = Technology(om_of_td_lines=0.02,
                                        distribution_losses=0.05,
@@ -218,7 +220,8 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                                        tech_life=30,
                                        capital_cost={float("inf"): 3000},
                                        om_costs=0.03,
-                                       mini_grid=True)
+                                       mini_grid=True,
+                                       discount_rate=0.198)
 
             mg_wind_calc = Technology(om_of_td_lines=0.02,
                                       distribution_losses=0.05,
@@ -227,7 +230,8 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                                       capital_cost={float("inf"): 3750},
                                       om_costs=0.02,
                                       tech_life=20,
-                                      mini_grid=True)
+                                      mini_grid=True,
+                                      discount_rate=0.198)
 
             mg_pv_calc = Technology(om_of_td_lines=0.02,
                                     distribution_losses=0.05,
@@ -236,7 +240,8 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                                     tech_life=20,
                                     om_costs=0.015,
                                     capital_cost={float("inf"): 2950},
-                                    mini_grid=True)
+                                    mini_grid=True,
+                                    discount_rate=0.198)
 
             sa_pv_calc = Technology(base_to_peak_load_ratio=0.9,
                                     tech_life=15,
@@ -247,7 +252,8 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                                                   0.050: 2200,
                                                   0.020: 9200
                                                   },
-                                    standalone=True)
+                                    standalone=True,
+                                    discount_rate=0.180)
 
             mg_diesel_calc = Technology(om_of_td_lines=0.02,
                                         distribution_losses=0.05,
@@ -257,14 +263,16 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                                         tech_life=15,
                                         om_costs=0.1,
                                         capital_cost={float("inf"): 721},
-                                        mini_grid=True)
+                                        mini_grid=True,
+                                        discount_rate=0.198)
 
             sa_diesel_calc = Technology(base_to_peak_load_ratio=0.9,
                                         capacity_factor=0.5,
                                         tech_life=10,
                                         om_costs=0.1,
                                         capital_cost={float("inf"): 938},
-                                        standalone=True)
+                                        standalone=True,
+                                        discount_rate=0.180)
 
             mg_pv_hybrid_calc = Technology(om_of_td_lines=0.02,
                                            distribution_losses=0.05,
@@ -272,7 +280,8 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                                            capacity_factor=0.5,
                                            tech_life=30,
                                            mini_grid=True,
-                                           hybrid=True)
+                                           hybrid=True,
+                                           discount_rate=0.198)
 
             mg_wind_hybrid_calc = Technology(om_of_td_lines=0.02,
                                              distribution_losses=0.05,
@@ -280,7 +289,8 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
                                              capacity_factor=0.5,
                                              tech_life=30,
                                              mini_grid=True,
-                                             hybrid=True)
+                                             hybrid=True,
+                                             discount_rate=0.198)
 
             sa_diesel_cost = {'diesel_price': diesel_price,
                               'efficiency': 0.28,
