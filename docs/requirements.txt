@@ -7,3 +7,4 @@ python-dateutil
 pytz
 six
 xlrd
+sphinx_rtd_theme
