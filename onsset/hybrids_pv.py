@@ -277,7 +277,7 @@ def calculate_hybrid_lcoe(diesel_price, end_year, start_year, energy_per_hh,
         if year == project_life:
             salvage = (1 - (project_life % battery_life) / battery_life) * battery_cost * battery_size / dod_max + \
                       (1 - (project_life % diesel_life) / diesel_life) * diesel_capacity * diesel_cost + \
-                      (1 - (project_life % pv_life) / pv_life) * pv_panel_size * (pv_cost + charge_controller) + \
+                      (1 - (project_life % pv_life) / pv_life) * pv_panel_size * (pv_cost + charge_controller + inverter_cost) + \
                       (1 - (project_life % inverter_life) / inverter_life) * max(load_curve) * inverter_cost
 
             total_battery_investment -= (1 - (project_life % battery_life) / battery_life) * battery_cost * battery_size / dod_max
