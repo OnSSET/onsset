@@ -11,7 +11,7 @@ The least-cost technology mix and investments required to fully electrify a coun
 
 3)  Local energy resource availability and off-grid power systems costs.
 
-The following paragraphs describe in brief how an electrification anaysis with OnSSET works.
+The following paragraphs describe in brief how an electrification analysis with OnSSET works.
 
 
 Electricity demand
@@ -20,7 +20,7 @@ The goal of OnSSET is clear, to identify the mix of technologies that will help 
 
 Geo-location of population and current electrification status
 -------------------------------------------------------------
-Using population density maps, OnSSET can identify where population is located whithin the study area. Depending on the number of people living in a settlement, OnSSET categorizes a settlement as either urban or rural. Other geospatial information such as the distance between a settlement and its closest electricity grid, its distance from closest transformer, population density and its brightness index at night (from satellite imagery), helps OnSSET identify the current electrification status per settlement. Each settlement is characterized as electrified or un-electrified.
+Using population density maps, OnSSET can identify where population is located within the study area. Depending on the number of people living in a settlement, OnSSET categorizes a settlement as either urban or rural. Other geospatial information such as the distance between a settlement and its closest electricity grid, its distance from closest transformer, population density and its brightness index at night (from satellite imagery), helps OnSSET identify the current electrification status per settlement. Each settlement is characterized as electrified or un-electrified.
 
     .. image::  img/AfghanElec.png
         :scale: 80 %
