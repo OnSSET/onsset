@@ -157,9 +157,9 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder):
         rollout_index = scenario_info.iloc[scenario]['Prioritization_algorithm']
         auto_intensification = scenario_parameters.iloc[rollout_index]['AutoIntensificationKM']
 
-        wind_path = os.path.join(r'C:\Users\adm.esa\Desktop\GEP_2021\{}-2\inputs'.format(country_id),
+        wind_path = os.path.join(r'C:\Users\alexl\Dropbox\GitHub\GEP_2021\onsset\onsset'.format(country_id),
                                  '{}-2-wind.csv'.format(country_id))
-        pv_path = os.path.join(r'C:\Users\adm.esa\Desktop\GEP_2021\{}-2\inputs'.format(country_id),
+        pv_path = os.path.join(r'C:\Users\alexl\Dropbox\GitHub\GEP_2021\onsset\onsset'.format(country_id),
                                  '{}-2-pv.csv'.format(country_id))
 
         settlements_in_csv = calibrated_csv_path
