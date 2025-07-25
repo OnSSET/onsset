@@ -14,7 +14,7 @@ Welcome to OnSSET's documentation!
 Electricity for all
 +++++++++++++++++++++
 
-In September 2015, the United Nations General Assembly adopted Agenda 2030, which comprises a set of 17 Sustainable Development Goals (SDGs) defined by 169 targets. “Ensuring access to affordable, reliable, sustainable and modern energy for all by 2030” is the seventh goal (SDG7). According to the Tracking SDG 7: The Energy Progress Report of 2020 approximately 789 million people lacked access to electricity in 2018, and many more rely on poor quality electricity services. The majority of those without access (85%) reside in rural areas. Access to electricity services is a prerequisite for sustainable development and a powerful factor in poverty alleviation and well-being.
+In September 2015, the United Nations General Assembly adopted Agenda 2030, which comprises a set of 17 Sustainable Development Goals (SDGs) defined by 169 targets. “Ensuring access to affordable, reliable, sustainable and modern energy for all by 2030” is the seventh goal (SDG7). According to the Tracking SDG 7: The Energy Progress Report of 2025 approximately 666 million people lacked access to electricity in 2023, and many more rely on poor quality electricity services. The majority of those without access (85%) reside in rural areas. Access to electricity services is a prerequisite for sustainable development and a powerful factor in poverty alleviation and well-being.
 
 .. figure::  img/optimusnew.png
    :align:   center
