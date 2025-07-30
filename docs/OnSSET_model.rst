@@ -1,16 +1,6 @@
 The OnSSET Model
 ================
 
-OnSSET is a bottom-up medium to long term optimization model. Its principle is simple. Using population settlements together with different geospatial characteristics and socio- and tecno-economic data the tool tries to identify the least-cost supply option in order to reach universial electrification in each location.
-
-The least-cost technology mix and investments required to fully electrify a country within a defined timeframe (e.g. 2030) can vary significantly depending on demand and supply characteristics, such as:
-
-1)  The level of electricity access to be achieved in a country (kWh/person/year).
-
-2)  The current status and plans of the national electricity grid along with its associated costs.
-
-3)  Local energy resource availability and off-grid power systems costs.
-
 The following paragraphs describe in brief how an electrification anaysis with OnSSET works.
 
 
@@ -40,7 +30,9 @@ Note, that OnSSET provides the option of determining the demand either through a
 
                         **Electricity Demand = Population in 2030 X Selected Access Tier**
                         
-In the bottom-up approach the user can use a combination of different GIS-datasets (e.g. GDP and poverty) in order to generate a custom demand estimate for each settlement. This approach requires the user to generate a demand layer and gives more dissagregated measure of deamnd than the urban-rural division in the top-down approach. 
+In the bottom-up approach the user can use a combination of different GIS-datasets (e.g. GDP and poverty) in order to generate a custom demand estimate for each settlement. This approach requires the user to generate a demand layer and gives more dissagregated measure of deamnd than the urban-rural division in the top-down approach.
+
+Furthermore, the user can add other demand sectors, including health, education, commercial and agriculture.
 
 
 Electricity supply
