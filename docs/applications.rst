@@ -1,7 +1,16 @@
 Online interfaces & Applications
 ====================================
 
-For those who would like to just take a taste of an OnSSET electrification analysis, KTH dESA has collaborated international organizations in order to develop interactive platforms that allow a quick display of "pre-cooked" electrification results for a number of countries. 
+For those who would like to just take a taste of an OnSSET electrification analysis, KTH dESA has collaborated with international organizations in order to develop interactive platforms that allow a quick display of "pre-cooked" electrification results for a number of countries.
+
+Global Electrification Platform
+*******************
+
+The `Global Electrification Platform (GEP) <https://electrifynow.energydata.info/>`_ is an open access, interactive, online platform that allows for overview of electrification investment scenarios for 58 countries around the globe. Developed by the World Bank, Energy Sector Management Assistance Program (ESMAP) and KTH Royal Institute of Technology and partners the GEP provides both visualization of interactive scenarios, data and a customized code version for replicability and updates.
+
+    .. image::  img/GEP.PNG
+        :scale: 40 %
+        :align: center
 
 United Nations app
 *******************
@@ -12,12 +21,12 @@ The `online interface Universal Electrification Access <https://un-modelling.git
         :scale: 60 %
         :align: center
         
-World Bank app
+Congo Epela Platform
 ****************
 
-A `Web-based application <http://electrification.energydata.info/presentation/>`_ developed by the World Bank, Energy Sector Management Assistance Program (ESMAP) and KTH Royal Institute of Technology in Stockholm, shows the dynamic of an OnSSET based electrification analysis. The tool considers a variety of open, geospatial data to determine the least-cost options for bringing electricity to areas as granular as 1 square km in size. So far three countries are included – Tanzania, Zambia, and Nigeria – and will be adapted for more.
+The `Congo Epela platform <https://congoepela.resourcematters.org/en>`_ developed by Resource Matters and partners, shows the dynamic of an OnSSET based electrification analysis. The tool considers a variety of open, geospatial data to determine the least-cost options for bringing electricity in the DRC.
 
-    .. image::  img/energydata.png
-        :scale: 60 %
+    .. image::  img/Epela.png
+        :scale: 40 %
         :align: center
 

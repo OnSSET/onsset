@@ -3,20 +3,15 @@ Contact
 
 Ask any questions on `OnSSET forum <https://groups.google.com/g/onsset>`_.
 
-You will need just a few clicks to sign up to the forum. Find the link at the top-right corner of the Optimus.community page.
+Bugs and ideas for improvements of the tool can be posted `here <https://github.com/OnSSET/onsset/issues>`_
 
-.. figure::  img/reddit.png
-   :align:   center
+Please post all comments and feedback you may have regarding this manual `here <https://groups.google.com/g/onsset/c/5qXWJISiigs>`_.
+
 
 **Contact us:**
 
-E-mail: media@desa.kth.se  (tbu) or `meet the team here. <https://www.kth.se/en/itm/inst/energiteknik/forskning/desa/personnel>`_
+E-mail: seap@desa.kth.se  (tbu) or `meet the team here. <https://www.energy.kth.se/energy-systems/energy-systems-contact-and-staff-1.937038>`_
 
-
-Feedback
-+++++++++
-
-Please post all comments and feedback you may have regarding this manual `here <https://groups.google.com/g/onsset/c/5qXWJISiigs>`_..
 
 Funding
 ++++++++
@@ -38,7 +33,7 @@ Brinellvägen 68
 
 SE-100 44 STOCKHOLM
 
-https://www.desa.kth.se
+https://www.energy.kth.se/energy-systems/division-of-energy-systems-1.937036
 
 
 .. figure::  img/Kth_logo2.png
