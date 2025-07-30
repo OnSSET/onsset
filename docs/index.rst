@@ -11,7 +11,7 @@ Welcome to OnSSET's documentation!
 
    KTH dES - http://www.onsset.org
 
-ntroduction to OnSSET
+Introduction to OnSSET
 ======================
 
 OnSSET is a bottom-up medium to long term optimization model. Its principle is simple. Using population settlements together with different geospatial characteristics and socio- and tecno-economic data the tool tries to identify the least-cost supply option in order to reach universial electrification in each location.
