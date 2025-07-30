@@ -9,8 +9,6 @@ Welcome to OnSSET's documentation!
 .. figure::  img/onsset_logo1.png
    :align:   center
 
-   KTH dES - http://www.onsset.org
-
 Introduction to OnSSET
 ======================
 
