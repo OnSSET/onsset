@@ -6,6 +6,26 @@ Since its development, OnSSET has been employed for a high number of studies pre
 Journal Publications
 **************
 
+`A. Abuzayed, A. Chitandula, K. Nyoni, A. Viltalta, Power system expansion and renewable integration for drought-resilient electrification in Zambia, Energy Policy, 2025. <https://doi.org/10.1016/j.enpol.2025.114786>`_
+
+`A. Temesgen, G. Bekele, GIS-based assessment of economically feasible off-grid mini-grids in Ethiopia, Discover Energy, 2025. <https://link.springer.com/article/10.1007/s43937-025-00073-9>`_
+
+`K. Imasuka, G. Ireland, A. Hughes, Optimizing Spatial Input Data for Techno-Economic Modeling of Least-Cost Electrification Pathways in Zambia, Journal of Sustainable Development of Energy Water and Environment Systems, 2025, <http://dx.doi.org/10.13044/j.sdewes.d13.0549>`_
+
+`S. Isihak, U. Akpan, S. Bhattarcharyya, Prioritizing projects in rural electrification planning: Integrating MAUT with OnSSET, Energy Strategy Reviews, 2025. <https://doi.org/10.1016/j.esr.2025.101807>`_
+
+`A. Temesgen, Y. Wassie, G. Bekele, E. Ahlgren, Long-term spatially explicit electricity demand scenarios for rural electrification: The case of Ethiopia, Energy Strategy Reviews, 2025. <https://doi.org/10.1016/j.esr.2025.101931>`_
+
+`Kabe, M.; Bokovi, Y.; Sedzro, K.S.; Takouda, P.; Lare, Y. Optimal Electrification Using Renewable Energies: Microgrid Installation Model with Combined Mixture k-Means Clustering Algorithm, Mixed Integer Linear Programming, and OnSSET Method. Energies 2024, <https://doi.org/10.3390/en17123022>`_
+
+`K. Götz, P. Rosner, I. Froissart, M. Lienkamp, The potential of electric agriculture and mobility for the least-cost rural electrification strategy in Sub-Saharan Africa, Energy for Sustainable Development, 2024. <https://doi.org/10.1016/j.esd.2024.101581>`_
+
+`G. Falchetta, A. Vinca, A. Troost, M. Tuninetti, G. Ireland, E. Byers, M. Hafner, A. Zulu, The role of agriculture for achieving renewable energy-centered sustainable development objectives in rural Africa, Environmental Development, 2024. <https://doi.org/10.1016/j.envdev.2024.101098>`_
+
+`M. Bissiri, P. Moura, R. Perez, N. Figueiredo, P. Pereira da Silva, Generation capacity expansion planning with spatially-resolved electricity demand and increasing variable renewable energy supply: Perspectives from power pooling in West Africa, Applied Energy, 2024. <https://doi.org/10.1016/j.apenergy.2024.123115>`_
+
+`A. Temesgen, Y. Wassie, E. Ahlgren, Analyzing grid extension suitability: A case study of Ethiopia using OnSSET, Energy Strategy Reviews, Volume 52, 2024, 101292, ISSN 2211-467X, <https://doi.org/10.1016/j.esr.2023.101292>`_
+
 `A. Sahlberg, B. Khavari, I. Mohamed, and F. Fuso Nerini, Comparison of Least-Cost Pathways towards Universal Electricity Access in Somalia over Different Timelines, Energies, 2023. <https://doi.org/10.3390/en16186489>`_
 
 `A. Sahlberg, W. Usher, I. Pappis, O. Broad, F. S. Kebede, and T. Walle, “Exploring long-term electrification pathway dynamics: a case study of Ethiopia,” Discover Energy, 2023. <https://doi.org/10.1007/s43937-023-00014-4>`_
@@ -50,6 +70,7 @@ Journal Publications
 
 Theses
 **************
+`B. Khavari, "Geospatial Open-Source Modelling for Integrated Energy Access Planning: New Tools and Methods to Bridge the Energy Access Gap", 2024 <http://kth.diva-portal.org/smash/record.jsf?pid=diva2:1830417>`_
 
 `A. Sahlberg, "New methods and applications to explore the dynamics of least-cost technologies in geospatial electrification modelling", 2023 <https://urn.kb.se/resolve?urn=urn:nbn:se:kth:diva-337676>`_
 
@@ -72,44 +93,7 @@ Community
 ----------
 OnSSET community welcomes professionals and experts from different levels: decision makers, policy officers, energy planners, developers of new model functionalities, programmers. All your valuable comments and contributions are welcomed here.
 
-Partners
-**********
 
-.. image:: img/partners/kth.png
-    :width: 100px
-    :height: 100px
-
-.. image:: img/partners/undesa.jpg
-    :width: 200px
-    :height: 100px
-
-.. image:: img/partners/undp.jpg
-    :width: 120px
-    :height: 100px
-
-.. image:: img/partners/wbank.jpg
-    :width: 180px
-    :height: 100px
-
-.. image:: img/partners/abb_orig.jpg
-    :width: 130px
-    :height: 100px
-
-.. image:: img/partners/iea.png
-    :width: 180px
-    :height: 100px
-
-.. image:: img/partners/nasa.png
-    :width: 200px
-    :height: 100px
-
-.. image:: img/partners/vetenskapsr.jpg
-    :width: 150px
-    :height: 100px
-
-.. image:: img/partners/sida.jpg
-    :width: 200px
-    :height: 90px
 
 
 
