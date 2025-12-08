@@ -1,0 +1,22 @@
+name: moz_onsset_env
+channels:
+  - defaults
+dependencies:
+  - python=3.12
+  - geopandas
+  - rasterio
+  - numba
+  - jupyter
+  - seaborn
+  - fiona
+  - jupyter
+  - pyogrio
+  - pip
+  - pip:
+      - alphashape==1.3.1
+      - click-log==0.4.0
+      - geojson
+      - trimesh==4.4.3
+      - exactextract
+      - gridfinder
+prefix: C:\Users\andre\.conda\envs\moz_onsset_env

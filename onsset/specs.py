@@ -31,7 +31,7 @@ SPE_POP_CUTOFF2 = 'PopCutOffRoundTwo'
 SPE_ELEC_LIMIT = "ElecLimit"
 SPE_INVEST_LIMIT = "InvestmentLimit"
 SPE_DIST_TO_TRANS = "DistToTrans"
-
+SPE_COST_NON_SUPLIED_ENERGY = 'CNSE' # in USD cents of kWh
 SPE_START_YEAR = "StartYear"
 SPE_END_YEAR = "EndYEar"
 SPE_TIMESTEP = "TimeStep"
