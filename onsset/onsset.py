@@ -2685,7 +2685,7 @@ class SettlementProcessor:
 
         self.df.loc[self.df[SET_HYDRO_DIST] > max_hydro_dist, SET_LCOE_MG_HYDRO + "{}".format(year)] = 99
 
-    def results_columns(self, techs, tech_codes, year, time_step, prio, auto_intensification, mg_interconnection=False):
+    def results_columns(self, techs, tech_codes, year, time_step, auto_intensification, mg_interconnection=False):
         """Calculate the capacity and investment requirements for each settlement
 
         Once the grid extension algorithm has been run, determine the minimum overall option,
@@ -2717,11 +2717,10 @@ class SettlementProcessor:
             self.df.loc[self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] == 6,
                         SET_MIN_OVERALL + "{}".format(year)] = SET_LCOE_MG_WIND + "{}".format(year)
 
-        # Ensure settlements within intensification distance are grid-connected # ToDo change to all settlements where grid_lcoe < 99 ?
-        if (prio == 2) or (prio == 4):
-            self.df.loc[(self.df[SET_MV_DIST_PLANNED] < auto_intensification) &
-                        (self.df[SET_LCOE_GRID + "{}".format(year)] != 99),
-                        SET_MIN_OVERALL + "{}".format(year)] = 'Grid' + "{}".format(year)
+        # Ensure settlements within intensification distance are grid-connected
+        self.df.loc[(self.df[SET_MV_DIST_PLANNED] < auto_intensification) &
+                    (self.df[SET_LCOE_GRID + "{}".format(year)] != 99),
+                    SET_MIN_OVERALL + "{}".format(year)] = 'Grid' + "{}".format(year)
 
         logging.info('Determine minimum overall LCOE')
         self.df[SET_MIN_OVERALL_LCOE + "{}".format(year)] = self.df[all_techs].T.min()
@@ -2784,9 +2783,8 @@ class SettlementProcessor:
         self.df[SET_NEW_CAPACITY + "{}".format(year)] = grid * grid_capacity + sa_pv * sa_pv_capacity + \
                                                         mg_pv_hybrid * mg_pv_hybrid_capacity + \
                                                         mg_wind * mg_wind_capacity + mg_hydro * mg_hydro_capacity
-    def pre_selection(self, eleclimit, year, time_step, prioritization, auto_densification=0, prio_choice=5):
+    def pre_selection(self, eleclimit, year, time_step, auto_densification=0, prio_choice=5):
 
-        choice = int(prioritization)
         self.df['PreSelection' + "{}".format(year)] = 0
 
         # Calculate the total population targeted to be electrified
@@ -2801,10 +2799,9 @@ class SettlementProcessor:
             self.df['PreSelection' + "{}".format(year)] = 1
             elecrate = 1
 
-        elif choice == 2:
-            # Prioritize already electrified settlements, then intensification, then lowest investment per connection
+        else:
 
-            self.df['Intensification'] = np.where((self.df[SET_MV_DIST_PLANNED] < auto_densification) & (self.df['MaxIntensificationDist']), 0, 1) # ToDo seems wrong
+            self.df['Intensification'] = np.where((self.df[SET_MV_DIST_PLANNED] < auto_densification) & (self.df['MaxDist' + '{}'.format(year)] >= 0), 0, 1)
 
             if prio_choice == 5:
                 self.df.sort_values(by=[SET_ELEC_FINAL_CODE + "{}".format(year - time_step),
@@ -2855,31 +2852,11 @@ class SettlementProcessor:
 
             del self.df['Elec_POP']
 
-        elif choice == 5:
-            # Prioritize already electrified settlements first, then lowest investment per connection
-            self.df.sort_values(by=[SET_ELEC_FINAL_CODE + "{}".format(year - time_step),
-                                    SET_INVEST_PER_CONNECTION + "{}".format(year)], inplace=True)
-
-            self.df['Elec_POP'] = self.df[SET_ELEC_POP + "{}".format(year - time_step)] + self.df[
-                SET_NEW_CONNECTIONS + "{}".format(year)] * self.df[SET_NUM_PEOPLE_PER_HH]
-            cumulative_pop = self.df['Elec_POP'].cumsum()
-
-            self.df['PreSelection' + "{}".format(year)] = np.where(cumulative_pop < elec_target_pop, 1, 0)
-
-            self.df.sort_index(inplace=True)
-
-            # Ensure already electrified settlements remain electrified
-            self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] < 99),
-                        'PreSelection' + "{}".format(year)] = 1
-
-            del self.df['Elec_POP']
-
         del self.df[SET_INVEST_PER_CONNECTION + "{}".format(year)]
 
-    def apply_limitations(self, eleclimit, year, time_step, prioritization=2, auto_densification=0):
+    def apply_limitations(self, eleclimit, year, time_step, auto_densification=0):
 
         logging.info('Determine electrification limits')
-        choice = int(prioritization)
         self.df[SET_LIMIT + "{}".format(year)] = 0
 
         # Calculate the total population targeted to be electrified
@@ -2894,14 +2871,10 @@ class SettlementProcessor:
             self.df[SET_LIMIT + "{}".format(year)] = 1
             elecrate = 1
 
-        elif choice == 2:
+        else:
             # Prioritize already electrified settlements, then intensification, then lowest investment per connection
 
-            self.df['Intensification'] = np.where(self.df[SET_MV_DIST_PLANNED] < auto_densification, 1, 0)
-
-            #self.df.sort_values(by=[SET_ELEC_FINAL_CODE + "{}".format(year - time_step),
-            #                        'Intensification',
-            #                        SET_INVEST_PER_CONNECTION + "{}".format(year)], inplace=True)
+            # self.df['Intensification'] = np.where(self.df[SET_MV_DIST_PLANNED] < auto_densification, 1, 0)
 
             self.df.sort_values(by=['PreSelection' + "{}".format(year)], inplace=True, ascending=False)
 
@@ -2911,9 +2884,8 @@ class SettlementProcessor:
             cumulative_pop = self.df[SET_POP + "{}".format(year)].cumsum()
 
             self.df[SET_LIMIT + "{}".format(year)] = np.where(cumulative_pop < elec_target_pop, 1, 0)
-            # self.df[SET_LIMIT + "{}".format(year)] = np.where(['PreSelection' + "{}".format(year)] == 1, 1, 0)
 
-            del self.df['Intensification']
+            # del self.df['Intensification']
 
             self.df.sort_index(inplace=True)
 
@@ -2923,32 +2895,6 @@ class SettlementProcessor:
 
             elecrate = self.df.loc[self.df[SET_LIMIT + "{}".format(year)] == 1, SET_POP + "{}".format(year)].sum() / \
                 self.df[SET_POP + "{}".format(year)].sum()
-
-        elif choice == 5:
-            # Prioritize already electrified settlements first, then lowest investment per connection
-            self.df.sort_values(by=[SET_ELEC_FINAL_CODE + "{}".format(year - time_step),
-                                    SET_INVEST_PER_CONNECTION + "{}".format(year)], inplace=True)
-
-            self.df.sort_values(by=['PreSelection' + "{}".format(year)], inplace=True, ascending=False)  # ToDo does this work?
-
-            self.df['Elec_POP'] = self.df[SET_ELEC_POP + "{}".format(year - time_step)] + self.df[
-                SET_NEW_CONNECTIONS + "{}".format(year)] * self.df[SET_NUM_PEOPLE_PER_HH]
-            cumulative_pop = self.df['Elec_POP'].cumsum()
-            # cumulative_pop = self.df[SET_POP + "{}".format(year)].cumsum()
-
-            self.df[SET_LIMIT + "{}".format(year)] = np.where(cumulative_pop < elec_target_pop, 1, 0)
-
-            self.df.sort_index(inplace=True)
-
-            # Ensure already electrified settlements remain electrified
-            self.df.loc[(self.df[SET_ELEC_FINAL_CODE + "{}".format(year - time_step)] < 99),
-                        SET_LIMIT + "{}".format(year)] = 1
-
-            elecrate = self.df.loc[self.df[SET_LIMIT + "{}".format(year)] == 1, 'Elec_POP'].sum() / \
-                self.df[SET_POP + "{}".format(year)].sum()
-
-        # elecrate = self.df.loc[self.df[SET_LIMIT + "{}".format(year)] == 1,
-        #                       SET_POP + "{}".format(year)].sum() / self.df[SET_POP + "{}".format(year)].sum()
 
         logging.info('Determine final electrification decision')
         self.df[SET_ELEC_FINAL_CODE + "{}".format(year)] = self.df[SET_MIN_OVERALL_CODE + "{}".format(year)]
