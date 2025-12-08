@@ -6,6 +6,8 @@ Since its development, OnSSET has been employed for a high number of studies pre
 Journal Publications
 **************
 
+`B. Khavari, A. Sahlberg, C. Ramirez, S. Odera, E. Onsongo, K. Nyamena, V. Otieno, D. Ronoh, A. Gurung, F. Fuso Nerini, Integrated geospatial modelling for the achievement of universal energy access in Kenya, npj Clean Energy, 2025. <https://doi.org/10.1038/s44406-025-00017-1>`_
+
 `A. Abuzayed, A. Chitandula, K. Nyoni, A. Viltalta, Power system expansion and renewable integration for drought-resilient electrification in Zambia, Energy Policy, 2025. <https://doi.org/10.1016/j.enpol.2025.114786>`_
 
 `A. Temesgen, G. Bekele, GIS-based assessment of economically feasible off-grid mini-grids in Ethiopia, Discover Energy, 2025. <https://link.springer.com/article/10.1007/s43937-025-00073-9>`_
