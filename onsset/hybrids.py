@@ -18,8 +18,8 @@ def find_least_cost_option(configuration, temp, ghi, hour_numbers, load_curve, i
     battery = float(configuration[1])
     usable_battery = battery * dod_max  # ensure the battery never goes below max depth of discharge
     diesel = float(configuration[2])
-    if diesel != 0 and diesel < 0.5:
-        diesel = 0.5  # minimum diesel capacity is 0.5 kW if included
+    if diesel < 0.5:
+        diesel = 0  # minimum diesel capacity is 0.5 kW if included
 
     annual_demand = load_curve.sum()
 
@@ -184,41 +184,49 @@ def hour_simulation(hour, soc, net_load, diesel_capacity, annual_fuel_consumptio
 
     soc_prev = soc  # Store the battery SOC before the hour in a variable to ensure battery is not over-used
 
+    soc_usage = 0  # Variable to store how much the SOC changes during the hour
     if (net_load > 0) & (battery_size > 0):
         if diesel_gen > 0:
             # If diesel generation is used, but is smaller than load, battery is discharged
-            soc -= net_load / n_dis / inv_eff / battery_size
+            soc_usage = net_load / n_dis / inv_eff / battery_size
         elif diesel_gen == 0:
             # If net load is positive and no diesel is used, battery is discharged
-            soc -= net_load / n_dis / inv_eff / battery_size
+            soc_usage = net_load / n_dis / inv_eff / battery_size
     elif (net_load < 0) & (battery_size > 0):
         if diesel_gen > 0:
-            # If diesel generation is used, and is larger than load, battery is charged
-            soc -= net_load * n_chg * inv_eff / battery_size
+            # If diesel generation is used, and is larger than load, excess diesel is used to charge the battery
+            soc_usage = net_load * n_chg * inv_eff / battery_size
         if diesel_gen == 0:
             # If net load is negative, and no diesel has been used, excess PV gen is used to charge battery
-            soc -= net_load * n_chg / battery_size
+            soc_usage = net_load * n_chg / battery_size
+
+    if net_load >= 0:
+        soc -= min(soc_usage, soc_prev)  # Update SOC based on the calculated SOC usage, ensuring battery is not over-used
+    else:
+        soc -= soc_usage
+
+    if soc < 0:
+        print('Error: SOC below 0')
 
     # Store how much battery energy (measured in SOC) was discharged (if used).
     # No more than the previous SOC can be used
     if (net_load > 0) & (battery_size > 0):
-        battery_use += min(net_load / n_dis / battery_size, soc_prev)
+        battery_use += min(soc_usage, soc_prev)
+        # battery_use += min(net_load / n_dis / battery_size, soc_prev)
 
     annual_battery_use += battery_use
 
     # Calculate if there was any unmet demand or excess energy generation during the hour
 
     if battery_size > 0:
-        if soc < 0:
-            # If State of charge is negative, that means there's demand that could not be met.
-            # If so, the annual unmet demand variable is updated and the SOC is reset to empty (0)
-            annual_unmet_demand -= soc / n_dis * battery_size
-            soc = 0
+        if soc_usage > soc_prev:
+            # If the SOC usage was larger than what the battery could provide, there is unmet demand
+            annual_unmet_demand += (soc_usage - soc_prev) * n_dis * inv_eff * battery_size
 
-        if soc > 1:
+        if soc_prev - soc_usage > 1:
             # If State of Charge is larger than 1, that means there was excess PV/diesel generation
             # If so, the annual excess generation variable is updated and the SOC is set to full (1)
-            annual_excess_gen += (soc - 1) / n_chg * battery_size
+            annual_excess_gen += (soc_prev + soc_usage - 1) / n_chg / inv_eff * battery_size
             soc = 1
     else:  # This part handles the same case, if no battery is included in the system
         if net_load > 0:
@@ -235,7 +243,8 @@ def calculate_hybrid_lcoe(diesel_price, end_year, start_year, annual_demand,
                           fuel_usage, pv_panel_size, pv_cost, pv_life, pv_om, charge_controller, pv_inverter_cost,
                           diesel_capacity, diesel_cost, diesel_om, diesel_life,
                           battery_size, battery_cost, battery_life, battery_inverter_cost, battery_inverter_life,
-                          load_curve, discount_rate):
+                          load_curve, discount_rate, pv_inverter_life=10, charge_controller_life=10,
+                          battery_om=0.05, battery_inverter_om=0.05):
 
     # Necessary information for calculation of LCOE is defined
     project_life = end_year - start_year  # Calculate project lifetime
@@ -259,42 +268,51 @@ def calculate_hybrid_lcoe(diesel_price, end_year, start_year, annual_demand,
         diesel_investment = 0
         pv_investment = 0
         battery_investment = 0
+        pv_inverter_investment = 0
+        charge_controller_investment = 0
 
         fuel_costs = fuel_usage * diesel_price
-        om_costs = (pv_panel_size * (pv_cost + charge_controller) * pv_om + diesel_capacity * diesel_cost * diesel_om)
+        om_costs = (pv_panel_size * (pv_cost + charge_controller + pv_inverter_cost) * pv_om +
+                    diesel_capacity * diesel_cost * diesel_om + battery_size * battery_cost * battery_om + max(
+                    load_curve) * battery_inverter_cost * battery_inverter_om)
 
         total_fuel_cost += fuel_costs / (1 + discount_rate) ** year
         total_om_cost += om_costs / (1 + discount_rate) ** year
 
         # Here we check if there is need for investment/reinvestment
         if year % battery_inverter_life == 0:
-            inverter_investment = max(load_curve) * battery_inverter_cost  # Battery inverter, sized based on the peak demand in the year
+            inverter_investment = max(
+                load_curve) * battery_inverter_cost  # Battery inverter, sized based on the peak demand in the year
         if year % diesel_life == 0:
             diesel_investment = diesel_capacity * diesel_cost
         if year % pv_life == 0:
-            pv_investment = pv_panel_size * (pv_cost + charge_controller + pv_inverter_cost)  # PV inverter and charge controller are sized based on the PV panel rated capacity
+            pv_investment = pv_panel_size * pv_cost
+        if year % pv_inverter_life == 0:
+            pv_inverter_investment = max(
+                load_curve) * pv_inverter_cost  # PV inverter sized based on the peak demand in the year. ToDo, should there be a DC/AC ratio?
+        if year % charge_controller_life == 0:
+            charge_controller_investment = pv_panel_size * charge_controller  # Charge controller, sized based on the PV panel rated capacity
         if year % battery_life == 0:
             battery_investment = battery_size * battery_cost
 
-        # In the final year, the salvage value of all components is calculated based on remaining life
-        if year == project_life:
-            salvage = (1 - (project_life % battery_life) / battery_life) * battery_cost * battery_size + \
-                      (1 - (project_life % diesel_life) / diesel_life) * diesel_capacity * diesel_cost + \
-                      (1 - (project_life % pv_life) / pv_life) * pv_panel_size * (
-                              pv_cost + charge_controller + pv_inverter_cost) + \
-                      (1 - (project_life % battery_inverter_life) / battery_inverter_life) * max(
-                load_curve) * battery_inverter_cost
+            # In the final year, the salvage value of all components is calculated based on remaining life
+            if year == project_life:
+                salvage = (1 - (project_life % battery_life) / battery_life) * battery_cost * battery_size + \
+                          (1 - (project_life % diesel_life) / diesel_life) * diesel_capacity * diesel_cost + \
+                          (1 - (project_life % pv_life) / pv_life) * pv_panel_size * (pv_cost + charge_controller) + \
+                          (1 - (project_life % pv_inverter_life) / pv_inverter_life) * pv_panel_size * pv_inverter_cost + \
+                          (1 - (project_life % charge_controller_life) / charge_controller_life) * pv_panel_size * charge_controller + \
+                          (1 - (project_life % battery_inverter_life) / battery_inverter_life) * max(load_curve) * battery_inverter_cost
 
-            total_battery_investment -= (1 - (
-                    project_life % battery_life) / battery_life) * battery_cost * battery_size
+            total_battery_investment -= (1 - (project_life % battery_life) / battery_life) * battery_cost * battery_size
 
         investment += diesel_investment + pv_investment + battery_investment + inverter_investment - salvage
         total_battery_investment += battery_investment
 
-        sum_costs += (fuel_costs + om_costs + battery_investment + diesel_investment + pv_investment +
+        sum_costs += (fuel_costs + om_costs + battery_investment + diesel_investment + pv_investment + pv_inverter_investment + charge_controller_investment +
                       inverter_investment - salvage) / ((1 + discount_rate) ** year)
 
-        npc += (fuel_costs + om_costs + battery_investment + diesel_investment + pv_investment +
+        npc += (fuel_costs + om_costs + battery_investment + diesel_investment + pv_investment + charge_controller_investment +
                 inverter_investment) / ((1 + discount_rate) ** year)
 
         if year > 0:
