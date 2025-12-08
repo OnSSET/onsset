@@ -9,51 +9,40 @@ onsset : Open Source Spatial Electrification Tool
 # Scope
 
 This repository contains the source code of the Open Source Spatial Electrification Tool
-([OnSSET](http://www.onsset.org/)).
+[OnSSET](https://www.linkedin.com/company/onsset-open-source-spatial-electrification-tool/).
 
+OnSSET can be run using interactive Jupyter Notebooks. First, the input file with GIS data extracted for each settlement should be created using the codes in the [OnSSET_GIS_Extraction_notebook repository](https://github.com/OnSSET/OnSSET_GIS_Extraction_notebook).
 
-The repository also includes sample test files available in ```.\test_data```
-and sample output files available in ```.\sample_output```.
+Next, run the *Calibration.ipynb* to calibrate the start year information.
+
+Finally, run the *OnSSET_Scenarios.ipynb*, or the *OnSSET_Scenarios_MultipleTimeSteps.ipynb* if you want to run the code in multiple time-steps.
 
 ## Installation
 
-### Requirements
+OnSSET is run using Python, most easily through Jupyter Notebook, but can also be run using another Python IDE.
+It is recommended to install OnSSET using Anaconda. 
 
-OnSSET requires Python > 3.5 with the following packages installed:
-- et-xmlfile
-- jdcal
-- numpy
-- openpyxl
-- pandas
-- python-dateutil
-- pytz
-- six
-- xlrd
-- notebook
-- seaborn
-- matplotlib
-- scipy
+### Install with the yml-file
 
-### Install with pip
+1. Download or clone the repository.
 
-Install onsset from the Python Packaging Index (PyPI):
+2. Open Anaconda prompr. Navigate to the folder where the OnSSET code is installed.
+
+3. Install all the packages required in a new environment called "OnSSET" using: 
 
 ```
-pip install onsset
+conda env create -n OnSSET -f onsset_env.yml
 ```
-
-### Install from GitHub
-
-Download or clone the repository and install the package in `develop`
-(editable) mode:
-
+4. Activate the environment using:
 ```
-git clone https://github.com/onsset/onsset.git
-cd onsset
-python setup.py develop
+conda activate OnSSET
 ```
+5. Finally, to run OnSSET using Jupyter Notebook, run the following command:
+```
+jupyter notebook
+```
+   
 
 ## Contact
 For more information regarding the tool, its functionality and implementation
-please visit https://www.onsset.org or contact the development team
-at seap@desa.kth.se.
+please visit OnSSET on LinkedIn or go to the [OnSSET forum](https://www.linkedin.com/company/onsset-open-source-spatial-electrification-tool/](https://forum.u4ria.org/c/onsset/)).
