@@ -2141,15 +2141,14 @@ class SettlementProcessor:
 
             #  This creates a series of the hour numbers (0-24) for one year
             hour_numbers = np.empty(8760)
-            for i in prange(365):
-                for j in prange(24):
-                    hour_numbers[i * 24 + j] = j
+            for i in prange(8760):
+                hour_numbers[i] = i
 
             def opt_func(X):
                 lcoe = find_least_cost_option(X, hourly_temp, hourly_ghi, hour_numbers,
                                               load_curve, inv_eff, n_dis, n_chg, dod_max,
                                               diesel_price, end_year, start_year, pv_cost, charge_controller,
-                                              pv_inverter, pv_om,
+                                              pv_inverter, inv_eff, pv_om,
                                               diesel_cost, diesel_om, battery_inverter_life, battery_inverter_cost,
                                               diesel_life, pv_life,
                                               battery_cost, discount_rate, lpsp_max, diesel_limit,
@@ -2165,7 +2164,7 @@ class SettlementProcessor:
             result = find_least_cost_option(X, hourly_temp, hourly_ghi, hour_numbers,
                                             load_curve, inv_eff, n_dis, n_chg, dod_max,
                                             diesel_price, end_year, start_year, pv_cost, charge_controller,
-                                            pv_inverter, pv_om,
+                                            pv_inverter, inv_eff, pv_om,
                                             diesel_cost, diesel_om, battery_inverter_life, battery_inverter_cost,
                                             diesel_life, pv_life,
                                             battery_cost, discount_rate, lpsp_max, diesel_limit,
@@ -2234,6 +2233,8 @@ class SettlementProcessor:
         self.df['PVHybridGenLCOE' + "{}".format(year)] = 0.
 
         ghi_curve, temp = read_environmental_data(pv_path)
+        ghi_curve = ghi_curve[:, 0]
+        temp = temp[:, 0]
 
         ghi_min = round(min(self.df[SET_GHI]), -2)
         ghi_max = round(max(self.df[SET_GHI]), -2)
