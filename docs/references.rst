@@ -6,6 +6,8 @@ Since its development, OnSSET has been employed for a high number of studies pre
 Journal Publications
 **************
 
+`C. Omondi, F. Njoka, F. Tonini, E. Abraham, Scenarios for universal electricity access with spatial changes in urbanisation: The case of Kenya, Energy Strategy Reviews, 2026. <https://doi.org/10.1016/j.esr.2025.102015>`_
+
 `B. Khavari, A. Sahlberg, C. Ramirez, S. Odera, E. Onsongo, K. Nyamena, V. Otieno, D. Ronoh, A. Gurung, F. Fuso Nerini, Integrated geospatial modelling for the achievement of universal energy access in Kenya, npj Clean Energy, 2025. <https://doi.org/10.1038/s44406-025-00017-1>`_
 
 `A. Abuzayed, A. Chitandula, K. Nyoni, A. Viltalta, Power system expansion and renewable integration for drought-resilient electrification in Zambia, Energy Policy, 2025. <https://doi.org/10.1016/j.enpol.2025.114786>`_
@@ -70,7 +72,7 @@ Journal Publications
 
 `F. F. Nerini, O. Broad, D. Mentis, M. Welsch, M. Bazilian, and M. Howells, “A cost comparison of technology approaches for improving access to electricity services,” Energy, 2016. <https://doi.org/10.1016/j.energy.2015.11.068>`_
 
-Theses
+PhD Theses
 **************
 `B. Khavari, "Geospatial Open-Source Modelling for Integrated Energy Access Planning: New Tools and Methods to Bridge the Energy Access Gap", 2024 <http://kth.diva-portal.org/smash/record.jsf?pid=diva2:1830417>`_
 
