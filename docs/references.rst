@@ -6,7 +6,11 @@ Since its development, OnSSET has been employed for a high number of studies pre
 Journal Publications
 **************
 
+`A. Sahlberg, A. Korkovelos, C. Kabongo, C. Trujillo, B. Khavari, F. Fuso Nerini, Attention to detail: exploring effects of model resolution and complexity in geospatial electrification modelling, Discover Energy, 2026. <https://doi.org/10.1007/s43937-025-00117-0>`_
+
 `C. Omondi, F. Njoka, F. Tonini, E. Abraham, Scenarios for universal electricity access with spatial changes in urbanisation: The case of Kenya, Energy Strategy Reviews, 2026. <https://doi.org/10.1016/j.esr.2025.102015>`_
+
+`A. Sarr, A. Bischi, U. Desidiri, C. Kebe, Least-cost electrification pathways for Senegal by 2030: A nationwide analysis using open-source spatial electrification tool (OnSSET), Energy Nexus, 2025. <https://doi.org/10.1016/j.nexus.2025.100621>`_
 
 `B. Khavari, A. Sahlberg, C. Ramirez, S. Odera, E. Onsongo, K. Nyamena, V. Otieno, D. Ronoh, A. Gurung, F. Fuso Nerini, Integrated geospatial modelling for the achievement of universal energy access in Kenya, npj Clean Energy, 2025. <https://doi.org/10.1038/s44406-025-00017-1>`_
 
