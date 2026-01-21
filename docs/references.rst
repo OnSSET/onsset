@@ -50,19 +50,19 @@ Journal Publications
 
 `A. Sahlberg, B. Khavari, A. Korkovelos, F. Fuso Nerini, and M. Howells, “A scenario discovery approach to least-cost electrification modelling in Burkina Faso,” Energy Strategy Reviews, 2021. <https://doi.org/10.1016/j.esr.2021.100714>`_
 
-`W. Jean et al., “A GIS for Rural Electrification Strategies in the Brazilian Amazon,” Papers in Applied Geography, 2021. <https://doi.org/10.1080/23754931.2020.1870539>`_
+`W. Jean, A. Arcela, R. van Els, A. Brasil Junior, S. Velez Echeverry, A. De Miranda, J. de Souza, , “A GIS for Rural Electrification Strategies in the Brazilian Amazon,” Papers in Applied Geography, 2021. <https://doi.org/10.1080/23754931.2020.1870539>`_
 
 `B. Khavari, A. Sahlberg, W. Usher, A. Korkovelos, and F. Fuso Nerini, “The effects of population aggregation in geospatial electrification planning,” Energy Strategy Reviews, 2021. <https://doi.org/10.1016/j.esr.2021.100752>`_
 
-`I. Pappis et al., “Influence of Electrification Pathways in the Electricity Sector of Ethiopia—Policy Implications Linking Spatial Electrification Analysis and Medium to Long-Term Energy Planning,” Energies, 2021. <https://doi.org/10.3390/en14041209>`_
+`I. Pappis, A. Sahlberg, T. Walle, O. Broad, E. Eludoyin, M. Howells, W. Usher, “Influence of Electrification Pathways in the Electricity Sector of Ethiopia—Policy Implications Linking Spatial Electrification Analysis and Medium to Long-Term Energy Planning,” Energies, 2021. <https://doi.org/10.3390/en14041209>`_
 
 `G. Falchetta, M. Hafner, and S. Tagliapietra, “Pathways to 100% Electrification in East Africa by 2030,” Energy Journal, 2020. <https://doi.org/10.5547/01956574.41.3.gfal>`_
 
 `M. Bissiri, P. Moura, N. C. Figueiredo, and P. Pereira da Silva, “A geospatial approach towards defining cost-optimal electrification pathways in West Africa,” Energy, 2020. <https://doi.org/10.1016/j.energy.2020.117471>`_
 
-`J. G. Peña Balderrama et al., “Incorporating high-resolution demand and techno-economic optimization to evaluate micro-grids into the Open Source Spatial Electrification Tool (OnSSET),” Energy for Sustainable Development, 2020. <https://doi.org/10.1016/j.esd.2020.02.009>`_
+`J. G. Peña Balderrama, S. Balderrama Subieta, F. Lombardi, N. Stevanato, A. Sahlberg, M. Howells, E. Colombo, S. Quoilin, “Incorporating high-resolution demand and techno-economic optimization to evaluate micro-grids into the Open Source Spatial Electrification Tool (OnSSET),” Energy for Sustainable Development, 2020. <https://doi.org/10.1016/j.esd.2020.02.009>`_
 
-`A. Korkovelos et al., “Supporting Electrification Policy in Fragile States: A Conflict-Adjusted Geospatial Least Cost Approach for Afghanistan,” Sustainability, 2020. <https://doi.org/10.3390/su12030777>`_
+`A. Korkovelos, D. Mentis, M. Bazilian, M. Howells, A. Saraj, S. Fayez Hotaki, F. Missfeldt-Ringius, “Supporting Electrification Policy in Fragile States: A Conflict-Adjusted Geospatial Least Cost Approach for Afghanistan,” Sustainability, 2020. <https://doi.org/10.3390/su12030777>`_
 
 `V. Menghwani et al., “Planning with justice: Using spatial modelling to incorporate justice in electricity pricing – The case of Tanzania,” Applied Energy, 2020. <https://doi.org/10.1016/j.apenergy.2020.114749>`_
 
@@ -70,11 +70,11 @@ Journal Publications
 
 `N. Moksnes, A. Korkovelos, D. Mentis, and M. Howells, “Electrification pathways for Kenya–linking spatial electrification analysis and medium to long term energy planning,” Environmental Research Letters, 2017. <https://doi.org/10.1088/1748-9326/aa7e18>`_
 
-`D. Mentis et al., “Lighting the World: the first application of an open source, spatial electrification tool (OnSSET) on Sub-Saharan Africa", Environmental Research Letters, 2017. <https://doi.org/10.1088/1748-9326/aa7b29>`_
+`D. Mentis, M. Howells, H. Rogner, A. Korkovelos, C. Arderne, E. Zepeda, S. Siyal, C. Taliotis, M. Bazilian, A. de Roo, Y. Tanvez, A. Oudalov, E. Scholtz, “Lighting the World: the first application of an open source, spatial electrification tool (OnSSET) on Sub-Saharan Africa", Environmental Research Letters, 2017. <https://doi.org/10.1088/1748-9326/aa7b29>`_
 
-`D. Mentis et al., “A GIS-based approach for electrification planning—A case study on Nigeria,” Energy for Sustainable Development, 2015. <https://doi.org/10.1016/j.esd.2015.09.007>`_
+`D. Mentis, M. Welsch, F. Fuso Nerini, O. Broad, M. Howells, M. Bazilian, H. Rogner, “A GIS-based approach for electrification planning—A case study on Nigeria,” Energy for Sustainable Development, 2015. <https://doi.org/10.1016/j.esd.2015.09.007>`_
 
-`F. F. Nerini, O. Broad, D. Mentis, M. Welsch, M. Bazilian, and M. Howells, “A cost comparison of technology approaches for improving access to electricity services,” Energy, 2016. <https://doi.org/10.1016/j.energy.2015.11.068>`_
+`F. Fuso Nerini, O. Broad, D. Mentis, M. Welsch, M. Bazilian, and M. Howells, “A cost comparison of technology approaches for improving access to electricity services,” Energy, 2016. <https://doi.org/10.1016/j.energy.2015.11.068>`_
 
 PhD Theses
 **************
