@@ -63,7 +63,7 @@ Contents
    running
    analysis_visualization
    Applications <applications>
-   References <references>
+   Publications <publications>
    Contact <contact>
    Frequently Asked Questions <faq>
    License <license>
