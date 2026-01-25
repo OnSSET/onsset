@@ -26,7 +26,7 @@ It is recommended to install OnSSET using Anaconda.
 
 1. Download or clone the repository.
 
-2. Open Anaconda prompr. Navigate to the folder where the OnSSET code is installed.
+2. Open Anaconda prompt. Navigate to the folder where the OnSSET code is installed.
 
 3. Install all the packages required in a new environment called "OnSSET" using: 
 
