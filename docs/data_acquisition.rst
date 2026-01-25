@@ -35,6 +35,103 @@ Attribute data is often referred to as tabular data.
 The selection of a particular data model, vector or raster, is dependent on the source and type of data, as well as the intended use of the data.
 Certain analytical procedures require raster data while others are better suited to vector data.
 
+IS data in OnSSET
+*******************
+
+OnSSET is a GIS-based tool and therefore requires data in a geographical format.
+In the context of the power sector, necessary data includes those on current and planned infrastructure
+(electric grid networks, road networks, power plants, industry, public facilities), population characteristics (distribution, location),
+economic and industrial activity, and local renewable energy flows. The table below lists all layers required for an OnSSET analysis.
+
++----+---------------------------+-----------------+---------------------------------------------------------------------------------+
+| #  | Dataset                   | Type            | Description                                                                     |
++====+===========================+=================+=================================================================================+
+| 1  | Population settlement     | Polygon         | Spatial identification and                                                      |
+|    | clusters                  |                 | quantification of the current (base year) population. This dataset sets the     |
+|    |                           |                 | basis of the ONSSET analysis as it is directly connected with the electricity   |
+|    |                           |                 | demand and the assignment of energy access goals.                               |
++----+---------------------------+-----------------+---------------------------------------------------------------------------------+
+| 2  | Administrative boundaries | Polygon         | Delineates the boundaries of the analysis.                                      |
+|    |                           |                 |                                                                                 |
+|    |                           |                 |                                                                                 |
++----+---------------------------+-----------------+---------------------------------------------------------------------------------+
+| 3  | Existing HV network       | Line shapefile  | Used to identify and spatially calibrate the currently                          |
+|    | **(Optional)**            |                 | electrified/non-electrified population.                                         |
+|    |                           |                 | This is layer is optional.                                                      |
++----+---------------------------+-----------------+---------------------------------------------------------------------------------+
+| 4  | Power Substations         | Point shapefile | Current Substation infrastructure used to identify                              |
+|    | **(Optional)**            |                 | and spatially calibrate the currently electrified/non-electrified               |
+|    |                           |                 | population. It is also used in order to specify grid extension suitability.     |
+|    |                           |                 | This is layer is optional.                                                      |
++----+---------------------------+-----------------+---------------------------------------------------------------------------------+
+| 5  | Roads                     | Line shapefile  | Current Road infrastructure                                                     |
+|    | **(Optional)**            |                 | used                                                                            |
+|    |                           |                 | to,identify and spatially calibrate the                                         |
+|    |                           |                 | currently electrified/non-electrified population. It is also used in order to   |
+|    |                           |                 | specify grid extension suitability.                                             |
+|    |                           |                 | This is layer is optional.                                                      |
++----+---------------------------+-----------------+---------------------------------------------------------------------------------+
+| 6  | Planned HV network      	 | Point shapefile | Represents the future plans for the                                             |
+|    | **(Optional)**            |                 | extension of the national electric grid. It also includes extension to          |
+|    |                           |                 | current/future substations, power plants, mines and queries.                    |
+|    |                           |                 | This is layer is optional.                                                      |
++----+---------------------------+-----------------+---------------------------------------------------------------------------------+
+| 7  | Existing MV network       | Line shapefile  | Used to identify and spatially calibrate the currently                          |
+|    | **(Optional)**            |                 | electrified/non-electrified population.                                         |
+|    |                           |                 | This is layer is optional.                                                      |
++----+---------------------------+-----------------+---------------------------------------------------------------------------------+
+| 8  | Planned MV network      	 | Point shapefile | Represents the future plans for the                                             |
+|    | **(Optional)**            |                 | extension of the national electric grid. 				             |
+|    |                           |                 | This is layer is optional.					                     |
+|    |                           |                 |                                                                                 |
++----+---------------------------+-----------------+---------------------------------------------------------------------------------+
+| 9  | Nighttime lights          | Raster          | Dataset used to,identify and spatially calibrate the                            |
+|    |                           |                 | currently electrified/non-electrified population.                               |
+|    |                           |                 |                                                                                 |
++----+---------------------------+-----------------+---------------------------------------------------------------------------------+
+| 10 | GHI                       | Raster          | Provide information                                                             |
+|    |                           |                 | about                                                                           |
+|    |                           |                 | the Global Horizontal Irradiation (kWh/m2/year)                                 |
+|    |                           |                 | over an area. This is later used to identify the availability/suitability of    |
+|    |                           |                 | Photovoltaic systems.                                                           |
+|    |                           |                 |                                                                                 |
++----+---------------------------+-----------------+---------------------------------------------------------------------------------+
+| 11 | Wind speed                | Raster          | Provide information                                                             |
+|    |                           |                 | about                                                                           |
+|    |                           |                 | the wind velocity (m/sec) over an area. This is later used to identify the      |
+|    |                           |                 | availability/suitability of wind power (using Capacity factors).                |
+|    |                           |                 |                                                                                 |
++----+---------------------------+-----------------+---------------------------------------------------------------------------------+
+| 12 | Hydro power potential     | Point shapefile | Points showing potential mini/small                                             |
+|    | **(Optional)**            |                 | hydropower potential. Dataset developed by KTH dESA                             |
+|    |                           |                 | including environmental, social and topological restrictions                    |
+|    |                           |                 | and provides                                                                    |
+|    |                           |                 | power availability in each identified point. Other sources can be used but      |
+|    |                           |                 | should also provide such information to reassure the proper model function.     |
+|    |                           |                 | This is layer is optional.                                                      |
++----+---------------------------+-----------------+---------------------------------------------------------------------------------+
+| 13 | Travel time               | Raster          | Visualizes spatially the travel                                                 |
+|    |                           |                 | time required to reach from any individual cell to the closest town with        |
+|    |                           |                 | population more than 50,000 people.                                             |
+|    |                           |                 |                                                                                 |
++----+---------------------------+-----------------+---------------------------------------------------------------------------------+
+| 14 | Service transformers      | Point shapefile | Current Transformer infrastructure used to identify                             |
+|    | **(Optional)**            |                 | and spatially calibrate the currently electrified/non-electrified               |
+|    |                           |                 | population. This is layer is optional.				             |
++----+---------------------------+-----------------+---------------------------------------------------------------------------------+
+| 15 | Custom demand             | Raster          | User defined electricity demand in the end year in each setltement.             |
+|    | **(Optional)**            |                 | This is layer is optional.							     |
+|    |                           |                 | 									             |
++----+---------------------------+-----------------+---------------------------------------------------------------------------------+
+
+.. note::
+
+   * Before a model can be built, one must acquire the layers of data outlined above.
+   * You are recommended to use all the layers listed in the table above, but some of the are optional and can be omited (see table above)
+   More often than not, each layer must be acquired on its own.
+   The final outcome is a .csv-file conveying all the information necessary
+   to initiate an OnSSET electrification analysis.
+
 GIS data sources
 *****************
 
@@ -120,116 +217,7 @@ in an effort to facilitate interdisciplinary research activities under a geospat
 | Russia               | http://gis-lab.info/qa/vmap0-eng.html                                              |
 +----------------------+------------------------------------------------------------------------------------+
 
-GIS data in OnSSET
-*******************
-
-OnSSET is a GIS-based tool and therefore requires data in a geographical format.
-In the context of the power sector, necessary data includes those on current and planned infrastructure
-(electric grid networks, road networks, power plants, industry, public facilities), population characteristics (distribution, location),
-economic and industrial activity, and local renewable energy flows. The table below lists all layers required for an OnSSET analysis.
-
-+----+---------------------------+-----------------+---------------------------------------------------------------------------------+
-| #  | Dataset                   | Type            | Description                                                                     |
-+====+===========================+=================+=================================================================================+
-| 1  | Population density &      | Raster          | Spatial identification and                                                      |
-|    | distribution              |                 | quantification of the current (base year) population. This dataset sets the     |
-|    |                           |                 | basis of the ONSSET analysis as it is directly connected with the electricity   |
-|    |                           |                 | demand and the assignment of energy access goals.                               |
-+----+---------------------------+-----------------+---------------------------------------------------------------------------------+
-| 2  | Administrative boundaries | Polygon         | Delineates the boundaries of the analysis.                                      |
-|    |                           |                 |                                                                                 |
-|    |                           |                 |                                                                                 |
-+----+---------------------------+-----------------+---------------------------------------------------------------------------------+
-| 3  | Existing HV network       | Line shapefile  | Used to identify and spatially calibrate the currently                          |
-|    | **(Optional)**            |                 | electrified/non-electrified population.                                         |
-|    |                           |                 | This is layer is optional.                                                      |
-+----+---------------------------+-----------------+---------------------------------------------------------------------------------+
-| 4  | Power Substations         | Point shapefile | Current Substation infrastructure used to identify                              |
-|    | **(Optional)**            |                 | and spatially calibrate the currently electrified/non-electrified               |
-|    |                           |                 | population. It is also used in order to specify grid extension suitability.     |
-|    |                           |                 | This is layer is optional.                                                      |
-+----+---------------------------+-----------------+---------------------------------------------------------------------------------+
-| 5  | Roads                     | Line shapefile  | Current Road infrastructure                                                     |
-|    | **(Optional)**            |                 | used                                                                            |
-|    |                           |                 | to,identify and spatially calibrate the                                         |
-|    |                           |                 | currently electrified/non-electrified population. It is also used in order to   |
-|    |                           |                 | specify grid extension suitability.                                             |
-|    |                           |                 | This is layer is optional.                                                      |
-+----+---------------------------+-----------------+---------------------------------------------------------------------------------+
-| 6  | Planned HV network      	 | Point shapefile | Represents the future plans for the                                             |
-|    | **(Optional)**            |                 | extension of the national electric grid. It also includes extension to          |
-|    |                           |                 | current/future substations, power plants, mines and queries.                    |
-|    |                           |                 | This is layer is optional.                                                      |
-+----+---------------------------+-----------------+---------------------------------------------------------------------------------+
-| 7  | Existing MV network       | Line shapefile  | Used to identify and spatially calibrate the currently                          |
-|    | **(Optional)**            |                 | electrified/non-electrified population.                                         |
-|    |                           |                 | This is layer is optional.                                                      |
-+----+---------------------------+-----------------+---------------------------------------------------------------------------------+
-| 8  | Planned MV network      	 | Point shapefile | Represents the future plans for the                                             |
-|    | **(Optional)**            |                 | extension of the national electric grid. 				             |
-|    |                           |                 | This is layer is optional.					                     |
-|    |                           |                 |                                                                                 |
-+----+---------------------------+-----------------+---------------------------------------------------------------------------------+
-| 9  | Nighttime lights          | Raster          | Dataset used to,identify and spatially calibrate the                            |
-|    |                           |                 | currently electrified/non-electrified population.                               |
-|    |                           |                 |                                                                                 |
-+----+---------------------------+-----------------+---------------------------------------------------------------------------------+
-| 10 | GHI                       | Raster          | Provide information                                                             |
-|    |                           |                 | about                                                                           |
-|    |                           |                 | the Global Horizontal Irradiation (kWh/m2/year)                                 |
-|    |                           |                 | over an area. This is later used to identify the availability/suitability of    |
-|    |                           |                 | Photovoltaic systems.                                                           |
-|    |                           |                 |                                                                                 |
-+----+---------------------------+-----------------+---------------------------------------------------------------------------------+
-| 11 | Wind speed                | Raster          | Provide information                                                             |
-|    |                           |                 | about                                                                           |
-|    |                           |                 | the wind velocity (m/sec) over an area. This is later used to identify the      |
-|    |                           |                 | availability/suitability of wind power (using Capacity factors).                |
-|    |                           |                 |                                                                                 |
-+----+---------------------------+-----------------+---------------------------------------------------------------------------------+
-| 12 | Hydro power potential     | Point shapefile | Points showing potential mini/small                                             |
-|    | **(Optional)**            |                 | hydropower potential. Dataset developed by KTH dESA                             |
-|    |                           |                 | including environmental, social and topological restrictions                    |
-|    |                           |                 | and provides                                                                    |
-|    |                           |                 | power availability in each identified point. Other sources can be used but      |
-|    |                           |                 | should also provide such information to reassure the proper model function.     |
-|    |                           |                 | This is layer is optional.                                                      |
-+----+---------------------------+-----------------+---------------------------------------------------------------------------------+
-| 13 | Travel time               | Raster          | Visualizes spatially the travel                                                 |
-|    |                           |                 | time required to reach from any individual cell to the closest town with        |
-|    |                           |                 | population more than 50,000 people.                                             |
-|    |                           |                 |                                                                                 |
-+----+---------------------------+-----------------+---------------------------------------------------------------------------------+
-| 14 | Elevation Map             | Raster          | Filled DEM maps are use in a number                                             |
-|    |                           |                 | of processes                                                                    |
-|    |                           |                 | in                                                                              |
-|    |                           |                 | the analysis (Energy potentials, restriction zones, grid extension suitability  |
-|    |                           |                 | map etc.).                                                                      |
-|    |                           |                 |                                                                                 |
-+----+---------------------------+-----------------+---------------------------------------------------------------------------------+
-| 15 | Land Cover                | Raster          | Land cover maps are use in a number                                             |
-|    |                           |                 | of processes                                                                    |
-|    |                           |                 | in                                                                              |
-|    |                           |                 | the analysis (Energy potentials, restriction zones, grid extension suitability  |
-|    |                           |                 | map etc.).                                                                      |
-|    |                           |                 |                                                                                 |
-+----+---------------------------+-----------------+---------------------------------------------------------------------------------+
-| 16 | Service transformers      | Point shapefile | Current Transformer infrastructure used to identify                             |
-|    | **(Optional)**            |                 | and spatially calibrate the currently electrified/non-electrified               |
-|    |                           |                 | population. This is layer is optional.				             |
-+----+---------------------------+-----------------+---------------------------------------------------------------------------------+
-| 17 | Custom demand             | Raster          | User defined electricity demand in the end year in each setltement.             |
-|    | **(Optional)**            |                 | This is layer is optional.							     |
-|    |                           |                 | 									             |
-+----+---------------------------+-----------------+---------------------------------------------------------------------------------+
-
-.. note::
-
-   * Before a model can be built, one must acquire the layers of data outlined above.
-   * You are recommended to use all the layers listed in the table above, but some of the are optional and can be omited (see table above) 
-   More often than not, each layer must be acquired on its own.
-   The final outcome is a .csv-file conveying all the information necessary
-   to initiate an OnSSET electrification analysis.
+G
 
 GIS basic datasets
 +++++++++++++++++++
