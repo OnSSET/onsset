@@ -1,9 +1,15 @@
 import logging
-import time
 from math import log, pi
 from typing import Dict
 import scipy.spatial
 from scipy.optimize import differential_evolution, Bounds
+from shapely.geometry import shape, Point
+import geopandas as gpd
+import numpy as np
+import pandas as pd
+from numba import njit
+import shapely.geometry
+import geojson
 
 try:
     from hybrids import *
@@ -14,15 +20,6 @@ try:
     from hybrids_wind import *
 except:
     from onsset.hybrids_wind import *
-
-import geojson
-from shapely.geometry import shape, Point
-import geopandas as gpd
-import numpy as np
-import pandas as pd
-from numba import njit
-import shapely.geometry
-import geojson
 
 logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.ERROR)
 logger = logging.getLogger(__name__)
@@ -631,7 +628,7 @@ class Technology:
 
         # Then calculate the difference between the two
         mv_lines_distribution_length_additional = \
-            np.maximum(cluster_lv_lines_length_total - cluster_lv_lines_length_existing, 0)
+            np.maximum(cluster_mv_lines_length_total - cluster_mv_lines_length_existing, 0)
         total_lv_lines_length_additional = \
             np.maximum(cluster_lv_lines_length_total - cluster_lv_lines_length_existing, 0)
         num_transformers_additional = np.maximum(no_of_service_transf_total - no_of_service_transf_existing, 0)
