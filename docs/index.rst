@@ -35,15 +35,12 @@ Scope and Objective
 *******************
 OnSSET output, can be used to support policy development for electrification by taking into consideration specific guidelines and targets for each country. This, could help answer questions like:
 
-* What would it cost to provide universal electricity access in the country? How does this cost change based on the targeted consumption level per capita?
+* What would it cost to provide universal electricity access in the country? How does this cost change based on the targeted consumption?
 * In case of limited resources, which customers/areas shall be prioritized? What key consumers should electrification activities focus on?
 * What part of population lives within 50 km from the existing grid infrastructure and what part in remote (last-mile) communities?
 * What is the most cost effective way to electrify populations in the last mile, what technologies and costs would that imply?
-* How do diesel generators compare with off grid renewables (solar PV, wind, hydro) in terms of overall economic performance? What are the implications of an imminent carbon pricing scheme?
-* What is the importance/impact of diesel price in the generation mix for electrification?
-* How does fuel cost for diesel compares with high upfront cost of renewables in terms of subsidy schemes (continuous vs one-time subsidy)?
 
-To the current state, OnSSET has supported electrification efforts in many countries around the globe including Afghanistan, Nigeria, Ethiopia, Kenya, India, Tanzania, Madagascar, Mozambique and Benin as part of joint collaboration with the World Bank, the United Nations, SNV and other. These organizations, have warmly embraced the tool in their fight against energy poverty. In addition, OnSSET has featured in several peer reviewd publications including the World Energy Outlook in 2014, 2015, 2017 and 2019, 2022.
+To the current state, OnSSET has supported electrification efforts in many countries around the globe including Afghanistan, Nigeria, Ethiopia, Kenya, India, Tanzania, Madagascar, Mozambique and Benin as part of joint collaboration with the World Bank, the United Nations, SEforALL, SNV and others. These organizations, have warmly embraced the tool in their fight against energy poverty. In addition, OnSSET has featured in several peer reviewd publications including the World Energy Outlook in 2014, 2015, 2017 and 2019, 2022.
 
 .. figure::  img/optimusnew.png
    :align:   center
@@ -55,13 +52,14 @@ Contents
    :maxdepth: 3
 
    Introduction <introduction>
-   OnSSET_model
-   Installation <installation>
-   data_acquisition
-   data_preparation
-   otherinputs
+   The OnSSET methodology <OnSSET_model>
    running
-   analysis_visualization
+   1. Installation <installation>
+   2. GIS Data Collection <data_acquisition>
+   3. GIS Data Extraction <data_preparation>
+   4. Start Year Calibration <otherinputs>
+   5. Running A Scenario <otherinputs>
+   6. Results and Visualization <analysis_visualization>
    Applications <applications>
    Publications <publications>
    Contact <contact>
