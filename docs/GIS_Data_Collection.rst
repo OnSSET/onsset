@@ -116,14 +116,14 @@ economic and industrial activity, and local renewable energy flows. The table be
    to initiate an OnSSET electrification analysis.
 
 Specific GIS datasets
-*****************
+**********************
 
 The following sections outline some starting points for GIS data collection. Generally, country-specific data sources such
 as the national statistics office, Ministry of Energy, power utility, etc. have the most up-to-date datasets, which should be
 prioritized. Here we list some openly accessible databases.
 
-Population/settlement cluster
------------------------------
+Population/settlement clusters
+------------------------------
 
 These settlement polygons form the basis of the OnSSET analysis. A readily available dataset is available
 `here <https://data.mendeley.com/datasets/z9zfhzk8cr/2>`_ for sub-Saharan African countries based on the methodology
@@ -170,7 +170,7 @@ The hydro-power potential dataset indicates locations where *small and mini-hydr
 *Note that the dataset is quite old and new updates should be undertaken if no country-specific dataset is available.*
 
 GIS databases
-+++++++++++++
+*************
 
 The following lists some important GIS databases where much data can be retreieved
 

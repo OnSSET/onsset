@@ -1,4 +1,4 @@
-Running the analysis
+Steps of an OnSSET analysis
 ====================================
 
 Creating and running a least-cost electrification scenario involves several steps from start to finish.

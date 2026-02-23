@@ -1,66 +1,298 @@
 GIS data preparation
 ========================
 
-Once all necessary layers have been succesfully acquired, the user would need to prepare the datasets for their input into the OnSSET model. This requires the creation of a .csv file. There are four steps that need to be undertaken to process the GIS data so that it can be used for an OnSSET analysis.
+Once all necessary layers have been succesfully acquired, the user would need to prepare the datasets for their input
+into the OnSSET model. This requires the creation of a .csv file. There are four steps that need to be undertaken to
+process the GIS data so that it can be used for an OnSSET analysis.
 
 **Step 1. Proper data types and coordinate system**
 ---------------------------------------------------
 
-In this first step the user would need to secure all the datasets. Before starting the analysis make sure that all datasets have the same coordiante system (preferably **World Geodetic Datum 1984 (WGS84)**) You can check the coordinate system of your layers by importing them into QGIS and then right-clicking on them and open the **Properties** window. In the Properties window go to the **Information** tab, here the coordinate system used is listed under *CRS* for both rasters and vectors.
+In this first step the user would need to secure all the datasets. Before starting the analysis make sure that all
+datasets are in the **World Geodetic Datum 1984 (WGS84) / EPSG:4326** coordinate system.
+You can check the coordinate system of your layers by importing them into QGIS and then right-clicking on them and open
+the **Properties** window. In the Properties window go to the **Information** tab, here the coordinate system used is
+listed under *CRS* for both rasters and vectors.
 
 **Step 2. Layer projection**
 ---------------------------------------------------
 
-In this step the user would need to determine the projection system he/she wish to use. Projection systems always distort the datasets and the system chosen should be one that minimizes this distortion. **Do not** manually project the datasets yourself (the extraction plugin presented below does this for you) it is however good to have an idea of which system to use before starting to work with the datasets.
-Here follows a few important key aspects:
+In this step the user would need to determine the projection system he/she wish to use. Projection systems always
+distort the datasets and the system chosen should be one that minimizes this distortion. **Do not** manually project
+the datasets yourself (the Jupyter Notebook presented below does this for you). However, it is good to have an idea of
+which system to use before starting to work with the datasets. Here follows a few important key aspects:
 
-**Projection** is the systematic transformation of the latitude and longitude of a location into a pair of two dimensional coordinates or else the position of this location on a plane (flat) surface. A projection is necessary every time a map is created and all map projections distort the surface in some fashion.
+**Projection** is the systematic transformation of the latitude and longitude of a location into a pair of two
+dimensional coordinates or else the position of this location on a plane (flat) surface. You will need to select
+a coordinate system that is measured in **meters** and appropriate for you region of interest. You can browse coordinate
+systems at `EPSG.io <https://epsg.io/>`_. Search for your country or region, check that the *Unit* is meters and note
+down the epsg code.
 
-**Coordinate System:** Simply put, it is a way of describing a spatial property relative to a center.
-
-**Datum:** The center and orientation of the ellipsoid
-
-.. image:: img/crs1.png
-    :width: 350px
-    :height: 200px
-    :align: center
-
-.. image:: img/crs2.png
-    :width: 300
-    :height: 150
-    :align: center
-
-**Step 3. Generate population clusters**
+**Step 3. Generate the OnSSET input file**
 ---------------------------------------------------
 
-Once the previous steps are finished we can generate our population clusters. These clusters represents settlements and will set the base of your OnSSET analysis. To generate the clusters you need the three following dataset: Administratvie boundaries (polygon vector), Population (raster) and night-time lights (raster). In order to facilitate the cluster generation KTH-dES has developed QGIS based plugins available `here <https://github.com/OnSSET/PopCluster>`_
+Here, the goal is to take all of the GIS layers that have been collected, and extract the neccessary information
+to each settlement, which will be saved in a csv-file to be used for running scenarios in the next step.
 
-In the repository go to the **Plugin** folder and select the option that you wish to use. Currently there are four options to choose from:
+First, you need to download the codes from `here <https://github.com/OnSSET/OnSSET_GIS_Extraction_notebook>`_
+(click on **Code** and *Download zip* or clone the repository using Git).
 
-    * Option 1. Plugin developed for QGIS 3.10 (the latest stable version) and works with HRSL
-    * Option 2. Plugin developed for QGIS 3.4 and works with HRSL
-    * Option 3. Plugin developed for QGIS 3.2 and works with HRSL
-    * Option 4. Plugin developed for QGIS 3.2 and works with GHS
+To launch the Jupyter Notebook, open **Anaconda Prompt** and run the following commands:
 
-Once you have selected the option you wish to use, download the file named hrsl_clustering.zip. In order to install and use the plugin please refer to the instructions published in its `repository <https://github.com/OnSSET/PopCluster>`_. 
+.. code-block:: bash
 
-**Step 4. Generate the OnSSET input file**
----------------------------------------------------
-Once the clusters are generated, we can combine all layers together into a single table.
-The principle is simple. We will use the clusters from **Step 3** in order to create a base table.
-Every row in this table represents a population settlement. Then, we will adhere one by one all the layers
-into this table so that every row (settlement) acquires its specific characteristics based on its location.
-One can perform the process manually by identifying the tools in the GIS environment of his/her preference.
+   cd PATH
+   conda activate onsset_env
+   jupyter notebook
 
-In order to facilitate the process KTH-dES has prepared a set of QGIS plugins that can be used. The plugin is available in the **Plugin** folder in the following `repository <https://github.com/OnSSET/ClusterbasedExtraction>`_. 
+Replace ``PATH`` with the location on your computer where you downloaded and extracted
+the folder containing the OnSSET GIS Extraction codes.
 
-There are three options: 
+This will open Jupyter in your browser. Note that everything is still running locally;
+the browser is simply used as the interface.
 
-    * Option 1. Works for QGIS 3.10 (latest LTR)
-    * Option 2. Works for QGIS 3.4
-    * Option 3. Works for QGIS 3.2
-    
-Choose the one that suits you, download the corresponding .zip-file named gep_onsset and follow the instructions in its `repository <https://github.com/OnSSET/ClusterbasedExtraction>`_ in order to intall and run the plugin. 
+Open the Notebook
+-----------------
+
+Click on the notebook called **csv_file_preparation_stepBystep_code.ipynb**
+
+.. figure:: img/open_notebook.png
+   :align: center
+
+   Opening the GIS extraction notebook.
+
+Running Cells
+-------------
+
+Click on the **Run** button to run the selected cell (highlighted in blue).
+
+.. figure:: img/run_cell.png
+   :align: center
+
+   Running a selected cell in Jupyter Notebook.
+
+Importing Packages
+------------------
+
+The first cell imports the necessary packages and scripts.
+
+If you receive an error message here, it typically means:
+
+* Something went wrong with the installation, or
+* The environment was not activated before launching the notebook.
+
+While a cell is executing, a ``*`` appears on the left side of the cell.
+Once execution finishes, it is replaced by a number (for example ``[1]``).
+
+Cells containing only text will not show a star or a number.
+
+.. figure:: img/import_packages.png
+   :align: center
+
+   Importing required packages.
+
+Define Coordinate System
+------------------------
+
+In the next cell, define the coordinate system.
+
+You can keep the default or change to the one identified in step 2 (sometimes not all coordinate systems work,
+so it is suggested to run first with the generic 3395 and then run again with the area-specific one):
+
+.. figure:: img/select_crs.png
+   :align: center
+
+   Selecting the coordinate system.
+
+Run the cell to proceed.
+
+Select Output Folder
+--------------------
+
+In the following cell, create or select an empty folder where the results will be saved.
+
+When you run the cell, a pop-up window will appear asking you to select the folder.
+
+.. figure:: img/select_output_folder.png
+   :align: center
+
+   Selecting the output folder.
+
+Selecting Input Datasets
+------------------------
+
+Next, you will select the required GIS datasets.
+
+Administrative Boundaries
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Select the administrative boundaries layer:
+
+.. figure:: img/select_admin_boundaries_1.png
+   :align: center
+
+.. figure:: img/select_admin_boundaries_2.png
+   :align: center
+
+Population Clusters
+^^^^^^^^^^^^^^^^^^^
+
+Select the population clusters layer:
+
+::
+
+   E.g. Benin_datasets > Clusters > Benin.shp
+
+After selecting the file, another pop-up will appear asking you to select the
+population column.
+
+Choose:
+
+::
+
+   Population
+
+Dataset Selection by Cell
+-------------------------
+
+Continue running the cells and select the datasets according to the list below.
+
+If a dataset is not available in the training exercise, simply click **Cancel**.
+
+**Cell 5**
+
+::
+
+   E.g. Benin_datasets > Solar > GHI.tif
+
+**Cell 6**
+
+::
+
+   E.g. Benin_datasets > Traveltime > Traveltime.tif
+
+**Cell 7**
+
+::
+
+   E.g. Benin_datasets > windvel > windvel.tif
+
+**Cell 8**
+
+::
+
+   E.g. Benin_datasets > NightLights > NightLights.tif
+
+**Cell 9**
+
+::
+
+   E.g. Benin_datasets > CustomDemand > CustomizedDemand2.tif
+
+**Cell 10**
+
+No selection required.
+
+**Cell 11**
+
+::
+
+   E.g. Benin_datasets > Substations > substations.shp
+
+**Cell 12**
+
+::
+
+   E.g. Benin_datasets > HV > Existing.shp
+
+**Cell 13**
+
+::
+
+   E.g. Benin_datasets > HV > Planned.shp
+
+**Cell 14**
+
+::
+
+   E.g. Benin_datasets > MV > Existing.shp
+
+**Cell 15**
+
+::
+
+   E.g. Benin_datasets > MV > Planned.shp
+
+**Cell 16**
+
+::
+
+   E.g. Benin_datasets > Roads > roads.shp
+
+**Cell 17**
+
+::
+
+   E.g. if not available — click **Cancel**.
+
+**Cell 18**
+
+::
+
+   E.g. Benin_datasets > Hydro > hydro_points.shp
+
+When prompted, select:
+
+1. ``PowerMW``
+2. ``MW``
+
+**Cell 19**
+
+::
+
+  E.g. if not available — click **Cancel**.
+
+**Cell 20**
+
+::
+
+   E.g. Benin_datasets > Admin > GADM36_BEN_1.shp
+
+When prompted, select:
+
+::
+
+   NAME_1 (or other based on your dataset)
+
+Exporting the Results
+---------------------
+
+**Cell 21**
+
+This the final step. Running this cell exports the processed data into a CSV file. If everything works correctly you
+will see the *Processing finished* message and the file will be saved in the output folder you selected earlier:
+
+.. figure:: img/export_csv.png
+   :align: center
+
+
+Understanding the Output
+------------------------
+
+In the generated CSV file:
+
+* Each row represents one settlement.
+* Each column represents an attribute used in the OnSSET model.
+
+.. figure:: img/gis_extraction_csv_file.png
+   :align: center
+
+To understand the meaning of each column, refer to the table below or
+`this document <drive.google.com/file/d/1vnmBWJuY1vwSErGKa64DUlEZtf7m72MR/view>`_
+which also indicates the expected values in each column.
+
+This CSV file is the final result of the GIS extraction process and will be
+used in the next exercise to run OnSSET.
 
 GIS country file
 ------------------------------

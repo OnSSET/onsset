@@ -52,14 +52,14 @@ Contents
    :maxdepth: 3
 
    Introduction <introduction>
-   The OnSSET methodology <OnSSET_model>
-   running
+   The OnSSET methodology <OnSSET_Methodology>
+   Steps of an OnSSET analysis <Steps of an OnSSET analysis>
    1. Installation <installation>
-   2. GIS Data Collection <data_acquisition>
-   3. GIS Data Extraction <data_preparation>
-   4. Start Year Calibration <otherinputs>
-   5. Running A Scenario <otherinputs>
-   6. Results and Visualization <analysis_visualization>
+   2. GIS Data Collection <GIS_Data_Collection>
+   3. GIS Data Extraction <GIS_Data_Extraction>
+   4. Start Year Calibration <calibration>
+   5. Running A Scenario <scenario_run>
+   6. Results and Visualization <results_visualization>
    Applications <applications>
    Publications <publications>
    Contact <contact>

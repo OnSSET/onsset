@@ -1,11 +1,129 @@
-Techno-economic and demographic parameter
-===============================================
+Running an OnSSET scenario
+==========================
 
-Input model parameters
-***********************
 
-In order to run the OnSSET analysis certain input parameters have to be used.
-Some of these are specified directly in the Python code while others are specified in an excel specs file.
+
+Open the notebook:
+
+::
+
+   2.OnSSET_Scenarios.ipynb
+
+This notebook runs the electrification scenarios and determines the
+least-cost technology for each settlement.
+
+Start by running the first cells to import the required packages.
+
+Step 1 – GIS Data Selection
+---------------------------
+
+Select the following files when prompted.
+
+First:
+
+::
+
+   OnSSET_InputFile_Calibrated.csv
+
+Then:
+
+::
+
+   Benin_datasets/bj-2-pv.csv
+
+Next:
+
+::
+
+   Benin_datasets/bj-2-wind.csv
+
+Finally:
+
+::
+
+   Benin_datasets/MV/Existing.shp
+
+Step 2 – Modelling Period and Electrification Rate
+--------------------------------------------------
+
+Define the end year and electrification target.
+
+For this exercise, leave the default values unchanged,
+which runs a scenario targeting:
+
+* **100% electricity access by 2030**
+
+Step 3 – Country-Specific Data
+------------------------------
+
+Define demographic and techno-economic parameters.
+
+Update the following values in subsection **a. Demographic and Social components**:
+
+.. code-block:: python
+
+   end_year_pop = 15507000
+   urban_ratio_end_year = 0.51
+   num_people_per_hh_urban = 3.1
+   num_people_per_hh_rural = 3.6
+
+Subsections **b, c, and d** can remain unchanged.
+
+Step 4 – Run the Scenario
+-------------------------
+
+This step runs the electrification model and calculates the
+least-cost technology for every settlement.
+
+.. important::
+
+   This process may take **several minutes to hours** depending on:
+
+   * Country size
+   * Computer performance
+   * Dataset resolution
+
+Step 5 – Results, Summaries, and Visualization
+----------------------------------------------
+
+This section displays:
+
+* Summary tables
+* Charts
+* A technology map showing electrification solutions
+
+.. figure:: img/scenario_results_example.png
+   :align: center
+
+   Example visualization of scenario results.
+
+Picture source: OnSSET teaching material
+https://doi.org/10.5281/zenodo.457403 (CC-BY 4.0)
+
+Step 6 – Export Results
+-----------------------
+
+1. Name your scenario in the first cell.
+2. Run the next cell.
+3. Click **OK** in the pop-up window.
+4. Select the folder where results should be saved.
+
+Run the final two cells to export:
+
+* Settlement-level results
+* National summary results
+
+The file named **Results** can be used to generate maps in **QGIS**.
+
+Understanding the Output
+------------------------
+
+Each row in the results file represents one settlement.
+
+Each column contains a variable used in the OnSSET analysis.
+
+Refer to the **Output Column Description** document or the
+**OnSSET documentation** for detailed explanations of each column.
 
 Python input parameters
 ------------------------
