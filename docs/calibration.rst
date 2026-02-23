@@ -18,10 +18,7 @@ To launch the Jupyter Notebook, open **Anaconda Prompt** and run:
 Replace ``PATH`` with the location where you downloaded and extracted the
 main **OnSSET** code.
 
-Part 1 – Calibrate the Input File
----------------------------------
-
-Open the 1. OnSSET_Calibration notebook:
+First, open the 1. OnSSET_Calibration notebook:
 
 .. figure:: img/open_calibration_notebook.png
    :align: center

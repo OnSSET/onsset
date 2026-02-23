@@ -1,16 +1,27 @@
 Running an OnSSET scenario
 ==========================
 
+After GIS-extraction and calibration of the input file, it is finally time to run a scenario using OnSSET to identify
+the least-cost technologies to meet access targets. This is done using the Jupyter Notebook called *2. OnSSET_Scenario.ipynb*
+which is found among the `main OnSSET codes <https://github.com/OnSSET/onsset>`_.
 
+To launch the Jupyter Notebook, open **Anaconda Prompt** and run:
 
-Open the notebook:
+.. code-block:: bash
 
-::
+   cd PATH
+   conda activate onsset_env
+   jupyter notebook
 
-   2.OnSSET_Scenarios.ipynb
+Replace ``PATH`` with the location where you downloaded and extracted the
+main **OnSSET** code.
+
+First, open the **1. OnSSET_Calibration notebook**.
 
 This notebook runs the electrification scenarios and determines the
 least-cost technology for each settlement.
+
+Run all cells from **top to bottom**.
 
 Start by running the first cells to import the required packages.
 
@@ -19,55 +30,35 @@ Step 1 – GIS Data Selection
 
 Select the following files when prompted.
 
-First:
+  * First: OnSSET_InputFile_Calibrated.csv - The calibrated input csv file created in the previous step
 
-::
+  * Then: bj-2-pv.csv (the first two letters are the country code, so the exact name depends on your country) - This file
+    contains hourly solar resource values and can be downloaded from `Energydata.info <https://energydata.info/dataset/?q=GEP&page=1>`_
+    for 58 countries around the globe. These files have been created using data from `Renewables.ninja <https://www.renewables.ninja/>`_.
 
-   OnSSET_InputFile_Calibrated.csv
+  * Then: bj-2-wind.csv (the first two letters are the country code, so the exact name depends on your country) - This file
+    contains hourly wind resource values and can be downloaded from `Energydata.info <https://energydata.info/dataset/?q=GEP&page=1>`_
+    for 58 countries around the globe. These files have been created using data from `Renewables.ninja <https://www.renewables.ninja/>`_.
 
-Then:
+  * Finally: Choose a GIS-dataset of existing *and planned* (if there are lines that are already commissioned/under
+    construction and should be included in the analysis) MV lines
 
-::
-
-   Benin_datasets/bj-2-pv.csv
-
-Next:
-
-::
-
-   Benin_datasets/bj-2-wind.csv
-
-Finally:
-
-::
-
-   Benin_datasets/MV/Existing.shp
+.. figure:: img/scenario_gis_data_selection.png
+   :align: center
 
 Step 2 – Modelling Period and Electrification Rate
 --------------------------------------------------
 
-Define the end year and electrification target.
-
-For this exercise, leave the default values unchanged,
-which runs a scenario targeting:
-
-* **100% electricity access by 2030**
+In this section, you define the end year of the analysis and the target national electrification rate by that year.
 
 Step 3 – Country-Specific Data
 ------------------------------
 
-Define demographic and techno-economic parameters.
+In this step, you can define country-specific demographic and techno-economic parameters.
+Check the units closely to ensure you enter data in the correct format.
 
-Update the following values in subsection **a. Demographic and Social components**:
-
-.. code-block:: python
-
-   end_year_pop = 15507000
-   urban_ratio_end_year = 0.51
-   num_people_per_hh_urban = 3.1
-   num_people_per_hh_rural = 3.6
-
-Subsections **b, c, and d** can remain unchanged.
+For an overview of the key techno-economic parameters, please refer to the Excel-file called
+**OnSSET v.2.0 -- non-GIS modelling parameters** which is included with the OnSSET code.
 
 Step 4 – Run the Scenario
 -------------------------
@@ -113,150 +104,4 @@ Run the final two cells to export:
 * Settlement-level results
 * National summary results
 
-The file named **Results** can be used to generate maps in **QGIS**.
-
-Understanding the Output
-------------------------
-
-Each row in the results file represents one settlement.
-
-Each column contains a variable used in the OnSSET analysis.
-
-Refer to the **Output Column Description** document or the
-**OnSSET documentation** for detailed explanations of each column.
-
-Python input parameters
-------------------------
-The values for the parameters in the table below are already filled in the OnSSET Python files.
-However, some of these may need to be updated with new or country specific values.
-
-+--------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-------------+
-| **Parameter**            | **Description**                                                                                                                                                                                                                           | **Unit**    |
-+--------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-------------+
-| BASE_YEAR                | The base year of the analysis. Note that this parameter is highly related to the input GIS data, which should, if possible, be calibrated towards this year (e.g. the population distribution map should represent the base year values). | -           |
-+--------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-------------+
-| END_YEAR                 | The final year of the analysis.                                                                                                                                                                                                           | -           |
-+--------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-------------+
-| Scenario                 | The input value here represents the annual electricity consumption per household that is expected to be achieved,by the end year.                                                                                                         | kWh/hh/year |
-+--------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-------------+
-| sa_diesel_capital_cost   | The capital cost (per capacity unit) of a stand- alone diesel generator.                                                                                                                                                                  | $/kW        |
-+--------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-------------+
-| sa_pv_capital_cost       | The capital cost (per capacity unit) of a stand- alone PV module.                                                                                                                                                                         | $/kW        |
-+--------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-------------+
-| mg_diesel_capital_cost   | The capital cost (per capacity unit) of a mini grid diesel generator.                                                                                                                                                                     | $/kW        |
-+--------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-------------+
-| mg_pv_capital_cost       | The capital cost (per capacity unit) of a mini grid PV system.                                                                                                                                                                            | $/kW        |
-+--------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-------------+
-| mg_wind_capital_cost     | The capital cost (per capacity unit) of a mini grid wind powered system.                                                                                                                                                                  | $/kW        |
-+--------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-------------+
-| mg_hydro_capital_cost    | The capital cost (per capacity unit) of a mini grid hydropower system.                                                                                                                                                                    | $/kW        |
-+--------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-------------+
-| existing_grid_cost_ratio | Incremental cost increase for extension of the grid from an electrified settlement to an un-electrified one. Default value set at 10%.                                                                                                    | ratio       |
-+--------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-------------+
-| discount_rate            | The discount rate applied to different technology configuration choices throughout the period of analysis                                                                                                                                 | ratio       |
-+--------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-------------+
-| grid_cell_area           | The size of each grid cell used in the study area. This value typically ranges between 1 and 10 km2                                                                                                                                       | km2         |
-+--------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-------------+
-
-Discount rate
-**************
-
-The discount rate is a rather important factor when doing modelling and planning for energy systems.
-This has to do with the fact that the discount rate is aimed at the variable cost. In other words a high discount rate
-tends to favour technologies with high variable costs (e.g. technologies that use non-renewable fuels), while lower
-discount rates favours technologies with high capital investment (e.g. renewables). This makes it a very good variable for
-running sensitivity analysis. For realistic values of the discount rate study the literature regarding your studyarea.
-
-Off-grid technology costs
-**************************
-
-When calculating the total cost for the off-grid technologies (all the stand-alone and mini-grid systems) there are
-several different costs that need to be taken into account. The technology is a fixed cost that need to be taken into
-account, but the variable costs necessary for generating electricity also have to be taken into account (e.g. fuel costs).
-The cost of installing the system also need to be taken into account. The connection to the grid is however excluded and
-hence not taken into consideration.
-
-Specs-file input parameters
----------------------------
-The inputs in the table below should be entered in an .xlsx file namned CountrySpecs.xlsx (Replace Country with the name of
-the area studied)
-
-+----------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-----------------------+
-| **Parameter**          | **Description**                                                                                                                                                                                                                                                                                                                                                          | **Unit**              |
-+----------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-----------------------+
-| Country                    | Enter the name of the study area                                                                                                                                                                                                                                                                                                                                     | -                     |
-+----------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-----------------------+
-| Pop2015                    | The population of the selected area in the base year.                                                                                                                                                                                                                                                                                                                | People                |
-+----------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-----------------------+
-| UrbanRatio2015             | The ratio of urban population in the selected area in the base year.                                                                                                                                                                                                                                                                                                 | Ratio                 |
-+----------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-----------------------+
-| Pop2030                    | The projected population                                                                                                                                                                                                                                                                                                                                             | People                |
-+----------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-----------------------+
-| UrbanRatio2030             | The ratio of urban population in the selected area in the end year.                                                                                                                                                                                                                                                                                                  | Ratio                 |
-+----------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-----------------------+
-| NumPeoplePerHHRural        | Number of people per household in rural areas                                                                                                                                                                                                                                                                                                                        | People                |
-+----------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-----------------------+
-| NumPeoplePerHHUrban        | Number of people per household in urban areas                                                                                                                                                                                                                                                                                                                        | People                |
-+----------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-----------------------+
-| DieselPriceLow             | The low price of diesel. Used in the calculation of the operational costs for diesel generators (in both mini grid and stand-alone systems).                                                                                                                                                                                                                         | $/liter               |
-+----------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-----------------------+
-| DieselPriceHigh            | The high price of diesel. Used in the calculation of the operational costs for diesel generators (in both mini grid and stand-alone systems).                                                                                                                                                                                                                        | $/liter               |
-+----------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-----------------------+
-| GridPrice                  | The cost of which the national grid generates electricity. This value is based on the mix of technologies used in the country.                                                                                                                                                                                                                                       | $/kWh                 |
-+----------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-----------------------+
-| GridCapacityInvestmentCost | The investment required per unit of additional capacity for the national grid. This is an average value based on,the mix of technologies used in the country.                                                                                                                                                                                                        | $/kWh                 |
-+----------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-----------------------+
-| GridLosses                 | This value represents the country’s average technical losses on transmission and distribution.                                                                                                                                                                                                                                                                       | Ratio                 |
-+----------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-----------------------+
-| BaseToPeak                 | This value represents the ratio between the base and peak load in the selected country. It is used for sizing the necessary capacity to be installed per settlement in order to cover the respective demand.                                                                                                                                                         | Ratio                 |
-+----------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-----------------------+
-| ExistingGridCostRatio      | Incremental cost increase for extension of the grid from an electrified settlement to an un-electrified one. Default value set at 10%.                                                                                                                                                                                                                               | Ratio                 |
-+----------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-----------------------+
-| MaxGridExtensionDist       | The input parameter sets the maximum distance for which the grid can be extended in order to electrify a settlement due to techno-ecoomic considerations. The default value in the model is 50km.                                                                                                                                                                    | km                    |
-+----------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-----------------------+
-| ElecActual                 | The electrification rate in the selected area in the base year. What ratio of population is electrified.                                                                                                                                                                                                                                                             | Ratio                 |
-+----------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-----------------------+
-| MinNightLights             | Night time light is an indicator retrieved by NASA’s satellite imageries and it represents light intensity over a geographical area. The value ranges from 0 to 63 with higher value representing higher light intensity over the night. The input parameter sets the minimum light intensity value under which the model will consider a settlement as electrified. | [0-63]                |
-+----------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-----------------------+
-| MaxGridDist                | The input parameter sets the maximum distance from the existing or planned grid network under which the model will consider a settlement as electrified.                                                                                                                                                                                                             | km                    |
-+----------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-----------------------+
-| MaxRoadDist                | The input parameter sets the maximum distance from the existing or planned road network under which the model will consider a settlement as electrified.                                                                                                                                                                                                             | km                    |
-+----------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-----------------------+
-| PopCutOffRoundOne          | These input parameters sets the minimum population value under which the model will consider a settlement as electrified. If the value at Round one is not satisfactory the program will move on to Round two (make sure that round two has a higher value than round one.)                                                                                          | People                |
-+----------------------------+                                                                                                                                                                                                                                                                                                                                                                      +                       +
-| PopCutOffRoundTwo          |                                                                                                                                                                                                                                                                                                                                                                      |                       |
-+----------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-----------------------+
-| UrbanCutOff                | This input parameter sets the minimum population value under which the model will consider a settlement urban                                                                                                                                                                                                                                                        | People                |
-+----------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-----------------------+
-
-The variables *MinNightLights, MaxGridDist, MaxRoadDist, PopCutOffRoundOne, PopCutOffRoundTwo* and *UrbanCutOff* are not found in the literature
-but rather defined by the user. When running the code these values are altered to find a combination that satisfies
-that the cells are assigned electrified and urban status matching the values entered at *ElecActual* and *UrbanRatio2015*.
-
-All the values with **ratio** as the unit should take a value between 0 and 1 in the excel file.
-
-Diesel pump price
-******************
-
-For the diesel price the best option is to find the diesel price directly from the literature regarding your studyarea.
-In cases for which this is not possible you should try to find the crude oil price in your country.
-1.15 is an emperical value used in order to estimate the diesel price ($/liter) from the crude oil price($/liter).
-It is assumed that the price of diesel is 15% higher than the crude oil price. If you have difficulties finding the
-crude oil price in your area of interest you can refer to e.g. http://www.oecd-ilibrary.org/energy/world-energy-outlook_20725302.
-
-Household size
-*****************
-
-The household size is an important parameter in the electrification planning analysis as it affects the connection costs
-per household. These are calculated based on:
-
-a) the projected mean national household size values
-
-b) the existing and projected national, urban and rural populations
-
-c) the urban to rural household size ratio given in demographics and health country surveys.
-
-
-.. note::
-    It is very important that the columns in the Specs-file are named exactly as they are namned in the
-    **Parameter**-column in the table above.
+The file named **Results** can be used to generate maps in **QGIS**, as described in the next section.

@@ -1,7 +1,7 @@
 Contact
 ==================
 
-Ask any questions on `OnSSETs LinkedIn page <https://www.linkedin.com/company/onsset-open-source-spatial-electrification-tool>`_.
+Ask any questions on the `Forum <https://forum.u4ria.org/c/onsset/>`_ or `OnSSETs LinkedIn page <https://www.linkedin.com/company/onsset-open-source-spatial-electrification-tool>`_.
 
 Bugs and ideas for improvements of the tool can be posted `here <https://github.com/OnSSET/onsset/issues>`_
 
