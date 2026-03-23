@@ -19,7 +19,7 @@ Configuration:
 import os
 import logging
 from enum import Enum
-from typing import List, Dict, Optional, Tuple
+from typing import List, Dict, Optional, Tuple, Generator
 from collections import defaultdict
 
 import pandas as pd
@@ -71,6 +71,57 @@ class TemporalResolution(Enum):
     MONTHLY = 'monthly'
     YEARLY = 'yearly'
     UNKNOWN = 'unknown'
+
+
+class ClimateDataType(Enum):
+    """Type of climate variable measured."""
+    TEMPERATURE = 'temperature'
+    PRECIPITATION = 'precipitation'
+    PEV = 'pev'  # Potential Evapotranspiration
+    UNKNOWN = 'unknown'
+
+
+def detect_temporal_from_filename(filename: str) -> TemporalResolution:
+    """Detect temporal resolution from filename patterns.
+
+    Args:
+        filename: Name of the climate data file.
+
+    Returns:
+        Detected TemporalResolution enum value.
+    """
+    fname_lower = filename.lower()
+    if 'hourly' in fname_lower:
+        return TemporalResolution.HOURLY
+    elif 'daily' in fname_lower or 'dailymax' in fname_lower:
+        return TemporalResolution.DAILY
+    elif 'monthly' in fname_lower or 'monthlytotal' in fname_lower:
+        return TemporalResolution.MONTHLY
+    elif 'yearly' in fname_lower or 'annual' in fname_lower:
+        return TemporalResolution.YEARLY
+    return TemporalResolution.UNKNOWN
+
+
+def detect_datatype_from_filename(filename: str) -> ClimateDataType:
+    """Detect climate data type from filename patterns.
+
+    Args:
+        filename: Name of the climate data file.
+
+    Returns:
+        Detected ClimateDataType enum value.
+    """
+    fname_lower = filename.lower()
+    # Temperature indicators
+    if any(pat in fname_lower for pat in ['t2m', 'temp', 'temperature', 'tmax', 'tmin']):
+        return ClimateDataType.TEMPERATURE
+    # Precipitation indicators
+    if any(pat in fname_lower for pat in ['tp_', 'tp-', 'precip', 'precipitation', 'rainfall', 'rain']):
+        return ClimateDataType.PRECIPITATION
+    # PEV indicators
+    if any(pat in fname_lower for pat in ['pev', 'evapotranspiration', 'evap', 'pet']):
+        return ClimateDataType.PEV
+    return ClimateDataType.UNKNOWN
 
 
 # Output column names (for integration with onsset.py)
@@ -194,8 +245,8 @@ def load_climate_config(specs_path: Optional[str] = None) -> Dict:
 class ClimateDataLoader:
     """Loads and validates climate data from a folder of CSV files.
 
-    Memory-efficient: classifies files by type and loads them separately
-    to avoid memory issues with large datasets.
+    Memory-efficient: classifies files by temporal resolution and data type,
+    then loads them separately to avoid memory issues with large datasets.
     """
 
     def __init__(self, folder_path: str, config: Dict):
@@ -208,16 +259,57 @@ class ClimateDataLoader:
         self.config = config
         self.dataframes: List[pd.DataFrame] = []
         self.temporal_resolution: TemporalResolution = TemporalResolution.UNKNOWN
+
+        # New nested classification structure: classified_files[temporal][datatype] = [filenames]
+        self.classified_files: Dict[TemporalResolution, Dict[ClimateDataType, List[str]]] = {
+            res: {dtype: [] for dtype in ClimateDataType}
+            for res in TemporalResolution
+        }
+
+        # Common columns (lat, lon, date) - shared across data types
+        self.common_columns: Dict[str, str] = {}
+
+        # Per-datatype column detection
+        self._detected_columns_by_type: Dict[ClimateDataType, Dict[str, str]] = {
+            dtype: {} for dtype in ClimateDataType
+        }
+
+        # Legacy detected_columns dict (for backward compatibility)
         self.detected_columns: Dict[str, str] = {}
 
-        # Classified file lists
-        self.daily_temp_files: List[str] = []
-        self.monthly_precip_files: List[str] = []
-        self.monthly_pev_files: List[str] = []
-        self.other_files: List[str] = []
+    # -------------------------------------------------------------------------
+    # Backward Compatibility Properties
+    # -------------------------------------------------------------------------
+
+    @property
+    def daily_temp_files(self) -> List[str]:
+        """Backward compatibility: list of daily temperature files."""
+        return self.classified_files[TemporalResolution.DAILY][ClimateDataType.TEMPERATURE]
+
+    @property
+    def monthly_precip_files(self) -> List[str]:
+        """Backward compatibility: list of monthly precipitation files."""
+        return self.classified_files[TemporalResolution.MONTHLY][ClimateDataType.PRECIPITATION]
+
+    @property
+    def monthly_pev_files(self) -> List[str]:
+        """Backward compatibility: list of monthly PEV files."""
+        return self.classified_files[TemporalResolution.MONTHLY][ClimateDataType.PEV]
+
+    @property
+    def other_files(self) -> List[str]:
+        """Backward compatibility: files that couldn't be classified."""
+        result = []
+        for datatype in ClimateDataType:
+            result.extend(self.classified_files[TemporalResolution.UNKNOWN][datatype])
+        return result
+
+    # -------------------------------------------------------------------------
+    # File Classification
+    # -------------------------------------------------------------------------
 
     def _classify_files(self) -> None:
-        """Classify files by type based on filename patterns."""
+        """Classify files by temporal resolution AND data type independently."""
         if not os.path.isdir(self.folder_path):
             raise ValueError(f"Climate data folder not found: {self.folder_path}")
 
@@ -230,27 +322,118 @@ class ClimateDataLoader:
             raise ValueError(f"No CSV or Excel files found in {self.folder_path}")
 
         for filename in all_files:
-            fname_lower = filename.lower()
-            # Classify by known patterns
-            if 't2m' in fname_lower and ('daily' in fname_lower or 'max' in fname_lower):
-                self.daily_temp_files.append(filename)
-            elif 'tp_' in fname_lower and 'monthly' in fname_lower:
-                self.monthly_precip_files.append(filename)
-            elif 'pev' in fname_lower and 'monthly' in fname_lower:
-                self.monthly_pev_files.append(filename)
-            else:
-                self.other_files.append(filename)
+            # Independent detection
+            temporal = detect_temporal_from_filename(filename)
+            datatype = detect_datatype_from_filename(filename)
 
-        # Sort files for consistent processing order
-        self.daily_temp_files.sort()
-        self.monthly_precip_files.sort()
-        self.monthly_pev_files.sort()
-        self.other_files.sort()
+            # Apply legacy rules for backward compatibility
+            temporal, datatype = self._apply_legacy_rules(filename, temporal, datatype)
 
-        logger.info(f"Classified files: {len(self.daily_temp_files)} daily temp, "
-                   f"{len(self.monthly_precip_files)} monthly precip, "
-                   f"{len(self.monthly_pev_files)} monthly PEV, "
-                   f"{len(self.other_files)} other")
+            # Store in nested structure
+            self.classified_files[temporal][datatype].append(filename)
+
+        # Sort all lists for consistent processing order
+        for temporal in self.classified_files:
+            for datatype in self.classified_files[temporal]:
+                self.classified_files[temporal][datatype].sort()
+
+        self._log_classification_summary()
+
+    def _apply_legacy_rules(
+        self,
+        filename: str,
+        temporal: TemporalResolution,
+        datatype: ClimateDataType
+    ) -> Tuple[TemporalResolution, ClimateDataType]:
+        """Apply backward-compatible rules from original hard-coded patterns.
+
+        Original patterns:
+        - t2m + (daily|max) -> daily + temperature
+        - tp_ + monthly -> monthly + precipitation
+        - pev + monthly -> monthly + pev
+        """
+        fname_lower = filename.lower()
+
+        # Rule 1: t2m with 'max' implies daily temperature even without 'daily' keyword
+        if 't2m' in fname_lower and 'max' in fname_lower:
+            if temporal == TemporalResolution.UNKNOWN:
+                temporal = TemporalResolution.DAILY
+            if datatype == ClimateDataType.UNKNOWN:
+                datatype = ClimateDataType.TEMPERATURE
+
+        return temporal, datatype
+
+    def _log_classification_summary(self) -> None:
+        """Log summary of file classification."""
+        summary_parts = []
+        for temporal in TemporalResolution:
+            if temporal == TemporalResolution.UNKNOWN:
+                continue
+            for datatype in ClimateDataType:
+                if datatype == ClimateDataType.UNKNOWN:
+                    continue
+                count = len(self.classified_files[temporal][datatype])
+                if count > 0:
+                    summary_parts.append(f"{count} {temporal.value} {datatype.value}")
+
+        unknown_count = sum(
+            len(self.classified_files[TemporalResolution.UNKNOWN][dt])
+            for dt in ClimateDataType
+        )
+        if unknown_count:
+            summary_parts.append(f"{unknown_count} unclassified")
+
+        logger.info(f"Classified files: {', '.join(summary_parts)}")
+
+    # -------------------------------------------------------------------------
+    # Data Availability Checks
+    # -------------------------------------------------------------------------
+
+    def has_data(self, temporal: TemporalResolution, datatype: ClimateDataType) -> bool:
+        """Check if data is available for a specific temporal/datatype combination.
+
+        Args:
+            temporal: Temporal resolution to check.
+            datatype: Data type to check.
+
+        Returns:
+            True if files exist for this combination.
+        """
+        if not any(
+            self.classified_files[t][d]
+            for t in TemporalResolution
+            for d in ClimateDataType
+        ):
+            self._classify_files()
+        return len(self.classified_files[temporal][datatype]) > 0
+
+    def get_available_combinations(self) -> List[Tuple[TemporalResolution, ClimateDataType]]:
+        """Get list of all (temporal, datatype) combinations with available data.
+
+        Returns:
+            List of (TemporalResolution, ClimateDataType) tuples with files.
+        """
+        if not any(
+            self.classified_files[t][d]
+            for t in TemporalResolution
+            for d in ClimateDataType
+        ):
+            self._classify_files()
+
+        result = []
+        for temporal in TemporalResolution:
+            for datatype in ClimateDataType:
+                if self.classified_files[temporal][datatype]:
+                    result.append((temporal, datatype))
+        return result
+
+    def has_daily_temp_data(self) -> bool:
+        """Backward compatibility check for daily temperature data."""
+        return self.has_data(TemporalResolution.DAILY, ClimateDataType.TEMPERATURE)
+
+    def has_monthly_precip_data(self) -> bool:
+        """Backward compatibility check for monthly precipitation data."""
+        return self.has_data(TemporalResolution.MONTHLY, ClimateDataType.PRECIPITATION)
 
     def load_all_files(self) -> pd.DataFrame:
         """Load all CSV/Excel files from the folder and combine into single DataFrame.
@@ -315,34 +498,93 @@ class ClimateDataLoader:
             logger.warning(f"Failed to load {filename}: {e}")
             return None
 
+    # -------------------------------------------------------------------------
+    # Generic Loader Methods
+    # -------------------------------------------------------------------------
+
+    def iter_files(
+        self,
+        temporal: Optional[TemporalResolution] = None,
+        datatype: Optional[ClimateDataType] = None
+    ) -> Generator[Tuple[str, pd.DataFrame], None, None]:
+        """Iterate over classified files, optionally filtered by temporal/datatype.
+
+        Args:
+            temporal: Filter by temporal resolution (None = all)
+            datatype: Filter by data type (None = all)
+
+        Yields:
+            Tuple of (filename, DataFrame) for each matching file.
+        """
+        if not any(
+            self.classified_files[t][d]
+            for t in TemporalResolution
+            for d in ClimateDataType
+        ):
+            self._classify_files()
+
+        temporals = [temporal] if temporal else list(TemporalResolution)
+        datatypes = [datatype] if datatype else list(ClimateDataType)
+
+        for t in temporals:
+            for d in datatypes:
+                for filename in self.classified_files[t][d]:
+                    df = self._load_file(filename)
+                    if df is not None:
+                        logger.info(f"Loaded {filename}: {len(df)} rows")
+                        yield filename, df
+
+    def load_files(
+        self,
+        temporal: Optional[TemporalResolution] = None,
+        datatype: Optional[ClimateDataType] = None
+    ) -> pd.DataFrame:
+        """Load and combine files matching temporal/datatype criteria.
+
+        Args:
+            temporal: Filter by temporal resolution (None = all)
+            datatype: Filter by data type (None = all)
+
+        Returns:
+            Combined DataFrame with all matching data.
+        """
+        dfs = []
+        for filename, df in self.iter_files(temporal, datatype):
+            dfs.append(df)
+
+        if not dfs:
+            return pd.DataFrame()
+
+        combined = pd.concat(dfs, ignore_index=True)
+
+        # Detect columns for the appropriate datatype
+        if datatype and datatype != ClimateDataType.UNKNOWN:
+            self._detect_columns_for_datatype(combined, datatype)
+        else:
+            self._detect_columns(combined)
+
+        logger.info(f"Combined data: {len(combined)} total rows")
+        return combined
+
+    # -------------------------------------------------------------------------
+    # Backward Compatible Loader Methods
+    # -------------------------------------------------------------------------
+
     def load_monthly_precip_files(self) -> pd.DataFrame:
         """Load only monthly precipitation files (memory-efficient for drought analysis).
 
         Returns:
             Combined DataFrame with monthly precipitation data.
         """
-        if not self.monthly_precip_files:
-            self._classify_files()
-
-        if not self.monthly_precip_files:
+        df = self.load_files(
+            temporal=TemporalResolution.MONTHLY,
+            datatype=ClimateDataType.PRECIPITATION
+        )
+        if not df.empty:
+            logger.info(f"Combined monthly precip data: {len(df)} total rows")
+        else:
             logger.warning("No monthly precipitation files found")
-            return pd.DataFrame()
-
-        dfs = []
-        for filename in self.monthly_precip_files:
-            df = self._load_file(filename)
-            if df is not None:
-                dfs.append(df)
-                logger.info(f"Loaded {filename}: {len(df)} rows")
-
-        if not dfs:
-            return pd.DataFrame()
-
-        combined = pd.concat(dfs, ignore_index=True)
-        logger.info(f"Combined monthly precip data: {len(combined)} total rows")
-
-        self._detect_columns(combined)
-        return combined
+        return df
 
     def iter_daily_temp_files(self):
         """Iterate over daily temperature files one at a time (memory-efficient).
@@ -350,14 +592,10 @@ class ClimateDataLoader:
         Yields:
             Tuple of (filename, DataFrame) for each daily temperature file.
         """
-        if not self.daily_temp_files:
-            self._classify_files()
-
-        for filename in self.daily_temp_files:
-            df = self._load_file(filename)
-            if df is not None:
-                logger.info(f"Loaded {filename}: {len(df)} rows")
-                yield filename, df
+        yield from self.iter_files(
+            temporal=TemporalResolution.DAILY,
+            datatype=ClimateDataType.TEMPERATURE
+        )
 
     def get_sample_for_column_detection(self) -> pd.DataFrame:
         """Load a small sample to detect column names without loading all data.
@@ -401,52 +639,140 @@ class ClimateDataLoader:
             self._classify_files()
         return len(self.monthly_precip_files) > 0
 
+    # -------------------------------------------------------------------------
+    # Column Detection (Modular)
+    # -------------------------------------------------------------------------
+
     def _detect_columns(self, df: pd.DataFrame):
-        """Auto-detect column names for lat, lon, date, temp, precip."""
+        """Auto-detect column names for lat, lon, date, temp, precip.
+
+        This is the legacy method that populates self.detected_columns.
+        """
         columns = df.columns.tolist()
         columns_lower = [c.lower() for c in columns]
 
-        # Latitude detection
+        # Detect common columns
+        self._detect_common_columns(columns, columns_lower)
+
+        # Detect all data type columns
+        self._detect_temperature_columns(columns, columns_lower)
+        self._detect_precipitation_columns(columns, columns_lower)
+        self._detect_pev_columns(columns, columns_lower)
+
+        # Populate legacy detected_columns dict from common_columns and type-specific
+        self.detected_columns.update(self.common_columns)
+        if 'value' in self._detected_columns_by_type[ClimateDataType.TEMPERATURE]:
+            self.detected_columns['temperature'] = self._detected_columns_by_type[ClimateDataType.TEMPERATURE]['value']
+        if 'value' in self._detected_columns_by_type[ClimateDataType.PRECIPITATION]:
+            self.detected_columns['precipitation'] = self._detected_columns_by_type[ClimateDataType.PRECIPITATION]['value']
+
+        logger.info(f"Detected columns: {self.detected_columns}")
+
+    def _detect_columns_for_datatype(self, df: pd.DataFrame, datatype: ClimateDataType):
+        """Detect columns specific to a data type.
+
+        Args:
+            df: DataFrame to analyze.
+            datatype: The type of climate data to detect columns for.
+        """
+        columns = df.columns.tolist()
+        columns_lower = [c.lower() for c in columns]
+
+        # Always detect common columns
+        self._detect_common_columns(columns, columns_lower)
+
+        # Type-specific detection
+        if datatype == ClimateDataType.TEMPERATURE:
+            self._detect_temperature_columns(columns, columns_lower)
+        elif datatype == ClimateDataType.PRECIPITATION:
+            self._detect_precipitation_columns(columns, columns_lower)
+        elif datatype == ClimateDataType.PEV:
+            self._detect_pev_columns(columns, columns_lower)
+
+        # Update legacy detected_columns for backward compatibility
+        self.detected_columns.update(self.common_columns)
+
+    def _detect_common_columns(self, columns: List[str], columns_lower: List[str]) -> None:
+        """Detect latitude, longitude, and date columns."""
+        # Latitude
         lat_options = [self.config['lat_column'], 'latitude', 'lat', 'y', 'y_deg']
         for opt in lat_options:
             if opt.lower() in columns_lower:
                 idx = columns_lower.index(opt.lower())
-                self.detected_columns['latitude'] = columns[idx]
+                self.common_columns['latitude'] = columns[idx]
                 break
 
-        # Longitude detection
+        # Longitude
         lon_options = [self.config['lon_column'], 'longitude', 'lon', 'x', 'x_deg']
         for opt in lon_options:
             if opt.lower() in columns_lower:
                 idx = columns_lower.index(opt.lower())
-                self.detected_columns['longitude'] = columns[idx]
+                self.common_columns['longitude'] = columns[idx]
                 break
 
-        # Date detection
+        # Date
         date_options = [self.config['date_column'], 'date', 'timestamp', 'time', 'datetime']
         for opt in date_options:
             if opt.lower() in columns_lower:
                 idx = columns_lower.index(opt.lower())
-                self.detected_columns['date'] = columns[idx]
+                self.common_columns['date'] = columns[idx]
                 break
 
-        # Temperature detection
-        temp_options = [self.config['temp_column'], 't2m_max_c', 'temperature', 'temp', 'tmax']
+    def _detect_temperature_columns(self, columns: List[str], columns_lower: List[str]) -> None:
+        """Detect temperature-specific columns."""
+        temp_options = [
+            self.config['temp_column'],
+            't2m_max_c', 't2m_max', 'temperature', 'temp', 'tmax', 'tmin', 't2m'
+        ]
         for opt in temp_options:
             if opt.lower() in columns_lower:
                 idx = columns_lower.index(opt.lower())
-                self.detected_columns['temperature'] = columns[idx]
+                self._detected_columns_by_type[ClimateDataType.TEMPERATURE]['value'] = columns[idx]
                 break
 
-        # Precipitation detection
-        precip_options = [self.config['precip_column'], 'tp_mm_month', 'precipitation', 'precip', 'rainfall']
+    def _detect_precipitation_columns(self, columns: List[str], columns_lower: List[str]) -> None:
+        """Detect precipitation-specific columns."""
+        precip_options = [
+            self.config['precip_column'],
+            'tp_mm_month', 'tp_mm', 'precipitation', 'precip', 'rainfall', 'rain', 'tp'
+        ]
         for opt in precip_options:
             if opt.lower() in columns_lower:
                 idx = columns_lower.index(opt.lower())
-                self.detected_columns['precipitation'] = columns[idx]
+                self._detected_columns_by_type[ClimateDataType.PRECIPITATION]['value'] = columns[idx]
                 break
 
-        logger.info(f"Detected columns: {self.detected_columns}")
+    def _detect_pev_columns(self, columns: List[str], columns_lower: List[str]) -> None:
+        """Detect PEV-specific columns."""
+        pev_options = ['pev', 'evapotranspiration', 'evap', 'et', 'pet']
+        for opt in pev_options:
+            if opt.lower() in columns_lower:
+                idx = columns_lower.index(opt.lower())
+                self._detected_columns_by_type[ClimateDataType.PEV]['value'] = columns[idx]
+                break
+
+    def get_columns(self, datatype: Optional[ClimateDataType] = None) -> Dict[str, str]:
+        """Get detected column names, merging common and type-specific columns.
+
+        Args:
+            datatype: Optional data type to get specific columns for.
+
+        Returns:
+            Dictionary with column mappings.
+        """
+        result = self.common_columns.copy()
+
+        if datatype and datatype in self._detected_columns_by_type:
+            type_cols = self._detected_columns_by_type[datatype]
+            if 'value' in type_cols:
+                if datatype == ClimateDataType.TEMPERATURE:
+                    result['temperature'] = type_cols['value']
+                elif datatype == ClimateDataType.PRECIPITATION:
+                    result['precipitation'] = type_cols['value']
+                elif datatype == ClimateDataType.PEV:
+                    result['pev'] = type_cols['value']
+
+        return result
 
     def detect_temporal_resolution(self, df: pd.DataFrame) -> TemporalResolution:
         """Analyze date column to determine data resolution.
@@ -1284,7 +1610,7 @@ def process_climate_data(
 
     This function orchestrates the full pipeline:
     1. Load climate configuration from specs file
-    2. Classify and load climate data files by type (memory-efficient)
+    2. Classify and load climate data files by temporal resolution and data type
     3. Run appropriate analysis for each data type
     4. Calculate risk scores
     5. Map to settlements
@@ -1316,40 +1642,68 @@ def process_climate_data(
         admin3_gdf = admin3_gdf.to_crs(epsg=4326)
     logger.info(f"Loaded {len(admin3_gdf)} admin-3 regions")
 
-    # Step 3: Initialize loader and classify files
+    # Step 3: Initialize loader and classify files (modular detection)
     loader = ClimateDataLoader(climate_folder, config)
 
-    # Get a sample to detect column names
+    # Get available data combinations (temporal resolution x data type)
+    available = loader.get_available_combinations()
+    logger.info(f"Available data combinations: {[(t.value, d.value) for t, d in available]}")
+
+    # Get initial columns from sample
     sample_df = loader.get_sample_for_column_detection()
     detected_columns = loader.detected_columns
 
     heatwave_risk_df = pd.DataFrame()
     drought_risk_df = pd.DataFrame()
 
-    # Step 4: Process daily temperature data for heatwave analysis (memory-efficient)
-    if loader.has_daily_temp_data():
-        logger.info("Daily temperature data detected - running incremental heatwave analysis")
-        heatwave_risk_df = calculate_heatwave_risk_incremental(
-            loader, admin3_gdf, config, detected_columns
-        )
+    # Step 4: Process temperature data for heatwave analysis
+    temp_combinations = [(t, d) for t, d in available if d == ClimateDataType.TEMPERATURE]
+    if temp_combinations:
+        # Prefer daily for heatwave analysis
+        temp_combinations.sort(key=lambda x: 0 if x[0] == TemporalResolution.DAILY else 1)
+        best_temporal, _ = temp_combinations[0]
 
-    # Step 5: Process monthly precipitation data for drought analysis
-    if loader.has_monthly_precip_data():
-        logger.info("Monthly precipitation data detected - running SPI drought analysis")
-        monthly_precip_df = loader.load_monthly_precip_files()
-        if not monthly_precip_df.empty:
-            # Detect columns from the precip data if not already set
-            loader._detect_columns(monthly_precip_df)
-            detected_columns.update(loader.detected_columns)
-            drought_risk_df = calculate_spi_drought_risk(
-                monthly_precip_df, admin3_gdf, config, detected_columns
+        if best_temporal == TemporalResolution.DAILY:
+            logger.info("Daily temperature data detected - running incremental heatwave analysis")
+            # Get temperature-specific columns
+            temp_columns = loader.get_columns(ClimateDataType.TEMPERATURE)
+            detected_columns.update(temp_columns)
+            heatwave_risk_df = calculate_heatwave_risk_incremental(
+                loader, admin3_gdf, config, detected_columns
             )
-            # Free memory
-            del monthly_precip_df
+        else:
+            logger.warning(f"Only {best_temporal.value} temperature data available. "
+                          f"Heatwave analysis works best with daily data.")
+
+    # Step 5: Process precipitation data for drought analysis
+    precip_combinations = [(t, d) for t, d in available if d == ClimateDataType.PRECIPITATION]
+    if precip_combinations:
+        # Prefer monthly for SPI drought analysis
+        precip_combinations.sort(key=lambda x: 0 if x[0] == TemporalResolution.MONTHLY else 1)
+        best_temporal, _ = precip_combinations[0]
+
+        if best_temporal == TemporalResolution.MONTHLY:
+            logger.info("Monthly precipitation data detected - running SPI drought analysis")
+            monthly_precip_df = loader.load_files(
+                temporal=TemporalResolution.MONTHLY,
+                datatype=ClimateDataType.PRECIPITATION
+            )
+            if not monthly_precip_df.empty:
+                # Get precipitation-specific columns
+                precip_columns = loader.get_columns(ClimateDataType.PRECIPITATION)
+                detected_columns.update(precip_columns)
+                drought_risk_df = calculate_spi_drought_risk(
+                    monthly_precip_df, admin3_gdf, config, detected_columns
+                )
+                # Free memory
+                del monthly_precip_df
+        else:
+            logger.warning(f"Only {best_temporal.value} precipitation data available. "
+                          f"SPI analysis works best with monthly data.")
 
     # Step 6: If no classified files, fall back to legacy loading (for small datasets)
     if heatwave_risk_df.empty and drought_risk_df.empty:
-        if not loader.has_daily_temp_data() and not loader.has_monthly_precip_data():
+        if not available or all(t == TemporalResolution.UNKNOWN for t, d in available):
             logger.warning("No classified climate files found. Attempting legacy load...")
             # Only for small datasets - this may fail for large datasets
             if len(loader.other_files) < 20:  # Safety threshold
