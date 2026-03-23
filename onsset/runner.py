@@ -8,10 +8,18 @@ import numpy as np
 import re
 import geojson
 import pandas as pd
-from onsset import (SET_ELEC_ORDER, SET_LCOE_GRID, SET_MIN_GRID_DIST, SET_GRID_PENALTY,
+try:
+    from onsset.onsset import (SET_ELEC_ORDER, SET_LCOE_GRID, SET_MIN_GRID_DIST, SET_GRID_PENALTY,
                     SET_MV_CONNECT_DIST, SET_WINDVEL, SET_WINDCF, SET_X_DEG, SET_Y_DEG,
                     SettlementProcessor, Technology)
-
+except ImportError:
+    from onsset import (SET_ELEC_ORDER, SET_LCOE_GRID, SET_MIN_GRID_DIST, SET_GRID_PENALTY,
+                    SET_MV_CONNECT_DIST, SET_WINDVEL, SET_WINDCF, SET_X_DEG, SET_Y_DEG,
+                    SettlementProcessor, Technology)
+try:
+    from onsset.climate_algorithm import process_climate_data
+except ImportError:
+    from climate_algorithm import process_climate_data
 try:
     from onsset.specs import (SPE_COUNTRY, SPE_ELEC, SPE_ELEC_MODELLED,
                               SPE_ELEC_RURAL, SPE_ELEC_URBAN, SPE_END_YEAR,
@@ -20,7 +28,8 @@ try:
                               SPE_NUM_PEOPLE_PER_HH_RURAL,
                               SPE_NUM_PEOPLE_PER_HH_URBAN, SPE_POP, SPE_POP_FUTURE,
                               SPE_START_YEAR, SPE_URBAN, SPE_URBAN_FUTURE,
-                              SPE_URBAN_MODELLED, SPE_COST_NON_SUPLIED_ENERGY)
+                              SPE_URBAN_MODELLED, SPE_COST_NON_SUPLIED_ENERGY,
+                              SPE_TIMESTEP)
 except ImportError:
     from specs import (SPE_COUNTRY, SPE_ELEC, SPE_ELEC_MODELLED,
                        SPE_ELEC_RURAL, SPE_ELEC_URBAN, SPE_END_YEAR,
@@ -29,7 +38,8 @@ except ImportError:
                        SPE_NUM_PEOPLE_PER_HH_RURAL,
                        SPE_NUM_PEOPLE_PER_HH_URBAN, SPE_POP, SPE_POP_FUTURE,
                        SPE_START_YEAR, SPE_URBAN, SPE_URBAN_FUTURE,
-                       SPE_URBAN_MODELLED, SPE_COST_NON_SUPLIED_ENERGY)
+                       SPE_URBAN_MODELLED, SPE_COST_NON_SUPLIED_ENERGY,
+                       SPE_TIMESTEP)
 from openpyxl import load_workbook
 
 logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.DEBUG)
@@ -53,6 +63,13 @@ def calibration(specs_path, csv_path, specs_path_calib, calibrated_csv_path):
 
     onsseter = SettlementProcessor(settlements_in_csv)
 
+    # First, run the broader conditioning routine to ensure all expected
+    # columns (including MGDist for mini-grid distance) exist and have
+    # reasonable default values, mirroring the workflow in the
+    # Jupyter calibration notebooks.
+    onsseter.conditioning()
+
+    # Then enforce numeric types, fill NaNs, and sort.
     onsseter.condition_df()
     onsseter.df[SET_GRID_PENALTY] = 1  # onsseter.grid_penalties(onsseter.df)
 
@@ -106,7 +123,8 @@ def calibration(specs_path, csv_path, specs_path_calib, calibrated_csv_path):
     onsseter.df.to_csv(settlements_out_csv, index=False)
 
 
-def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder, pv_path, wind_path, mv_path):
+def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder, pv_path, wind_path, mv_path,
+              climate_folder=None, admin3_shapefile=None):
     """
 
     Arguments
@@ -115,19 +133,34 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder, pv
     calibrated_csv_path : str
     results_folder : str
     summary_folder : str
+    pv_path : str
+    wind_path : str
+    mv_path : str
+    climate_folder : str, optional
+        Path to folder containing climate data CSV files.
+    admin3_shapefile : str, optional
+        Path to admin-3 (municipality) level shapefile.
 
     """
 
     scenario_info = pd.read_excel(specs_path, sheet_name='ScenarioInfo')
     scenarios = scenario_info['Scenario']
     scenario_parameters = pd.read_excel(specs_path, sheet_name='ScenarioParameters')
-    specs_data = pd.read_excel(specs_path, sheet_name='SpecsDataCalib', index_col=0)
+    specs_data = pd.read_excel(specs_path, sheet_name='SpecsDataCalib')
     print(specs_data.iloc[0][SPE_COUNTRY])
 
     for scenario in scenarios:
         print('Scenario: ' + str(scenario + 1))
 
         onsseter = SettlementProcessor(calibrated_csv_path)
+
+        # Process climate data if provided
+        if climate_folder and admin3_shapefile:
+            logging.info('Processing climate data...')
+            onsseter.df = process_climate_data(
+                climate_folder, admin3_shapefile, onsseter.df, specs_path=specs_path
+            )
+            logging.info('Climate data processing complete.')
 
         x_mv_exist, y_mv_exist = onsseter.start_extension_points(mv_path)
         x_coordinates = x_mv_exist
@@ -138,9 +171,13 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder, pv
             key=lambda x: int(re.search(r"\d{4}$", x).group())
         )
 
-        yearsofanalysis = specs_data.index.tolist()
-        base_year = specs_data.iloc[0][SPE_START_YEAR]
-        end_year = yearsofanalysis[-1]
+        base_year = int(specs_data.iloc[0][SPE_START_YEAR])
+        end_year = int(specs_data.iloc[0][SPE_END_YEAR])
+        time_step_param = int(specs_data.iloc[0].get(SPE_TIMESTEP, 1))
+
+        # Build analysis years as end-of-period years and set as DataFrame index
+        yearsofanalysis = list(range(base_year + time_step_param, end_year + 1, time_step_param))
+        specs_data.index = yearsofanalysis
 
         onsseter.add_xy_3395()
 
@@ -186,7 +223,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder, pv
         total_rows = len(sumtechs)
         df_summary = pd.DataFrame(columns=yearsofanalysis)
         for row in range(0, total_rows):
-            df_summary.loc[sumtechs[row]] = "Nan"
+            df_summary.loc[sumtechs[row]] = np.nan
 
         onsseter.current_mv_line_dist()
 
@@ -463,7 +500,6 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder, pv
                                               grid_reliability_option,
                                               max_grid_extension_dist,
                                               year,
-                                              start_year,
                                               end_year,
                                               time_step,
                                               grid_cap_gen_limit,
@@ -473,7 +509,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder, pv
                                               mg_interconnection=False,
                                               )
 
-            onsseter.results_columns(techs, tech_codes, year, time_step, prioritization, auto_intensification,
+            onsseter.results_columns(techs, tech_codes, year, time_step, auto_intensification,
                                      mg_interconnection)
 
             onsseter.calculate_investments_and_capacity(sa_pv_investment, sa_pv_capacity,
@@ -488,7 +524,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder, pv
 
             onsseter.check_grid_limitations(new_grid_connect_limit, annual_grid_cap_gen_limit, year, time_step, final_step)
 
-            onsseter.apply_limitations(eleclimit, year, time_step, 2, auto_intensification)
+            onsseter.apply_limitations(eleclimit, year, time_step, auto_intensification)
 
             onsseter.calculate_emission(grid_factor=grid_emission_factor, year=year,
                                         time_step=time_step, start_year=start_year)

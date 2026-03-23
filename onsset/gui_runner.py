@@ -7,7 +7,11 @@ and asks the user to browse to the necessary input files
 import tkinter as tk
 from tkinter import filedialog, messagebox
 import pandas as pd
-from runner import calibration, scenario
+try:
+    from onsset.runner import calibration, scenario
+except ImportError:
+    from runner import calibration, scenario
+
 
 root = tk.Tk()
 root.withdraw()
@@ -53,6 +57,13 @@ elif choice == 2:
     messagebox.showinfo('OnSSET', 'Open the MV line data')
     mv_path = filedialog.askopenfilename()
 
-    scenario(specs_path, calibrated_csv_path, results_folder, summary_folder, pv_path, wind_path, mv_path)
+    messagebox.showinfo('OnSSET', 'Browse to folder containing climate data CSV files')
+    climate_folder = filedialog.askdirectory()
+
+    messagebox.showinfo('OnSSET', 'Open the admin-3 (municipality) shapefile')
+    admin3_shapefile = filedialog.askopenfilename(filetypes=[("Shapefiles", "*.shp"), ("All files", "*.*")])
+
+    scenario(specs_path, calibrated_csv_path, results_folder, summary_folder, pv_path, wind_path, mv_path,
+             climate_folder, admin3_shapefile)
 
 

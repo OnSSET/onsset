@@ -1,15 +1,9 @@
 import logging
+import time
 from math import log, pi
 from typing import Dict
 import scipy.spatial
 from scipy.optimize import differential_evolution, Bounds
-from shapely.geometry import Point
-import geopandas as gpd
-import numpy as np
-import pandas as pd
-from numba import njit
-import shapely.geometry
-import geojson
 
 try:
     from hybrids import *
@@ -20,6 +14,24 @@ try:
     from hybrids_wind import *
 except:
     from onsset.hybrids_wind import *
+
+# Import climate risk column constant
+try:
+    from onsset.climate_algorithm import SET_CLIMATE_RISK
+except ImportError:
+    try:
+        from climate_algorithm import SET_CLIMATE_RISK
+    except ImportError:
+        SET_CLIMATE_RISK = 'ClimateRisk'  # Fallback if climate module not available
+
+import geojson
+from shapely.geometry import shape, Point
+import geopandas as gpd
+import numpy as np
+import pandas as pd
+from numba import njit
+import shapely.geometry
+import geojson
 
 logging.basicConfig(format='%(asctime)s\t\t%(message)s', level=logging.ERROR)
 logger = logging.getLogger(__name__)
@@ -628,7 +640,7 @@ class Technology:
 
         # Then calculate the difference between the two
         mv_lines_distribution_length_additional = \
-            np.maximum(cluster_mv_lines_length_total - cluster_mv_lines_length_existing, 0)
+            np.maximum(cluster_lv_lines_length_total - cluster_lv_lines_length_existing, 0)
         total_lv_lines_length_additional = \
             np.maximum(cluster_lv_lines_length_total - cluster_lv_lines_length_existing, 0)
         num_transformers_additional = np.maximum(no_of_service_transf_total - no_of_service_transf_existing, 0)
@@ -2828,6 +2840,20 @@ class SettlementProcessor:
                 self.df.sort_values(by=[SET_ELEC_FINAL_CODE + "{}".format(year - time_step),
                                         'Intensification',
                                         SET_ROAD_DIST], inplace=True)
+
+            elif prio_choice == 6:
+                # Climate risk prioritization: high risk = high priority (electrify first)
+                # Multiply by -1 so that higher risk values come first when sorting ascending
+                if SET_CLIMATE_RISK in self.df.columns:
+                    self.df['ClimateRiskSort'] = self.df[SET_CLIMATE_RISK] * -1
+                    self.df.sort_values(by=[SET_ELEC_FINAL_CODE + "{}".format(year - time_step),
+                                            'Intensification',
+                                            'ClimateRiskSort'], inplace=True)
+                    del self.df['ClimateRiskSort']
+                else:
+                    logging.warning('Climate risk column not found, falling back to population-based prioritization')
+                    self.df.sort_values(by=[SET_ELEC_FINAL_CODE + "{}".format(year - time_step),
+                                            SET_POP + "{}".format(year)], inplace=True)
 
             self.df['Elec_POP'] = self.df[SET_ELEC_POP + "{}".format(year - time_step)] + self.df[
                 SET_NEW_CONNECTIONS + "{}".format(year)] * self.df[SET_NUM_PEOPLE_PER_HH]
