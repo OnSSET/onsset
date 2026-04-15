@@ -125,7 +125,8 @@ def detect_datatype_from_filename(filename: str) -> ClimateDataType:
 
 
 # Output column names (for integration with onsset.py)
-SET_CLIMATE_RISK = 'ClimateRisk'  # Compound risk score
+SET_NORMALIZED_CLIMATE_HAZARD = 'NormalizedClimateHazard'  # Compound normalized hazard score
+SET_CLIMATE_RISK = 'ClimateRisk'  # Backward-compatible alias for legacy workflows
 SET_CLIMATE_RISK_HEATWAVE = 'ClimateRiskHeatwave'  # Individual risk
 SET_CLIMATE_RISK_DROUGHT = 'ClimateRiskDrought'  # Individual risk
 SET_ADMIN3_ID = 'Admin3ID'  # Municipality identifier
@@ -277,6 +278,9 @@ class ClimateDataLoader:
         # Legacy detected_columns dict (for backward compatibility)
         self.detected_columns: Dict[str, str] = {}
 
+        # Flag to prevent re-classification
+        self._files_classified: bool = False
+
     # -------------------------------------------------------------------------
     # Backward Compatibility Properties
     # -------------------------------------------------------------------------
@@ -310,6 +314,10 @@ class ClimateDataLoader:
 
     def _classify_files(self) -> None:
         """Classify files by temporal resolution AND data type independently."""
+        # Check if already classified to prevent duplicate entries
+        if self._files_classified:
+            return
+
         if not os.path.isdir(self.folder_path):
             raise ValueError(f"Climate data folder not found: {self.folder_path}")
 
@@ -337,6 +345,7 @@ class ClimateDataLoader:
             for datatype in self.classified_files[temporal]:
                 self.classified_files[temporal][datatype].sort()
 
+        self._files_classified = True
         self._log_classification_summary()
 
     def _apply_legacy_rules(
@@ -1217,7 +1226,11 @@ def _compute_spi_for_cell(
     Returns:
         DataFrame with: date, year, month, P_k, spi
     """
-    df = df_cell.sort_values(date_col).set_index(date_col)
+    df = df_cell.sort_values(date_col).copy()
+
+    # Drop duplicate dates (keep first occurrence), then set index
+    df = df.drop_duplicates(subset=[date_col], keep='first')
+    df = df.set_index(date_col)
 
     # Full continuous monthly index
     full_index = pd.date_range(df.index.min(), df.index.max(), freq='MS')
@@ -1580,14 +1593,24 @@ def map_risk_to_settlements(
 
     # Rename columns for OnSSET integration
     if 'compound_risk' in settlements_df.columns:
-        settlements_df[SET_CLIMATE_RISK] = settlements_df['compound_risk']
+        hazard_values = pd.to_numeric(settlements_df['compound_risk'], errors='coerce')
+        hazard_min = hazard_values.min()
+        hazard_max = hazard_values.max()
+        if pd.notna(hazard_min) and pd.notna(hazard_max) and hazard_max > hazard_min:
+            hazard_values = (hazard_values - hazard_min) / (hazard_max - hazard_min)
+        else:
+            hazard_values = hazard_values.fillna(0)
+
+        # Persist both new and legacy names for compatibility.
+        settlements_df[SET_NORMALIZED_CLIMATE_HAZARD] = hazard_values
+        settlements_df[SET_CLIMATE_RISK] = hazard_values
     if 'heatwave_risk' in settlements_df.columns:
         settlements_df[SET_CLIMATE_RISK_HEATWAVE] = settlements_df['heatwave_risk']
     if 'drought_risk' in settlements_df.columns:
         settlements_df[SET_CLIMATE_RISK_DROUGHT] = settlements_df['drought_risk']
 
     # Fill NaN with 0 (settlements outside coverage)
-    for col in [SET_CLIMATE_RISK, SET_CLIMATE_RISK_HEATWAVE, SET_CLIMATE_RISK_DROUGHT]:
+    for col in [SET_NORMALIZED_CLIMATE_HAZARD, SET_CLIMATE_RISK, SET_CLIMATE_RISK_HEATWAVE, SET_CLIMATE_RISK_DROUGHT]:
         if col in settlements_df.columns:
             settlements_df[col] = settlements_df[col].fillna(0)
 
@@ -1754,6 +1777,7 @@ def get_temporal_resolution() -> TemporalResolution:
 def get_risk_column_names() -> Dict[str, str]:
     """Get dictionary of risk column names for use in onsset.py."""
     return {
+        'normalized_hazard': SET_NORMALIZED_CLIMATE_HAZARD,
         'compound': SET_CLIMATE_RISK,
         'heatwave': SET_CLIMATE_RISK_HEATWAVE,
         'drought': SET_CLIMATE_RISK_DROUGHT,

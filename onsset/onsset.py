@@ -15,14 +15,15 @@ try:
 except:
     from onsset.hybrids_wind import *
 
-# Import climate risk column constant
+# Import climate hazard column constants
 try:
-    from onsset.climate_algorithm import SET_CLIMATE_RISK
+    from onsset.climate_algorithm import SET_CLIMATE_RISK, SET_NORMALIZED_CLIMATE_HAZARD
 except ImportError:
     try:
-        from climate_algorithm import SET_CLIMATE_RISK
+        from climate_algorithm import SET_CLIMATE_RISK, SET_NORMALIZED_CLIMATE_HAZARD
     except ImportError:
-        SET_CLIMATE_RISK = 'ClimateRisk'  # Fallback if climate module not available
+        SET_CLIMATE_RISK = 'ClimateRisk'  # Backward-compatible fallback
+        SET_NORMALIZED_CLIMATE_HAZARD = 'NormalizedClimateHazard'
 
 import geojson
 from shapely.geometry import shape, Point
@@ -47,6 +48,9 @@ SET_GRID_DIST_PLANNED = 'GridDistPlan'  # Distance in km from current and future
 SET_ROAD_DIST = 'RoadDist'  # Distance in km from road network
 SET_NIGHT_LIGHTS = 'NightLights'  # Intensity of night time lights (from NASA), range 0 - 63
 SET_TRAVEL_HOURS = 'TravelHours'  # Travel time to large city in hours
+SET_NORMALIZED_RELATIVE_WEALTH = 'NormalizedRelativeWealth'
+SET_NORMALIZED_TRAVEL_HOURS = 'NormalizedTravelHours'
+SET_NORMALIZED_VULNERABILITY_SCORE = 'NormalizedVulnerabilityScore'
 SET_GHI = 'GHI'  # Global horizontal irradiance in kWh/m2/day
 SET_WINDVEL = 'WindVel'  # Wind velocity in m/s
 SET_WINDCF = 'WindCF'  # Wind capacity factor as percentage (range 0 - 1)
@@ -2842,16 +2846,39 @@ class SettlementProcessor:
                                         SET_ROAD_DIST], inplace=True)
 
             elif prio_choice == 6:
-                # Climate risk prioritization: high risk = high priority (electrify first)
-                # Multiply by -1 so that higher risk values come first when sorting ascending
-                if SET_CLIMATE_RISK in self.df.columns:
-                    self.df['ClimateRiskSort'] = self.df[SET_CLIMATE_RISK] * -1
+                # Vulnerability prioritization: higher normalized score is prioritized first.
+                hazard_col = next((col for col in [
+                    SET_NORMALIZED_CLIMATE_HAZARD,
+                    'Normalized climate hazard',
+                    'normalized_climate_hazard',
+                    SET_CLIMATE_RISK,
+                ] if col in self.df.columns), None)
+                wealth_col = next((col for col in [
+                    SET_NORMALIZED_RELATIVE_WEALTH,
+                    'Normalized relative wealth',
+                    'normalized_relative_wealth',
+                ] if col in self.df.columns), None)
+                travel_col = next((col for col in [
+                    SET_NORMALIZED_TRAVEL_HOURS,
+                    'Normalized travel hours',
+                    'normalized_travel_hours',
+                ] if col in self.df.columns), None)
+
+                if hazard_col and wealth_col and travel_col:
+                    self.df[SET_NORMALIZED_VULNERABILITY_SCORE] = (
+                        pd.to_numeric(self.df[hazard_col], errors='coerce').fillna(0)
+                        + pd.to_numeric(self.df[wealth_col], errors='coerce').fillna(0)
+                        + pd.to_numeric(self.df[travel_col], errors='coerce').fillna(0)
+                    ) / 3
+
+                    # Multiply by -1 so that higher values come first when sorting ascending.
+                    self.df['VulnerabilitySort'] = self.df[SET_NORMALIZED_VULNERABILITY_SCORE] * -1
                     self.df.sort_values(by=[SET_ELEC_FINAL_CODE + "{}".format(year - time_step),
                                             'Intensification',
-                                            'ClimateRiskSort'], inplace=True)
-                    del self.df['ClimateRiskSort']
+                                            'VulnerabilitySort'], inplace=True)
+                    del self.df['VulnerabilitySort']
                 else:
-                    logging.warning('Climate risk column not found, falling back to population-based prioritization')
+                    logging.warning('Missing normalized vulnerability inputs, falling back to population-based prioritization')
                     self.df.sort_values(by=[SET_ELEC_FINAL_CODE + "{}".format(year - time_step),
                                             SET_POP + "{}".format(year)], inplace=True)
 

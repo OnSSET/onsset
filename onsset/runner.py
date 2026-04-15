@@ -196,7 +196,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder, pv
         rural_cutoff = scenario_parameters.iloc[tier_index]['RuralCutoffSize']
         urban_tier = scenario_parameters.iloc[tier_index]['UrbanTargetTier']
         grid_price = scenario_parameters.iloc[grid_index]['GridGenerationCost']
-        prioritization = scenario_parameters.iloc[prio_index]['PrioritizationAlgorithm']
+        prioritization = int(scenario_parameters.iloc[prio_index]['PrioritizationAlgorithm'])
         auto_intensification = scenario_parameters.iloc[prio_index]['AutoIntensificationKM']
         max_auto_intensification_cost = scenario_parameters.iloc[prio_index]['MaxIntensificationCost']  # Max household connection cost for forced grid intensification
         grid_capacity_investment = specs_data['GridCapacityInvestmentCost']
@@ -491,7 +491,7 @@ def scenario(specs_path, calibrated_csv_path, results_folder, summary_folder, pv
             onsseter.max_extension_dist(year, time_step, end_year, start_year, grid_calc, sa_diesel_calc,
                                         grid_reliability_option, max_auto_intensification_cost, auto_intensification)
 
-            onsseter.pre_selection(eleclimit, year, time_step, 2, auto_intensification)
+            onsseter.pre_selection(eleclimit, year, time_step, 2, prioritization)
 
             onsseter.df[SET_LCOE_GRID + "{}".format(year)], onsseter.df[SET_MIN_GRID_DIST + "{}".format(year)], \
                 grid_investment, grid_capacity, x_coordinates, y_coordinates, new_lines_geojson[year] = \
