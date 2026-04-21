@@ -1212,6 +1212,7 @@ def _compute_spi_for_cell(
     scale: int,
     baseline_start: int,
     baseline_end: int,
+    baseline_params: Optional[Dict[int, Tuple[float, float, float]]] = None,
 ) -> pd.DataFrame:
     """Compute SPI-k for one grid cell.
 
@@ -1253,28 +1254,31 @@ def _compute_spi_for_cell(
 
         series = df.loc[mask_month, 'P_k']
 
-        # Baseline subset for fitting
-        baseline_mask = (
-            mask_month &
-            (df['year'] >= baseline_start) &
-            (df['year'] <= baseline_end)
-        )
-        baseline_values = df.loc[baseline_mask, 'P_k'].dropna()
+        if baseline_params is not None and m in baseline_params:
+            shape, scale_param, q = baseline_params[m]
+        else:
+            # Fallback to cell-specific baseline subset for fitting
+            baseline_mask = (
+                mask_month &
+                (df['year'] >= baseline_start) &
+                (df['year'] <= baseline_end)
+            )
+            baseline_values = df.loc[baseline_mask, 'P_k'].dropna()
 
-        if len(baseline_values) < 10:
-            continue
+            if len(baseline_values) < 10:
+                continue
 
-        positive = baseline_values[baseline_values > 0]
-        if len(positive) < 2:
-            continue
+            positive = baseline_values[baseline_values > 0]
+            if len(positive) < 2:
+                continue
 
-        # Gamma fit: shape, loc=0, scale
-        try:
-            shape, loc, scale_param = gamma.fit(positive, floc=0)
-        except Exception:
-            continue
+            # Gamma fit: shape, loc=0, scale
+            try:
+                shape, loc, scale_param = gamma.fit(positive, floc=0)
+            except Exception:
+                continue
 
-        q = len(positive) / len(baseline_values)  # non-zero probability
+            q = len(positive) / len(baseline_values)  # non-zero probability
 
         x = series.values
         x_clipped = np.maximum(x, 0.0001)
@@ -1292,6 +1296,55 @@ def _compute_spi_for_cell(
 
     df = df.dropna(subset=['P_k', 'spi']).reset_index().rename(columns={'index': 'date'})
     return df[['date', 'year', 'month', 'P_k', 'spi']]
+
+
+def _fit_countrywide_spi_baseline(
+    climate_df: pd.DataFrame,
+    lat_col: str,
+    lon_col: str,
+    date_col: str,
+    precip_col: str,
+    scale: int,
+    baseline_start: int,
+    baseline_end: int,
+) -> Dict[int, Tuple[float, float, float]]:
+    """Fit month-wise SPI baseline parameters using all cells countrywide.
+
+    Returns a dict mapping month -> (shape, scale_param, q_nonzero).
+    """
+    df = climate_df[[lat_col, lon_col, date_col, precip_col]].copy()
+    df = df.sort_values([lat_col, lon_col, date_col])
+    df['year'] = df[date_col].dt.year
+    df['month'] = df[date_col].dt.month
+
+    # Build SPI-k precipitation sums for each cell using available monthly sequence.
+    df['P_k'] = (
+        df.groupby([lat_col, lon_col], sort=False)[precip_col]
+        .transform(lambda s: s.rolling(window=scale, min_periods=scale).sum())
+    )
+
+    baseline_mask = (df['year'] >= baseline_start) & (df['year'] <= baseline_end)
+    baseline_df = df.loc[baseline_mask, ['month', 'P_k']].dropna()
+
+    baseline_params: Dict[int, Tuple[float, float, float]] = {}
+    for m in range(1, 13):
+        vals = baseline_df.loc[baseline_df['month'] == m, 'P_k']
+        if len(vals) < 10:
+            continue
+
+        positive = vals[vals > 0]
+        if len(positive) < 2:
+            continue
+
+        try:
+            shape, loc, scale_param = gamma.fit(positive, floc=0)
+        except Exception:
+            continue
+
+        q = len(positive) / len(vals)
+        baseline_params[m] = (shape, scale_param, q)
+
+    return baseline_params
 
 
 def calculate_spi_drought_risk(
@@ -1355,6 +1408,27 @@ def calculate_spi_drought_risk(
     baseline_start = int(config['spi_baseline_start'])
     baseline_end = int(config['spi_baseline_end'])
 
+    # Fit a countrywide monthly SPI baseline (shared across all cells).
+    baseline_params = _fit_countrywide_spi_baseline(
+        climate_df=df,
+        lat_col=lat_col,
+        lon_col=lon_col,
+        date_col=date_col,
+        precip_col=precip_col,
+        scale=spi_scale,
+        baseline_start=baseline_start,
+        baseline_end=baseline_end,
+    )
+    if baseline_params:
+        logger.info(
+            f"Using countrywide SPI baseline from {baseline_start} to {baseline_end} "
+            f"for months: {sorted(baseline_params.keys())}"
+        )
+    else:
+        logger.warning(
+            "Could not fit countrywide SPI baseline; falling back to cell-specific baseline fitting"
+        )
+
     grouped_cells = df.groupby([lat_col, lon_col], sort=False)
     logger.info(f"Computing SPI-{spi_scale} for {len(grouped_cells)} grid cells...")
 
@@ -1362,7 +1436,8 @@ def calculate_spi_drought_risk(
     for (lat, lon), df_cell in grouped_cells:
         spi_df = _compute_spi_for_cell(
             df_cell, date_col, precip_col,
-            spi_scale, baseline_start, baseline_end
+            spi_scale, baseline_start, baseline_end,
+            baseline_params=baseline_params if baseline_params else None,
         )
         if spi_df.empty:
             continue
@@ -1783,3 +1858,4 @@ def get_risk_column_names() -> Dict[str, str]:
         'drought': SET_CLIMATE_RISK_DROUGHT,
         'admin3_id': SET_ADMIN3_ID,
     }
+

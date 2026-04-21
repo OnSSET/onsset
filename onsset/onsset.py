@@ -2857,6 +2857,7 @@ class SettlementProcessor:
                     SET_NORMALIZED_RELATIVE_WEALTH,
                     'Normalized relative wealth',
                     'normalized_relative_wealth',
+                    'normalized_wealth_index',
                 ] if col in self.df.columns), None)
                 travel_col = next((col for col in [
                     SET_NORMALIZED_TRAVEL_HOURS,
@@ -2865,10 +2866,17 @@ class SettlementProcessor:
                 ] if col in self.df.columns), None)
 
                 if hazard_col and wealth_col and travel_col:
+                    hazard_values = pd.to_numeric(self.df[hazard_col], errors='coerce').fillna(0)
+                    wealth_values = pd.to_numeric(self.df[wealth_col], errors='coerce').fillna(0)
+                    travel_values = pd.to_numeric(self.df[travel_col], errors='coerce').fillna(0)
+
+                    # Invert normalized wealth so higher wealth means lower vulnerability.
+                    wealth_vulnerability = 1 - wealth_values
+
                     self.df[SET_NORMALIZED_VULNERABILITY_SCORE] = (
-                        pd.to_numeric(self.df[hazard_col], errors='coerce').fillna(0)
-                        + pd.to_numeric(self.df[wealth_col], errors='coerce').fillna(0)
-                        + pd.to_numeric(self.df[travel_col], errors='coerce').fillna(0)
+                        hazard_values
+                        + wealth_vulnerability
+                        + travel_values
                     ) / 3
 
                     # Multiply by -1 so that higher values come first when sorting ascending.
