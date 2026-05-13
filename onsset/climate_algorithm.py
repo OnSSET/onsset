@@ -126,10 +126,15 @@ def detect_datatype_from_filename(filename: str) -> ClimateDataType:
 
 # Output column names (for integration with onsset.py)
 SET_NORMALIZED_CLIMATE_HAZARD = 'NormalizedClimateHazard'  # Compound normalized hazard score
-SET_CLIMATE_RISK = 'ClimateRisk'  # Backward-compatible alias for legacy workflows
-SET_CLIMATE_RISK_HEATWAVE = 'ClimateRiskHeatwave'  # Individual risk
-SET_CLIMATE_RISK_DROUGHT = 'ClimateRiskDrought'  # Individual risk
+SET_CLIMATE_HAZARD = 'ClimateHazard'  # Explicit hazard component (heatwave + drought)
+SET_CLIMATE_VULNERABILITY = 'ClimateVulnerability'  # Susceptibility component (wealth + remoteness)
+SET_CLIMATE_PRIORITY = 'ClimatePriority'  # Prioritization score: Hazard × Vulnerability
+SET_CLIMATE_RISK_HEATWAVE = 'ClimateRiskHeatwave'  # Individual heatwave hazard
+SET_CLIMATE_RISK_DROUGHT = 'ClimateRiskDrought'  # Individual drought hazard
 SET_ADMIN3_ID = 'Admin3ID'  # Municipality identifier
+
+# Deprecated: SET_CLIMATE_EXPOSURE no longer used (population accounts for scheduling, not priority)
+# Deprecated: SET_CLIMATE_RISK previously stored population-weighted risk; now use ClimatePriority
 
 # Global variable for detected temporal resolution
 _temporal_resolution: TemporalResolution = TemporalResolution.UNKNOWN
@@ -1620,6 +1625,10 @@ def map_risk_to_settlements(
 ) -> pd.DataFrame:
     """Map climate risk from admin-3 regions to settlements.
 
+    Computes climate prioritization score: Priority = Hazard × Vulnerability
+    Population is NOT included in the priority score because it is already accounted
+    for by the electrification rollout rule (fixed % targets per timestep).
+
     Args:
         settlements_df: OnSSET settlements DataFrame.
         risk_df: DataFrame with risk scores per admin3.
@@ -1629,7 +1638,11 @@ def map_risk_to_settlements(
         lon_col: Name of longitude column in settlements.
 
     Returns:
-        Settlements DataFrame with risk columns added.
+        Settlements DataFrame with climate columns added:
+        - ClimateHazard: Compound hazard (heatwave + drought)
+        - ClimateVulnerability: Susceptibility (wealth + remoteness)
+        - ClimatePriority: Final prioritization score (Hazard × Vulnerability)
+        - ClimateRiskHeatwave, ClimateRiskDrought: Individual hazards
     """
     admin3_id_col = config['admin3_id_column']
 
@@ -1676,16 +1689,51 @@ def map_risk_to_settlements(
         else:
             hazard_values = hazard_values.fillna(0)
 
-        # Persist both new and legacy names for compatibility.
+        # Store normalized hazard component (keep legacy name for backward compatibility)
         settlements_df[SET_NORMALIZED_CLIMATE_HAZARD] = hazard_values
-        settlements_df[SET_CLIMATE_RISK] = hazard_values
+        settlements_df[SET_CLIMATE_HAZARD] = hazard_values
+
+        # Compute Vulnerability component: ((1 - normalized_wealth) + normalized_travel) / 2
+        # Try multiple column name variants for robustness
+        wealth_col = next((col for col in [
+            'NormalizedRelativeWealth',
+            'normalized_wealth_index',
+            'NormalizedWealth',
+            'normalized_relative_wealth',
+        ] if col in settlements_df.columns), None)
+
+        travel_col = next((col for col in [
+            'NormalizedTravelHours',
+            'normalized_travel_hours',
+            'NormalizedTravel',
+        ] if col in settlements_df.columns), None)
+
+        if wealth_col and travel_col:
+            wealth_values = pd.to_numeric(settlements_df[wealth_col], errors='coerce').fillna(0)
+            travel_values = pd.to_numeric(settlements_df[travel_col], errors='coerce').fillna(0)
+            # Vulnerability: invert wealth (high wealth = low vulnerability), average with travel
+            vulnerability_values = ((1 - wealth_values) + travel_values) / 2
+            settlements_df[SET_CLIMATE_VULNERABILITY] = vulnerability_values
+        else:
+            # Fallback: if wealth/travel missing, set vulnerability to neutral (0.5)
+            vulnerability_values = pd.Series(0.5, index=settlements_df.index)
+            logger.warning("Wealth or travel columns not found; using neutral vulnerability value 0.5")
+            settlements_df[SET_CLIMATE_VULNERABILITY] = vulnerability_values
+
+        # Compute Climate Priority: Hazard × Vulnerability
+        # NOTE: Population is NOT included here. Population affects WHEN targets are reached
+        # (cumulative % targets per timestep), not WHO should be prioritized first.
+        priority_values = hazard_values * vulnerability_values
+        settlements_df[SET_CLIMATE_PRIORITY] = priority_values
+
     if 'heatwave_risk' in settlements_df.columns:
         settlements_df[SET_CLIMATE_RISK_HEATWAVE] = settlements_df['heatwave_risk']
     if 'drought_risk' in settlements_df.columns:
         settlements_df[SET_CLIMATE_RISK_DROUGHT] = settlements_df['drought_risk']
 
     # Fill NaN with 0 (settlements outside coverage)
-    for col in [SET_NORMALIZED_CLIMATE_HAZARD, SET_CLIMATE_RISK, SET_CLIMATE_RISK_HEATWAVE, SET_CLIMATE_RISK_DROUGHT]:
+    for col in [SET_NORMALIZED_CLIMATE_HAZARD, SET_CLIMATE_HAZARD,
+                SET_CLIMATE_VULNERABILITY, SET_CLIMATE_PRIORITY, SET_CLIMATE_RISK_HEATWAVE, SET_CLIMATE_RISK_DROUGHT]:
         if col in settlements_df.columns:
             settlements_df[col] = settlements_df[col].fillna(0)
 
