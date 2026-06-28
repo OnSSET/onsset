@@ -858,7 +858,7 @@ class SettlementProcessor:
                         print(c + " contains null values. Filling with most common")
 
                     elif c in ['GHI', 'TravelTime', 'WindVel', 'TravelHours']:
-                        self.df[c].fillna(self.df[c].mean(), inplace=True)
+                        self.df[c] = self.df[c].fillna(self.df[c].mean())
                         print(c + " contains null values. Filling with mean")
 
                     elif c in ['NightLights', 'ElecPop', 'IsUrban', 'Elevation', 'Slope', 'Hydropower', 'HealthDemand',
@@ -1602,69 +1602,105 @@ class SettlementProcessor:
                                  new_capacity_limit,
                                  x_coordinates_iteration,
                                  y_coordinates_iteration,
+                                 prev_dist,
+                                 max_grid_extension_dist
                                  ):
+
+        # Ensure prev_dist is a properly typed float array matching the iteration frontier
+        prev_dist = np.ascontiguousarray(prev_dist)
+
         newly_electrified = []
         newly_electrified_dist = []
         new_mv_line_coords = []
+        newly_electrified_total_dist = []
 
         new_x_coords = []
         new_y_coords = []
 
+        # NEW: Tracks cumulative distances for the NEXT iteration's frontier
+        # This will perfectly mirror new_x_coords and new_y_coords item-for-item
+        frontier_prev_dist = []
+
         for i in range(len(unelectrified)):
 
-            if (grid_connect_limit <= 0) | (new_capacity_limit <= 0):
+            if (grid_connect_limit <= 0) or (new_capacity_limit <= 0):
                 break
 
-            id = unelectrified[i]
+            id_val = unelectrified[i]
             x = x_unelectrified[i]
             y = y_unelectrified[i]
 
-            dist = np.sqrt((x_coordinates_iteration - x) ** 2 + (y_coordinates_iteration - y) ** 2)
-            min_dist = min(dist) / 1000
-            min_index = np.argmin(dist)
+            min_dist = np.inf
+            min_index = -1
+
+            # This loop is now perfectly safe because prev_dist and x_coordinates_iteration
+            # are guaranteed to be identical in length at the start of the function
+            for k in range(len(x_coordinates_iteration)):
+                d_km = np.sqrt((x_coordinates_iteration[k] - x) ** 2 + (y_coordinates_iteration[k] - y) ** 2) / 1000.0
+
+                if (prev_dist[k] + d_km) < max_grid_extension_dist:
+                    if d_km < min_dist:
+                        min_dist = d_km
+                        min_index = k
+
+            if min_index == -1:
+                continue
 
             if min_dist < max_dist[i]:
-                newly_electrified.append(id)
+                newly_electrified.append(id_val)
                 x_coordinates = np.append(x_coordinates, x)
                 y_coordinates = np.append(y_coordinates, y)
 
+                # Grow the active search arrays for intra-iteration connections
                 x_coordinates_iteration = np.append(x_coordinates_iteration, x)
                 y_coordinates_iteration = np.append(y_coordinates_iteration, y)
 
+                new_cumulative_dist = prev_dist[min_index] + min_dist
+                prev_dist = np.append(prev_dist, new_cumulative_dist)
+
+                # Build the next round's frontier coordinates
                 new_x_coords.append(x)
                 new_y_coords.append(y)
 
+                # Record the frontier distance budget
+                frontier_prev_dist.append(new_cumulative_dist)
+
                 newly_electrified_dist.append(min_dist)
-                new_mv_line_coords.append((x, y, x_coordinates_iteration[min_index], y_coordinates_iteration[min_index]))
+                newly_electrified_total_dist.append(new_cumulative_dist)
+
+                new_mv_line_coords.append(
+                    (x, y, x_coordinates_iteration[min_index], y_coordinates_iteration[min_index]))
 
                 grid_connect_limit -= new_connections[i]
                 new_capacity_limit -= new_capacity[i]
 
                 if min_dist > 0.75:
-                    # Calculate the number of intermediate points
                     number_of_points = int(min_dist / 0.5)
 
-                    # Generate the intermediate points
-                    for i in range(1, number_of_points + 1):
-                        x_i = x + i * (x_coordinates_iteration[min_index] - x) / (number_of_points + 1)
-                        y_i = y + i * (y_coordinates_iteration[min_index] - y) / (number_of_points + 1)
+                    for j in range(1, number_of_points + 1):
+                        x_i = x + j * (x_coordinates_iteration[min_index] - x) / (number_of_points + 1)
+                        y_i = y + j * (y_coordinates_iteration[min_index] - y) / (number_of_points + 1)
                         x_coordinates = np.append(x_coordinates, x_i)
                         y_coordinates = np.append(y_coordinates, y_i)
 
                         x_coordinates_iteration = np.append(x_coordinates_iteration, x_i)
                         y_coordinates_iteration = np.append(y_coordinates_iteration, y_i)
 
+                        dist_j_km = min_dist * (1.0 - j / (number_of_points + 1))
+                        prev_dist_j = prev_dist[min_index] + dist_j_km
+                        prev_dist = np.append(prev_dist, prev_dist_j)
+
+                        # Keep the next round's frontier coordinates and distances perfectly in sync
                         new_x_coords.append(x_i)
                         new_y_coords.append(y_i)
+                        frontier_prev_dist.append(prev_dist_j)
 
             else:
                 pass
 
-        new_x_coords = np.array(new_x_coords)
-        new_y_coords = np.array(new_y_coords)
-
-        return newly_electrified, newly_electrified_dist, new_mv_line_coords, \
-            x_coordinates, y_coordinates, grid_connect_limit, new_capacity_limit, new_x_coords, new_y_coords
+        return newly_electrified, newly_electrified_dist, new_mv_line_coords, x_coordinates, y_coordinates, \
+            grid_connect_limit, new_capacity_limit, np.array(new_x_coords), np.array(
+            new_y_coords), newly_electrified_total_dist, np.array(frontier_prev_dist)
 
     def add_xy_3395(self):
         # Earth's radius in meters (WGS 84)
@@ -1708,12 +1744,14 @@ class SettlementProcessor:
         new_electrified = []
         new_dists = []
         new_lines = []
+        tot_dists = []
 
         iterate = True
         i = 0
 
         new_x_coords = x_coordinates.copy()
         new_y_coords = y_coordinates.copy()
+        prev_dist = x_coordinates * 0
 
         while iterate:
 
@@ -1731,8 +1769,8 @@ class SettlementProcessor:
             unelectrified = [x for x in unelectrified if x not in new_electrified]
 
             if len(unelectrified) > 0:
-                newly_electrified, newly_electrified_dists, new_mv_line_coords, \
-                     x_coordinates, y_coordinates, grid_connect_limit, grid_capacity_limit, new_x_coords, new_y_coords = \
+                newly_electrified, newly_electrified_dists, new_mv_line_coords, x_coordinates, y_coordinates,\
+                     grid_connect_limit, grid_capacity_limit, new_x_coords, new_y_coords, total_dist, prev_dist = \
                      self.extension_dist_and_check(unelectrified,
                                                    x_coordinates,
                                                    y_coordinates,
@@ -1744,19 +1782,22 @@ class SettlementProcessor:
                                                    np.array(self.df.loc[unelectrified]['GridCapacityRequired' + '{}'.format(year)]),
                                                    grid_capacity_limit,
                                                    new_x_coords,
-                                                   new_y_coords
+                                                   new_y_coords,
+                                                   prev_dist,
+                                                   max_dist
                                                    )
 
                 new_lines += new_mv_line_coords
                 new_electrified += newly_electrified
                 new_dists += newly_electrified_dists
+                tot_dists += total_dist
 
                 if len(newly_electrified) > 0:
                     print(len(newly_electrified), ' new settlements connected to the grid', time.ctime())
 
-                new_lines += new_mv_line_coords
-                new_electrified += newly_electrified
-                new_dists += newly_electrified_dists
+                #new_lines += new_mv_line_coords
+                #new_electrified += newly_electrified
+                #new_dists += newly_electrified_dists
 
             else:
                 newly_electrified = []
@@ -2012,7 +2053,7 @@ class SettlementProcessor:
         self.df.loc[self.df[SET_HH_DEMAND] < tiers[3], SET_TIER] = 2
         self.df.loc[self.df[SET_HH_DEMAND] < tiers[2], SET_TIER] = 1
 
-        self.df[SET_AVERAGE_TO_PEAK] = 0.8
+        self.df[SET_AVERAGE_TO_PEAK] = 0.5
         self.df.loc[self.df[SET_TIER] == 1, SET_AVERAGE_TO_PEAK] = 0.3
         self.df.loc[self.df[SET_TIER] == 2, SET_AVERAGE_TO_PEAK] = 0.4
         self.df.loc[self.df[SET_TIER] == 3, SET_AVERAGE_TO_PEAK] = 0.5
