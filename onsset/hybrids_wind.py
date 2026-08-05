@@ -133,7 +133,7 @@ def hour_simulation_wind(hour, soc, net_load, diesel_capacity, annual_fuel_consu
                     n_chg, battery_size, annual_battery_use, annual_unmet_demand, annual_excess_gen):
     # First the battery self-discharge is calculated (default rate set to 0.02% of the state-of-charge - SOC - per hour)
     battery_use = 0.0002 * soc
-    soc - 0.0002 * soc
+    soc -= 0.0002 * soc
 
     battery_dispatchable = soc * battery_size * n_dis * inv_eff  # Max load that can be met by the battery until empty
     battery_chargeable = (1 - soc) * battery_size / n_chg / inv_eff  # Max energy that can be used to charge the battery until full
