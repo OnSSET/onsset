@@ -1,80 +1,146 @@
 References
 ==================
 
-Since its development, OnSSET has been employed for a high number of studies presented at international conferences and published on peer reviewed journals. Here you find a list of the publications on OnSSET, which is going to be continuously updated.
+Since its development, OnSSET has been employed for a high number of studies presented at international conferences and published on peer reviewed journals.
+Here you find a list of the publications on OnSSET, which is updated at regular intervals.
 
 Journal Publications
 **************
 
+Key publications on the OnSSET methodology
+-------------------------------------------
+`D. Mentis, M. Howells, H. Rogner, A. Korkovelos, C. Arderne, E. Zepeda, S. Siyal, C. Taliotis, M. Bazilian, A. de Roo, Y. Tanvez, A. Oudalov, E. Scholtz, “Lighting the World: the first application of an open source, spatial electrification tool (OnSSET) on Sub-Saharan Africa", Environmental Research Letters, 2017. <https://doi.org/10.1088/1748-9326/aa7b29>`_
+
+`A. Korkovelos, B. Khavari, A. Sahlberg, M. Howells, and C. Arderne, “The Role of Open Access Data in Geospatial Electrification Planning and the Achievement of SDG7. An OnSSET-Based Case Study for Malawi,” Energies, 2019. <https://doi.org/10.3390/en12071395>`_
+
 `A. Sahlberg, A. Korkovelos, C. Kabongo, C. Trujillo, B. Khavari, F. Fuso Nerini, Attention to detail: exploring effects of model resolution and complexity in geospatial electrification modelling, Discover Energy, 2026. <https://doi.org/10.1007/s43937-025-00117-0>`_
 
-`C. Omondi, F. Njoka, F. Tonini, E. Abraham, Scenarios for universal electricity access with spatial changes in urbanisation: The case of Kenya, Energy Strategy Reviews, 2026. <https://doi.org/10.1016/j.esr.2025.102015>`_
+`B. Khavari, A. Sahlberg, W. Usher, A. Korkovelos, and F. Fuso Nerini, “The effects of population aggregation in geospatial electrification planning,” Energy Strategy Reviews, 2021. <https://doi.org/10.1016/j.esr.2021.100752>`_
 
-`A. Sarr, A. Bischi, U. Desidiri, C. Kebe, Least-cost electrification pathways for Senegal by 2030: A nationwide analysis using open-source spatial electrification tool (OnSSET), Energy Nexus, 2025. <https://doi.org/10.1016/j.nexus.2025.100621>`_
+`D. Mentis, M. Welsch, F. Fuso Nerini, O. Broad, M. Howells, M. Bazilian, H. Rogner, “A GIS-based approach for electrification planning—A case study on Nigeria,” Energy for Sustainable Development, 2015. <https://doi.org/10.1016/j.esd.2015.09.007>`_
 
-`B. Khavari, A. Sahlberg, C. Ramirez, S. Odera, E. Onsongo, K. Nyamena, V. Otieno, D. Ronoh, A. Gurung, F. Fuso Nerini, Integrated geospatial modelling for the achievement of universal energy access in Kenya, npj Clean Energy, 2025. <https://doi.org/10.1038/s44406-025-00017-1>`_
+`F. Fuso Nerini, O. Broad, D. Mentis, M. Welsch, M. Bazilian, and M. Howells, “A cost comparison of technology approaches for improving access to electricity services,” Energy, 2016. <https://doi.org/10.1016/j.energy.2015.11.068>`_
+
+Linking OnSSET (or OnSSET outputs) to other energy planning tools or themes
+-------------------------------------------
+OnSSET + Capacity expansion planning
+
+`N. Moksnes, A. Korkovelos, D. Mentis, and M. Howells, “Electrification pathways for Kenya–linking spatial electrification analysis and medium to long term energy planning,” Environmental Research Letters, 2017. <https://doi.org/10.1088/1748-9326/aa7e18>`_
+
+`I. Pappis, A. Sahlberg, T. Walle, O. Broad, E. Eludoyin, M. Howells, W. Usher, “Influence of Electrification Pathways in the Electricity Sector of Ethiopia—Policy Implications Linking Spatial Electrification Analysis and Medium to Long-Term Energy Planning,” Energies, 2021. <https://doi.org/10.3390/en14041209>`_
+
+`M. Bissiri, P. Moura, R. Perez, N. Figueiredo, P. Pereira da Silva, Generation capacity expansion planning with spatially-resolved electricity demand and increasing variable renewable energy supply: Perspectives from power pooling in West Africa, Applied Energy, 2024. <https://doi.org/10.1016/j.apenergy.2024.123115>`_
 
 `A. Abuzayed, A. Chitandula, K. Nyoni, A. Viltalta, Power system expansion and renewable integration for drought-resilient electrification in Zambia, Energy Policy, 2025. <https://doi.org/10.1016/j.enpol.2025.114786>`_
 
-`A. Temesgen, G. Bekele, GIS-based assessment of economically feasible off-grid mini-grids in Ethiopia, Discover Energy, 2025. <https://link.springer.com/article/10.1007/s43937-025-00073-9>`_
+`I. Pappis, Strategic low-cost energy investment opportunities and challenges towards achieving universal electricity access (SDG7) in forty-eight African nations, Environmental Research: Infrastructure and Sustainability, 2022. <https://doi.org/0.1088/2634-4505/ac7900>`_
 
-`K. Imasuka, G. Ireland, A. Hughes, Optimizing Spatial Input Data for Techno-Economic Modeling of Least-Cost Electrification Pathways in Zambia, Journal of Sustainable Development of Energy Water and Environment Systems, 2025, <http://dx.doi.org/10.13044/j.sdewes.d13.0549>`_
+OnSSET + Climate hazard / resilience
 
-`S. Isihak, U. Akpan, S. Bhattarcharyya, Prioritizing projects in rural electrification planning: Integrating MAUT with OnSSET, Energy Strategy Reviews, 2025. <https://doi.org/10.1016/j.esr.2025.101807>`_
+`D. Adshead, S. Thacker, R. Pant, J., Hall, F. Fuso Nerini, Climate hazard screening in energy access planning for sub-Saharan Africa, Sustainable Futures, 2026. <https://doi.org/10.1016/j.sftr.2026.102146>`_
 
-`A. Temesgen, Y. Wassie, G. Bekele, E. Ahlgren, Long-term spatially explicit electricity demand scenarios for rural electrification: The case of Ethiopia, Energy Strategy Reviews, 2025. <https://doi.org/10.1016/j.esr.2025.101931>`_
+OnSSET + OnStove (clean cooking planning tool)
+
+`B. Khavari, A. Sahlberg, C. Ramirez, S. Odera, E. Onsongo, K. Nyamena, V. Otieno, D. Ronoh, A. Gurung, F. Fuso Nerini, Integrated geospatial modelling for the achievement of universal energy access in Kenya, npj Clean Energy, 2025. <https://doi.org/10.1038/s44406-025-00017-1>`_
+
+OnSSET + Mini-grid modelling
 
 `Kabe, M.; Bokovi, Y.; Sedzro, K.S.; Takouda, P.; Lare, Y. Optimal Electrification Using Renewable Energies: Microgrid Installation Model with Combined Mixture k-Means Clustering Algorithm, Mixed Integer Linear Programming, and OnSSET Method. Energies 2024, <https://doi.org/10.3390/en17123022>`_
+
+`J. G. Peña Balderrama, S. Balderrama Subieta, F. Lombardi, N. Stevanato, A. Sahlberg, M. Howells, E. Colombo, S. Quoilin, “Incorporating high-resolution demand and techno-economic optimization to evaluate micro-grids into the Open Source Spatial Electrification Tool (OnSSET),” Energy for Sustainable Development, 2020. <https://doi.org/10.1016/j.esd.2020.02.009>`_
+
+OnSSET + Agriculture
 
 `K. Götz, P. Rosner, I. Froissart, M. Lienkamp, The potential of electric agriculture and mobility for the least-cost rural electrification strategy in Sub-Saharan Africa, Energy for Sustainable Development, 2024. <https://doi.org/10.1016/j.esd.2024.101581>`_
 
 `G. Falchetta, A. Vinca, A. Troost, M. Tuninetti, G. Ireland, E. Byers, M. Hafner, A. Zulu, The role of agriculture for achieving renewable energy-centered sustainable development objectives in rural Africa, Environmental Development, 2024. <https://doi.org/10.1016/j.envdev.2024.101098>`_
 
-`M. Bissiri, P. Moura, R. Perez, N. Figueiredo, P. Pereira da Silva, Generation capacity expansion planning with spatially-resolved electricity demand and increasing variable renewable energy supply: Perspectives from power pooling in West Africa, Applied Energy, 2024. <https://doi.org/10.1016/j.apenergy.2024.123115>`_
+OnSSET + Grid network planning
 
-`A. Temesgen, Y. Wassie, E. Ahlgren, Analyzing grid extension suitability: A case study of Ethiopia using OnSSET, Energy Strategy Reviews, Volume 52, 2024, 101292, ISSN 2211-467X, <https://doi.org/10.1016/j.esr.2023.101292>`_
+`C. Omondi, F. Njoka, F. Tonini, E. Abraham, The cost of grid stability in developing power systems: Evidence from Kenya, Energy Strategy Reviews, 2026. <https://doi.org/10.1016/j.esr.2026.102390>`_
 
-`A. Sahlberg, B. Khavari, I. Mohamed, and F. Fuso Nerini, Comparison of Least-Cost Pathways towards Universal Electricity Access in Somalia over Different Timelines, Energies, 2023. <https://doi.org/10.3390/en16186489>`_
+Country case studies
+--------------------------
 
-`A. Sahlberg, W. Usher, I. Pappis, O. Broad, F. S. Kebede, and T. Walle, “Exploring long-term electrification pathway dynamics: a case study of Ethiopia,” Discover Energy, 2023. <https://doi.org/10.1007/s43937-023-00014-4>`_
-
-`F. Egli, C. Agutu, B. Steffen, and T. S. Schmidt, “The cost of electrifying all households in 40 Sub-Saharan African countries by 2030,” Nature Communications, 2023. <https://doi.org/10.1038/s41467-023-40612-3>`_
-
-`S. R. Isihak, “Achieving universal electricity access in line with SDG7 using GIS-based Model: An application of OnSSET for rural electrification planning in Nigeria,” Energy Strategy Reviews, 2023. <https://doi.org/10.1016/j.esr.2022.101021>`_
-
-`N. S. Ouedraogo, “A GIS approach to electrification planning in Cameroon,” Energy Strategy Reviews, 2023. <https://doi.org/10.1016/j.esr.2022.101020>`_
-
-`S. Isihak, U. Akpan, and S. Bhattacharyya, “Evolution of GIS-based rural electrification planning models and an application of OnSSET in Nigeria,” Renewable and Sustainable Energy Transition, 2022. <https://doi.org/10.1016/j.rset.2022.100019>`_
-
-`C. Agutu, F. Egli, N. J. Williams, T. S. Schmidt, and B. Steffen, “Accounting for finance in electrification models for sub-Saharan Africa,” Nature Energy, 2022. <https://doi.org/10.1038/s41560-022-01041-6>`_
-
-`A. Sahlberg, B. Khavari, A. Korkovelos, F. Fuso Nerini, and M. Howells, “A scenario discovery approach to least-cost electrification modelling in Burkina Faso,” Energy Strategy Reviews, 2021. <https://doi.org/10.1016/j.esr.2021.100714>`_
-
-`W. Jean, A. Arcela, R. van Els, A. Brasil Junior, S. Velez Echeverry, A. De Miranda, J. de Souza, , “A GIS for Rural Electrification Strategies in the Brazilian Amazon,” Papers in Applied Geography, 2021. <https://doi.org/10.1080/23754931.2020.1870539>`_
-
-`B. Khavari, A. Sahlberg, W. Usher, A. Korkovelos, and F. Fuso Nerini, “The effects of population aggregation in geospatial electrification planning,” Energy Strategy Reviews, 2021. <https://doi.org/10.1016/j.esr.2021.100752>`_
-
-`I. Pappis, A. Sahlberg, T. Walle, O. Broad, E. Eludoyin, M. Howells, W. Usher, “Influence of Electrification Pathways in the Electricity Sector of Ethiopia—Policy Implications Linking Spatial Electrification Analysis and Medium to Long-Term Energy Planning,” Energies, 2021. <https://doi.org/10.3390/en14041209>`_
-
-`G. Falchetta, M. Hafner, and S. Tagliapietra, “Pathways to 100% Electrification in East Africa by 2030,” Energy Journal, 2020. <https://doi.org/10.5547/01956574.41.3.gfal>`_
-
-`M. Bissiri, P. Moura, N. C. Figueiredo, and P. Pereira da Silva, “A geospatial approach towards defining cost-optimal electrification pathways in West Africa,” Energy, 2020. <https://doi.org/10.1016/j.energy.2020.117471>`_
-
-`J. G. Peña Balderrama, S. Balderrama Subieta, F. Lombardi, N. Stevanato, A. Sahlberg, M. Howells, E. Colombo, S. Quoilin, “Incorporating high-resolution demand and techno-economic optimization to evaluate micro-grids into the Open Source Spatial Electrification Tool (OnSSET),” Energy for Sustainable Development, 2020. <https://doi.org/10.1016/j.esd.2020.02.009>`_
+Afghanistan
 
 `A. Korkovelos, D. Mentis, M. Bazilian, M. Howells, A. Saraj, S. Fayez Hotaki, F. Missfeldt-Ringius, “Supporting Electrification Policy in Fragile States: A Conflict-Adjusted Geospatial Least Cost Approach for Afghanistan,” Sustainability, 2020. <https://doi.org/10.3390/su12030777>`_
 
+Brazil
+
+`W. Jean, A. Arcela, R. van Els, A. Brasil Junior, S. Velez Echeverry, A. De Miranda, J. de Souza, , “A GIS for Rural Electrification Strategies in the Brazilian Amazon,” Papers in Applied Geography, 2021. <https://doi.org/10.1080/23754931.2020.1870539>`_
+
+Burkina Faso
+
+`A. Sahlberg, B. Khavari, A. Korkovelos, F. Fuso Nerini, and M. Howells, “A scenario discovery approach to least-cost electrification modelling in Burkina Faso,” Energy Strategy Reviews, 2021. <https://doi.org/10.1016/j.esr.2021.100714>`_
+
+Cameroon
+
+`N. S. Ouedraogo, “A GIS approach to electrification planning in Cameroon,” Energy Strategy Reviews, 2023. <https://doi.org/10.1016/j.esr.2022.101020>`_
+
+Ecuador
+
+`A. Falcon-Mendoza, J. Herrera-Perez, J. Hernandez-Ambato, E. Ramos-Hidalgo, V. Herrera-Perez, Techno-Economic Analysis of Least-Cost Technology Solutions for Expanding Electricity Access in Ecuador, Advanced Research in Technologies, Information, Innovation and Sustainability, 2026. <https://doi.org/10.1007/978-3-032-16851-1_23>`_
+
+Ethiopia
+
+`A. Temesgen, Y. Wassie, G. Bekele, E. Ahlgren, Long-term least-cost geospatial electrification planning to bridge the electricity access gap: the case of Ethiopia, Environmental Research: Infrastructure and Sustainability, 2026. <https://doi.org/10.1088/2634-4505/ae5556>`_
+
+`A. Temesgen, G. Bekele, GIS-based assessment of economically feasible off-grid mini-grids in Ethiopia, Discover Energy, 2025. <https://link.springer.com/article/10.1007/s43937-025-00073-9>`_
+
+`A. Temesgen, Y. Wassie, G. Bekele, E. Ahlgren, Long-term spatially explicit electricity demand scenarios for rural electrification: The case of Ethiopia, Energy Strategy Reviews, 2025. <https://doi.org/10.1016/j.esr.2025.101931>`_
+
+`A. Temesgen, Y. Wassie, E. Ahlgren, Analyzing grid extension suitability: A case study of Ethiopia using OnSSET, Energy Strategy Reviews, Volume 52, 2024, 101292, ISSN 2211-467X, <https://doi.org/10.1016/j.esr.2023.101292>`_
+
+`A. Sahlberg, W. Usher, I. Pappis, O. Broad, F. S. Kebede, and T. Walle, “Exploring long-term electrification pathway dynamics: a case study of Ethiopia,” Discover Energy, 2023. <https://doi.org/10.1007/s43937-023-00014-4>`_
+
+Kenya
+
+`C. Omondi, F. Njoka, F. Tonini, E. Abraham, Scenarios for universal electricity access with spatial changes in urbanisation: The case of Kenya, Energy Strategy Reviews, 2026. <https://doi.org/10.1016/j.esr.2025.102015>`_
+
+Nigeria
+
+`S. Isihak, U. Akpan, S. Bhattarcharyya, Prioritizing projects in rural electrification planning: Integrating MAUT with OnSSET, Energy Strategy Reviews, 2025. <https://doi.org/10.1016/j.esr.2025.101807>`_
+
+`S. R. Isihak, “Achieving universal electricity access in line with SDG7 using GIS-based Model: An application of OnSSET for rural electrification planning in Nigeria,” Energy Strategy Reviews, 2023. <https://doi.org/10.1016/j.esr.2022.101021>`_
+
+`S. Isihak, U. Akpan, and S. Bhattacharyya, “Evolution of GIS-based rural electrification planning models and an application of OnSSET in Nigeria,” Renewable and Sustainable Energy Transition, 2022. <https://doi.org/10.1016/j.rset.2022.100019>`_
+
+Senegal
+
+`A. Sarr, A. Bischi, U. Desidiri, C. Kebe, Least-cost electrification pathways for Senegal by 2030: A nationwide analysis using open-source spatial electrification tool (OnSSET), Energy Nexus, 2025. <https://doi.org/10.1016/j.nexus.2025.100621>`_
+
+Somalia
+
+`A. Sahlberg, B. Khavari, I. Mohamed, and F. Fuso Nerini, Comparison of Least-Cost Pathways towards Universal Electricity Access in Somalia over Different Timelines, Energies, 2023. <https://doi.org/10.3390/en16186489>`_
+
+Tanzania
+
 `V. Menghwani et al., “Planning with justice: Using spatial modelling to incorporate justice in electricity pricing – The case of Tanzania,” Applied Energy, 2020. <https://doi.org/10.1016/j.apenergy.2020.114749>`_
 
-`A. Korkovelos, B. Khavari, A. Sahlberg, M. Howells, and C. Arderne, “The Role of Open Access Data in Geospatial Electrification Planning and the Achievement of SDG7. An OnSSET-Based Case Study for Malawi,” Energies, 2019. <https://doi.org/10.3390/en12071395>`_
+Zambia
 
-`N. Moksnes, A. Korkovelos, D. Mentis, and M. Howells, “Electrification pathways for Kenya–linking spatial electrification analysis and medium to long term energy planning,” Environmental Research Letters, 2017. <https://doi.org/10.1088/1748-9326/aa7e18>`_
+`K. Imasuka, G. Ireland, A. Hughes, Optimizing Spatial Input Data for Techno-Economic Modeling of Least-Cost Electrification Pathways in Zambia, Journal of Sustainable Development of Energy Water and Environment Systems, 2025, <http://dx.doi.org/10.13044/j.sdewes.d13.0549>`_
 
-`D. Mentis, M. Howells, H. Rogner, A. Korkovelos, C. Arderne, E. Zepeda, S. Siyal, C. Taliotis, M. Bazilian, A. de Roo, Y. Tanvez, A. Oudalov, E. Scholtz, “Lighting the World: the first application of an open source, spatial electrification tool (OnSSET) on Sub-Saharan Africa", Environmental Research Letters, 2017. <https://doi.org/10.1088/1748-9326/aa7b29>`_
 
-`D. Mentis, M. Welsch, F. Fuso Nerini, O. Broad, M. Howells, M. Bazilian, H. Rogner, “A GIS-based approach for electrification planning—A case study on Nigeria,” Energy for Sustainable Development, 2015. <https://doi.org/10.1016/j.esd.2015.09.007>`_
+Regional case studies
+--------------------------
 
-`F. Fuso Nerini, O. Broad, D. Mentis, M. Welsch, M. Bazilian, and M. Howells, “A cost comparison of technology approaches for improving access to electricity services,” Energy, 2016. <https://doi.org/10.1016/j.energy.2015.11.068>`_
+Sub-Saharan Africa
+
+`F. Egli, C. Agutu, B. Steffen, and T. S. Schmidt, “The cost of electrifying all households in 40 Sub-Saharan African countries by 2030,” Nature Communications, 2023. <https://doi.org/10.1038/s41467-023-40612-3>`_
+
+`C. Agutu, F. Egli, N. J. Williams, T. S. Schmidt, and B. Steffen, “Accounting for finance in electrification models for sub-Saharan Africa,” Nature Energy, 2022. <https://doi.org/10.1038/s41560-022-01041-6>`_
+
+East Africa
+
+`G. Falchetta, M. Hafner, and S. Tagliapietra, “Pathways to 100% Electrification in East Africa by 2030,” Energy Journal, 2020. <https://doi.org/10.5547/01956574.41.3.gfal>`_
+
+West Africa
+
+`A. Sarr, C. Kebe, S. Dan-Baibe, B. Ndiaye, A. Bischi, U. Desideri, Comparative least-cost electrification pathways in West Africa: A spatially explicit analysis using OnSSET, Energy Strategy Reviews, 2026. <https://doi.org/10.1016/j.esr.2026.102319>`_
+
+`M. Bissiri, P. Moura, N. C. Figueiredo, and P. Pereira da Silva, “A geospatial approach towards defining cost-optimal electrification pathways in West Africa,” Energy, 2020. <https://doi.org/10.1016/j.energy.2020.117471>`_
 
 PhD Theses
 **************
@@ -95,7 +161,7 @@ In the policymaking arena, electrification planning is often captured by private
 
 Education
 ----------
-OnSSET can be used by graduate students to enhance its functionalities and develop new applications in order to help address energy access issues. Enabling graduate students to build and iteratively develop formal energy planning models will impart this knowledge base to very wide range of energy market roles and positions. An open online introductory training course on OnSSET is available `here <https://www.open.edu/openlearncreate/course/view.php?id=11533>`_.
+OnSSET can be used by graduate students to enhance its functionalities and develop new applications in order to help address energy access issues. Enabling graduate students to build and iteratively develop formal energy planning models will impart this knowledge base to very wide range of energy market roles and positions. An open online introductory training course on OnSSET is available `here <https://www.open.edu/openlearncreate/course/view.php?id=19939>`_.
 
 Community
 ----------
